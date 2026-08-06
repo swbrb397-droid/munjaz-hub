@@ -13,7 +13,7 @@ export const Route = createFileRoute("/wallet")({
       { property: "og:description", content: "إيداع وسحب USDT بدون رسوم داخلية مع سحب فوري للحسابات الموثقة." },
     ],
   }),
-  component: WalletPage;
+  component: WalletPage,
 });
 
 const networks = ["TRC-20", "BEP-20", "Polygon"] as const;
