@@ -1,18 +1,40 @@
 import { Link } from "@tanstack/react-router";
 import { Bell, Menu, Wallet2, X } from "lucide-react";
 import { useState, type ReactNode } from "react";
+import { useLang, type TranslationKey } from "@/lib/lang";
 
 const nav = [
-  { to: "/", label: "الرئيسية" },
-  { to: "/store", label: "المتجر و NFT" },
-  { to: "/dashboard", label: "لوحة التحكم" },
-  { to: "/wallet", label: "المحفظة" },
-  { to: "/workspace", label: "مساحة الطلب" },
-  { to: "/admin", label: "الإدارة" },
-] as const;
+  { to: "/", key: "home" },
+  { to: "/store", key: "store" },
+  { to: "/dashboard", key: "dashboard" },
+  { to: "/wallet", key: "wallet" },
+  { to: "/workspace", key: "workspace" },
+  { to: "/admin", key: "admin" },
+] as const satisfies ReadonlyArray<{ to: string; key: TranslationKey }>;
+
+function LangSwitch() {
+  const { lang, setLang } = useLang();
+  return (
+    <div className="flex items-center rounded-lg border border-border p-0.5" role="group" aria-label="Language">
+      {(["ar", "en"] as const).map((l) => (
+        <button
+          key={l}
+          onClick={() => setLang(l)}
+          aria-pressed={lang === l}
+          className={`rounded-md px-2 py-1 text-xs font-bold uppercase transition-colors ${
+            lang === l ? "bg-primary/15 text-primary" : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          {l}
+        </button>
+      ))}
+    </div>
+  );
+}
 
 export function Shell({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
+  const { t } = useLang();
 
   return (
     <div className="min-h-screen">
@@ -20,7 +42,7 @@ export function Shell({ children }: { children: ReactNode }) {
         <div className="mx-auto flex h-16 max-w-7xl items-center gap-4 px-4">
           <Link to="/" className="flex items-center gap-2">
             <span className="grid size-9 place-items-center rounded-xl bg-primary/15 text-primary glow font-bold">م</span>
-            <span className="text-lg font-extrabold tracking-tight neon-text">مُنجَز</span>
+            <span className="text-lg font-extrabold tracking-tight neon-text">{t("brand")}</span>
           </Link>
 
           <nav className="mx-auto hidden items-center gap-1 lg:flex">
@@ -32,13 +54,13 @@ export function Shell({ children }: { children: ReactNode }) {
                 activeProps={{ className: "rounded-lg px-3 py-2 text-sm bg-secondary text-primary" }}
                 activeOptions={{ exact: item.to === "/" }}
               >
-                {item.label}
+                {t(item.key)}
               </Link>
             ))}
           </nav>
 
           <div className="ms-auto flex items-center gap-2 lg:ms-0">
-            <button className="relative grid size-9 place-items-center rounded-lg border border-border text-muted-foreground hover:text-foreground" aria-label="التنبيهات">
+            <button className="relative grid size-9 place-items-center rounded-lg border border-border text-muted-foreground hover:text-foreground" aria-label={t("notifications")}>
               <Bell className="size-4" />
               <span className="absolute -top-1 -start-1 size-2 rounded-full bg-primary" />
             </button>
@@ -49,7 +71,8 @@ export function Shell({ children }: { children: ReactNode }) {
               <Wallet2 className="size-4" />
               4,182.50 USDT
             </Link>
-            <button className="grid size-9 place-items-center rounded-lg border border-border lg:hidden" onClick={() => setOpen(!open)} aria-label="القائمة">
+            <LangSwitch />
+            <button className="grid size-9 place-items-center rounded-lg border border-border lg:hidden" onClick={() => setOpen(!open)} aria-label={t("menu")}>
               {open ? <X className="size-4" /> : <Menu className="size-4" />}
             </button>
           </div>
@@ -66,7 +89,7 @@ export function Shell({ children }: { children: ReactNode }) {
                 activeProps={{ className: "rounded-lg px-3 py-2 text-sm bg-secondary text-primary" }}
                 activeOptions={{ exact: item.to === "/" }}
               >
-                {item.label}
+                {t(item.key)}
               </Link>
             ))}
           </nav>
@@ -77,8 +100,8 @@ export function Shell({ children }: { children: ReactNode }) {
 
       <footer className="mt-24 border-t border-border">
         <div className="mx-auto flex max-w-7xl flex-col gap-2 px-4 py-8 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
-          <p>مُنجَز — سوق الخدمات الرقمية بعملة USDT.</p>
-          <p className="text-xs">TRC-20 · BEP-20 · Polygon · بيانات تجريبية</p>
+          <p>{t("footer")}</p>
+          <p className="text-xs">{t("footerSub")}</p>
         </div>
       </footer>
     </div>

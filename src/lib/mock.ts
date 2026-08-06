@@ -1,3 +1,10 @@
+import coverDesign from "@/assets/cover-design.jpg";
+import coverCode from "@/assets/cover-code.jpg";
+import coverCourse from "@/assets/cover-course.jpg";
+import coverProduct from "@/assets/cover-product.jpg";
+import coverGaming from "@/assets/cover-gaming.jpg";
+import coverVideo from "@/assets/cover-video.jpg";
+
 export type Service = {
   id: string;
   title: string;
@@ -8,17 +15,18 @@ export type Service = {
   orders: number;
   verified: boolean;
   tag: string;
+  cover: string;
 };
 
 export const services: Service[] = [
-  { id: "s1", title: "تصميم هوية بصرية متكاملة", seller: "استوديو نُون", category: "freelance", price: 320, rating: 4.9, orders: 214, verified: true, tag: "تصميم" },
-  { id: "s2", title: "تطوير متجر إلكتروني Next.js", seller: "م. خالد", category: "freelance", price: 850, rating: 5.0, orders: 96, verified: true, tag: "برمجة" },
-  { id: "s3", title: "دورة: احتراف العقود الذكية", seller: "أكاديمية بلوك", category: "course", price: 120, rating: 4.8, orders: 1320, verified: true, tag: "تعليم" },
-  { id: "s4", title: "حزمة قوالب لوحات تحكم", seller: "Pixel Vault", category: "product", price: 45, rating: 4.7, orders: 780, verified: false, tag: "منتج رقمي" },
-  { id: "s5", title: "جلسة تدريب Valorant احترافية", seller: "Coach Zaid", category: "gaming", price: 25, rating: 4.9, orders: 430, verified: true, tag: "قيمنق" },
-  { id: "s6", title: "مونتاج فيديو سينمائي", seller: "دار الإطار", category: "freelance", price: 190, rating: 4.6, orders: 152, verified: false, tag: "فيديو" },
-  { id: "s7", title: "دورة تسويق أداء متقدمة", seller: "منصة رقم", category: "course", price: 95, rating: 4.7, orders: 640, verified: true, tag: "تعليم" },
-  { id: "s8", title: "مكتبة أيقونات نيون 800+", seller: "Neon Labs", category: "product", price: 30, rating: 4.9, orders: 1105, verified: true, tag: "منتج رقمي" },
+  { id: "s1", title: "تصميم هوية بصرية متكاملة", seller: "استوديو نُون", category: "freelance", price: 320, rating: 4.9, orders: 214, verified: true, tag: "تصميم", cover: coverDesign },
+  { id: "s2", title: "تطوير متجر إلكتروني Next.js", seller: "م. خالد", category: "freelance", price: 850, rating: 5.0, orders: 96, verified: true, tag: "برمجة", cover: coverCode },
+  { id: "s3", title: "دورة: احتراف العقود الذكية", seller: "أكاديمية بلوك", category: "course", price: 120, rating: 4.8, orders: 1320, verified: true, tag: "تعليم", cover: coverCourse },
+  { id: "s4", title: "حزمة قوالب لوحات تحكم", seller: "Pixel Vault", category: "product", price: 45, rating: 4.7, orders: 780, verified: false, tag: "منتج رقمي", cover: coverProduct },
+  { id: "s5", title: "جلسة تدريب Valorant احترافية", seller: "Coach Zaid", category: "gaming", price: 25, rating: 4.9, orders: 430, verified: true, tag: "قيمنق", cover: coverGaming },
+  { id: "s6", title: "مونتاج فيديو سينمائي", seller: "دار الإطار", category: "freelance", price: 190, rating: 4.6, orders: 152, verified: false, tag: "فيديو", cover: coverVideo },
+  { id: "s7", title: "دورة تسويق أداء متقدمة", seller: "منصة رقم", category: "course", price: 95, rating: 4.7, orders: 640, verified: true, tag: "تعليم", cover: coverCourse },
+  { id: "s8", title: "مكتبة أيقونات نيون 800+", seller: "Neon Labs", category: "product", price: 30, rating: 4.9, orders: 1105, verified: true, tag: "منتج رقمي", cover: coverProduct },
 ];
 
 export type Nft = { id: string; name: string; collection: string; price: number; hue: number };

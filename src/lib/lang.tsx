@@ -1,0 +1,65 @@
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+
+export type Lang = "ar" | "en";
+
+const dict = {
+  ar: {
+    home: "الرئيسية",
+    store: "المتجر و NFT",
+    dashboard: "لوحة التحكم",
+    wallet: "المحفظة",
+    workspace: "مساحة الطلب",
+    admin: "الإدارة",
+    brand: "مُنجَز",
+    notifications: "التنبيهات",
+    menu: "القائمة",
+    verified: "موثّق",
+    footer: "مُنجَز — سوق الخدمات الرقمية بعملة USDT.",
+    footerSub: "TRC-20 · BEP-20 · Polygon · بيانات تجريبية",
+  },
+  en: {
+    home: "Home",
+    store: "Store & NFT",
+    dashboard: "Dashboard",
+    wallet: "Wallet",
+    workspace: "Workspace",
+    admin: "Admin",
+    brand: "Munjaz",
+    notifications: "Notifications",
+    menu: "Menu",
+    verified: "Verified",
+    footer: "Munjaz — the USDT-native digital services marketplace.",
+    footerSub: "TRC-20 · BEP-20 · Polygon · demo data",
+  },
+} as const;
+
+export type TranslationKey = keyof (typeof dict)["ar"];
+
+const LangContext = createContext<{ lang: Lang; setLang: (l: Lang) => void; t: (k: TranslationKey) => string }>({
+  lang: "ar",
+  setLang: () => {},
+  t: (k) => dict.ar[k],
+});
+
+export function LangProvider({ children }: { children: ReactNode }) {
+  const [lang, setLang] = useState<Lang>("ar");
+
+  useEffect(() => {
+    const stored = window.localStorage.getItem("munjaz-lang");
+    if (stored === "en" || stored === "ar") setLang(stored);
+  }, []);
+
+  useEffect(() => {
+    document.documentElement.lang = lang;
+    document.documentElement.dir = lang === "ar" ? "rtl" : "ltr";
+    window.localStorage.setItem("munjaz-lang", lang);
+  }, [lang]);
+
+  return (
+    <LangContext.Provider value={{ lang, setLang, t: (k) => dict[lang][k] }}>{children}</LangContext.Provider>
+  );
+}
+
+export function useLang() {
+  return useContext(LangContext);
+}
