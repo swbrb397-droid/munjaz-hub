@@ -63,7 +63,7 @@ function Store() {
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {list.map((s) => (
-            <ServiceCard key={s.id} title={s.title} seller={s.seller} price={s.price} rating={s.rating} orders={s.orders} verified={s.verified} tag={s.tag} />
+            <ServiceCard key={s.id} title={s.title} seller={s.seller} price={s.price} rating={s.rating} orders={s.orders} verified={s.verified} tag={s.tag} cover={s.cover} />
           ))}
         </div>
         {list.length === 0 && <p className="py-10 text-center text-muted-foreground">لا توجد نتائج مطابقة.</p>}

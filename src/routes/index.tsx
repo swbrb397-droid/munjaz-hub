@@ -3,6 +3,7 @@ import { useState } from "react";
 import { ArrowLeft, BadgeCheck, Gamepad2, ShieldCheck, Sparkle, Star, Zap } from "lucide-react";
 import { Card, Section } from "@/components/site/Shell";
 import { nfts, services, tickers } from "@/lib/mock";
+import { VerifiedBadge } from "@/components/site/VerifiedBadge";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -24,7 +25,7 @@ function Landing() {
       <Section title="خدمات مميزة" subtitle="بضمان الوساطة ومراحل تسليم موثقة" action={<Link to="/store" className="text-sm text-primary">تصفح الكل ←</Link>}>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {services.slice(0, 4).map((s) => (
-            <ServiceCard key={s.id} title={s.title} seller={s.seller} price={s.price} rating={s.rating} orders={s.orders} verified={s.verified} tag={s.tag} />
+            <ServiceCard key={s.id} title={s.title} seller={s.seller} price={s.price} rating={s.rating} orders={s.orders} verified={s.verified} tag={s.tag} cover={s.cover} />
           ))}
         </div>
       </Section>
@@ -32,7 +33,7 @@ function Landing() {
       <Section title="منتجات رقمية ودورات" subtitle="تسليم فوري وتشغيل داخل المنصة">
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {services.filter((s) => s.category === "course" || s.category === "product").map((s) => (
-            <ServiceCard key={s.id} title={s.title} seller={s.seller} price={s.price} rating={s.rating} orders={s.orders} verified={s.verified} tag={s.tag} />
+            <ServiceCard key={s.id} title={s.title} seller={s.seller} price={s.price} rating={s.rating} orders={s.orders} verified={s.verified} tag={s.tag} cover={s.cover} />
           ))}
         </div>
       </Section>
@@ -138,15 +139,19 @@ function Ticker() {
 }
 
 export function ServiceCard({
-  title, seller, price, rating, orders, verified, tag,
-}: { title: string; seller: string; price: number; rating: number; orders: number; verified: boolean; tag: string }) {
+  title, seller, price, rating, orders, verified, tag, cover,
+}: { title: string; seller: string; price: number; rating: number; orders: number; verified: boolean; tag: string; cover: string }) {
   return (
     <Card className="flex flex-col transition-colors hover:border-primary/50">
-      <div className="mb-4 h-28 rounded-xl bg-gradient-to-br from-primary/25 via-accent/15 to-violet/25" />
-      <span className="text-xs text-muted-foreground">{tag}</span>
+      <div className="relative mb-4 h-28 overflow-hidden rounded-xl border border-border">
+        <img src={cover} alt={title} loading="lazy" width={768} height={512} className="size-full object-cover" />
+        <span className="absolute bottom-2 start-2 rounded-full bg-background/70 px-2 py-0.5 text-[10px] font-semibold text-foreground backdrop-blur">
+          {tag}
+        </span>
+      </div>
       <h3 className="mt-1 font-bold leading-snug">{title}</h3>
-      <p className="mt-1 flex items-center gap-1 text-sm text-muted-foreground">
-        {seller} {verified && <BadgeCheck className="size-4 text-primary" />}
+      <p className="mt-1 flex flex-wrap items-center gap-1.5 text-sm text-muted-foreground">
+        {seller} {verified && <VerifiedBadge />}
       </p>
       <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
         <Star className="size-3.5 fill-accent text-accent" /> {rating} · {orders} طلب
