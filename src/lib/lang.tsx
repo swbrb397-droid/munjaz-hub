@@ -35,10 +35,19 @@ const dict = {
 
 export type TranslationKey = keyof (typeof dict)["ar"];
 
-const LangContext = createContext<{ lang: Lang; setLang: (l: Lang) => void; t: (k: TranslationKey) => string }>({
+type Ctx = {
+  lang: Lang;
+  setLang: (l: Lang) => void;
+  t: (k: TranslationKey) => string;
+  /** Inline bilingual helper: tr("عربي", "English") */
+  tr: (ar: string, en: string) => string;
+};
+
+const LangContext = createContext<Ctx>({
   lang: "ar",
   setLang: () => {},
   t: (k) => dict.ar[k],
+  tr: (ar) => ar,
 });
 
 export function LangProvider({ children }: { children: ReactNode }) {
@@ -56,7 +65,11 @@ export function LangProvider({ children }: { children: ReactNode }) {
   }, [lang]);
 
   return (
-    <LangContext.Provider value={{ lang, setLang, t: (k) => dict[lang][k] }}>{children}</LangContext.Provider>
+    <LangContext.Provider
+      value={{ lang, setLang, t: (k) => dict[lang][k], tr: (ar, en) => (lang === "ar" ? ar : en) }}
+    >
+      {children}
+    </LangContext.Provider>
   );
 }
 

@@ -2,7 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { Award, Coins, ShoppingBag, TrendingUp, Users } from "lucide-react";
 import { Card, Section } from "@/components/site/Shell";
-import { orders } from "@/lib/mock";
+import { useMock } from "@/lib/mock";
+import { useLang } from "@/lib/lang";
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({
@@ -17,27 +18,29 @@ export const Route = createFileRoute("/dashboard")({
 });
 
 function Dashboard() {
+  const { tr } = useLang();
+  const { orders } = useMock();
   const [view, setView] = useState<"seller" | "buyer">("seller");
 
   const stats =
     view === "seller"
       ? [
-          { icon: Coins, label: "أرباح الشهر", value: "3,240 USDT", sub: "+18% عن الشهر الماضي" },
-          { icon: ShoppingBag, label: "طلبات نشطة", value: "7", sub: "3 بانتظار التسليم" },
-          { icon: TrendingUp, label: "معدل الإنجاز", value: "97%", sub: "آخر 30 يوماً" },
-          { icon: Users, label: "عملاء متكررون", value: "42", sub: "من 118 عميلاً" },
+          { icon: Coins, label: tr("أرباح الشهر", "Monthly earnings"), value: "3,240 USDT", sub: tr("+18% عن الشهر الماضي", "+18% vs last month") },
+          { icon: ShoppingBag, label: tr("طلبات نشطة", "Active orders"), value: "7", sub: tr("3 بانتظار التسليم", "3 awaiting delivery") },
+          { icon: TrendingUp, label: tr("معدل الإنجاز", "Completion rate"), value: "97%", sub: tr("آخر 30 يوماً", "Last 30 days") },
+          { icon: Users, label: tr("عملاء متكررون", "Repeat clients"), value: "42", sub: tr("من 118 عميلاً", "out of 118 clients") },
         ]
       : [
-          { icon: Coins, label: "الإنفاق هذا الشهر", value: "1,120 USDT", sub: "5 طلبات" },
-          { icon: ShoppingBag, label: "طلبات جارية", value: "3", sub: "1 بانتظار مراجعتك" },
-          { icon: TrendingUp, label: "مبالغ في الضمان", value: "850 USDT", sub: "محجوزة بأمان" },
-          { icon: Users, label: "بائعون مفضلون", value: "9", sub: "متابَعون" },
+          { icon: Coins, label: tr("الإنفاق هذا الشهر", "Spending this month"), value: "1,120 USDT", sub: tr("5 طلبات", "5 orders") },
+          { icon: ShoppingBag, label: tr("طلبات جارية", "Ongoing orders"), value: "3", sub: tr("1 بانتظار مراجعتك", "1 awaiting your review") },
+          { icon: TrendingUp, label: tr("مبالغ في الضمان", "Amounts in escrow"), value: "850 USDT", sub: tr("محجوزة بأمان", "Safely held") },
+          { icon: Users, label: tr("بائعون مفضلون", "Favorite sellers"), value: "9", sub: tr("متابَعون", "Followed") },
         ];
 
   return (
     <Section
-      title="لوحة التحكم"
-      subtitle="عرض مزدوج: بائع / مشتري"
+      title={tr("لوحة التحكم", "Dashboard")}
+      subtitle={tr("عرض مزدوج: بائع / مشتري", "Dual view: seller / buyer")}
       action={
         <div className="flex rounded-xl border border-border p-1">
           {(["seller", "buyer"] as const).map((v) => (
@@ -46,7 +49,7 @@ function Dashboard() {
               onClick={() => setView(v)}
               className={`rounded-lg px-4 py-2 text-sm ${view === v ? "bg-primary font-bold text-primary-foreground" : "text-muted-foreground"}`}
             >
-              {v === "seller" ? "بائع" : "مشتري"}
+              {v === "seller" ? tr("بائع", "Seller") : tr("مشتري", "Buyer")}
             </button>
           ))}
         </div>
@@ -65,7 +68,7 @@ function Dashboard() {
 
       <div className="mt-6 grid gap-4 lg:grid-cols-[1.4fr_1fr]">
         <Card>
-          <h3 className="font-bold">الطلبات النشطة</h3>
+          <h3 className="font-bold">{tr("الطلبات النشطة", "Active orders")}</h3>
           <div className="mt-4 grid gap-3">
             {orders.map((o) => (
               <div key={o.id} className="rounded-xl border border-border p-4">
@@ -91,26 +94,26 @@ function Dashboard() {
           <Card>
             <div className="flex items-center gap-2">
               <Award className="size-5 text-violet" />
-              <h3 className="font-bold">المستوى 12 · محترف</h3>
+              <h3 className="font-bold">{tr("المستوى 12 · محترف", "Level 12 · Professional")}</h3>
             </div>
             <p className="mt-2 text-sm text-muted-foreground">4,820 / 6,000 XP</p>
             <div className="mt-2 h-3 rounded-full bg-secondary">
               <div className="h-3 rounded-full bg-gradient-to-l from-primary to-violet" style={{ width: "80%" }} />
             </div>
             <div className="mt-4 flex flex-wrap gap-2 text-xs">
-              {["تسليم سريع", "تقييم ذهبي", "بائع موثق", "100 طلب"].map((b) => (
+              {[tr("تسليم سريع", "Fast delivery"), tr("تقييم ذهبي", "Gold rating"), tr("بائع موثق", "Verified seller"), tr("100 طلب", "100 orders")].map((b) => (
                 <span key={b} className="rounded-full border border-border px-3 py-1 text-muted-foreground">{b}</span>
               ))}
             </div>
           </Card>
           <Card>
-            <h3 className="font-bold">مؤشرات المحفظة</h3>
+            <h3 className="font-bold">{tr("مؤشرات المحفظة", "Wallet indicators")}</h3>
             <dl className="mt-3 grid gap-2 text-sm">
               {[
-                ["الرصيد المتاح", "4,182.50 USDT"],
-                ["محجوز في الضمان", "850.00 USDT"],
-                ["قيد السحب", "450.00 USDT"],
-                ["حالة التوثيق", "الطبقة 2 — موثق"],
+                [tr("الرصيد المتاح", "Available balance"), "4,182.50 USDT"],
+                [tr("محجوز في الضمان", "Held in escrow"), "850.00 USDT"],
+                [tr("قيد السحب", "Pending withdrawal"), "450.00 USDT"],
+                [tr("حالة التوثيق", "Verification status"), tr("الطبقة 2 — موثق", "Tier 2 — Verified")],
               ].map(([k, v]) => (
                 <div key={k} className="flex justify-between border-b border-border pb-2 last:border-0">
                   <dt className="text-muted-foreground">{k}</dt>

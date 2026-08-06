@@ -2,7 +2,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { ArrowLeft, BadgeCheck, Gamepad2, ShieldCheck, Sparkle, Star, Zap } from "lucide-react";
 import { Card, Section } from "@/components/site/Shell";
-import { nfts, services, tickers } from "@/lib/mock";
+import { useMock } from "@/lib/mock";
+import { useLang } from "@/lib/lang";
 import { VerifiedBadge } from "@/components/site/VerifiedBadge";
 
 export const Route = createFileRoute("/")({
@@ -18,11 +19,13 @@ export const Route = createFileRoute("/")({
 });
 
 function Landing() {
+  const { tr } = useLang();
+  const { services, nfts } = useMock();
   return (
     <>
       <Hero />
       <Ticker />
-      <Section title="خدمات مميزة" subtitle="بضمان الوساطة ومراحل تسليم موثقة" action={<Link to="/store" className="text-sm text-primary">تصفح الكل ←</Link>}>
+      <Section title={tr("خدمات مميزة", "Featured services")} subtitle={tr("بضمان الوساطة ومراحل تسليم موثقة", "With escrow protection and verified delivery milestones")} action={<Link to="/store" className="text-sm text-primary">{tr("تصفح الكل ←", "Browse all ←")}</Link>}>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {services.slice(0, 4).map((s) => (
             <ServiceCard key={s.id} title={s.title} seller={s.seller} price={s.price} rating={s.rating} orders={s.orders} verified={s.verified} tag={s.tag} cover={s.cover} />
@@ -30,7 +33,7 @@ function Landing() {
         </div>
       </Section>
 
-      <Section title="منتجات رقمية ودورات" subtitle="تسليم فوري وتشغيل داخل المنصة">
+      <Section title={tr("منتجات رقمية ودورات", "Digital products & courses")} subtitle={tr("تسليم فوري وتشغيل داخل المنصة", "Instant delivery and in-platform access")}>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {services.filter((s) => s.category === "course" || s.category === "product").map((s) => (
             <ServiceCard key={s.id} title={s.title} seller={s.seller} price={s.price} rating={s.rating} orders={s.orders} verified={s.verified} tag={s.tag} cover={s.cover} />
@@ -38,7 +41,7 @@ function Landing() {
         </div>
       </Section>
 
-      <Section title="معرض NFT" subtitle="أصول رقمية موثقة على Polygon" action={<Link to="/store" className="text-sm text-primary">المعرض الكامل ←</Link>}>
+      <Section title={tr("معرض NFT", "NFT gallery")} subtitle={tr("أصول رقمية موثقة على Polygon", "Verified digital assets on Polygon")} action={<Link to="/store" className="text-sm text-primary">{tr("المعرض الكامل ←", "Full gallery ←")}</Link>}>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {nfts.slice(0, 3).map((n) => (
             <NftCard key={n.id} {...n} />
@@ -52,33 +55,37 @@ function Landing() {
 }
 
 function Hero() {
+  const { tr } = useLang();
   return (
     <div className="relative overflow-hidden border-b border-border">
       <div className="pointer-events-none absolute inset-0 grid-lines opacity-40" />
       <div className="relative mx-auto grid max-w-7xl items-center gap-10 px-4 py-20 lg:grid-cols-[1.1fr_.9fr]">
         <div>
           <span className="inline-flex items-center gap-2 rounded-full border border-primary/40 bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
-            <Sparkle className="size-3.5" /> ضمان ذكي + تسوية نزاعات بالذكاء الاصطناعي
+            <Sparkle className="size-3.5" /> {tr("ضمان ذكي + تسوية نزاعات بالذكاء الاصطناعي", "Smart escrow + AI dispute resolution")}
           </span>
           <h1 className="mt-5 text-4xl leading-tight font-black sm:text-6xl">
-            سوق رقمي كامل يعمل بـ <span className="neon-text">USDT</span>
+            {tr("سوق رقمي كامل يعمل بـ", "A full digital marketplace powered by")} <span className="neon-text">USDT</span>
           </h1>
           <p className="mt-4 max-w-xl text-base text-muted-foreground sm:text-lg">
-            خدمات مستقلين، منتجات فورية، دورات، جلسات قيمنق، و NFT — بمحفظة داخلية بدون رسوم غاز، وسحوبات فورية للحسابات الموثقة.
+            {tr(
+              "خدمات مستقلين، منتجات فورية، دورات، جلسات قيمنق، و NFT — بمحفظة داخلية بدون رسوم غاز، وسحوبات فورية للحسابات الموثقة.",
+              "Freelance services, instant products, courses, gaming sessions, and NFTs — with a gas-free internal wallet and instant withdrawals for verified accounts.",
+            )}
           </p>
           <div className="mt-7 flex flex-wrap gap-3">
             <Link to="/store" className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-3 font-bold text-primary-foreground glow">
-              ابدأ التصفح <ArrowLeft className="size-4" />
+              {tr("ابدأ التصفح", "Start browsing")} <ArrowLeft className="size-4" />
             </Link>
             <Link to="/dashboard" className="rounded-xl border border-border px-5 py-3 font-semibold text-foreground hover:bg-secondary">
-              لوحة التحكم
+              {tr("لوحة التحكم", "Dashboard")}
             </Link>
           </div>
           <div className="mt-10 grid max-w-lg grid-cols-3 gap-4">
             {[
-              { k: "12.4M", v: "حجم تداول USDT" },
-              { k: "48K", v: "طلب مكتمل" },
-              { k: "0%", v: "رسوم داخلية" },
+              { k: "12.4M", v: tr("حجم تداول USDT", "USDT trading volume") },
+              { k: "48K", v: tr("طلب مكتمل", "orders completed") },
+              { k: "0%", v: tr("رسوم داخلية", "internal fees") },
             ].map((s) => (
               <div key={s.v}>
                 <p className="text-2xl font-black text-primary">{s.k}</p>
@@ -93,8 +100,8 @@ function Hero() {
             <div className="flex items-center gap-3">
               <ShieldCheck className="size-5 text-primary" />
               <div>
-                <p className="font-bold">ضمان المراحل (Escrow)</p>
-                <p className="text-sm text-muted-foreground">تُجمَّد الأموال حتى اعتماد التسليم أو حكم الوكيل الذكي.</p>
+                <p className="font-bold">{tr("ضمان المراحل (Escrow)", "Milestone escrow")}</p>
+                <p className="text-sm text-muted-foreground">{tr("تُجمَّد الأموال حتى اعتماد التسليم أو حكم الوكيل الذكي.", "Funds are held until delivery is approved or the AI agent rules.")}</p>
               </div>
             </div>
           </Card>
@@ -102,8 +109,8 @@ function Hero() {
             <div className="flex items-center gap-3">
               <Zap className="size-5 text-accent" />
               <div>
-                <p className="font-bold">سحب فوري للموثقين</p>
-                <p className="text-sm text-muted-foreground">TRC-20 · BEP-20 · Polygon برسوم مصغّرة.</p>
+                <p className="font-bold">{tr("سحب فوري للموثقين", "Instant withdrawal for verified users")}</p>
+                <p className="text-sm text-muted-foreground">TRC-20 · BEP-20 · Polygon {tr("برسوم مصغّرة", "with minimal fees")}.</p>
               </div>
             </div>
           </Card>
@@ -111,8 +118,8 @@ function Hero() {
             <div className="flex items-center gap-3">
               <Gamepad2 className="size-5 text-violet" />
               <div>
-                <p className="font-bold">مركز القيمنق والتدريب</p>
-                <p className="text-sm text-muted-foreground">حجز جلسات مباشرة مع مدربين محترفين.</p>
+                <p className="font-bold">{tr("مركز القيمنق والتدريب", "Gaming & coaching hub")}</p>
+                <p className="text-sm text-muted-foreground">{tr("حجز جلسات مباشرة مع مدربين محترفين.", "Book live sessions with professional coaches.")}</p>
               </div>
             </div>
           </Card>
@@ -123,6 +130,7 @@ function Hero() {
 }
 
 function Ticker() {
+  const { tickers } = useMock();
   return (
     <div className="overflow-hidden border-b border-border bg-surface/60 py-3">
       <div className="flex gap-8 whitespace-nowrap px-4 text-sm">
@@ -141,6 +149,7 @@ function Ticker() {
 export function ServiceCard({
   title, seller, price, rating, orders, verified, tag, cover,
 }: { title: string; seller: string; price: number; rating: number; orders: number; verified: boolean; tag: string; cover: string }) {
+  const { tr } = useLang();
   return (
     <Card className="flex flex-col transition-colors hover:border-primary/50">
       <div className="relative mb-4 h-28 overflow-hidden rounded-xl border border-border">
@@ -154,7 +163,7 @@ export function ServiceCard({
         {seller} {verified && <VerifiedBadge />}
       </p>
       <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
-        <Star className="size-3.5 fill-accent text-accent" /> {rating} · {orders} طلب
+        <Star className="size-3.5 fill-accent text-accent" /> {rating} · {orders} {tr("طلب", "orders")}
       </div>
       <p className="mt-4 text-lg font-black text-primary">{price} USDT</p>
     </Card>
@@ -180,6 +189,7 @@ export function NftCard({ name, collection, price, hue }: { name: string; collec
 }
 
 function AffiliateCalculator() {
+  const { tr } = useLang();
   const [referrals, setReferrals] = useState(25);
   const [avgSpend, setAvgSpend] = useState(400);
   const share = 0.18;
@@ -187,23 +197,23 @@ function AffiliateCalculator() {
   const monthly = referrals * avgSpend * commission * share;
 
   return (
-    <Section title="حاسبة برنامج الإحالة" subtitle="احصل على 15–20% من صافي عمولة المنصة لمدة 12 شهراً لكل مُحال">
+    <Section title={tr("حاسبة برنامج الإحالة", "Referral program calculator")} subtitle={tr("احصل على 15–20% من صافي عمولة المنصة لمدة 12 شهراً لكل مُحال", "Earn 15–20% of net platform commission for 12 months per referral")}>
       <Card className="grid gap-6 lg:grid-cols-[1fr_320px]">
         <div className="grid gap-6">
           <label className="grid gap-2">
-            <span className="flex justify-between text-sm"><span>عدد المُحالين</span><span className="font-bold text-primary">{referrals}</span></span>
+            <span className="flex justify-between text-sm"><span>{tr("عدد المُحالين", "Number of referrals")}</span><span className="font-bold text-primary">{referrals}</span></span>
             <input type="range" min={1} max={300} value={referrals} onChange={(e) => setReferrals(Number(e.target.value))} className="accent-[oklch(0.76_0.17_165)]" />
           </label>
           <label className="grid gap-2">
-            <span className="flex justify-between text-sm"><span>متوسط إنفاق المُحال شهرياً (USDT)</span><span className="font-bold text-primary">{avgSpend}</span></span>
+            <span className="flex justify-between text-sm"><span>{tr("متوسط إنفاق المُحال شهرياً (USDT)", "Average referral monthly spend (USDT)")}</span><span className="font-bold text-primary">{avgSpend}</span></span>
             <input type="range" min={50} max={3000} step={50} value={avgSpend} onChange={(e) => setAvgSpend(Number(e.target.value))} className="accent-[oklch(0.76_0.17_165)]" />
           </label>
         </div>
         <div className="rounded-2xl border border-primary/40 bg-primary/10 p-5 text-center">
-          <p className="text-sm text-muted-foreground">دخلك الشهري التقديري</p>
+          <p className="text-sm text-muted-foreground">{tr("دخلك الشهري التقديري", "Your estimated monthly income")}</p>
           <p className="mt-2 text-4xl font-black text-primary">{monthly.toFixed(0)}</p>
-          <p className="text-sm text-muted-foreground">USDT / شهر</p>
-          <p className="mt-4 text-xs text-muted-foreground">≈ {(monthly * 12).toFixed(0)} USDT خلال 12 شهراً</p>
+          <p className="text-sm text-muted-foreground">USDT / {tr("شهر", "month")}</p>
+          <p className="mt-4 text-xs text-muted-foreground">≈ {(monthly * 12).toFixed(0)} USDT {tr("خلال 12 شهراً", "over 12 months")}</p>
         </div>
       </Card>
     </Section>

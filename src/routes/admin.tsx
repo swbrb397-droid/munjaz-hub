@@ -2,7 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { Gavel, ShieldCheck, TrendingUp } from "lucide-react";
 import { Card, Section } from "@/components/site/Shell";
-import { disputes, kycQueue } from "@/lib/mock";
+import { useMock } from "@/lib/mock";
+import { useLang } from "@/lib/lang";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
@@ -16,26 +17,29 @@ export const Route = createFileRoute("/admin")({
   component: Admin,
 });
 
-const tabs = [
-  { key: "disputes", label: "النزاعات", icon: Gavel },
-  { key: "kyc", label: "التوثيق", icon: ShieldCheck },
-  { key: "revenue", label: "الإيرادات", icon: TrendingUp },
-] as const;
-
-const revenue = [
-  { m: "مارس", v: 42 },
-  { m: "أبريل", v: 58 },
-  { m: "مايو", v: 51 },
-  { m: "يونيو", v: 74 },
-  { m: "يوليو", v: 88 },
-  { m: "أغسطس", v: 96 },
-];
-
 function Admin() {
+  const { tr } = useLang();
+  const { disputes, kycQueue } = useMock();
+
+  const tabs = [
+    { key: "disputes", label: tr("النزاعات", "Disputes"), icon: Gavel },
+    { key: "kyc", label: tr("التوثيق", "KYC"), icon: ShieldCheck },
+    { key: "revenue", label: tr("الإيرادات", "Revenue"), icon: TrendingUp },
+  ] as const;
+
+  const revenue = [
+    { m: tr("مارس", "Mar"), v: 42 },
+    { m: tr("أبريل", "Apr"), v: 58 },
+    { m: tr("مايو", "May"), v: 51 },
+    { m: tr("يونيو", "Jun"), v: 74 },
+    { m: tr("يوليو", "Jul"), v: 88 },
+    { m: tr("أغسطس", "Aug"), v: 96 },
+  ];
+
   const [tab, setTab] = useState<(typeof tabs)[number]["key"]>("disputes");
 
   return (
-    <Section title="لوحة الإدارة" subtitle="تشغيل المنصة والرقابة والتحليلات">
+    <Section title={tr("لوحة الإدارة", "Admin Dashboard")} subtitle={tr("تشغيل المنصة والرقابة والتحليلات", "Platform operations, oversight, and analytics")}>
       <Card className="mb-6 flex flex-wrap gap-2">
         {tabs.map((t) => (
           <button
@@ -50,7 +54,7 @@ function Admin() {
 
       {tab === "disputes" && (
         <Card>
-          <h3 className="font-bold">قائمة النزاعات</h3>
+          <h3 className="font-bold">{tr("قائمة النزاعات", "Disputes list")}</h3>
           <div className="mt-4 grid gap-3">
             {disputes.map((d) => (
               <div key={d.id} className="flex flex-wrap items-center gap-3 rounded-xl border border-border p-4 text-sm">
@@ -58,13 +62,13 @@ function Admin() {
                   <p className="font-semibold">{d.id} · {d.order}</p>
                   <p className="text-xs text-muted-foreground">{d.reason}</p>
                 </div>
-                <span className={`rounded-full px-3 py-1 text-xs ${d.risk === "مرتفع" ? "bg-destructive/15 text-destructive" : d.risk === "متوسط" ? "bg-accent/15 text-accent" : "bg-primary/15 text-primary"}`}>
-                  خطورة {d.risk}
+                <span className={`rounded-full px-3 py-1 text-xs ${d.risk === tr("مرتفع", "High") ? "bg-destructive/15 text-destructive" : d.risk === tr("متوسط", "Medium") ? "bg-accent/15 text-accent" : "bg-primary/15 text-primary"}`}>
+                  {tr("خطورة", "Risk")} {d.risk}
                 </span>
-                <span className="text-muted-foreground">حكم AI: {d.ai}</span>
+                <span className="text-muted-foreground">{tr("حكم AI", "AI ruling")}: {d.ai}</span>
                 <div className="ms-auto flex gap-2">
-                  <button className="rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground">اعتماد</button>
-                  <button className="rounded-lg border border-border px-3 py-1.5 text-xs">مراجعة</button>
+                  <button className="rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground">{tr("اعتماد", "Approve")}</button>
+                  <button className="rounded-lg border border-border px-3 py-1.5 text-xs">{tr("مراجعة", "Review")}</button>
                 </div>
               </div>
             ))}
@@ -74,7 +78,7 @@ function Admin() {
 
       {tab === "kyc" && (
         <Card>
-          <h3 className="font-bold">مركز توثيق الهوية</h3>
+          <h3 className="font-bold">{tr("مركز توثيق الهوية", "KYC center")}</h3>
           <div className="mt-4 grid gap-3">
             {kycQueue.map((u) => (
               <div key={u.id} className="flex flex-wrap items-center gap-3 rounded-xl border border-border p-4 text-sm">
@@ -85,8 +89,8 @@ function Admin() {
                 <span className="text-muted-foreground">{u.docs}</span>
                 <span className="text-xs text-muted-foreground">{u.submitted}</span>
                 <div className="ms-auto flex gap-2">
-                  <button className="rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground">قبول</button>
-                  <button className="rounded-lg border border-destructive/50 px-3 py-1.5 text-xs text-destructive">رفض</button>
+                  <button className="rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground">{tr("قبول", "Accept")}</button>
+                  <button className="rounded-lg border border-destructive/50 px-3 py-1.5 text-xs text-destructive">{tr("رفض", "Reject")}</button>
                 </div>
               </div>
             ))}
@@ -97,7 +101,7 @@ function Admin() {
       {tab === "revenue" && (
         <div className="grid gap-4 lg:grid-cols-[1.4fr_1fr]">
           <Card>
-            <h3 className="font-bold">إيرادات العمولة (ألف USDT)</h3>
+            <h3 className="font-bold">{tr("إيرادات العمولة (ألف USDT)", "Commission revenue (thousand USDT)")}</h3>
             <div className="mt-6 flex h-56 items-end gap-3">
               {revenue.map((r) => (
                 <div key={r.m} className="flex flex-1 flex-col items-center gap-2">
@@ -109,10 +113,10 @@ function Admin() {
           </Card>
           <div className="grid gap-4">
             {[
-              ["إجمالي حجم التداول", "12.4M USDT"],
-              ["صافي عمولة المنصة", "96K USDT"],
-              ["مدفوعات الإحالة", "17.2K USDT"],
-              ["نسبة النزاعات", "0.9%"],
+              [tr("إجمالي حجم التداول", "Total trading volume"), "12.4M USDT"],
+              [tr("صافي عمولة المنصة", "Net platform commission"), "96K USDT"],
+              [tr("مدفوعات الإحالة", "Referral payouts"), "17.2K USDT"],
+              [tr("نسبة النزاعات", "Dispute rate"), "0.9%"],
             ].map(([k, v]) => (
               <Card key={k}>
                 <p className="text-sm text-muted-foreground">{k}</p>
