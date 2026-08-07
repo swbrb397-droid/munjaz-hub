@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
-import { Bell, Menu, Wallet2, X } from "lucide-react";
-import { useState, type ReactNode } from "react";
+import { Bell, Globe, Menu, Wallet2, X } from "lucide-react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useLang, type TranslationKey } from "@/lib/lang";
 
 const nav = [
@@ -13,24 +13,67 @@ const nav = [
 ] as const satisfies ReadonlyArray<{ to: string; key: TranslationKey }>;
 
 function LangSwitch() {
-  const { lang, setLang } = useLang();
+  const { lang, setLang, tr } = useLang();
+  const next = lang === "ar" ? "en" : "ar";
   return (
-    <div className="flex items-center rounded-lg border border-border p-0.5" role="group" aria-label="Language">
-      {(["ar", "en"] as const).map((l) => (
-        <button
-          key={l}
-          onClick={() => setLang(l)}
-          aria-pressed={lang === l}
-          className={`rounded-md px-2 py-1 text-xs font-bold uppercase transition-colors ${
-            lang === l ? "bg-primary/15 text-primary" : "text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          {l}
-        </button>
-      ))}
+    <button
+      type="button"
+      onClick={() => setLang(next)}
+      title={tr("تغيير اللغة", "Change language")}
+      aria-label={tr("تغيير اللغة", "Change language")}
+      className="flex h-9 shrink-0 items-center gap-1.5 rounded-lg border border-primary/40 bg-primary/10 px-2.5 text-xs font-bold uppercase text-primary transition-colors hover:bg-primary/20"
+    >
+      <Globe className="size-4" />
+      {next}
+    </button>
+  );
+}
+
+function Notifications() {
+  const { tr } = useLang();
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", onDown);
+    return () => document.removeEventListener("mousedown", onDown);
+  }, [open]);
+
+  const items = [
+    tr("تم تحرير 250 USDT من الضمان.", "250 USDT released from escrow."),
+    tr("رسالة جديدة في مساحة الطلب #4821.", "New message in workspace #4821."),
+    tr("اكتمل توثيق حسابك (KYC 2).", "Your account verification is complete (KYC 2)."),
+  ];
+
+  return (
+    <div className="relative shrink-0" ref={ref}>
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        className="relative grid size-9 place-items-center rounded-lg border border-border text-muted-foreground transition-colors hover:text-foreground"
+        aria-label={tr("التنبيهات", "Notifications")}
+      >
+        <Bell className="size-4" />
+        <span className="absolute -top-1 -start-1 size-2 rounded-full bg-primary" />
+      </button>
+      {open && (
+        <div className="absolute end-0 top-11 z-50 w-64 rounded-xl border border-border bg-card p-2 shadow-xl">
+          {items.map((n) => (
+            <p key={n} className="rounded-lg px-3 py-2 text-xs text-muted-foreground hover:bg-secondary">
+              {n}
+            </p>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
+
 
 export function Shell({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
@@ -59,22 +102,20 @@ export function Shell({ children }: { children: ReactNode }) {
             ))}
           </nav>
 
-          <div className="ms-auto flex items-center gap-2 lg:ms-0">
-            <button className="relative grid size-9 place-items-center rounded-lg border border-border text-muted-foreground hover:text-foreground" aria-label={t("notifications")}>
-              <Bell className="size-4" />
-              <span className="absolute -top-1 -start-1 size-2 rounded-full bg-primary" />
-            </button>
+          <div className="ms-auto flex shrink-0 items-center gap-2 lg:ms-0">
+            <Notifications />
             <Link
               to="/wallet"
-              className="hidden items-center gap-2 rounded-lg border border-primary/40 bg-primary/10 px-3 py-2 text-sm font-semibold text-primary sm:flex"
+              className="hidden items-center gap-2 rounded-lg border border-primary/40 bg-primary/10 px-3 py-2 text-sm font-semibold text-primary md:flex"
             >
               <Wallet2 className="size-4" />
               4,182.50 USDT
             </Link>
             <LangSwitch />
-            <button className="grid size-9 place-items-center rounded-lg border border-border lg:hidden" onClick={() => setOpen(!open)} aria-label={t("menu")}>
+            <button type="button" className="grid size-9 shrink-0 place-items-center rounded-lg border border-border lg:hidden" onClick={() => setOpen(!open)} aria-label={t("menu")}>
               {open ? <X className="size-4" /> : <Menu className="size-4" />}
             </button>
+
           </div>
         </div>
 
