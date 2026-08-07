@@ -102,22 +102,20 @@ export function Shell({ children }: { children: ReactNode }) {
             ))}
           </nav>
 
-          <div className="ms-auto flex items-center gap-2 lg:ms-0">
-            <button className="relative grid size-9 place-items-center rounded-lg border border-border text-muted-foreground hover:text-foreground" aria-label={t("notifications")}>
-              <Bell className="size-4" />
-              <span className="absolute -top-1 -start-1 size-2 rounded-full bg-primary" />
-            </button>
+          <div className="ms-auto flex shrink-0 items-center gap-2 lg:ms-0">
+            <Notifications />
             <Link
               to="/wallet"
-              className="hidden items-center gap-2 rounded-lg border border-primary/40 bg-primary/10 px-3 py-2 text-sm font-semibold text-primary sm:flex"
+              className="hidden items-center gap-2 rounded-lg border border-primary/40 bg-primary/10 px-3 py-2 text-sm font-semibold text-primary md:flex"
             >
               <Wallet2 className="size-4" />
               4,182.50 USDT
             </Link>
             <LangSwitch />
-            <button className="grid size-9 place-items-center rounded-lg border border-border lg:hidden" onClick={() => setOpen(!open)} aria-label={t("menu")}>
+            <button type="button" className="grid size-9 shrink-0 place-items-center rounded-lg border border-border lg:hidden" onClick={() => setOpen(!open)} aria-label={t("menu")}>
               {open ? <X className="size-4" /> : <Menu className="size-4" />}
             </button>
+
           </div>
         </div>
 
