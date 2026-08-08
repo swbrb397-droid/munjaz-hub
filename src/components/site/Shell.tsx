@@ -118,6 +118,9 @@ function Notifications() {
 export function Shell({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
   const { t } = useLang();
+  const { isAuthenticated } = useAuth();
+  const wallet = useWallet();
+
 
   return (
     <div className="min-h-screen">
@@ -144,14 +147,18 @@ export function Shell({ children }: { children: ReactNode }) {
 
           <div className="ms-auto flex shrink-0 items-center gap-2 lg:ms-0">
             <Notifications />
-            <Link
-              to="/wallet"
-              className="hidden items-center gap-2 rounded-lg border border-primary/40 bg-primary/10 px-3 py-2 text-sm font-semibold text-primary md:flex"
-            >
-              <Wallet2 className="size-4" />
-              4,182.50 USDT
-            </Link>
+            {isAuthenticated && (
+              <Link
+                to="/wallet"
+                className="hidden items-center gap-2 rounded-lg border border-primary/40 bg-primary/10 px-3 py-2 text-sm font-semibold text-primary md:flex"
+              >
+                <Wallet2 className="size-4" />
+                {Number(wallet.data?.available_usdt ?? 0).toLocaleString()} USDT
+              </Link>
+            )}
+            <AuthButton />
             <LangSwitch />
+
             <button type="button" className="grid size-9 shrink-0 place-items-center rounded-lg border border-border lg:hidden" onClick={() => setOpen(!open)} aria-label={t("menu")}>
               {open ? <X className="size-4" /> : <Menu className="size-4" />}
             </button>
