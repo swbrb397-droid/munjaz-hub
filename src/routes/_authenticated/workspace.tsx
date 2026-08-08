@@ -5,7 +5,7 @@ import { Card, Section } from "@/components/site/Shell";
 import { useMock } from "@/lib/mock";
 import { useLang } from "@/lib/lang";
 
-export const Route = createFileRoute("/workspace")({
+export const Route = createFileRoute("/_authenticated/workspace")({
   head: () => ({
     meta: [
       { title: "مساحة عمل الطلب | مُنجَز" },
