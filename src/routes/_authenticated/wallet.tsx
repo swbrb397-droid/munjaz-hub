@@ -1,11 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ArrowDownToLine, ArrowUpFromLine, BadgeCheck, Copy, QrCode, X } from "lucide-react";
 import { Card, Section } from "@/components/site/Shell";
-import { useMock } from "@/lib/mock";
 import { useLang } from "@/lib/lang";
+import { useAuth } from "@/hooks/use-auth";
+import { useProfile, useTransactions, useWallet } from "@/lib/queries";
+import { supabase } from "@/integrations/supabase/client";
 
-export const Route = createFileRoute("/wallet")({
+export const Route = createFileRoute("/_authenticated/wallet")({
   head: () => ({
     meta: [
       { title: "المحفظة الداخلية USDT | مُنجَز" },
@@ -17,34 +20,71 @@ export const Route = createFileRoute("/wallet")({
   component: WalletPage,
 });
 
-const networks = ["TRC-20", "BEP-20", "Polygon"] as const;
+const networks = [
+  { value: "trc20", label: "TRC-20" },
+  { value: "bep20", label: "BEP-20" },
+  { value: "polygon", label: "Polygon" },
+] as const;
+
 const rates: Record<string, number> = { USD: 1.0002, SAR: 3.7506, AED: 3.6731, EUR: 0.9184 };
 
 function WalletPage() {
   const { tr } = useLang();
-  const { transactions } = useMock();
+  const { user } = useAuth();
+  const qc = useQueryClient();
+  const wallet = useWallet();
+  const profile = useProfile();
+  const txs = useTransactions();
+
   const [deposit, setDeposit] = useState(false);
-  const [network, setNetwork] = useState<(typeof networks)[number]>("TRC-20");
+  const [network, setNetwork] = useState<(typeof networks)[number]["value"]>("trc20");
   const [amount, setAmount] = useState("250");
-  const balance = 4182.5;
+  const [address, setAddress] = useState("");
+  const [feedback, setFeedback] = useState<string | null>(null);
+
+  const balance = Number(wallet.data?.available_usdt ?? 0);
+  const locked = Number(wallet.data?.locked_usdt ?? 0);
+
+  const withdraw = useMutation({
+    mutationFn: async () => {
+      const value = Number(amount);
+      if (!value || value <= 0) throw new Error(tr("أدخل مبلغاً صحيحاً", "Enter a valid amount"));
+      if (value > balance) throw new Error(tr("الرصيد غير كافٍ", "Insufficient balance"));
+      if (!address.trim()) throw new Error(tr("أدخل عنوان المحفظة", "Enter a wallet address"));
+      const { error } = await supabase.from("wallet_transactions").insert({
+        user_id: user!.id,
+        type: "withdrawal",
+        status: "pending",
+        amount: -value,
+        network,
+        address: address.trim(),
+        note: "Withdrawal request",
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      setFeedback(tr("تم إرسال طلب السحب للمراجعة.", "Withdrawal request submitted for review."));
+      qc.invalidateQueries({ queryKey: ["transactions"] });
+    },
+    onError: (e: Error) => setFeedback(e.message),
+  });
 
   return (
     <Section
       title={tr("المحفظة الداخلية", "Internal wallet")}
       subtitle={tr("جميع الأرصدة بعملة USDT — تحويلات داخلية بدون رسوم غاز", "All balances in USDT — internal transfers with no gas fees")}
       action={
-        <div className="flex gap-2">
-          <button onClick={() => setDeposit(true)} className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 font-bold text-primary-foreground glow">
-            <ArrowDownToLine className="size-4" /> {tr("إيداع", "Deposit")}
-          </button>
-        </div>
+        <button onClick={() => setDeposit(true)} className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 font-bold text-primary-foreground glow">
+          <ArrowDownToLine className="size-4" /> {tr("إيداع", "Deposit")}
+        </button>
       }
     >
       <div className="grid gap-4 lg:grid-cols-3">
         <Card className="glow lg:col-span-1">
           <p className="text-sm text-muted-foreground">{tr("الرصيد المتاح", "Available balance")}</p>
-          <p className="mt-1 text-4xl font-black text-primary">{balance.toLocaleString()} </p>
+          <p className="mt-1 text-4xl font-black text-primary">{balance.toLocaleString()}</p>
           <p className="text-sm text-muted-foreground">USDT</p>
+          <p className="mt-2 text-xs text-muted-foreground">{tr("محجوز في الضمان", "Held in escrow")}: {locked.toLocaleString()} USDT</p>
           <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
             {Object.entries(rates).map(([c, r]) => (
               <div key={c} className="rounded-lg border border-border px-3 py-2">
@@ -54,7 +94,10 @@ function WalletPage() {
             ))}
           </div>
           <p className="mt-4 inline-flex items-center gap-1 text-xs text-primary">
-            <BadgeCheck className="size-4" /> {tr("حساب موثق (الطبقة 2) — سحب فوري مفعّل", "Verified account (Tier 2) — instant withdrawal enabled")}
+            <BadgeCheck className="size-4" />
+            {profile.data?.is_verified
+              ? tr("حساب موثق — سحب فوري مفعّل", "Verified account — instant withdrawal enabled")
+              : tr("حساب غير موثق — السحب مجدول", "Unverified account — scheduled withdrawal")}
           </p>
         </Card>
 
@@ -64,7 +107,7 @@ function WalletPage() {
             <label className="grid gap-2 text-sm">
               <span className="text-muted-foreground">{tr("الشبكة", "Network")}</span>
               <select value={network} onChange={(e) => setNetwork(e.target.value as typeof network)} className="rounded-lg border border-input bg-surface px-3 py-2 outline-none focus:border-primary">
-                {networks.map((n) => <option key={n}>{n}</option>)}
+                {networks.map((n) => <option key={n.value} value={n.value}>{n.label}</option>)}
               </select>
             </label>
             <label className="grid gap-2 text-sm">
@@ -73,14 +116,20 @@ function WalletPage() {
             </label>
             <label className="grid gap-2 text-sm sm:col-span-2">
               <span className="text-muted-foreground">{tr("عنوان المحفظة", "Wallet address")}</span>
-              <input placeholder={tr("T… / 0x…", "T… / 0x…")} className="rounded-lg border border-input bg-surface px-3 py-2 outline-none focus:border-primary" />
+              <input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="T… / 0x…" className="rounded-lg border border-input bg-surface px-3 py-2 outline-none focus:border-primary" />
             </label>
           </div>
           <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-surface-2/60 p-4 text-sm">
             <span className="text-muted-foreground">{tr("رسوم السحب الفوري:", "Instant withdrawal fee:")} <span className="text-foreground">0.8 USDT</span></span>
-            <span className="text-muted-foreground">{tr("تصلك خلال:", "Arrives within:")} <span className="text-primary">{tr("دقائق", "minutes")}</span></span>
-            <button className="rounded-lg bg-primary px-4 py-2 font-bold text-primary-foreground">{tr("تأكيد السحب", "Confirm withdrawal")}</button>
+            <button
+              onClick={() => withdraw.mutate()}
+              disabled={withdraw.isPending}
+              className="rounded-lg bg-primary px-4 py-2 font-bold text-primary-foreground disabled:opacity-60"
+            >
+              {tr("تأكيد السحب", "Confirm withdrawal")}
+            </button>
           </div>
+          {feedback && <p className="mt-3 text-xs text-primary">{feedback}</p>}
           <p className="mt-3 text-xs text-muted-foreground">{tr("الحسابات غير الموثقة تخضع لسحب مجدول بفترة تأمين 72 ساعة.", "Unverified accounts are subject to scheduled withdrawal with a 72-hour lock period.")}</p>
         </Card>
       </div>
@@ -97,19 +146,22 @@ function WalletPage() {
               </tr>
             </thead>
             <tbody>
-              {transactions.map((t) => (
+              {(txs.data ?? []).map((t) => (
                 <tr key={t.id} className="border-b border-border/60 last:border-0">
                   <td className="py-3">{t.type}</td>
-                  <td className="text-muted-foreground">{t.network}</td>
-                  <td className={t.amount >= 0 ? "font-semibold text-primary" : "font-semibold text-destructive"}>
-                    {t.amount > 0 ? "+" : ""}{t.amount} USDT
+                  <td className="text-muted-foreground">{t.network ?? tr("داخلي", "Internal")}</td>
+                  <td className={Number(t.amount) >= 0 ? "font-semibold text-primary" : "font-semibold text-destructive"}>
+                    {Number(t.amount) > 0 ? "+" : ""}{Number(t.amount)} USDT
                   </td>
                   <td className="text-muted-foreground">{t.status}</td>
-                  <td className="text-muted-foreground">{t.date}</td>
+                  <td className="text-muted-foreground">{new Date(t.created_at).toLocaleDateString()}</td>
                 </tr>
               ))}
             </tbody>
           </table>
+          {!txs.isLoading && (txs.data ?? []).length === 0 && (
+            <p className="py-8 text-center text-sm text-muted-foreground">{tr("لا توجد معاملات بعد.", "No transactions yet.")}</p>
+          )}
         </div>
       </Card>
 
@@ -122,20 +174,30 @@ function WalletPage() {
             </div>
             <div className="mt-4 flex gap-2">
               {networks.map((n) => (
-                <button key={n} onClick={() => setNetwork(n)} className={`rounded-lg px-3 py-1.5 text-sm ${network === n ? "bg-primary font-bold text-primary-foreground" : "border border-border text-muted-foreground"}`}>
-                  {n}
+                <button
+                  key={n.value}
+                  onClick={() => setNetwork(n.value)}
+                  className={`flex-1 rounded-lg px-3 py-2 text-xs ${network === n.value ? "bg-primary font-bold text-primary-foreground" : "border border-border text-muted-foreground"}`}
+                >
+                  {n.label}
                 </button>
               ))}
             </div>
-            <div className="mt-5 grid place-items-center rounded-xl border border-border bg-surface-2/60 p-6">
-              <QrCode className="size-32 text-primary" />
-              <p className="mt-3 text-xs text-muted-foreground">{tr("امسح الرمز أو انسخ العنوان", "Scan the code or copy the address")}</p>
+            <div className="mt-4 grid place-items-center rounded-xl border border-border p-6">
+              <QrCode className="size-24 text-primary" />
+              <p className="mt-3 break-all text-center text-xs text-muted-foreground">
+                {network === "trc20" ? "TJ9xMunjazEscrowDeposit7fKq2Zb" : "0x8fMunjazEscrowDeposit19aB4cD7"}
+              </p>
+              <button
+                onClick={() => navigator.clipboard.writeText(network === "trc20" ? "TJ9xMunjazEscrowDeposit7fKq2Zb" : "0x8fMunjazEscrowDeposit19aB4cD7")}
+                className="mt-3 inline-flex items-center gap-2 rounded-lg border border-border px-3 py-1.5 text-xs"
+              >
+                <Copy className="size-3.5" /> {tr("نسخ العنوان", "Copy address")}
+              </button>
             </div>
-            <div className="mt-4 flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-xs">
-              <span className="truncate font-mono">TXk9Fq2mUn7ZaMunjazDemoAddr{network}</span>
-              <Copy className="ms-auto size-4 shrink-0 text-primary" />
-            </div>
-            <p className="mt-3 text-xs text-muted-foreground">{tr(`أرسل عملة USDT فقط على شبكة ${network}. أي شبكة أخرى تؤدي لفقدان الأموال.`, `Send only USDT on the ${network} network. Any other network will result in loss of funds.`)}</p>
+            <p className="mt-3 text-xs text-muted-foreground">
+              {tr("يُضاف الرصيد تلقائياً بعد تأكيد الشبكة.", "Balance is credited automatically after network confirmation.")}
+            </p>
           </Card>
         </div>
       )}

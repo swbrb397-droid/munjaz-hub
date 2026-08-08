@@ -15,7 +15,7 @@ const dict = {
     menu: "القائمة",
     verified: "موثّق",
     footer: "مُنجَز — سوق الخدمات الرقمية بعملة USDT.",
-    footerSub: "TRC-20 · BEP-20 · Polygon · بيانات تجريبية",
+    footerSub: "TRC-20 · BEP-20 · Polygon",
   },
   en: {
     home: "Home",
@@ -29,7 +29,7 @@ const dict = {
     menu: "Menu",
     verified: "Verified",
     footer: "Munjaz — the USDT-native digital services marketplace.",
-    footerSub: "TRC-20 · BEP-20 · Polygon · demo data",
+    footerSub: "TRC-20 · BEP-20 · Polygon",
   },
 } as const;
 
