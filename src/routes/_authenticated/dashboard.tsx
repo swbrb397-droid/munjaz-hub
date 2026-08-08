@@ -1,9 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
-import { Award, Coins, ShoppingBag, TrendingUp, Users } from "lucide-react";
+import { useMemo, useState } from "react";
+import { Award, Coins, Copy, ShoppingBag, TrendingUp, Users } from "lucide-react";
 import { Card, Section } from "@/components/site/Shell";
-import { useMock } from "@/lib/mock";
 import { useLang } from "@/lib/lang";
+import { useAuth } from "@/hooks/use-auth";
+import { useOrders, useProfile, useReferrals, useWallet } from "@/lib/queries";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
@@ -17,30 +18,56 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
   component: Dashboard,
 });
 
+const num = (v: unknown) => Number(v ?? 0);
+
 function Dashboard() {
   const { tr } = useLang();
-  const { orders } = useMock();
+  const { user } = useAuth();
   const [view, setView] = useState<"seller" | "buyer">("seller");
+
+  const profile = useProfile();
+  const wallet = useWallet();
+  const orders = useOrders();
+  const referrals = useReferrals();
+  const [copied, setCopied] = useState(false);
+
+  const rows = orders.data ?? [];
+  const asSeller = useMemo(() => rows.filter((o) => o.seller_id === user?.id), [rows, user]);
+  const asBuyer = useMemo(() => rows.filter((o) => o.buyer_id === user?.id), [rows, user]);
+  const list = view === "seller" ? asSeller : asBuyer;
+
+  const active = list.filter((o) => ["pending", "in_progress", "delivered"].includes(o.status));
+  const completed = list.filter((o) => o.status === "completed");
+  const escrow = list.filter((o) => o.escrow_locked).reduce((s, o) => s + num(o.amount_usdt), 0);
 
   const stats =
     view === "seller"
       ? [
-          { icon: Coins, label: tr("أرباح الشهر", "Monthly earnings"), value: "3,240 USDT", sub: tr("+18% عن الشهر الماضي", "+18% vs last month") },
-          { icon: ShoppingBag, label: tr("طلبات نشطة", "Active orders"), value: "7", sub: tr("3 بانتظار التسليم", "3 awaiting delivery") },
-          { icon: TrendingUp, label: tr("معدل الإنجاز", "Completion rate"), value: "97%", sub: tr("آخر 30 يوماً", "Last 30 days") },
-          { icon: Users, label: tr("عملاء متكررون", "Repeat clients"), value: "42", sub: tr("من 118 عميلاً", "out of 118 clients") },
+          { icon: Coins, label: tr("إجمالي الأرباح", "Lifetime earnings"), value: `${num(wallet.data?.lifetime_earned).toLocaleString()} USDT`, sub: tr("محرَّرة من الضمان", "Released from escrow") },
+          { icon: ShoppingBag, label: tr("طلبات نشطة", "Active orders"), value: String(active.length), sub: tr("قيد التنفيذ أو التسليم", "In progress or delivered") },
+          { icon: TrendingUp, label: tr("طلبات مكتملة", "Completed orders"), value: String(profile.data?.completed_orders ?? completed.length), sub: tr("سجل الإنجاز", "Completion record") },
+          { icon: Users, label: tr("عمولات الإحالة", "Referral commissions"), value: `${(referrals.data?.totalEarned ?? 0).toLocaleString()} USDT`, sub: `${referrals.data?.referrals.length ?? 0} ${tr("إحالة", "referrals")}` },
         ]
       : [
-          { icon: Coins, label: tr("الإنفاق هذا الشهر", "Spending this month"), value: "1,120 USDT", sub: tr("5 طلبات", "5 orders") },
-          { icon: ShoppingBag, label: tr("طلبات جارية", "Ongoing orders"), value: "3", sub: tr("1 بانتظار مراجعتك", "1 awaiting your review") },
-          { icon: TrendingUp, label: tr("مبالغ في الضمان", "Amounts in escrow"), value: "850 USDT", sub: tr("محجوزة بأمان", "Safely held") },
-          { icon: Users, label: tr("بائعون مفضلون", "Favorite sellers"), value: "9", sub: tr("متابَعون", "Followed") },
+          { icon: Coins, label: tr("إجمالي الإنفاق", "Total spending"), value: `${asBuyer.reduce((s, o) => s + num(o.amount_usdt), 0).toLocaleString()} USDT`, sub: `${asBuyer.length} ${tr("طلب", "orders")}` },
+          { icon: ShoppingBag, label: tr("طلبات جارية", "Ongoing orders"), value: String(active.length), sub: tr("بانتظار التسليم/المراجعة", "Awaiting delivery/review") },
+          { icon: TrendingUp, label: tr("مبالغ في الضمان", "Amounts in escrow"), value: `${escrow.toLocaleString()} USDT`, sub: tr("محجوزة بأمان", "Safely held") },
+          { icon: Users, label: tr("الرصيد المتاح", "Available balance"), value: `${num(wallet.data?.available_usdt).toLocaleString()} USDT`, sub: "USDT" },
         ];
+
+  const xp = profile.data?.xp_points ?? 0;
+  const level = profile.data?.level ?? 1;
+  const nextLevelXp = level * 500;
+  const pct = Math.min(100, Math.round((xp / Math.max(1, nextLevelXp)) * 100));
+
+  const refLink = typeof window !== "undefined" && profile.data?.referral_code
+    ? `${window.location.origin}/auth?ref=${profile.data.referral_code}`
+    : "";
 
   return (
     <Section
       title={tr("لوحة التحكم", "Dashboard")}
-      subtitle={tr("عرض مزدوج: بائع / مشتري", "Dual view: seller / buyer")}
+      subtitle={profile.data?.display_name || user?.email || tr("عرض مزدوج: بائع / مشتري", "Dual view: seller / buyer")}
       action={
         <div className="flex rounded-xl border border-border p-1">
           {(["seller", "buyer"] as const).map((v) => (
@@ -70,23 +97,32 @@ function Dashboard() {
         <Card>
           <h3 className="font-bold">{tr("الطلبات النشطة", "Active orders")}</h3>
           <div className="mt-4 grid gap-3">
-            {orders.map((o) => (
-              <div key={o.id} className="rounded-xl border border-border p-4">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div>
-                    <p className="font-semibold">{o.title}</p>
-                    <p className="text-xs text-muted-foreground">{o.id} · {o.client}</p>
+            {orders.isLoading && <p className="text-sm text-muted-foreground">{tr("جارٍ التحميل…", "Loading…")}</p>}
+            {!orders.isLoading && active.length === 0 && (
+              <p className="rounded-xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
+                {tr("لا توجد طلبات نشطة بعد.", "No active orders yet.")}
+              </p>
+            )}
+            {active.map((o) => {
+              const progress = o.status === "delivered" ? 90 : o.status === "in_progress" ? 55 : 15;
+              return (
+                <div key={o.id} className="rounded-xl border border-border p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <p className="font-semibold">{o.title}</p>
+                      <p className="text-xs text-muted-foreground">#MJ-{o.order_number} · {o.category ?? tr("عام", "General")}</p>
+                    </div>
+                    <div className="text-end">
+                      <p className="font-bold text-primary">{num(o.amount_usdt)} USDT</p>
+                      <p className="text-xs text-muted-foreground">{o.status}</p>
+                    </div>
                   </div>
-                  <div className="text-end">
-                    <p className="font-bold text-primary">{o.value} USDT</p>
-                    <p className="text-xs text-muted-foreground">{o.state}</p>
+                  <div className="mt-3 h-2 rounded-full bg-secondary">
+                    <div className="h-2 rounded-full bg-primary" style={{ width: `${progress}%` }} />
                   </div>
                 </div>
-                <div className="mt-3 h-2 rounded-full bg-secondary">
-                  <div className="h-2 rounded-full bg-primary" style={{ width: `${o.progress}%` }} />
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </Card>
 
@@ -94,32 +130,49 @@ function Dashboard() {
           <Card>
             <div className="flex items-center gap-2">
               <Award className="size-5 text-violet" />
-              <h3 className="font-bold">{tr("المستوى 12 · محترف", "Level 12 · Professional")}</h3>
+              <h3 className="font-bold">
+                {tr("المستوى", "Level")} {level}
+                {profile.data?.is_verified ? ` · ${tr("موثّق", "Verified")}` : ""}
+              </h3>
             </div>
-            <p className="mt-2 text-sm text-muted-foreground">4,820 / 6,000 XP</p>
+            <p className="mt-2 text-sm text-muted-foreground">{xp} / {nextLevelXp} XP</p>
             <div className="mt-2 h-3 rounded-full bg-secondary">
-              <div className="h-3 rounded-full bg-gradient-to-l from-primary to-violet" style={{ width: "80%" }} />
+              <div className="h-3 rounded-full bg-gradient-to-l from-primary to-violet" style={{ width: `${pct}%` }} />
             </div>
             <div className="mt-4 flex flex-wrap gap-2 text-xs">
-              {[tr("تسليم سريع", "Fast delivery"), tr("تقييم ذهبي", "Gold rating"), tr("بائع موثق", "Verified seller"), tr("100 طلب", "100 orders")].map((b) => (
-                <span key={b} className="rounded-full border border-border px-3 py-1 text-muted-foreground">{b}</span>
-              ))}
+              <span className="rounded-full border border-border px-3 py-1 text-muted-foreground">KYC: {profile.data?.kyc_tier ?? "tier0"}</span>
+              <span className="rounded-full border border-border px-3 py-1 text-muted-foreground">
+                {profile.data?.completed_orders ?? 0} {tr("طلب مكتمل", "completed orders")}
+              </span>
             </div>
           </Card>
+
           <Card>
-            <h3 className="font-bold">{tr("مؤشرات المحفظة", "Wallet indicators")}</h3>
+            <h3 className="font-bold">{tr("برنامج الإحالة", "Referral program")}</h3>
+            <p className="mt-2 text-sm text-muted-foreground">
+              {tr("18% من رسوم المنصة لمدة 12 شهراً عن كل مستخدم تدعوه.", "18% of platform fees for 12 months for every user you invite.")}
+            </p>
+            <div className="mt-3 flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-xs">
+              <span className="truncate">{refLink || tr("جارٍ التحميل…", "Loading…")}</span>
+              <button
+                type="button"
+                className="ms-auto shrink-0 text-primary"
+                onClick={() => { if (refLink) { navigator.clipboard.writeText(refLink); setCopied(true); setTimeout(() => setCopied(false), 1500); } }}
+                aria-label={tr("نسخ", "Copy")}
+              >
+                <Copy className="size-4" />
+              </button>
+            </div>
+            {copied && <p className="mt-2 text-xs text-primary">{tr("تم النسخ", "Copied")}</p>}
             <dl className="mt-3 grid gap-2 text-sm">
-              {[
-                [tr("الرصيد المتاح", "Available balance"), "4,182.50 USDT"],
-                [tr("محجوز في الضمان", "Held in escrow"), "850.00 USDT"],
-                [tr("قيد السحب", "Pending withdrawal"), "450.00 USDT"],
-                [tr("حالة التوثيق", "Verification status"), tr("الطبقة 2 — موثق", "Tier 2 — Verified")],
-              ].map(([k, v]) => (
-                <div key={k} className="flex justify-between border-b border-border pb-2 last:border-0">
-                  <dt className="text-muted-foreground">{k}</dt>
-                  <dd className="font-semibold">{v}</dd>
-                </div>
-              ))}
+              <div className="flex justify-between border-b border-border pb-2">
+                <dt className="text-muted-foreground">{tr("عدد الإحالات", "Referrals")}</dt>
+                <dd className="font-semibold">{referrals.data?.referrals.length ?? 0}</dd>
+              </div>
+              <div className="flex justify-between">
+                <dt className="text-muted-foreground">{tr("إجمالي العمولات", "Total commissions")}</dt>
+                <dd className="font-semibold">{(referrals.data?.totalEarned ?? 0).toLocaleString()} USDT</dd>
+              </div>
             </dl>
           </Card>
         </div>
