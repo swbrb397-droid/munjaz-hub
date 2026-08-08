@@ -1,7 +1,11 @@
-import { Link } from "@tanstack/react-router";
-import { Bell, Globe, Menu, Wallet2, X } from "lucide-react";
+import { Link, useNavigate } from "@tanstack/react-router";
+import { useQueryClient } from "@tanstack/react-query";
+import { Bell, Globe, LogIn, LogOut, Menu, Wallet2, X } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useLang, type TranslationKey } from "@/lib/lang";
+import { useAuth } from "@/hooks/use-auth";
+import { useWallet } from "@/lib/queries";
+import { supabase } from "@/integrations/supabase/client";
 
 const nav = [
   { to: "/", key: "home" },
@@ -11,6 +15,42 @@ const nav = [
   { to: "/workspace", key: "workspace" },
   { to: "/admin", key: "admin" },
 ] as const satisfies ReadonlyArray<{ to: string; key: TranslationKey }>;
+
+function AuthButton() {
+  const { tr } = useLang();
+  const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
+  const qc = useQueryClient();
+
+  if (!isAuthenticated) {
+    return (
+      <Link
+        to="/auth"
+        className="flex h-9 shrink-0 items-center gap-1.5 rounded-lg bg-primary px-3 text-xs font-bold text-primary-foreground"
+      >
+        <LogIn className="size-4" /> {tr("دخول", "Sign in")}
+      </Link>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      title={tr("تسجيل الخروج", "Sign out")}
+      aria-label={tr("تسجيل الخروج", "Sign out")}
+      onClick={async () => {
+        await qc.cancelQueries();
+        qc.clear();
+        await supabase.auth.signOut();
+        navigate({ to: "/auth", replace: true });
+      }}
+      className="grid size-9 shrink-0 place-items-center rounded-lg border border-border text-muted-foreground transition-colors hover:text-foreground"
+    >
+      <LogOut className="size-4" />
+    </button>
+  );
+}
+
 
 function LangSwitch() {
   const { lang, setLang, tr } = useLang();
