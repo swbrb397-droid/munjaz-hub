@@ -187,9 +187,15 @@ export function Shell({ children }: { children: ReactNode }) {
       <main>{children}</main>
 
       <footer className="mt-24 border-t border-border">
-        <div className="mx-auto flex max-w-7xl flex-col gap-2 px-4 py-8 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+        <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-8 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
           <p>{t("footer")}</p>
-          <p className="text-xs">{t("footerSub")}</p>
+          <div className="flex items-center gap-4 text-xs">
+            <Link to="/terms" className="hover:text-foreground transition-colors">
+              {t("terms")}
+            </Link>
+            <span className="hidden sm:inline">·</span>
+            <p className="hidden sm:block">{t("footerSub")}</p>
+          </div>
         </div>
       </footer>
     </div>
