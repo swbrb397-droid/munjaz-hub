@@ -3,6 +3,7 @@ import { useState } from "react";
 import { ArrowLeft, BadgeCheck, Gamepad2, ShieldCheck, Sparkle, Star, Zap } from "lucide-react";
 import { Card, Section } from "@/components/site/Shell";
 import { useMock } from "@/lib/mock";
+import { useListings, useNfts } from "@/lib/catalog";
 import { useLang } from "@/lib/lang";
 import { VerifiedBadge } from "@/components/site/VerifiedBadge";
 
