@@ -3,6 +3,7 @@ import { useState } from "react";
 import { ArrowLeft, BadgeCheck, Gamepad2, ShieldCheck, Sparkle, Star, Zap } from "lucide-react";
 import { Card, Section } from "@/components/site/Shell";
 import { useMock } from "@/lib/mock";
+import { useListings, useNfts } from "@/lib/catalog";
 import { useLang } from "@/lib/lang";
 import { VerifiedBadge } from "@/components/site/VerifiedBadge";
 
@@ -20,14 +21,15 @@ export const Route = createFileRoute("/")({
 
 function Landing() {
   const { tr } = useLang();
-  const { services, nfts } = useMock();
+  const { data: featured = [] } = useListings({ sort: "popular" });
+  const { data: nfts = [] } = useNfts({ sort: "price_desc" });
   return (
     <>
       <Hero />
       <Ticker />
       <Section title={tr("خدمات مميزة", "Featured services")} subtitle={tr("بضمان الوساطة ومراحل تسليم موثقة", "With escrow protection and verified delivery milestones")} action={<Link to="/store" className="text-sm text-primary">{tr("تصفح الكل ←", "Browse all ←")}</Link>}>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {services.slice(0, 4).map((s) => (
+          {featured.slice(0, 4).map((s) => (
             <ServiceCard key={s.id} title={s.title} seller={s.seller} price={s.price} rating={s.rating} orders={s.orders} verified={s.verified} tag={s.tag} cover={s.cover} />
           ))}
         </div>
@@ -35,7 +37,7 @@ function Landing() {
 
       <Section title={tr("منتجات رقمية ودورات", "Digital products & courses")} subtitle={tr("تسليم فوري وتشغيل داخل المنصة", "Instant delivery and in-platform access")}>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {services.filter((s) => s.category === "course" || s.category === "product").map((s) => (
+          {featured.filter((s) => s.category === "course" || s.category === "product").map((s) => (
             <ServiceCard key={s.id} title={s.title} seller={s.seller} price={s.price} rating={s.rating} orders={s.orders} verified={s.verified} tag={s.tag} cover={s.cover} />
           ))}
         </div>
@@ -48,6 +50,7 @@ function Landing() {
           ))}
         </div>
       </Section>
+
 
       <AffiliateCalculator />
     </>

@@ -85,6 +85,96 @@ export type Database = {
           },
         ]
       }
+      listings: {
+        Row: {
+          category: Database["public"]["Enums"]["listing_category"]
+          cover_key: string
+          created_at: string
+          id: string
+          is_published: boolean
+          orders_count: number
+          price_usdt: number
+          rating: number
+          seller_ar: string
+          seller_en: string
+          tag_ar: string
+          tag_en: string
+          title_ar: string
+          title_en: string
+          updated_at: string
+          verified: boolean
+        }
+        Insert: {
+          category?: Database["public"]["Enums"]["listing_category"]
+          cover_key?: string
+          created_at?: string
+          id?: string
+          is_published?: boolean
+          orders_count?: number
+          price_usdt?: number
+          rating?: number
+          seller_ar: string
+          seller_en: string
+          tag_ar?: string
+          tag_en?: string
+          title_ar: string
+          title_en: string
+          updated_at?: string
+          verified?: boolean
+        }
+        Update: {
+          category?: Database["public"]["Enums"]["listing_category"]
+          cover_key?: string
+          created_at?: string
+          id?: string
+          is_published?: boolean
+          orders_count?: number
+          price_usdt?: number
+          rating?: number
+          seller_ar?: string
+          seller_en?: string
+          tag_ar?: string
+          tag_en?: string
+          title_ar?: string
+          title_en?: string
+          updated_at?: string
+          verified?: boolean
+        }
+        Relationships: []
+      }
+      nft_items: {
+        Row: {
+          collection: string
+          created_at: string
+          hue: number
+          id: string
+          is_published: boolean
+          name: string
+          price_usdt: number
+          updated_at: string
+        }
+        Insert: {
+          collection: string
+          created_at?: string
+          hue?: number
+          id?: string
+          is_published?: boolean
+          name: string
+          price_usdt?: number
+          updated_at?: string
+        }
+        Update: {
+          collection?: string
+          created_at?: string
+          hue?: number
+          id?: string
+          is_published?: boolean
+          name?: string
+          price_usdt?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       orders: {
         Row: {
           amount_usdt: number
@@ -424,6 +514,7 @@ export type Database = {
       case_kind: "dispute" | "review_appeal"
       case_status: "open" | "ai_reviewed" | "resolved" | "rejected"
       kyc_tier: "tier0" | "tier1" | "tier2" | "tier3"
+      listing_category: "freelance" | "course" | "product" | "gaming"
       order_status:
         | "pending"
         | "in_progress"
@@ -574,6 +665,7 @@ export const Constants = {
       case_kind: ["dispute", "review_appeal"],
       case_status: ["open", "ai_reviewed", "resolved", "rejected"],
       kyc_tier: ["tier0", "tier1", "tier2", "tier3"],
+      listing_category: ["freelance", "course", "product", "gaming"],
       order_status: [
         "pending",
         "in_progress",
