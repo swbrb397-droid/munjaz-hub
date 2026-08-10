@@ -63,14 +63,31 @@ function AuthPage() {
     setMsg(null);
     try {
       if (mode === "signup") {
+        if (!role) {
+          throw new Error(tr("يجب اختيار نوع الحساب.", "You must select an account type."));
+        }
+        if (!acceptedTerms) {
+          throw new Error(
+            tr(
+              "يجب الموافقة على الشروط والأحكام وسياسة الخصوصية.",
+              "You must agree to the Terms of Service and Privacy Policy.",
+            ),
+          );
+        }
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
             emailRedirectTo: window.location.origin,
-            data: { display_name: displayName, referral_code: referral || undefined },
+            data: {
+              display_name: displayName,
+              role,
+              terms_accepted: "true",
+              referral_code: referral || undefined,
+            },
           },
         });
+
         if (error) throw error;
         if (!data.session) {
           setMsg(tr("تم إنشاء الحساب — تحقق من بريدك لتأكيد التسجيل.", "Account created — check your email to confirm."));
