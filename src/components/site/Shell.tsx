@@ -175,8 +175,10 @@ export function Shell({ children }: { children: ReactNode }) {
           </nav>
 
           <div className="ms-auto flex shrink-0 items-center gap-2 lg:ms-0">
+            {isAuthenticated && <ViewSwitch />}
             <Notifications />
             {isAuthenticated && (
+
               <Link
                 to="/wallet"
                 className="hidden items-center gap-2 rounded-lg border border-primary/40 bg-primary/10 px-3 py-2 text-sm font-semibold text-primary md:flex"
