@@ -120,6 +120,29 @@ function AuthPage() {
               <input value={displayName} onChange={(e) => setDisplayName(e.target.value)} className="rounded-lg border border-input bg-surface px-3 py-2 outline-none focus:border-primary" />
             </label>
           )}
+          {mode === "signup" && (
+            <div className="grid gap-1.5">
+              <span className="text-muted-foreground">{tr("نوع الحساب *", "Account type *")}</span>
+              <div className="grid grid-cols-2 gap-2">
+                {ROLES.map((r) => (
+                  <button
+                    key={r.value}
+                    type="button"
+                    onClick={() => setRole(r.value)}
+                    aria-pressed={role === r.value}
+                    className={`rounded-lg border px-3 py-2 text-xs font-bold transition-colors ${
+                      role === r.value
+                        ? "border-primary bg-primary/15 text-primary"
+                        : "border-input bg-surface text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {tr(r.ar, r.en)}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           <label className="grid gap-1.5">
             <span className="text-muted-foreground">{tr("البريد الإلكتروني", "Email")}</span>
             <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className="rounded-lg border border-input bg-surface px-3 py-2 outline-none focus:border-primary" />
