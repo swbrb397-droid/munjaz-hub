@@ -215,7 +215,10 @@ export function Shell({ children }: { children: ReactNode }) {
         )}
       </header>
 
-      <main>{children}</main>
+      <main>
+        <ErrorBoundary label="page">{children}</ErrorBoundary>
+      </main>
+
 
       <footer className="mt-24 border-t border-border">
         <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-8 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
