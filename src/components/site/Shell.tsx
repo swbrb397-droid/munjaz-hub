@@ -55,8 +55,34 @@ function AuthButton() {
 }
 
 
+function ViewSwitch() {
+  const { tr } = useLang();
+  const { view, toggleView } = useViewMode();
+  const label =
+    view === "buyer"
+      ? tr("التحويل للوحة البائع", "Switch to Seller Dashboard")
+      : tr("التحويل للوحة المشتري", "Switch to Buyer Dashboard");
+
+  return (
+    <button
+      type="button"
+      onClick={toggleView}
+      title={label}
+      aria-label={label}
+      className="hidden h-9 shrink-0 items-center gap-1.5 rounded-lg border border-accent/40 bg-accent/10 px-2.5 text-xs font-bold text-accent transition-colors hover:bg-accent/20 md:flex"
+    >
+      <Repeat2 className="size-4" />
+      <span className="hidden lg:inline">{label}</span>
+      <span className="lg:hidden">
+        {view === "buyer" ? tr("بائع", "Seller") : tr("مشتري", "Buyer")}
+      </span>
+    </button>
+  );
+}
+
 function LangSwitch() {
   const { lang, setLang, tr } = useLang();
+
   const next = lang === "ar" ? "en" : "ar";
   return (
     <button
