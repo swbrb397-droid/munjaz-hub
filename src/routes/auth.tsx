@@ -1,10 +1,20 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { LogIn, UserPlus } from "lucide-react";
 import { Card } from "@/components/site/Shell";
 import { useLang } from "@/lib/lang";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
+
+type SignupRole = "buyer" | "seller" | "hybrid" | "corporate";
+
+const ROLES: ReadonlyArray<{ value: SignupRole; ar: string; en: string }> = [
+  { value: "buyer", ar: "مشتري", en: "Buyer" },
+  { value: "seller", ar: "بائع", en: "Seller" },
+  { value: "hybrid", ar: "مشتري وبائع", en: "Hybrid" },
+  { value: "corporate", ar: "شركة", en: "Corporate" },
+];
+
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
