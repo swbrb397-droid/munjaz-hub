@@ -1,11 +1,14 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import { Bell, Globe, LogIn, LogOut, Menu, Wallet2, X } from "lucide-react";
+import { Bell, Globe, LogIn, LogOut, Menu, Repeat2, Wallet2, X } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useLang, type TranslationKey } from "@/lib/lang";
 import { useAuth } from "@/hooks/use-auth";
+import { useViewMode } from "@/lib/view-mode";
+import { ErrorBoundary } from "@/components/site/ErrorBoundary";
 import { useWallet } from "@/lib/queries";
 import { supabase } from "@/integrations/supabase/client";
+
 
 const nav = [
   { to: "/", key: "home" },
