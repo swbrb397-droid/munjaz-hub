@@ -36,10 +36,13 @@ function AuthPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
+  const [role, setRole] = useState<SignupRole | "">("");
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [referral, setReferral] = useState("");
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+
 
   useEffect(() => {
     if (!loading && isAuthenticated) navigate({ to: "/dashboard", replace: true });
