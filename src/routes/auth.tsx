@@ -134,6 +134,28 @@ function AuthPage() {
               <input value={referral} onChange={(e) => setReferral(e.target.value.toUpperCase())} className="rounded-lg border border-input bg-surface px-3 py-2 uppercase outline-none focus:border-primary" />
             </label>
           )}
+          {mode === "signup" && (
+            <label className="mt-1 flex items-start gap-2.5 rounded-lg border border-border bg-surface/50 p-3">
+              <input
+                type="checkbox"
+                required
+                checked={acceptedTerms}
+                onChange={(e) => setAcceptedTerms(e.target.checked)}
+                className="mt-0.5 size-4 shrink-0 accent-[hsl(var(--primary))]"
+              />
+              <span className="text-xs leading-relaxed text-muted-foreground">
+                {tr("أوافق على ", "I agree to the ")}
+                <Link to="/terms" className="font-bold text-primary underline-offset-4 hover:underline">
+                  {tr("الشروط والأحكام وسياسة الخصوصية", "Terms of Service and Privacy Policy")}
+                </Link>
+                {tr(
+                  " — بما في ذلك أن اشتراكات Pro و Corporate غير قابلة للاسترداد نهائياً.",
+                  " — including that Pro & Corporate subscriptions are strictly non-refundable.",
+                )}
+              </span>
+            </label>
+          )}
+
 
           {err && <p className="rounded-lg bg-destructive/15 px-3 py-2 text-xs text-destructive">{err}</p>}
           {msg && <p className="rounded-lg bg-primary/15 px-3 py-2 text-xs text-primary">{msg}</p>}
