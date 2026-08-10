@@ -82,6 +82,16 @@ function TermsPage() {
         />
 
         <Clause
+          icon={<Lock className="size-5 text-amber" />}
+          title={tr("4.1 اشتراكات Pro و Corporate غير قابلة للاسترداد", "4.1 Pro & Corporate Subscriptions — Non-Refundable")}
+          body={tr(
+            `اشتراكات Pro و Corporate غير قابلة للاسترداد بنسبة 100% تحت أي ظرف من الظروف بمجرد إتمام الدفع. لا يُمنح أي استرداد كلي أو جزئي عند الإلغاء المبكر، أو عدم استخدام المزايا، أو تعليق الحساب نتيجة مخالفة الشروط، أو تغيّر حدود المقاعد. يستمر الاشتراك حتى نهاية الدورة المدفوعة ثم يتوقف التجديد إن ألغاه المستخدم.`,
+            `Pro & Corporate Subscriptions are strictly 100% NON-REFUNDABLE under any circumstances upon payment. No full or partial refund is granted for early cancellation, unused features, account suspension due to terms violations, or seat-cap changes. The subscription remains active until the end of the paid cycle and simply does not renew if cancelled.`,
+          )}
+        />
+
+
+        <Clause
           icon={<Ban className="size-5 text-destructive" />}
           title={tr("5. منع التعاملات الخارجية", "5. Strict Anti-Off-Platform Prohibition")}
           body={tr(

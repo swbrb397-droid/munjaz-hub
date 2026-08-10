@@ -246,6 +246,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          active_view: string
           avatar_url: string | null
           bio: string | null
           completed_orders: number
@@ -259,10 +260,12 @@ export type Database = {
           rating: number
           referral_code: string
           referred_by: string | null
+          terms_accepted_at: string | null
           updated_at: string
           xp_points: number
         }
         Insert: {
+          active_view?: string
           avatar_url?: string | null
           bio?: string | null
           completed_orders?: number
@@ -276,10 +279,12 @@ export type Database = {
           rating?: number
           referral_code: string
           referred_by?: string | null
+          terms_accepted_at?: string | null
           updated_at?: string
           xp_points?: number
         }
         Update: {
+          active_view?: string
           avatar_url?: string | null
           bio?: string | null
           completed_orders?: number
@@ -293,6 +298,7 @@ export type Database = {
           rating?: number
           referral_code?: string
           referred_by?: string | null
+          terms_accepted_at?: string | null
           updated_at?: string
           xp_points?: number
         }
@@ -510,7 +516,7 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "buyer" | "seller" | "admin"
+      app_role: "buyer" | "seller" | "admin" | "hybrid" | "corporate"
       case_kind: "dispute" | "review_appeal"
       case_status: "open" | "ai_reviewed" | "resolved" | "rejected"
       kyc_tier: "tier0" | "tier1" | "tier2" | "tier3"
@@ -661,7 +667,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["buyer", "seller", "admin"],
+      app_role: ["buyer", "seller", "admin", "hybrid", "corporate"],
       case_kind: ["dispute", "review_appeal"],
       case_status: ["open", "ai_reviewed", "resolved", "rejected"],
       kyc_tier: ["tier0", "tier1", "tier2", "tier3"],

@@ -13,6 +13,8 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Shell } from "../components/site/Shell";
 import { LangProvider } from "../lib/lang";
+import { ViewModeProvider } from "../lib/view-mode";
+
 import { supabase } from "@/integrations/supabase/client";
 
 
@@ -135,13 +137,16 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <LangProvider>
-        <Shell>
-        {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-          <Outlet />
-        </Shell>
+        <ViewModeProvider>
+          <Shell>
+            {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
+            <Outlet />
+          </Shell>
+        </ViewModeProvider>
       </LangProvider>
     </QueryClientProvider>
   );
 }
+
 
 

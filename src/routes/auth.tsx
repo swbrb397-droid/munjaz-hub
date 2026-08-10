@@ -1,10 +1,20 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { LogIn, UserPlus } from "lucide-react";
 import { Card } from "@/components/site/Shell";
 import { useLang } from "@/lib/lang";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
+
+type SignupRole = "buyer" | "seller" | "hybrid" | "corporate";
+
+const ROLES: ReadonlyArray<{ value: SignupRole; ar: string; en: string }> = [
+  { value: "buyer", ar: "مشتري", en: "Buyer" },
+  { value: "seller", ar: "بائع", en: "Seller" },
+  { value: "hybrid", ar: "مشتري وبائع", en: "Hybrid" },
+  { value: "corporate", ar: "شركة", en: "Corporate" },
+];
+
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
@@ -26,10 +36,13 @@ function AuthPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
+  const [role, setRole] = useState<SignupRole | "">("");
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [referral, setReferral] = useState("");
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+
 
   useEffect(() => {
     if (!loading && isAuthenticated) navigate({ to: "/dashboard", replace: true });
@@ -50,14 +63,31 @@ function AuthPage() {
     setMsg(null);
     try {
       if (mode === "signup") {
+        if (!role) {
+          throw new Error(tr("يجب اختيار نوع الحساب.", "You must select an account type."));
+        }
+        if (!acceptedTerms) {
+          throw new Error(
+            tr(
+              "يجب الموافقة على الشروط والأحكام وسياسة الخصوصية.",
+              "You must agree to the Terms of Service and Privacy Policy.",
+            ),
+          );
+        }
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
             emailRedirectTo: window.location.origin,
-            data: { display_name: displayName, referral_code: referral || undefined },
+            data: {
+              display_name: displayName,
+              role,
+              terms_accepted: "true",
+              referral_code: referral || undefined,
+            },
           },
         });
+
         if (error) throw error;
         if (!data.session) {
           setMsg(tr("تم إنشاء الحساب — تحقق من بريدك لتأكيد التسجيل.", "Account created — check your email to confirm."));
@@ -90,6 +120,29 @@ function AuthPage() {
               <input value={displayName} onChange={(e) => setDisplayName(e.target.value)} className="rounded-lg border border-input bg-surface px-3 py-2 outline-none focus:border-primary" />
             </label>
           )}
+          {mode === "signup" && (
+            <div className="grid gap-1.5">
+              <span className="text-muted-foreground">{tr("نوع الحساب *", "Account type *")}</span>
+              <div className="grid grid-cols-2 gap-2">
+                {ROLES.map((r) => (
+                  <button
+                    key={r.value}
+                    type="button"
+                    onClick={() => setRole(r.value)}
+                    aria-pressed={role === r.value}
+                    className={`rounded-lg border px-3 py-2 text-xs font-bold transition-colors ${
+                      role === r.value
+                        ? "border-primary bg-primary/15 text-primary"
+                        : "border-input bg-surface text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {tr(r.ar, r.en)}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           <label className="grid gap-1.5">
             <span className="text-muted-foreground">{tr("البريد الإلكتروني", "Email")}</span>
             <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className="rounded-lg border border-input bg-surface px-3 py-2 outline-none focus:border-primary" />
@@ -104,6 +157,28 @@ function AuthPage() {
               <input value={referral} onChange={(e) => setReferral(e.target.value.toUpperCase())} className="rounded-lg border border-input bg-surface px-3 py-2 uppercase outline-none focus:border-primary" />
             </label>
           )}
+          {mode === "signup" && (
+            <label className="mt-1 flex items-start gap-2.5 rounded-lg border border-border bg-surface/50 p-3">
+              <input
+                type="checkbox"
+                required
+                checked={acceptedTerms}
+                onChange={(e) => setAcceptedTerms(e.target.checked)}
+                className="mt-0.5 size-4 shrink-0 accent-[hsl(var(--primary))]"
+              />
+              <span className="text-xs leading-relaxed text-muted-foreground">
+                {tr("أوافق على ", "I agree to the ")}
+                <Link to="/terms" className="font-bold text-primary underline-offset-4 hover:underline">
+                  {tr("الشروط والأحكام وسياسة الخصوصية", "Terms of Service and Privacy Policy")}
+                </Link>
+                {tr(
+                  " — بما في ذلك أن اشتراكات Pro و Corporate غير قابلة للاسترداد نهائياً.",
+                  " — including that Pro & Corporate subscriptions are strictly non-refundable.",
+                )}
+              </span>
+            </label>
+          )}
+
 
           {err && <p className="rounded-lg bg-destructive/15 px-3 py-2 text-xs text-destructive">{err}</p>}
           {msg && <p className="rounded-lg bg-primary/15 px-3 py-2 text-xs text-primary">{msg}</p>}
