@@ -207,6 +207,54 @@ function Workspace() {
               ))}
             </div>
           </Card>
+          {order && (
+            <Card>
+              <h3 className="font-bold">{tr("سير الطلب", "Order lifecycle")}</h3>
+              <ol className="mt-3 grid gap-2 text-xs">
+                {(["pending", "in_progress", "delivered", "completed"] as const).map((s) => {
+                  const idx = ["pending", "in_progress", "delivered", "completed"].indexOf(order.status);
+                  const here = ["pending", "in_progress", "delivered", "completed"].indexOf(s);
+                  const done = idx >= here && idx >= 0;
+                  return (
+                    <li key={s} className={`flex items-center gap-2 rounded-lg border px-3 py-2 ${done ? "border-primary/50 bg-primary/10 text-primary" : "border-border text-muted-foreground"}`}>
+                      {done ? <CheckCircle2 className="size-3.5" /> : <Circle className="size-3.5" />} {statusLabel(s, tr)}
+                    </li>
+                  );
+                })}
+              </ol>
+
+              <div className="mt-4 grid gap-2">
+                {nextActions(order, user?.id).map((a) => (
+                  <button
+                    key={a.key}
+                    onClick={() => {
+                      setActionMsg(null);
+                      transition.mutate(
+                        { id: order.id, status: a.key },
+                        { onError: (e: Error) => setActionMsg(e.message) },
+                      );
+                    }}
+                    disabled={transition.isPending}
+                    className={`w-full rounded-xl px-4 py-2.5 text-sm font-bold disabled:opacity-50 ${
+                      a.tone === "danger"
+                        ? "border border-destructive/50 bg-destructive/10 text-destructive"
+                        : a.tone === "accent"
+                          ? "border border-accent/50 bg-accent/10 text-accent"
+                          : "bg-primary text-primary-foreground"
+                    }`}
+                  >
+                    {actionLabel(a.key, tr)}
+                  </button>
+                ))}
+                {nextActions(order, user?.id).length === 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    {tr("لا يوجد إجراء مطلوب منك حالياً على هذا الطلب.", "No action is required from you on this order right now.")}
+                  </p>
+                )}
+                {actionMsg && <p className="text-xs text-destructive">{actionMsg}</p>}
+              </div>
+            </Card>
+          )}
           <Card>
             <h3 className="font-bold">{tr("حالة الضمان", "Escrow status")}</h3>
             <p className="mt-2 text-sm text-muted-foreground">
@@ -214,6 +262,11 @@ function Workspace() {
                 ? tr("المبلغ محجوز في الضمان حتى اعتماد التسليم.", "Funds are held in escrow until delivery is approved.")
                 : tr("لا توجد مبالغ محجوزة على هذا الطلب.", "No funds are currently held for this order.")}
             </p>
+            {order?.due_at && (
+              <p className="mt-2 text-xs text-muted-foreground">
+                {tr("موعد التسليم", "Delivery due")}: {new Date(order.due_at).toLocaleString()}
+              </p>
+            )}
             {order?.auto_release_at && (
               <p className="mt-2 text-xs text-primary">
                 {tr("إطلاق تلقائي في", "Auto-release at")}: {new Date(order.auto_release_at).toLocaleString()}
