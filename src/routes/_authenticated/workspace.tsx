@@ -196,9 +196,31 @@ function Workspace() {
                 <p className="mt-3 font-semibold">{tr("اسحب ملفات التسليم هنا", "Drag deliverable files here")}</p>
                 <p className="text-xs text-muted-foreground">{tr("حتى 2GB لكل ملف · تُفتح للمشتري بعد اعتماد المرحلة", "Up to 2GB per file · unlocked for the buyer after milestone approval")}</p>
               </div>
+              {order && order.seller_id === user?.id && (
+                <div className="mt-4 flex items-center gap-2">
+                  <input
+                    value={deliverable}
+                    onChange={(e) => setDeliverable(e.target.value)}
+                    placeholder={tr("رابط أو وصف التسليم (Drive, Figma, ...)", "Deliverable link or description (Drive, Figma, ...)")}
+                    className="flex-1 rounded-lg border border-input bg-surface px-3 py-2 text-sm outline-none focus:border-primary"
+                  />
+                  <button
+                    onClick={() => {
+                      const v = deliverable.trim();
+                      if (!v) return;
+                      const current = Array.isArray(order.deliverables) ? (order.deliverables as unknown[]).map(String) : [];
+                      addDeliverable.mutate({ id: order.id, deliverables: [...current, v] }, { onSuccess: () => setDeliverable("") });
+                    }}
+                    disabled={addDeliverable.isPending}
+                    className="rounded-lg bg-primary px-4 py-2 text-sm font-bold text-primary-foreground disabled:opacity-50"
+                  >
+                    {tr("إضافة", "Add")}
+                  </button>
+                </div>
+              )}
               <div className="mt-4 grid gap-2">
                 {(Array.isArray(order?.deliverables) ? (order!.deliverables as unknown[]) : []).map((d, i) => (
-                  <div key={i} className="rounded-lg border border-border px-4 py-3 text-sm">{String(d)}</div>
+                  <div key={i} className="rounded-lg border border-border px-4 py-3 text-sm break-all">{String(d)}</div>
                 ))}
               </div>
             </div>
