@@ -201,6 +201,7 @@ export type Database = {
           due_at: string | null
           escrow_locked: boolean
           id: string
+          listing_id: string | null
           order_number: number
           platform_fee_usdt: number
           seller_id: string
@@ -223,6 +224,7 @@ export type Database = {
           due_at?: string | null
           escrow_locked?: boolean
           id?: string
+          listing_id?: string | null
           order_number?: number
           platform_fee_usdt?: number
           seller_id: string
@@ -245,6 +247,7 @@ export type Database = {
           due_at?: string | null
           escrow_locked?: boolean
           id?: string
+          listing_id?: string | null
           order_number?: number
           platform_fee_usdt?: number
           seller_id?: string
@@ -253,7 +256,15 @@ export type Database = {
           title?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "orders_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "listings"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
