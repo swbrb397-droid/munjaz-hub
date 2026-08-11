@@ -13,11 +13,13 @@ import { supabase } from "@/integrations/supabase/client";
 const nav = [
   { to: "/", key: "home" },
   { to: "/store", key: "store" },
+  { to: "/create-listing", key: "createListing" },
   { to: "/dashboard", key: "dashboard" },
   { to: "/wallet", key: "wallet" },
   { to: "/workspace", key: "workspace" },
   { to: "/admin", key: "admin" },
 ] as const satisfies ReadonlyArray<{ to: string; key: TranslationKey }>;
+
 
 function AuthButton() {
   const { tr } = useLang();
