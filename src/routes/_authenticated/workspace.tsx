@@ -1,12 +1,44 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { AlertTriangle, FileUp, Languages, Paperclip, Send, ShieldAlert, Video } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Circle, FileUp, Languages, Paperclip, Send, ShieldAlert, Video } from "lucide-react";
 import { Card, Section } from "@/components/site/Shell";
 import { useLang } from "@/lib/lang";
 import { useAuth } from "@/hooks/use-auth";
 import { useOrders } from "@/lib/queries";
+import { nextActions, useOrderTransition, type OrderStatus } from "@/lib/orders";
 import { supabase } from "@/integrations/supabase/client";
+
+type Tr = (ar: string, en: string) => string;
+
+function statusLabel(s: OrderStatus, tr: Tr) {
+  const map: Record<OrderStatus, [string, string]> = {
+    pending: ["بانتظار التمويل", "Awaiting funding"],
+    in_progress: ["قيد التنفيذ", "In progress"],
+    delivered: ["تم التسليم", "Delivered"],
+    completed: ["مكتمل", "Completed"],
+    disputed: ["نزاع", "Disputed"],
+    cancelled: ["ملغي", "Cancelled"],
+    refunded: ["مسترجع", "Refunded"],
+  };
+  const [ar, en] = map[s];
+  return tr(ar, en);
+}
+
+function actionLabel(s: OrderStatus, tr: Tr) {
+  switch (s) {
+    case "in_progress":
+      return tr("تمويل الضمان وبدء التنفيذ", "Fund escrow & start work");
+    case "delivered":
+      return tr("تسليم العمل للمشتري", "Deliver work to buyer");
+    case "completed":
+      return tr("اعتماد التسليم وتحرير المبلغ", "Approve delivery & release funds");
+    case "cancelled":
+      return tr("إلغاء الطلب", "Cancel order");
+    default:
+      return statusLabel(s, tr);
+  }
+}
 
 export const Route = createFileRoute("/_authenticated/workspace")({
   head: () => ({
