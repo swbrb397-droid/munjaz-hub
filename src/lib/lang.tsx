@@ -6,6 +6,7 @@ const dict = {
   ar: {
     home: "الرئيسية",
     store: "المتجر و NFT",
+    createListing: "إنشاء عرض",
     dashboard: "لوحة التحكم",
     wallet: "المحفظة",
     workspace: "مساحة الطلب",
@@ -21,6 +22,7 @@ const dict = {
   en: {
     home: "Home",
     store: "Store & NFT",
+    createListing: "Create listing",
     dashboard: "Dashboard",
     wallet: "Wallet",
     workspace: "Workspace",

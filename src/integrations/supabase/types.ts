@@ -93,6 +93,7 @@ export type Database = {
           id: string
           is_published: boolean
           orders_count: number
+          owner_id: string | null
           price_usdt: number
           rating: number
           seller_ar: string
@@ -111,6 +112,7 @@ export type Database = {
           id?: string
           is_published?: boolean
           orders_count?: number
+          owner_id?: string | null
           price_usdt?: number
           rating?: number
           seller_ar: string
@@ -129,6 +131,7 @@ export type Database = {
           id?: string
           is_published?: boolean
           orders_count?: number
+          owner_id?: string | null
           price_usdt?: number
           rating?: number
           seller_ar?: string
@@ -140,7 +143,15 @@ export type Database = {
           updated_at?: string
           verified?: boolean
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "listings_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       nft_items: {
         Row: {
