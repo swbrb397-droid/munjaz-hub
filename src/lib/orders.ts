@@ -34,7 +34,7 @@ export function useListing(id: string) {
         orders: data.orders_count,
         verified: data.verified,
         ownerId: data.owner_id,
-        cover: COVERS[data.cover_key] ?? COVERS.product!,
+        cover: COVERS[data.cover_key] ?? COVERS["product"]!,
       };
     },
   });
