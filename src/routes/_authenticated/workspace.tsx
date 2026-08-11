@@ -80,6 +80,8 @@ function Workspace() {
   const [warning, setWarning] = useState(false);
   const [reason, setReason] = useState("");
   const [disputeMsg, setDisputeMsg] = useState<string | null>(null);
+  const [actionMsg, setActionMsg] = useState<string | null>(null);
+  const transition = useOrderTransition();
 
   function send() {
     const text = draft.trim();
