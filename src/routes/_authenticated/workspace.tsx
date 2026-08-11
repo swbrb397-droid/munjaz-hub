@@ -6,7 +6,7 @@ import { Card, Section } from "@/components/site/Shell";
 import { useLang } from "@/lib/lang";
 import { useAuth } from "@/hooks/use-auth";
 import { useOrders } from "@/lib/queries";
-import { nextActions, useOrderTransition, type OrderStatus } from "@/lib/orders";
+import { nextActions, useDeliverables, useOrderTransition, type OrderStatus } from "@/lib/orders";
 import { supabase } from "@/integrations/supabase/client";
 
 type Tr = (ar: string, en: string) => string;
