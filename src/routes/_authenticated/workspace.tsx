@@ -81,6 +81,8 @@ function Workspace() {
   const [reason, setReason] = useState("");
   const [disputeMsg, setDisputeMsg] = useState<string | null>(null);
   const [actionMsg, setActionMsg] = useState<string | null>(null);
+  const [deliverable, setDeliverable] = useState("");
+  const addDeliverable = useDeliverables();
   const transition = useOrderTransition();
 
   function send() {
