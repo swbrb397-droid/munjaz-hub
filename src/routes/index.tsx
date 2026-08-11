@@ -30,7 +30,7 @@ function Landing() {
       <Section title={tr("خدمات مميزة", "Featured services")} subtitle={tr("بضمان الوساطة ومراحل تسليم موثقة", "With escrow protection and verified delivery milestones")} action={<Link to="/store" className="text-sm text-primary">{tr("تصفح الكل ←", "Browse all ←")}</Link>}>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {featured.slice(0, 4).map((s) => (
-            <ServiceCard key={s.id} title={s.title} seller={s.seller} price={s.price} rating={s.rating} orders={s.orders} verified={s.verified} tag={s.tag} cover={s.cover} />
+            <ServiceCard key={s.id} {...s} />
           ))}
         </div>
       </Section>
@@ -38,7 +38,7 @@ function Landing() {
       <Section title={tr("منتجات رقمية ودورات", "Digital products & courses")} subtitle={tr("تسليم فوري وتشغيل داخل المنصة", "Instant delivery and in-platform access")}>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {featured.filter((s) => s.category === "course" || s.category === "product").map((s) => (
-            <ServiceCard key={s.id} title={s.title} seller={s.seller} price={s.price} rating={s.rating} orders={s.orders} verified={s.verified} tag={s.tag} cover={s.cover} />
+            <ServiceCard key={s.id} {...s} />
           ))}
         </div>
       </Section>
