@@ -120,7 +120,7 @@ function Workspace() {
   return (
     <Section
       title={order ? tr(`مساحة عمل الطلب #MJ-${order.order_number}`, `Order workspace #MJ-${order.order_number}`) : tr("مساحة عمل الطلب", "Order workspace")}
-      subtitle={order ? `${order.title} · ${Number(order.amount_usdt)} USDT · ${order.status}` : tr("لا توجد طلبات بعد", "No orders yet")}
+      subtitle={order ? `${order.title} · ${Number(order.amount_usdt)} USDT · ${statusLabel(order.status, tr)}` : tr("لا توجد طلبات بعد", "No orders yet")}
       action={
         <button className="inline-flex items-center gap-2 rounded-xl border border-accent/50 bg-accent/10 px-4 py-2 font-semibold text-accent">
           <Video className="size-4" /> {tr("بدء مكالمة فيديو", "Start video call")}
