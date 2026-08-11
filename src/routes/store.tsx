@@ -85,7 +85,7 @@ function Store() {
           <>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {(listings.data ?? []).map((s) => (
-                <ServiceCard key={s.id} title={s.title} seller={s.seller} price={s.price} rating={s.rating} orders={s.orders} verified={s.verified} tag={s.tag} cover={s.cover} />
+                <ServiceCard key={s.id} {...s} />
               ))}
             </div>
             {(listings.data ?? []).length === 0 && (

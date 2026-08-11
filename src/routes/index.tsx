@@ -30,7 +30,7 @@ function Landing() {
       <Section title={tr("خدمات مميزة", "Featured services")} subtitle={tr("بضمان الوساطة ومراحل تسليم موثقة", "With escrow protection and verified delivery milestones")} action={<Link to="/store" className="text-sm text-primary">{tr("تصفح الكل ←", "Browse all ←")}</Link>}>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {featured.slice(0, 4).map((s) => (
-            <ServiceCard key={s.id} title={s.title} seller={s.seller} price={s.price} rating={s.rating} orders={s.orders} verified={s.verified} tag={s.tag} cover={s.cover} />
+            <ServiceCard key={s.id} {...s} />
           ))}
         </div>
       </Section>
@@ -38,7 +38,7 @@ function Landing() {
       <Section title={tr("منتجات رقمية ودورات", "Digital products & courses")} subtitle={tr("تسليم فوري وتشغيل داخل المنصة", "Instant delivery and in-platform access")}>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {featured.filter((s) => s.category === "course" || s.category === "product").map((s) => (
-            <ServiceCard key={s.id} title={s.title} seller={s.seller} price={s.price} rating={s.rating} orders={s.orders} verified={s.verified} tag={s.tag} cover={s.cover} />
+            <ServiceCard key={s.id} {...s} />
           ))}
         </div>
       </Section>
@@ -150,26 +150,28 @@ function Ticker() {
 }
 
 export function ServiceCard({
-  title, seller, price, rating, orders, verified, tag, cover,
-}: { title: string; seller: string; price: number; rating: number; orders: number; verified: boolean; tag: string; cover: string }) {
+  id, title, seller, price, rating, orders, verified, tag, cover,
+}: { id: string; title: string; seller: string; price: number; rating: number; orders: number; verified: boolean; tag: string; cover: string; category?: string }) {
   const { tr } = useLang();
   return (
-    <Card className="flex flex-col transition-colors hover:border-primary/50">
-      <div className="relative mb-4 h-28 overflow-hidden rounded-xl border border-border">
-        <img src={cover} alt={title} loading="lazy" width={768} height={512} className="size-full object-cover" />
-        <span className="absolute bottom-2 start-2 rounded-full bg-background/70 px-2 py-0.5 text-[10px] font-semibold text-foreground backdrop-blur">
-          {tag}
-        </span>
-      </div>
-      <h3 className="mt-1 font-bold leading-snug">{title}</h3>
-      <p className="mt-1 flex flex-wrap items-center gap-1.5 text-sm text-muted-foreground">
-        {seller} {verified && <VerifiedBadge />}
-      </p>
-      <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
-        <Star className="size-3.5 fill-accent text-accent" /> {rating} · {orders} {tr("طلب", "orders")}
-      </div>
-      <p className="mt-4 text-lg font-black text-primary">{price} USDT</p>
-    </Card>
+    <Link to="/listing/$id" params={{ id }} className="block">
+      <Card className="flex h-full flex-col transition-colors hover:border-primary/50">
+        <div className="relative mb-4 h-28 overflow-hidden rounded-xl border border-border">
+          <img src={cover} alt={title} loading="lazy" width={768} height={512} className="size-full object-cover" />
+          <span className="absolute bottom-2 start-2 rounded-full bg-background/70 px-2 py-0.5 text-[10px] font-semibold text-foreground backdrop-blur">
+            {tag}
+          </span>
+        </div>
+        <h3 className="mt-1 font-bold leading-snug">{title}</h3>
+        <p className="mt-1 flex flex-wrap items-center gap-1.5 text-sm text-muted-foreground">
+          {seller} {verified && <VerifiedBadge />}
+        </p>
+        <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
+          <Star className="size-3.5 fill-accent text-accent" /> {rating} · {orders} {tr("طلب", "orders")}
+        </div>
+        <p className="mt-4 text-lg font-black text-primary">{price} USDT</p>
+      </Card>
+    </Link>
   );
 }
 

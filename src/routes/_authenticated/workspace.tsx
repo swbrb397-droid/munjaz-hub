@@ -1,12 +1,44 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { AlertTriangle, FileUp, Languages, Paperclip, Send, ShieldAlert, Video } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Circle, FileUp, Languages, Paperclip, Send, ShieldAlert, Video } from "lucide-react";
 import { Card, Section } from "@/components/site/Shell";
 import { useLang } from "@/lib/lang";
 import { useAuth } from "@/hooks/use-auth";
 import { useOrders } from "@/lib/queries";
+import { nextActions, useDeliverables, useOrderTransition, type OrderStatus } from "@/lib/orders";
 import { supabase } from "@/integrations/supabase/client";
+
+type Tr = (ar: string, en: string) => string;
+
+function statusLabel(s: OrderStatus, tr: Tr) {
+  const map: Record<OrderStatus, [string, string]> = {
+    pending: ["بانتظار التمويل", "Awaiting funding"],
+    in_progress: ["قيد التنفيذ", "In progress"],
+    delivered: ["تم التسليم", "Delivered"],
+    completed: ["مكتمل", "Completed"],
+    disputed: ["نزاع", "Disputed"],
+    cancelled: ["ملغي", "Cancelled"],
+    refunded: ["مسترجع", "Refunded"],
+  };
+  const [ar, en] = map[s];
+  return tr(ar, en);
+}
+
+function actionLabel(s: OrderStatus, tr: Tr) {
+  switch (s) {
+    case "in_progress":
+      return tr("تمويل الضمان وبدء التنفيذ", "Fund escrow & start work");
+    case "delivered":
+      return tr("تسليم العمل للمشتري", "Deliver work to buyer");
+    case "completed":
+      return tr("اعتماد التسليم وتحرير المبلغ", "Approve delivery & release funds");
+    case "cancelled":
+      return tr("إلغاء الطلب", "Cancel order");
+    default:
+      return statusLabel(s, tr);
+  }
+}
 
 export const Route = createFileRoute("/_authenticated/workspace")({
   head: () => ({
@@ -48,6 +80,10 @@ function Workspace() {
   const [warning, setWarning] = useState(false);
   const [reason, setReason] = useState("");
   const [disputeMsg, setDisputeMsg] = useState<string | null>(null);
+  const [actionMsg, setActionMsg] = useState<string | null>(null);
+  const [deliverable, setDeliverable] = useState("");
+  const addDeliverable = useDeliverables();
+  const transition = useOrderTransition();
 
   function send() {
     const text = draft.trim();
@@ -86,7 +122,7 @@ function Workspace() {
   return (
     <Section
       title={order ? tr(`مساحة عمل الطلب #MJ-${order.order_number}`, `Order workspace #MJ-${order.order_number}`) : tr("مساحة عمل الطلب", "Order workspace")}
-      subtitle={order ? `${order.title} · ${Number(order.amount_usdt)} USDT · ${order.status}` : tr("لا توجد طلبات بعد", "No orders yet")}
+      subtitle={order ? `${order.title} · ${Number(order.amount_usdt)} USDT · ${statusLabel(order.status, tr)}` : tr("لا توجد طلبات بعد", "No orders yet")}
       action={
         <button className="inline-flex items-center gap-2 rounded-xl border border-accent/50 bg-accent/10 px-4 py-2 font-semibold text-accent">
           <Video className="size-4" /> {tr("بدء مكالمة فيديو", "Start video call")}
@@ -162,9 +198,31 @@ function Workspace() {
                 <p className="mt-3 font-semibold">{tr("اسحب ملفات التسليم هنا", "Drag deliverable files here")}</p>
                 <p className="text-xs text-muted-foreground">{tr("حتى 2GB لكل ملف · تُفتح للمشتري بعد اعتماد المرحلة", "Up to 2GB per file · unlocked for the buyer after milestone approval")}</p>
               </div>
+              {order && order.seller_id === user?.id && (
+                <div className="mt-4 flex items-center gap-2">
+                  <input
+                    value={deliverable}
+                    onChange={(e) => setDeliverable(e.target.value)}
+                    placeholder={tr("رابط أو وصف التسليم (Drive, Figma, ...)", "Deliverable link or description (Drive, Figma, ...)")}
+                    className="flex-1 rounded-lg border border-input bg-surface px-3 py-2 text-sm outline-none focus:border-primary"
+                  />
+                  <button
+                    onClick={() => {
+                      const v = deliverable.trim();
+                      if (!v) return;
+                      const current = Array.isArray(order.deliverables) ? (order.deliverables as unknown[]).map(String) : [];
+                      addDeliverable.mutate({ id: order.id, deliverables: [...current, v] }, { onSuccess: () => setDeliverable("") });
+                    }}
+                    disabled={addDeliverable.isPending}
+                    className="rounded-lg bg-primary px-4 py-2 text-sm font-bold text-primary-foreground disabled:opacity-50"
+                  >
+                    {tr("إضافة", "Add")}
+                  </button>
+                </div>
+              )}
               <div className="mt-4 grid gap-2">
                 {(Array.isArray(order?.deliverables) ? (order!.deliverables as unknown[]) : []).map((d, i) => (
-                  <div key={i} className="rounded-lg border border-border px-4 py-3 text-sm">{String(d)}</div>
+                  <div key={i} className="rounded-lg border border-border px-4 py-3 text-sm break-all">{String(d)}</div>
                 ))}
               </div>
             </div>
@@ -207,6 +265,54 @@ function Workspace() {
               ))}
             </div>
           </Card>
+          {order && (
+            <Card>
+              <h3 className="font-bold">{tr("سير الطلب", "Order lifecycle")}</h3>
+              <ol className="mt-3 grid gap-2 text-xs">
+                {(["pending", "in_progress", "delivered", "completed"] as const).map((s) => {
+                  const idx = ["pending", "in_progress", "delivered", "completed"].indexOf(order.status);
+                  const here = ["pending", "in_progress", "delivered", "completed"].indexOf(s);
+                  const done = idx >= here && idx >= 0;
+                  return (
+                    <li key={s} className={`flex items-center gap-2 rounded-lg border px-3 py-2 ${done ? "border-primary/50 bg-primary/10 text-primary" : "border-border text-muted-foreground"}`}>
+                      {done ? <CheckCircle2 className="size-3.5" /> : <Circle className="size-3.5" />} {statusLabel(s, tr)}
+                    </li>
+                  );
+                })}
+              </ol>
+
+              <div className="mt-4 grid gap-2">
+                {nextActions(order, user?.id).map((a) => (
+                  <button
+                    key={a.key}
+                    onClick={() => {
+                      setActionMsg(null);
+                      transition.mutate(
+                        { id: order.id, status: a.key },
+                        { onError: (e: Error) => setActionMsg(e.message) },
+                      );
+                    }}
+                    disabled={transition.isPending}
+                    className={`w-full rounded-xl px-4 py-2.5 text-sm font-bold disabled:opacity-50 ${
+                      a.tone === "danger"
+                        ? "border border-destructive/50 bg-destructive/10 text-destructive"
+                        : a.tone === "accent"
+                          ? "border border-accent/50 bg-accent/10 text-accent"
+                          : "bg-primary text-primary-foreground"
+                    }`}
+                  >
+                    {actionLabel(a.key, tr)}
+                  </button>
+                ))}
+                {nextActions(order, user?.id).length === 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    {tr("لا يوجد إجراء مطلوب منك حالياً على هذا الطلب.", "No action is required from you on this order right now.")}
+                  </p>
+                )}
+                {actionMsg && <p className="text-xs text-destructive">{actionMsg}</p>}
+              </div>
+            </Card>
+          )}
           <Card>
             <h3 className="font-bold">{tr("حالة الضمان", "Escrow status")}</h3>
             <p className="mt-2 text-sm text-muted-foreground">
@@ -214,6 +320,11 @@ function Workspace() {
                 ? tr("المبلغ محجوز في الضمان حتى اعتماد التسليم.", "Funds are held in escrow until delivery is approved.")
                 : tr("لا توجد مبالغ محجوزة على هذا الطلب.", "No funds are currently held for this order.")}
             </p>
+            {order?.due_at && (
+              <p className="mt-2 text-xs text-muted-foreground">
+                {tr("موعد التسليم", "Delivery due")}: {new Date(order.due_at).toLocaleString()}
+              </p>
+            )}
             {order?.auto_release_at && (
               <p className="mt-2 text-xs text-primary">
                 {tr("إطلاق تلقائي في", "Auto-release at")}: {new Date(order.auto_release_at).toLocaleString()}
