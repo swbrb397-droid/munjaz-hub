@@ -1,12 +1,19 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { ArrowDownToLine, ArrowUpFromLine, BadgeCheck, Copy, QrCode, X } from "lucide-react";
+import { ArrowDownToLine, ArrowUpFromLine, BadgeCheck, Copy, Lock, QrCode, ShieldAlert, Timer, X } from "lucide-react";
 import { Card, Section } from "@/components/site/Shell";
 import { useLang } from "@/lib/lang";
-import { useAuth } from "@/hooks/use-auth";
 import { useProfile, useTransactions, useWallet } from "@/lib/queries";
-import { supabase } from "@/integrations/supabase/client";
+import {
+  MIN_WITHDRAWAL,
+  WITHDRAWAL_FEE,
+  slaHoursForTier,
+  useMyWithdrawals,
+  useRequestWithdrawal,
+  withdrawalErrorMessage,
+  type WithdrawalNetwork,
+} from "@/lib/withdrawals";
+import { formatUsdt, parseUsdt } from "@/lib/security";
 
 export const Route = createFileRoute("/_authenticated/wallet")({
   head: () => ({
@@ -29,45 +36,44 @@ const networks = [
 const rates: Record<string, number> = { USD: 1.0002, SAR: 3.7506, AED: 3.6731, EUR: 0.9184 };
 
 function WalletPage() {
-  const { tr } = useLang();
-  const { user } = useAuth();
-  const qc = useQueryClient();
+  const { tr, lang } = useLang();
   const wallet = useWallet();
   const profile = useProfile();
   const txs = useTransactions();
+  const requests = useMyWithdrawals();
 
   const [deposit, setDeposit] = useState(false);
-  const [network, setNetwork] = useState<(typeof networks)[number]["value"]>("trc20");
+  const [network, setNetwork] = useState<WithdrawalNetwork>("trc20");
   const [amount, setAmount] = useState("250");
   const [address, setAddress] = useState("");
   const [feedback, setFeedback] = useState<string | null>(null);
 
   const balance = Number(wallet.data?.available_usdt ?? 0);
   const locked = Number(wallet.data?.locked_usdt ?? 0);
+  const tier = (profile.data as { account_tier?: string } | null)?.account_tier ?? "free";
+  const frozen = Boolean((profile.data as { is_frozen?: boolean } | null)?.is_frozen);
+  const sla = slaHoursForTier(tier);
+  const parsed = parseUsdt(amount) ?? 0;
 
-  const withdraw = useMutation({
-    mutationFn: async () => {
-      const value = Number(amount);
-      if (!value || value <= 0) throw new Error(tr("أدخل مبلغاً صحيحاً", "Enter a valid amount"));
-      if (value > balance) throw new Error(tr("الرصيد غير كافٍ", "Insufficient balance"));
-      if (!address.trim()) throw new Error(tr("أدخل عنوان المحفظة", "Enter a wallet address"));
-      const { error } = await supabase.from("wallet_transactions").insert({
-        user_id: user!.id,
-        type: "withdrawal",
-        status: "pending",
-        amount: -value,
-        network,
-        address: address.trim(),
-        note: "Withdrawal request",
-      });
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      setFeedback(tr("تم إرسال طلب السحب للمراجعة.", "Withdrawal request submitted for review."));
-      qc.invalidateQueries({ queryKey: ["transactions"] });
-    },
-    onError: (e: Error) => setFeedback(e.message),
-  });
+  const withdraw = useRequestWithdrawal();
+
+  const submit = () => {
+    setFeedback(null);
+    withdraw.mutate(
+      { amount, network, address },
+      {
+        onSuccess: () =>
+          setFeedback(
+            tr(
+              `تم استلام الطلب — المعالجة خلال ${sla} ساعة.`,
+              `Request received — processing within ${sla} hours.`,
+            ),
+          ),
+        onError: (e: Error) => setFeedback(withdrawalErrorMessage(e.message, lang === "ar")),
+      },
+    );
+  };
+
 
   return (
     <Section
