@@ -13,6 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 const nav = [
   { to: "/", key: "home" },
   { to: "/store", key: "store" },
+  { to: "/leaderboard", key: "leaderboard" },
   { to: "/create-listing", key: "createListing" },
   { to: "/dashboard", key: "dashboard" },
   { to: "/wallet", key: "wallet" },
