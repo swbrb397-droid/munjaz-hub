@@ -268,6 +268,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          account_tier: Database["public"]["Enums"]["account_tier"]
           active_view: string
           avatar_url: string | null
           bio: string | null
@@ -275,7 +276,10 @@ export type Database = {
           country: string | null
           created_at: string
           display_name: string
+          frozen_at: string | null
+          frozen_reason: string | null
           id: string
+          is_frozen: boolean
           is_verified: boolean
           kyc_tier: Database["public"]["Enums"]["kyc_tier"]
           level: number
@@ -287,6 +291,7 @@ export type Database = {
           xp_points: number
         }
         Insert: {
+          account_tier?: Database["public"]["Enums"]["account_tier"]
           active_view?: string
           avatar_url?: string | null
           bio?: string | null
@@ -294,7 +299,10 @@ export type Database = {
           country?: string | null
           created_at?: string
           display_name?: string
+          frozen_at?: string | null
+          frozen_reason?: string | null
           id: string
+          is_frozen?: boolean
           is_verified?: boolean
           kyc_tier?: Database["public"]["Enums"]["kyc_tier"]
           level?: number
@@ -306,6 +314,7 @@ export type Database = {
           xp_points?: number
         }
         Update: {
+          account_tier?: Database["public"]["Enums"]["account_tier"]
           active_view?: string
           avatar_url?: string | null
           bio?: string | null
@@ -313,7 +322,10 @@ export type Database = {
           country?: string | null
           created_at?: string
           display_name?: string
+          frozen_at?: string | null
+          frozen_reason?: string | null
           id?: string
+          is_frozen?: boolean
           is_verified?: boolean
           kyc_tier?: Database["public"]["Enums"]["kyc_tier"]
           level?: number
@@ -333,6 +345,27 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      rate_limit_events: {
+        Row: {
+          action: string
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       referral_commissions: {
         Row: {
@@ -415,6 +448,42 @@ export type Database = {
           starts_at?: string
           total_earned_usdt?: number
           updated_at?: string
+        }
+        Relationships: []
+      }
+      security_incidents: {
+        Row: {
+          created_at: string
+          detail: string
+          froze_account: boolean
+          id: string
+          kind: Database["public"]["Enums"]["incident_kind"]
+          meta: Json
+          resolved: boolean
+          severity: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          detail?: string
+          froze_account?: boolean
+          id?: string
+          kind: Database["public"]["Enums"]["incident_kind"]
+          meta?: Json
+          resolved?: boolean
+          severity?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          detail?: string
+          froze_account?: boolean
+          id?: string
+          kind?: Database["public"]["Enums"]["incident_kind"]
+          meta?: Json
+          resolved?: boolean
+          severity?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -523,12 +592,85 @@ export type Database = {
         }
         Relationships: []
       }
+      withdrawal_requests: {
+        Row: {
+          address: string
+          admin_note: string | null
+          amount_usdt: number
+          created_at: string
+          fee_usdt: number
+          id: string
+          net_usdt: number
+          network: Database["public"]["Enums"]["usdt_network"]
+          process_by: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          risk_flags: Json
+          risk_score: number
+          sla_hours: number
+          status: Database["public"]["Enums"]["withdrawal_status"]
+          tier: Database["public"]["Enums"]["account_tier"]
+          transaction_id: string | null
+          tx_hash: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          address: string
+          admin_note?: string | null
+          amount_usdt: number
+          created_at?: string
+          fee_usdt?: number
+          id?: string
+          net_usdt?: number
+          network?: Database["public"]["Enums"]["usdt_network"]
+          process_by?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          risk_flags?: Json
+          risk_score?: number
+          sla_hours?: number
+          status?: Database["public"]["Enums"]["withdrawal_status"]
+          tier?: Database["public"]["Enums"]["account_tier"]
+          transaction_id?: string | null
+          tx_hash?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          address?: string
+          admin_note?: string | null
+          amount_usdt?: number
+          created_at?: string
+          fee_usdt?: number
+          id?: string
+          net_usdt?: number
+          network?: Database["public"]["Enums"]["usdt_network"]
+          process_by?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          risk_flags?: Json
+          risk_score?: number
+          sla_hours?: number
+          status?: Database["public"]["Enums"]["withdrawal_status"]
+          tier?: Database["public"]["Enums"]["account_tier"]
+          transaction_id?: string | null
+          tx_hash?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
       auto_release_escrow: { Args: never; Returns: number }
+      check_rate_limit: {
+        Args: { _action: string; _max: number; _window: string }
+        Returns: number
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -536,11 +678,102 @@ export type Database = {
         }
         Returns: boolean
       }
+      log_security_event: {
+        Args: {
+          _detail: string
+          _kind: Database["public"]["Enums"]["incident_kind"]
+          _meta?: Json
+        }
+        Returns: string
+      }
+      process_withdrawal_queue: { Args: never; Returns: number }
+      request_withdrawal: {
+        Args: {
+          _address: string
+          _amount: number
+          _network: Database["public"]["Enums"]["usdt_network"]
+        }
+        Returns: {
+          address: string
+          admin_note: string | null
+          amount_usdt: number
+          created_at: string
+          fee_usdt: number
+          id: string
+          net_usdt: number
+          network: Database["public"]["Enums"]["usdt_network"]
+          process_by: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          risk_flags: Json
+          risk_score: number
+          sla_hours: number
+          status: Database["public"]["Enums"]["withdrawal_status"]
+          tier: Database["public"]["Enums"]["account_tier"]
+          transaction_id: string | null
+          tx_hash: string | null
+          updated_at: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "withdrawal_requests"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      resolve_withdrawal: {
+        Args: {
+          _action: string
+          _id: string
+          _note?: string
+          _tx_hash?: string
+        }
+        Returns: {
+          address: string
+          admin_note: string | null
+          amount_usdt: number
+          created_at: string
+          fee_usdt: number
+          id: string
+          net_usdt: number
+          network: Database["public"]["Enums"]["usdt_network"]
+          process_by: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          risk_flags: Json
+          risk_score: number
+          sla_hours: number
+          status: Database["public"]["Enums"]["withdrawal_status"]
+          tier: Database["public"]["Enums"]["account_tier"]
+          transaction_id: string | null
+          tx_hash: string | null
+          updated_at: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "withdrawal_requests"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      set_account_frozen: {
+        Args: { _frozen: boolean; _reason?: string; _user_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
+      account_tier: "free" | "pro" | "corporate"
       app_role: "buyer" | "seller" | "admin" | "hybrid" | "corporate"
       case_kind: "dispute" | "review_appeal"
       case_status: "open" | "ai_reviewed" | "resolved" | "rejected"
+      incident_kind:
+        | "withdrawal_spike"
+        | "large_withdrawal"
+        | "admin_access_attempt"
+        | "rate_limit"
+        | "frozen_account_attempt"
       kyc_tier: "tier0" | "tier1" | "tier2" | "tier3"
       listing_category: "freelance" | "course" | "product" | "gaming"
       order_status:
@@ -562,6 +795,13 @@ export type Database = {
         | "referral_payout"
         | "adjustment"
       usdt_network: "trc20" | "bep20" | "polygon"
+      withdrawal_status:
+        | "queued"
+        | "auto_approved"
+        | "manual_review"
+        | "processing"
+        | "paid"
+        | "rejected"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -689,9 +929,17 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      account_tier: ["free", "pro", "corporate"],
       app_role: ["buyer", "seller", "admin", "hybrid", "corporate"],
       case_kind: ["dispute", "review_appeal"],
       case_status: ["open", "ai_reviewed", "resolved", "rejected"],
+      incident_kind: [
+        "withdrawal_spike",
+        "large_withdrawal",
+        "admin_access_attempt",
+        "rate_limit",
+        "frozen_account_attempt",
+      ],
       kyc_tier: ["tier0", "tier1", "tier2", "tier3"],
       listing_category: ["freelance", "course", "product", "gaming"],
       order_status: [
@@ -715,6 +963,14 @@ export const Constants = {
         "adjustment",
       ],
       usdt_network: ["trc20", "bep20", "polygon"],
+      withdrawal_status: [
+        "queued",
+        "auto_approved",
+        "manual_review",
+        "processing",
+        "paid",
+        "rejected",
+      ],
     },
   },
 } as const

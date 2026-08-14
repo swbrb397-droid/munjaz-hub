@@ -8,6 +8,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useOrders } from "@/lib/queries";
 import { nextActions, useDeliverables, useOrderTransition, type OrderStatus } from "@/lib/orders";
 import { supabase } from "@/integrations/supabase/client";
+import { sanitizeText } from "@/lib/security";
 
 type Tr = (ar: string, en: string) => string;
 
@@ -107,7 +108,7 @@ function Workspace() {
         kind: "dispute",
         raised_by: user!.id,
         against_user: against,
-        reason: reason.trim(),
+        reason: sanitizeText(reason, 2000),
       });
       if (error) throw error;
     },

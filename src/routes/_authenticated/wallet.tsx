@@ -1,12 +1,19 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { ArrowDownToLine, ArrowUpFromLine, BadgeCheck, Copy, QrCode, X } from "lucide-react";
+import { ArrowDownToLine, ArrowUpFromLine, BadgeCheck, Copy, Lock, QrCode, ShieldAlert, Timer, X } from "lucide-react";
 import { Card, Section } from "@/components/site/Shell";
 import { useLang } from "@/lib/lang";
-import { useAuth } from "@/hooks/use-auth";
 import { useProfile, useTransactions, useWallet } from "@/lib/queries";
-import { supabase } from "@/integrations/supabase/client";
+import {
+  MIN_WITHDRAWAL,
+  WITHDRAWAL_FEE,
+  slaHoursForTier,
+  useMyWithdrawals,
+  useRequestWithdrawal,
+  withdrawalErrorMessage,
+  type WithdrawalNetwork,
+} from "@/lib/withdrawals";
+import { formatUsdt, parseUsdt } from "@/lib/security";
 
 export const Route = createFileRoute("/_authenticated/wallet")({
   head: () => ({
@@ -29,45 +36,44 @@ const networks = [
 const rates: Record<string, number> = { USD: 1.0002, SAR: 3.7506, AED: 3.6731, EUR: 0.9184 };
 
 function WalletPage() {
-  const { tr } = useLang();
-  const { user } = useAuth();
-  const qc = useQueryClient();
+  const { tr, lang } = useLang();
   const wallet = useWallet();
   const profile = useProfile();
   const txs = useTransactions();
+  const requests = useMyWithdrawals();
 
   const [deposit, setDeposit] = useState(false);
-  const [network, setNetwork] = useState<(typeof networks)[number]["value"]>("trc20");
+  const [network, setNetwork] = useState<WithdrawalNetwork>("trc20");
   const [amount, setAmount] = useState("250");
   const [address, setAddress] = useState("");
   const [feedback, setFeedback] = useState<string | null>(null);
 
   const balance = Number(wallet.data?.available_usdt ?? 0);
   const locked = Number(wallet.data?.locked_usdt ?? 0);
+  const tier = (profile.data as { account_tier?: string } | null)?.account_tier ?? "free";
+  const frozen = Boolean((profile.data as { is_frozen?: boolean } | null)?.is_frozen);
+  const sla = slaHoursForTier(tier);
+  const parsed = parseUsdt(amount) ?? 0;
 
-  const withdraw = useMutation({
-    mutationFn: async () => {
-      const value = Number(amount);
-      if (!value || value <= 0) throw new Error(tr("أدخل مبلغاً صحيحاً", "Enter a valid amount"));
-      if (value > balance) throw new Error(tr("الرصيد غير كافٍ", "Insufficient balance"));
-      if (!address.trim()) throw new Error(tr("أدخل عنوان المحفظة", "Enter a wallet address"));
-      const { error } = await supabase.from("wallet_transactions").insert({
-        user_id: user!.id,
-        type: "withdrawal",
-        status: "pending",
-        amount: -value,
-        network,
-        address: address.trim(),
-        note: "Withdrawal request",
-      });
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      setFeedback(tr("تم إرسال طلب السحب للمراجعة.", "Withdrawal request submitted for review."));
-      qc.invalidateQueries({ queryKey: ["transactions"] });
-    },
-    onError: (e: Error) => setFeedback(e.message),
-  });
+  const withdraw = useRequestWithdrawal();
+
+  const submit = () => {
+    setFeedback(null);
+    withdraw.mutate(
+      { amount, network, address },
+      {
+        onSuccess: () =>
+          setFeedback(
+            tr(
+              `تم استلام الطلب — المعالجة خلال ${sla} ساعة.`,
+              `Request received — processing within ${sla} hours.`,
+            ),
+          ),
+        onError: (e: Error) => setFeedback(withdrawalErrorMessage(e.message, lang === "ar")),
+      },
+    );
+  };
+
 
   return (
     <Section
@@ -103,36 +109,89 @@ function WalletPage() {
 
         <Card className="lg:col-span-2">
           <h3 className="flex items-center gap-2 font-bold"><ArrowUpFromLine className="size-4 text-accent" /> {tr("طلب سحب", "Withdrawal request")}</h3>
+          <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
+            <span className="rounded-lg border border-accent/40 bg-accent/10 px-2.5 py-1 font-bold uppercase text-accent">{tier}</span>
+            <span className="inline-flex items-center gap-1 text-muted-foreground">
+              <Timer className="size-3.5" />
+              {tr(`المعالجة الآلية خلال ${sla} ساعة`, `AI processing within ${sla} hours`)}
+            </span>
+          </div>
+
+          {frozen && (
+            <p className="mt-3 inline-flex items-center gap-2 rounded-xl border border-destructive/50 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+              <ShieldAlert className="size-4" />
+              {tr("الحساب مجمّد أمنياً — السحب معطّل حتى مراجعة الإدارة.", "Account frozen for security — withdrawals are disabled pending admin review.")}
+            </p>
+          )}
+
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
             <label className="grid gap-2 text-sm">
               <span className="text-muted-foreground">{tr("الشبكة", "Network")}</span>
-              <select value={network} onChange={(e) => setNetwork(e.target.value as typeof network)} className="rounded-lg border border-input bg-surface px-3 py-2 outline-none focus:border-primary">
+              <select value={network} onChange={(e) => setNetwork(e.target.value as WithdrawalNetwork)} className="rounded-lg border border-input bg-surface px-3 py-2 outline-none focus:border-primary">
                 {networks.map((n) => <option key={n.value} value={n.value}>{n.label}</option>)}
               </select>
             </label>
             <label className="grid gap-2 text-sm">
-              <span className="text-muted-foreground">{tr("المبلغ (USDT)", "Amount (USDT)")}</span>
-              <input value={amount} onChange={(e) => setAmount(e.target.value)} inputMode="decimal" className="rounded-lg border border-input bg-surface px-3 py-2 outline-none focus:border-primary" />
+              <span className="text-muted-foreground">{tr(`المبلغ (USDT) — الحد الأدنى ${MIN_WITHDRAWAL}`, `Amount (USDT) — min ${MIN_WITHDRAWAL}`)}</span>
+              <input value={amount} onChange={(e) => setAmount(e.target.value.replace(/[^\d.]/g, ""))} inputMode="decimal" maxLength={16} className="rounded-lg border border-input bg-surface px-3 py-2 outline-none focus:border-primary" />
             </label>
             <label className="grid gap-2 text-sm sm:col-span-2">
               <span className="text-muted-foreground">{tr("عنوان المحفظة", "Wallet address")}</span>
-              <input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="T… / 0x…" className="rounded-lg border border-input bg-surface px-3 py-2 outline-none focus:border-primary" />
+              <input value={address} onChange={(e) => setAddress(e.target.value.replace(/[^A-Za-z0-9]/g, ""))} placeholder="T… / 0x…" maxLength={64} className="rounded-lg border border-input bg-surface px-3 py-2 outline-none focus:border-primary" />
             </label>
           </div>
           <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-surface-2/60 p-4 text-sm">
-            <span className="text-muted-foreground">{tr("رسوم السحب الفوري:", "Instant withdrawal fee:")} <span className="text-foreground">0.8 USDT</span></span>
+            <span className="text-muted-foreground">
+              {tr("الرسوم:", "Fee:")} <span className="text-foreground">{WITHDRAWAL_FEE} USDT</span>
+              {" · "}
+              {tr("الصافي:", "Net:")} <span className="text-foreground">{formatUsdt(Math.max(0, parsed - WITHDRAWAL_FEE))} USDT</span>
+            </span>
             <button
-              onClick={() => withdraw.mutate()}
-              disabled={withdraw.isPending}
+              onClick={submit}
+              disabled={withdraw.isPending || frozen}
               className="rounded-lg bg-primary px-4 py-2 font-bold text-primary-foreground disabled:opacity-60"
             >
               {tr("تأكيد السحب", "Confirm withdrawal")}
             </button>
           </div>
           {feedback && <p className="mt-3 text-xs text-primary">{feedback}</p>}
-          <p className="mt-3 text-xs text-muted-foreground">{tr("الحسابات غير الموثقة تخضع لسحب مجدول بفترة تأمين 72 ساعة.", "Unverified accounts are subject to scheduled withdrawal with a 72-hour lock period.")}</p>
+          <p className="mt-3 text-xs text-muted-foreground">
+            {tr(
+              "الطلبات ذات درجة خطورة مرتفعة تُحال تلقائياً لمراجعة بشرية، وتُحجز الأموال حتى إتمام التحويل.",
+              "High risk-score requests are routed automatically to human review; funds stay locked until payout completes.",
+            )}
+          </p>
         </Card>
       </div>
+
+      <Card className="mt-6">
+        <h3 className="flex items-center gap-2 font-bold"><Lock className="size-4 text-accent" /> {tr("قائمة طلبات السحب", "Withdrawal queue")}</h3>
+        <div className="mt-4 grid gap-3">
+          {(requests.data ?? []).length === 0 && (
+            <p className="rounded-xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
+              {tr("لا توجد طلبات سحب.", "No withdrawal requests yet.")}
+            </p>
+          )}
+          {(requests.data ?? []).map((r) => (
+            <div key={r.id} className="flex flex-wrap items-center gap-3 rounded-xl border border-border p-4 text-sm">
+              <div className="min-w-40">
+                <p className="font-semibold">{formatUsdt(r.amount_usdt)} USDT · {r.network}</p>
+                <p className="text-xs text-muted-foreground">{new Date(r.created_at).toLocaleString()}</p>
+              </div>
+              <span className="rounded-lg border border-border px-2.5 py-1 text-xs">{r.status}</span>
+              <span className="text-xs text-muted-foreground">
+                {tr("درجة الخطورة", "Risk score")}: {Number(r.risk_score)}
+              </span>
+              {r.process_by && (
+                <span className="ms-auto text-xs text-muted-foreground">
+                  {tr("المعالجة قبل", "Process by")} {new Date(r.process_by).toLocaleString()}
+                </span>
+              )}
+            </div>
+          ))}
+        </div>
+      </Card>
+
 
       <Card className="mt-6">
         <h3 className="font-bold">{tr("سجل المعاملات", "Transaction history")}</h3>

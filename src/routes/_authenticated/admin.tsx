@@ -1,11 +1,19 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Gavel, ShieldCheck, TrendingUp } from "lucide-react";
+import { Banknote, Gavel, ShieldAlert, ShieldCheck, TrendingUp } from "lucide-react";
 import { Card, Section } from "@/components/site/Shell";
 import { useLang } from "@/lib/lang";
 import { useDisputes, useKycQueue, useOrders, useRoles } from "@/lib/queries";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  logSecurityEvent,
+  useResolveWithdrawal,
+  useSecurityIncidents,
+  useSetAccountFrozen,
+  useWithdrawalQueue,
+} from "@/lib/withdrawals";
+import { formatUsdt } from "@/lib/security";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({
@@ -28,9 +36,21 @@ function Admin() {
   const disputes = useDisputes();
   const kyc = useKycQueue(isAdmin);
   const orders = useOrders();
+  const payouts = useWithdrawalQueue(isAdmin);
+  const incidents = useSecurityIncidents(isAdmin);
+  const resolvePayout = useResolveWithdrawal();
+  const setFrozen = useSetAccountFrozen();
+
+  // Security sentinel: record unauthorized attempts to reach the admin area.
+  useEffect(() => {
+    if (roles.isLoading || roles.data === undefined || isAdmin) return;
+    void logSecurityEvent("admin_access_attempt", "Non-admin user opened the admin dashboard");
+  }, [roles.isLoading, roles.data, isAdmin]);
 
   const tabs = [
     { key: "disputes", label: tr("النزاعات", "Disputes"), icon: Gavel },
+    { key: "payouts", label: tr("السحوبات", "Payouts"), icon: Banknote },
+    { key: "security", label: tr("الأمن", "Security"), icon: ShieldAlert },
     { key: "kyc", label: tr("التوثيق", "KYC"), icon: ShieldCheck },
     { key: "revenue", label: tr("الإيرادات", "Revenue"), icon: TrendingUp },
   ] as const;
@@ -116,6 +136,116 @@ function Admin() {
                   <button onClick={() => resolveCase.mutate({ id: d.id, status: "resolved" })} className="rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground">{tr("اعتماد", "Approve")}</button>
                   <button onClick={() => resolveCase.mutate({ id: d.id, status: "rejected" })} className="rounded-lg border border-border px-3 py-1.5 text-xs">{tr("رفض", "Reject")}</button>
                 </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
+
+      {tab === "payouts" && (
+        <Card>
+          <h3 className="font-bold">{tr("قائمة معالجة السحوبات", "Withdrawal processing queue")}</h3>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {tr(
+              "الوكيل الآلي يعتمد طلبات Pro/Corporate خلال 12 ساعة، والمجاني خلال 48 ساعة، ويحوّل الطلبات المشبوهة للمراجعة البشرية.",
+              "The AI agent auto-approves Pro/Corporate within 12h, free tier within 48h, and routes suspicious requests to human review.",
+            )}
+          </p>
+          <div className="mt-4 grid gap-3">
+            {(payouts.data ?? []).length === 0 && (
+              <p className="rounded-xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
+                {tr("لا توجد طلبات سحب.", "No withdrawal requests.")}
+              </p>
+            )}
+            {(payouts.data ?? []).map((w) => (
+              <div key={w.id} className="grid gap-3 rounded-xl border border-border p-4 text-sm md:grid-cols-[1fr_auto]">
+                <div>
+                  <p className="font-semibold">
+                    {formatUsdt(w.amount_usdt)} USDT · {w.network} · <span className="uppercase text-accent">{w.tier}</span>
+                  </p>
+                  <p className="break-all text-xs text-muted-foreground">{w.address}</p>
+                  <p className="mt-1 text-xs">
+                    <span className={Number(w.risk_score) >= 50 ? "font-bold text-destructive" : "text-muted-foreground"}>
+                      {tr("درجة الخطورة", "Risk")}: {Number(w.risk_score)}
+                    </span>
+                    {" · "}
+                    <span className="text-muted-foreground">{w.status}</span>
+                    {" · SLA "}{w.sla_hours}h
+                  </p>
+                  {Array.isArray(w.risk_flags) && w.risk_flags.length > 0 && (
+                    <div className="mt-2 flex flex-wrap gap-1">
+                      {(w.risk_flags as string[]).map((f) => (
+                        <span key={f} className="rounded-md border border-border px-2 py-0.5 text-[11px] text-muted-foreground">{f}</span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <div className="flex flex-wrap items-start gap-2">
+                  <button
+                    disabled={resolvePayout.isPending || w.status === "paid" || w.status === "rejected"}
+                    onClick={() => resolvePayout.mutate({ id: w.id, action: "approve" })}
+                    className="rounded-lg border border-border px-3 py-1.5 text-xs disabled:opacity-50"
+                  >
+                    {tr("اعتماد", "Approve")}
+                  </button>
+                  <button
+                    disabled={resolvePayout.isPending || w.status === "paid" || w.status === "rejected"}
+                    onClick={() => resolvePayout.mutate({ id: w.id, action: "pay" })}
+                    className="rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground disabled:opacity-50"
+                  >
+                    {tr("تم الدفع", "Mark paid")}
+                  </button>
+                  <button
+                    disabled={resolvePayout.isPending || w.status === "paid" || w.status === "rejected"}
+                    onClick={() => resolvePayout.mutate({ id: w.id, action: "reject" })}
+                    className="rounded-lg border border-destructive/50 px-3 py-1.5 text-xs text-destructive disabled:opacity-50"
+                  >
+                    {tr("رفض وإرجاع", "Reject & refund")}
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
+
+      {tab === "security" && (
+        <Card>
+          <h3 className="font-bold">{tr("حارس الأمن — سجل الحوادث", "Security sentinel — incident log")}</h3>
+          <div className="mt-4 grid gap-3">
+            {(incidents.data ?? []).length === 0 && (
+              <p className="rounded-xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
+                {tr("لا توجد حوادث أمنية.", "No security incidents.")}
+              </p>
+            )}
+            {(incidents.data ?? []).map((i) => (
+              <div key={i.id} className="flex flex-wrap items-center gap-3 rounded-xl border border-border p-4 text-sm">
+                <div className="min-w-56">
+                  <p className="font-semibold">{i.kind} · <span className="uppercase text-destructive">{i.severity}</span></p>
+                  <p className="text-xs text-muted-foreground">{i.detail}</p>
+                  <p className="text-xs text-muted-foreground">{new Date(i.created_at).toLocaleString()}</p>
+                </div>
+                {i.froze_account && (
+                  <span className="rounded-lg border border-destructive/50 px-2.5 py-1 text-xs text-destructive">
+                    {tr("تم تجميد الحساب", "Account frozen")}
+                  </span>
+                )}
+                {i.user_id && (
+                  <div className="ms-auto flex gap-2">
+                    <button
+                      onClick={() => setFrozen.mutate({ userId: i.user_id!, frozen: false })}
+                      className="rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground"
+                    >
+                      {tr("رفع التجميد", "Unfreeze")}
+                    </button>
+                    <button
+                      onClick={() => setFrozen.mutate({ userId: i.user_id!, frozen: true, reason: i.detail })}
+                      className="rounded-lg border border-destructive/50 px-3 py-1.5 text-xs text-destructive"
+                    >
+                      {tr("تجميد", "Freeze")}
+                    </button>
+                  </div>
+                )}
               </div>
             ))}
           </div>

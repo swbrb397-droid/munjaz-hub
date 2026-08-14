@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { sanitizeText } from "@/lib/security";
 import { useAuth } from "@/hooks/use-auth";
 import { useLang } from "@/lib/lang";
 import { COVERS } from "@/lib/catalog";
@@ -67,12 +68,12 @@ export function useCreateOrder() {
           listing_id: input.listingId,
           buyer_id: user.id,
           seller_id: input.sellerId,
-          title: input.title,
+          title: sanitizeText(input.title, 160),
           category: input.category,
           amount_usdt: input.amount,
           platform_fee_usdt: Number((input.amount * 0.1).toFixed(6)),
           delivery_days: input.deliveryDays,
-          sow_terms: input.sowTerms,
+          sow_terms: sanitizeText(input.sowTerms, 4000),
           status: "pending",
         })
         .select("id")
