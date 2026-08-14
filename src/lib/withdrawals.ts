@@ -105,8 +105,8 @@ export function useResolveWithdrawal() {
       const { error } = await supabase.rpc("resolve_withdrawal", {
         _id: input.id,
         _action: input.action,
-        _note: input.note ? sanitizeText(input.note, 300) : undefined,
-        _tx_hash: input.txHash ? sanitizeText(input.txHash, 120) : undefined,
+        ...(input.note ? { _note: sanitizeText(input.note, 300) } : {}),
+        ...(input.txHash ? { _tx_hash: sanitizeText(input.txHash, 120) } : {}),
       });
       if (error) throw new Error(error.message);
     },
@@ -140,7 +140,7 @@ export function useSetAccountFrozen() {
       const { error } = await supabase.rpc("set_account_frozen", {
         _user_id: input.userId,
         _frozen: input.frozen,
-        _reason: input.reason ? sanitizeText(input.reason, 300) : undefined,
+        ...(input.reason ? { _reason: sanitizeText(input.reason, 300) } : {}),
       });
       if (error) throw new Error(error.message);
     },
