@@ -7,6 +7,7 @@ import { useLang } from "@/lib/lang";
 import { useAuth } from "@/hooks/use-auth";
 import { useProfile } from "@/lib/queries";
 import { supabase } from "@/integrations/supabase/client";
+import { parseUsdt, sanitizeText } from "@/lib/security";
 import { COVERS, type ListingCategory } from "@/lib/catalog";
 
 export const Route = createFileRoute("/_authenticated/create-listing")({
@@ -60,18 +61,18 @@ function CreateListing() {
 
   const create = useMutation({
     mutationFn: async () => {
-      const price = Number(form.price_usdt);
+      const price = parseUsdt(form.price_usdt) ?? 0;
       const sellerName = profile.data?.display_name || tr("بائع", "Seller");
       const { error } = await supabase.from("listings").insert({
         owner_id: user!.id,
-        title_ar: form.title_ar.trim() || form.title_en.trim(),
-        title_en: form.title_en.trim() || form.title_ar.trim(),
-        seller_ar: sellerName,
-        seller_en: sellerName,
+        title_ar: sanitizeText(form.title_ar, 120) || sanitizeText(form.title_en, 120),
+        title_en: sanitizeText(form.title_en, 120) || sanitizeText(form.title_ar, 120),
+        seller_ar: sanitizeText(sellerName, 80),
+        seller_en: sanitizeText(sellerName, 80),
         category: form.category,
         price_usdt: price,
-        tag_ar: form.tag_ar.trim(),
-        tag_en: form.tag_en.trim() || form.tag_ar.trim(),
+        tag_ar: sanitizeText(form.tag_ar, 40),
+        tag_en: sanitizeText(form.tag_en, 40) || sanitizeText(form.tag_ar, 40),
         cover_key: form.cover_key,
         verified: !!profile.data?.is_verified,
         is_published: true,
@@ -102,7 +103,7 @@ function CreateListing() {
     e.preventDefault();
     setError("");
     setDone(false);
-    const price = Number(form.price_usdt);
+    const price = parseUsdt(form.price_usdt) ?? 0;
     if (!form.title_ar.trim() && !form.title_en.trim()) {
       setError(tr("العنوان مطلوب.", "A title is required."));
       return;
