@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { LogIn, UserPlus } from "lucide-react";
+import { LogIn, RefreshCw, UserPlus } from "lucide-react";
 import { Card } from "@/components/site/Shell";
 import { useLang } from "@/lib/lang";
 import { useAuth } from "@/hooks/use-auth";
@@ -42,7 +42,37 @@ function AuthPage() {
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [pendingEmail, setPendingEmail] = useState<string | null>(null);
+  const [cooldown, setCooldown] = useState(0);
+  const [resends, setResends] = useState(0);
 
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const id = window.setInterval(() => setCooldown((c) => (c <= 1 ? 0 : c - 1)), 1000);
+    return () => window.clearInterval(id);
+  }, [cooldown]);
+
+  async function resendConfirmation() {
+    if (!pendingEmail || cooldown > 0) return;
+    setBusy(true);
+    setErr(null);
+    setMsg(null);
+    try {
+      const { error } = await supabase.auth.resend({
+        type: "signup",
+        email: pendingEmail,
+        options: { emailRedirectTo: window.location.origin },
+      });
+      if (error) throw error;
+      setResends((n) => n + 1);
+      setCooldown(60);
+      setMsg(tr("أُرسلت رسالة تحقق جديدة إلى ", "A new confirmation email was sent to ") + pendingEmail);
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : String(e));
+    } finally {
+      setBusy(false);
+    }
+  }
 
   useEffect(() => {
     if (!loading && isAuthenticated) navigate({ to: "/dashboard", replace: true });
@@ -90,11 +120,20 @@ function AuthPage() {
 
         if (error) throw error;
         if (!data.session) {
+          setPendingEmail(email);
+          setCooldown(60);
+          setResends(0);
           setMsg(tr("تم إنشاء الحساب — تحقق من بريدك لتأكيد التسجيل.", "Account created — check your email to confirm."));
         }
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
+        if (error) {
+          if (/confirm/i.test(error.message)) {
+            setPendingEmail(email);
+            setCooldown(0);
+          }
+          throw error;
+        }
       }
     } catch (e) {
       setErr(e instanceof Error ? e.message : String(e));
@@ -182,6 +221,30 @@ function AuthPage() {
 
           {err && <p className="rounded-lg bg-destructive/15 px-3 py-2 text-xs text-destructive">{err}</p>}
           {msg && <p className="rounded-lg bg-primary/15 px-3 py-2 text-xs text-primary">{msg}</p>}
+
+          {pendingEmail && (
+            <div className="rounded-lg border border-border bg-surface/50 p-3 text-xs">
+              <p className="text-muted-foreground">
+                {tr("لم تصلك رسالة التحقق؟ تحقق من مجلد الرسائل غير المرغوب فيها أو أعد الإرسال.", "Didn't get the confirmation email? Check your spam folder or resend it.")}
+              </p>
+              <button
+                type="button"
+                disabled={busy || cooldown > 0}
+                onClick={resendConfirmation}
+                className="mt-2 inline-flex items-center gap-2 rounded-lg border border-primary/50 px-3 py-1.5 font-bold text-primary disabled:opacity-50"
+              >
+                <RefreshCw className="size-3.5" />
+                {cooldown > 0
+                  ? tr(`إعادة الإرسال بعد ${cooldown} ثانية`, `Resend in ${cooldown}s`)
+                  : tr("إعادة إرسال رسالة التحقق", "Resend confirmation email")}
+              </button>
+              {resends > 0 && (
+                <p className="mt-2 text-[11px] text-muted-foreground">
+                  {tr(`عدد مرات الإرسال: ${resends}`, `Times resent: ${resends}`)}
+                </p>
+              )}
+            </div>
+          )}
 
           <button disabled={busy} type="submit" className="mt-2 inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 font-bold text-primary-foreground glow disabled:opacity-60">
             {mode === "signin" ? <LogIn className="size-4" /> : <UserPlus className="size-4" />}
