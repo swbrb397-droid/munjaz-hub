@@ -152,8 +152,10 @@ function Workspace() {
 
           {tab === "chat" && (
             <>
+              <div className="pt-3"><ChatSecurityNotice /></div>
               <div className="flex-1 space-y-3 overflow-y-auto py-4">
                 {messages.length === 0 && (
+
                   <p className="py-10 text-center text-sm text-muted-foreground">
                     {tr("ابدأ المحادثة مع الطرف الآخر.", "Start the conversation with the other party.")}
                   </p>
