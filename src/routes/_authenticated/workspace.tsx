@@ -3,6 +3,8 @@ import { useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { AlertTriangle, CheckCircle2, Circle, FileUp, Languages, Paperclip, Send, ShieldAlert, Video } from "lucide-react";
 import { Card, Section } from "@/components/site/Shell";
+import { ChatSecurityNotice } from "@/components/site/ChatSecurityNotice";
+
 import { useLang } from "@/lib/lang";
 import { useAuth } from "@/hooks/use-auth";
 import { useOrders } from "@/lib/queries";
