@@ -3,6 +3,8 @@ import { useState } from "react";
 import { ArrowLeft, Loader2, ShieldCheck, Star, Timer } from "lucide-react";
 import { Card, Section } from "@/components/site/Shell";
 import { VerifiedBadge } from "@/components/site/VerifiedBadge";
+import { MediaShowcase } from "@/components/site/MediaShowcase";
+
 import { useLang } from "@/lib/lang";
 import { useAuth } from "@/hooks/use-auth";
 import { useWallet } from "@/lib/queries";
