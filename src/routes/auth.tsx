@@ -120,11 +120,20 @@ function AuthPage() {
 
         if (error) throw error;
         if (!data.session) {
+          setPendingEmail(email);
+          setCooldown(60);
+          setResends(0);
           setMsg(tr("تم إنشاء الحساب — تحقق من بريدك لتأكيد التسجيل.", "Account created — check your email to confirm."));
         }
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
+        if (error) {
+          if (/confirm/i.test(error.message)) {
+            setPendingEmail(email);
+            setCooldown(0);
+          }
+          throw error;
+        }
       }
     } catch (e) {
       setErr(e instanceof Error ? e.message : String(e));
