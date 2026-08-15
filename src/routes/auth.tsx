@@ -42,7 +42,37 @@ function AuthPage() {
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [pendingEmail, setPendingEmail] = useState<string | null>(null);
+  const [cooldown, setCooldown] = useState(0);
+  const [resends, setResends] = useState(0);
 
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const id = window.setInterval(() => setCooldown((c) => (c <= 1 ? 0 : c - 1)), 1000);
+    return () => window.clearInterval(id);
+  }, [cooldown]);
+
+  async function resendConfirmation() {
+    if (!pendingEmail || cooldown > 0) return;
+    setBusy(true);
+    setErr(null);
+    setMsg(null);
+    try {
+      const { error } = await supabase.auth.resend({
+        type: "signup",
+        email: pendingEmail,
+        options: { emailRedirectTo: window.location.origin },
+      });
+      if (error) throw error;
+      setResends((n) => n + 1);
+      setCooldown(60);
+      setMsg(tr("أُرسلت رسالة تحقق جديدة إلى ", "A new confirmation email was sent to ") + pendingEmail);
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : String(e));
+    } finally {
+      setBusy(false);
+    }
+  }
 
   useEffect(() => {
     if (!loading && isAuthenticated) navigate({ to: "/dashboard", replace: true });
