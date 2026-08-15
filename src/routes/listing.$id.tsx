@@ -3,6 +3,8 @@ import { useState } from "react";
 import { ArrowLeft, Loader2, ShieldCheck, Star, Timer } from "lucide-react";
 import { Card, Section } from "@/components/site/Shell";
 import { VerifiedBadge } from "@/components/site/VerifiedBadge";
+import { MediaShowcase } from "@/components/site/MediaShowcase";
+
 import { useLang } from "@/lib/lang";
 import { useAuth } from "@/hooks/use-auth";
 import { useWallet } from "@/lib/queries";
@@ -11,9 +13,9 @@ import { useCreateOrder, useListing } from "@/lib/orders";
 export const Route = createFileRoute("/listing/$id")({
   head: () => ({
     meta: [
-      { title: "تفاصيل العرض | مُنجَز" },
-      { name: "description", content: "تفاصيل الخدمة أو المنتج الرقمي على مُنجَز: السعر بعملة USDT، مدة التسليم، نطاق العمل، وشراء محمي بضمان الوساطة." },
-      { property: "og:title", content: "تفاصيل العرض | مُنجَز" },
+      { title: "تفاصيل العرض | المُنجَز" },
+      { name: "description", content: "تفاصيل الخدمة أو المنتج الرقمي على المُنجَز: السعر بعملة USDT، مدة التسليم، نطاق العمل، وشراء محمي بضمان الوساطة." },
+      { property: "og:title", content: "تفاصيل العرض | المُنجَز" },
       { property: "og:description", content: "اشترِ بضمان الوساطة USDT مع تحرير تلقائي بعد اعتماد التسليم." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -122,7 +124,17 @@ function ListingDetail() {
             placeholder={tr("اكتب متطلباتك بدقة: المخرجات، الصيغ، عدد التعديلات...", "Describe your requirements: deliverables, formats, revisions...")}
             className="mt-3 w-full rounded-xl border border-input bg-surface p-3 text-sm outline-none focus:border-primary"
           />
+
+          <MediaShowcase
+            items={[
+              { id: "m1", src: item.cover, title: tr("الغلاف الرئيسي", "Primary cover"), format: "image" },
+              { id: "m2", src: item.cover, title: tr("معاينة حية للواجهة", "Live interface preview"), format: "live" },
+              { id: "m3", src: item.cover, title: tr("مقتطف من الكود المصدري", "Source code snippet"), format: "code" },
+              { id: "m4", src: item.cover, title: tr("فيديو توضيحي", "Walkthrough video"), format: "video" },
+            ]}
+          />
         </Card>
+
 
         <div className="grid content-start gap-4">
           <Card>

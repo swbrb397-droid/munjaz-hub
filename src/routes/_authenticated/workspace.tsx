@@ -3,6 +3,8 @@ import { useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { AlertTriangle, CheckCircle2, Circle, FileUp, Languages, Paperclip, Send, ShieldAlert, Video } from "lucide-react";
 import { Card, Section } from "@/components/site/Shell";
+import { ChatSecurityNotice } from "@/components/site/ChatSecurityNotice";
+
 import { useLang } from "@/lib/lang";
 import { useAuth } from "@/hooks/use-auth";
 import { useOrders } from "@/lib/queries";
@@ -44,9 +46,9 @@ function actionLabel(s: OrderStatus, tr: Tr) {
 export const Route = createFileRoute("/_authenticated/workspace")({
   head: () => ({
     meta: [
-      { title: "مساحة عمل الطلب | مُنجَز" },
+      { title: "مساحة عمل الطلب | المُنجَز" },
       { name: "description", content: "محادثة لحظية مع ترجمة فورية بالذكاء الاصطناعي، مكالمات فيديو، تسليم الملفات، وفتح نزاع محمي بضمان المنصة." },
-      { property: "og:title", content: "مساحة عمل الطلب | مُنجَز" },
+      { property: "og:title", content: "مساحة عمل الطلب | المُنجَز" },
       { property: "og:description", content: "تواصل، سلّم، وأدر نزاعاتك داخل مساحة عمل واحدة آمنة." },
     ],
   }),
@@ -152,8 +154,10 @@ function Workspace() {
 
           {tab === "chat" && (
             <>
+              <div className="pt-3"><ChatSecurityNotice /></div>
               <div className="flex-1 space-y-3 overflow-y-auto py-4">
                 {messages.length === 0 && (
+
                   <p className="py-10 text-center text-sm text-muted-foreground">
                     {tr("ابدأ المحادثة مع الطرف الآخر.", "Start the conversation with the other party.")}
                   </p>
