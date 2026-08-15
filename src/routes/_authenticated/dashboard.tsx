@@ -9,10 +9,10 @@ import { useOrders, useProfile, useReferrals, useWallet } from "@/lib/queries";
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
     meta: [
-      { title: "لوحة التحكم | المُنجَز" },
+      { title: "لوحة التحكم | الـمُـنْـجِـز" },
       { name: "description", content: "لوحة تحكم تفاعلية بعرض مزدوج للمشتري والبائع: الدخل المباشر، الطلبات النشطة، تقدم XP، ومؤشرات محفظة USDT." },
-      { property: "og:title", content: "لوحة التحكم | المُنجَز" },
-      { property: "og:description", content: "تابع دخلك وطلباتك ومستواك في المُنجَز لحظياً." },
+      { property: "og:title", content: "لوحة التحكم | الـمُـنْـجِـز" },
+      { property: "og:description", content: "تابع دخلك وطلباتك ومستواك في الـمُـنْـجِـز لحظياً." },
     ],
   }),
   component: Dashboard,

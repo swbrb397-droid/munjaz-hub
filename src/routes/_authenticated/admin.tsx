@@ -18,9 +18,9 @@ import { formatUsdt } from "@/lib/security";
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({
     meta: [
-      { title: "لوحة الإدارة | المُنجَز" },
+      { title: "لوحة الإدارة | الـمُـنْـجِـز" },
       { name: "description", content: "إدارة النزاعات، مركز توثيق الهوية (KYC)، وتحليلات إيرادات المنصة بعملة USDT." },
-      { property: "og:title", content: "لوحة الإدارة | المُنجَز" },
+      { property: "og:title", content: "لوحة الإدارة | الـمُـنْـجِـز" },
       { property: "og:description", content: "قائمة النزاعات، طلبات التوثيق، ومؤشرات الإيرادات في مكان واحد." },
     ],
   }),

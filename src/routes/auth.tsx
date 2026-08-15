@@ -19,10 +19,10 @@ const ROLES: ReadonlyArray<{ value: SignupRole; ar: string; en: string }> = [
 export const Route = createFileRoute("/auth")({
   head: () => ({
     meta: [
-      { title: "تسجيل الدخول | المُنجَز" },
-      { name: "description", content: "سجّل الدخول أو أنشئ حساباً في المُنجَز لإدارة محفظة USDT والطلبات والإحالات." },
-      { property: "og:title", content: "تسجيل الدخول | المُنجَز" },
-      { property: "og:description", content: "حساب المُنجَز: محفظة USDT، ضمان الطلبات، ونظام الإحالات." },
+      { title: "تسجيل الدخول | الـمُـنْـجِـز" },
+      { name: "description", content: "سجّل الدخول أو أنشئ حساباً في الـمُـنْـجِـز لإدارة محفظة USDT والطلبات والإحالات." },
+      { property: "og:title", content: "تسجيل الدخول | الـمُـنْـجِـز" },
+      { property: "og:description", content: "حساب الـمُـنْـجِـز: محفظة USDT، ضمان الطلبات، ونظام الإحالات." },
     ],
   }),
   component: AuthPage,
