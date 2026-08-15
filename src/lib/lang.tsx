@@ -17,7 +17,7 @@ const dict = {
     menu: "القائمة",
     verified: "موثّق",
     terms: "الشروط والأحكام",
-    footer: "الـمُـنْـجِـز — سوق الخدمات الرقمية بعملة USDT.",
+    footer: "جميع الحقوق محفوظة لـ الـمُـنْـجِـز",
     footerSub: "TRC-20 · BEP-20 · Polygon",
   },
   en: {
