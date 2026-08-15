@@ -122,7 +122,17 @@ function ListingDetail() {
             placeholder={tr("اكتب متطلباتك بدقة: المخرجات، الصيغ، عدد التعديلات...", "Describe your requirements: deliverables, formats, revisions...")}
             className="mt-3 w-full rounded-xl border border-input bg-surface p-3 text-sm outline-none focus:border-primary"
           />
+
+          <MediaShowcase
+            items={[
+              { id: "m1", src: item.cover, title: tr("الغلاف الرئيسي", "Primary cover"), format: "image" },
+              { id: "m2", src: item.cover, title: tr("معاينة حية للواجهة", "Live interface preview"), format: "live" },
+              { id: "m3", src: item.cover, title: tr("مقتطف من الكود المصدري", "Source code snippet"), format: "code" },
+              { id: "m4", src: item.cover, title: tr("فيديو توضيحي", "Walkthrough video"), format: "video" },
+            ]}
+          />
         </Card>
+
 
         <div className="grid content-start gap-4">
           <Card>
