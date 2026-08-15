@@ -13,9 +13,9 @@ import { COVERS, type ListingCategory } from "@/lib/catalog";
 export const Route = createFileRoute("/_authenticated/create-listing")({
   head: () => ({
     meta: [
-      { title: "إنشاء عرض جديد | المُنجَز" },
-      { name: "description", content: "أنشئ عدداً غير محدود من الخدمات والمنتجات الرقمية على المُنجَز بحد أدنى 3 USDT للعرض الواحد." },
-      { property: "og:title", content: "إنشاء عرض جديد | المُنجَز" },
+      { title: "إنشاء عرض جديد | الـمُـنْـجِـز" },
+      { name: "description", content: "أنشئ عدداً غير محدود من الخدمات والمنتجات الرقمية على الـمُـنْـجِـز بحد أدنى 3 USDT للعرض الواحد." },
+      { property: "og:title", content: "إنشاء عرض جديد | الـمُـنْـجِـز" },
       { property: "og:description", content: "انشر خدماتك ومنتجاتك الرقمية بعملة USDT مع حماية الضمان." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
