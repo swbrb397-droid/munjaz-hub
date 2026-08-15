@@ -222,6 +222,30 @@ function AuthPage() {
           {err && <p className="rounded-lg bg-destructive/15 px-3 py-2 text-xs text-destructive">{err}</p>}
           {msg && <p className="rounded-lg bg-primary/15 px-3 py-2 text-xs text-primary">{msg}</p>}
 
+          {pendingEmail && (
+            <div className="rounded-lg border border-border bg-surface/50 p-3 text-xs">
+              <p className="text-muted-foreground">
+                {tr("لم تصلك رسالة التحقق؟ تحقق من مجلد الرسائل غير المرغوب فيها أو أعد الإرسال.", "Didn't get the confirmation email? Check your spam folder or resend it.")}
+              </p>
+              <button
+                type="button"
+                disabled={busy || cooldown > 0}
+                onClick={resendConfirmation}
+                className="mt-2 inline-flex items-center gap-2 rounded-lg border border-primary/50 px-3 py-1.5 font-bold text-primary disabled:opacity-50"
+              >
+                <RefreshCw className="size-3.5" />
+                {cooldown > 0
+                  ? tr(`إعادة الإرسال بعد ${cooldown} ثانية`, `Resend in ${cooldown}s`)
+                  : tr("إعادة إرسال رسالة التحقق", "Resend confirmation email")}
+              </button>
+              {resends > 0 && (
+                <p className="mt-2 text-[11px] text-muted-foreground">
+                  {tr(`عدد مرات الإرسال: ${resends}`, `Times resent: ${resends}`)}
+                </p>
+              )}
+            </div>
+          )}
+
           <button disabled={busy} type="submit" className="mt-2 inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 font-bold text-primary-foreground glow disabled:opacity-60">
             {mode === "signin" ? <LogIn className="size-4" /> : <UserPlus className="size-4" />}
             {mode === "signin" ? tr("دخول", "Sign in") : tr("تسجيل", "Sign up")}
