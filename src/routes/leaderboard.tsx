@@ -8,9 +8,9 @@ import { rankSellers, type LeaderboardMetric } from "@/lib/sellers";
 export const Route = createFileRoute("/leaderboard")({
   head: () => ({
     meta: [
-      { title: "لوحة المتصدرين | المنجز" },
-      { name: "description", content: "ترتيب البائعين في المنجز وفق التقييم الرقمي ونسبة الإنجاز وعدد المبيعات — بدون أي ترقية مدفوعة." },
-      { property: "og:title", content: "لوحة المتصدرين | المنجز" },
+      { title: "لوحة المتصدرين | المُنجَز" },
+      { name: "description", content: "ترتيب البائعين في المُنجَز وفق التقييم الرقمي ونسبة الإنجاز وعدد المبيعات — بدون أي ترقية مدفوعة." },
+      { property: "og:title", content: "لوحة المتصدرين | المُنجَز" },
       { property: "og:description", content: "ترتيب استحقاقي بالكامل يعتمد على الأداء الرقمي فقط." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },

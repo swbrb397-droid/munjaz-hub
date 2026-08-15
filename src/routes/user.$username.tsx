@@ -13,14 +13,14 @@ export const Route = createFileRoute("/user/$username")({
   },
   head: ({ loaderData }) => {
     if (!loaderData) {
-      return { meta: [{ title: "الملف غير متاح | المنجز" }, { name: "robots", content: "noindex" }] };
+      return { meta: [{ title: "الملف غير متاح | المُنجَز" }, { name: "robots", content: "noindex" }] };
     }
     const s = loaderData.seller;
     return {
       meta: [
-        { title: `${s.name_ar} — ملف البائع | المنجز` },
+        { title: `${s.name_ar} — ملف البائع | المُنجَز` },
         { name: "description", content: s.bio_ar.slice(0, 150) },
-        { property: "og:title", content: `${s.name_ar} — ملف البائع | المنجز` },
+        { property: "og:title", content: `${s.name_ar} — ملف البائع | المُنجَز` },
         { property: "og:description", content: s.bio_en.slice(0, 150) },
         { property: "og:type", content: "profile" },
         { property: "og:image", content: s.cover_url },

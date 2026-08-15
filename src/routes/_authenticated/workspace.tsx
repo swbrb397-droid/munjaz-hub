@@ -44,9 +44,9 @@ function actionLabel(s: OrderStatus, tr: Tr) {
 export const Route = createFileRoute("/_authenticated/workspace")({
   head: () => ({
     meta: [
-      { title: "مساحة عمل الطلب | مُنجَز" },
+      { title: "مساحة عمل الطلب | المُنجَز" },
       { name: "description", content: "محادثة لحظية مع ترجمة فورية بالذكاء الاصطناعي، مكالمات فيديو، تسليم الملفات، وفتح نزاع محمي بضمان المنصة." },
-      { property: "og:title", content: "مساحة عمل الطلب | مُنجَز" },
+      { property: "og:title", content: "مساحة عمل الطلب | المُنجَز" },
       { property: "og:description", content: "تواصل، سلّم، وأدر نزاعاتك داخل مساحة عمل واحدة آمنة." },
     ],
   }),

@@ -18,9 +18,9 @@ import { formatUsdt, parseUsdt } from "@/lib/security";
 export const Route = createFileRoute("/_authenticated/wallet")({
   head: () => ({
     meta: [
-      { title: "المحفظة الداخلية USDT | مُنجَز" },
+      { title: "المحفظة الداخلية USDT | المُنجَز" },
       { name: "description", content: "أودع واسحب USDT عبر TRC-20 و BEP-20 و Polygon، وتابع سجل المعاملات والمبالغ المحجوزة في الضمان." },
-      { property: "og:title", content: "المحفظة الداخلية USDT | مُنجَز" },
+      { property: "og:title", content: "المحفظة الداخلية USDT | المُنجَز" },
       { property: "og:description", content: "إيداع وسحب USDT بدون رسوم داخلية مع سحب فوري للحسابات الموثقة." },
     ],
   }),
