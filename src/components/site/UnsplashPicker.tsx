@@ -28,8 +28,8 @@ export function UnsplashPicker({
   const [results, setResults] = useState<StockPhoto[]>([]);
   const [lightbox, setLightbox] = useState<StockPhoto | null>(null);
 
-  const runSearch = (e: FormEvent) => {
-    e.preventDefault();
+  const runSearch = (e?: FormEvent) => {
+    e?.preventDefault();
     if (!term.trim()) return;
     setLoading(true);
     const next = buildResults(term);
@@ -41,23 +41,31 @@ export function UnsplashPicker({
 
   return (
     <div className="grid gap-3">
-      <form onSubmit={runSearch} className="flex gap-2">
+      <div className="flex gap-2">
         <input
           value={term}
           onChange={(e) => setTerm(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              runSearch();
+            }
+          }}
           maxLength={60}
           placeholder={tr("ابحث عن غلاف مناسب (مثال: Code, Design, 3D)...", "Search a cover (e.g. Code, Design, 3D)...")}
           className="h-11 w-full rounded-xl border border-input bg-surface px-3 text-sm outline-none focus:border-primary"
         />
         <button
-          type="submit"
+          type="button"
+          onClick={() => runSearch()}
           disabled={!term.trim() || loading}
           className="flex h-11 shrink-0 items-center gap-2 rounded-xl bg-secondary px-4 text-sm font-bold text-foreground disabled:opacity-50"
         >
           {loading ? <Loader2 className="size-4 animate-spin" /> : <Search className="size-4" />}
           {tr("بحث", "Search")}
         </button>
-      </form>
+      </div>
+
 
       {results.length === 0 && !loading && (
         <p className="rounded-xl border border-dashed border-border p-6 text-center text-xs text-muted-foreground">
