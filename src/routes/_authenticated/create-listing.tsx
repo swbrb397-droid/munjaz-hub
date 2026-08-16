@@ -1,14 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, PlusCircle, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 import { Card, Section } from "@/components/site/Shell";
+import { UnsplashPicker, type StockPhoto } from "@/components/site/UnsplashPicker";
 import { useLang } from "@/lib/lang";
 import { useAuth } from "@/hooks/use-auth";
 import { useProfile } from "@/lib/queries";
 import { supabase } from "@/integrations/supabase/client";
 import { parseUsdt, sanitizeText } from "@/lib/security";
-import { COVERS, type ListingCategory } from "@/lib/catalog";
+import { type ListingCategory } from "@/lib/catalog";
 
 export const Route = createFileRoute("/_authenticated/create-listing")({
   head: () => ({
@@ -25,15 +27,26 @@ export const Route = createFileRoute("/_authenticated/create-listing")({
 });
 
 const MIN_PRICE = 3;
+const MIN_DESC = 50;
 
-const emptyForm = {
+type FormState = {
+  title_ar: string;
+  title_en: string;
+  category: ListingCategory;
+  price_usdt: string;
+  tag_ar: string;
+  tag_en: string;
+  description_ar: string;
+};
+
+const emptyForm: FormState = {
   title_ar: "",
   title_en: "",
-  category: "freelance" as ListingCategory,
+  category: "freelance",
   price_usdt: "",
   tag_ar: "",
   tag_en: "",
-  cover_key: "product",
+  description_ar: "",
 };
 
 function CreateListing() {
@@ -41,9 +54,19 @@ function CreateListing() {
   const { user } = useAuth();
   const profile = useProfile();
   const qc = useQueryClient();
-  const [form, setForm] = useState(emptyForm);
-  const [error, setError] = useState("");
-  const [done, setDone] = useState(false);
+  const [form, setForm] = useState<FormState>(emptyForm);
+  const [cover, setCover] = useState<StockPhoto | null>(null);
+
+  const price = useMemo(() => parseUsdt(form.price_usdt) ?? Number.NaN, [form.price_usdt]);
+  const priceTouched = form.price_usdt.trim().length > 0;
+  const priceInvalid = priceTouched && (!Number.isFinite(price) || price < MIN_PRICE);
+  const descLen = form.description_ar.trim().length;
+  const descTouched = descLen > 0;
+  const descInvalid = descTouched && descLen < MIN_DESC;
+  const titleMissing = !form.title_ar.trim() && !form.title_en.trim();
+
+  const canSubmit =
+    !titleMissing && Number.isFinite(price) && price >= MIN_PRICE && descLen >= MIN_DESC;
 
   const mine = useQuery({
     queryKey: ["my-listings", user?.id],
@@ -61,7 +84,6 @@ function CreateListing() {
 
   const create = useMutation({
     mutationFn: async () => {
-      const price = parseUsdt(form.price_usdt) ?? 0;
       const sellerName = profile.data?.display_name || tr("بائع", "Seller");
       const { error } = await supabase.from("listings").insert({
         owner_id: user!.id,
@@ -73,7 +95,7 @@ function CreateListing() {
         price_usdt: price,
         tag_ar: sanitizeText(form.tag_ar, 40),
         tag_en: sanitizeText(form.tag_en, 40) || sanitizeText(form.tag_ar, 40),
-        cover_key: form.cover_key,
+        cover_key: "product",
         verified: !!profile.data?.is_verified,
         is_published: true,
       });
@@ -81,11 +103,17 @@ function CreateListing() {
     },
     onSuccess: () => {
       setForm(emptyForm);
-      setDone(true);
+      setCover(null);
       qc.invalidateQueries({ queryKey: ["my-listings"] });
       qc.invalidateQueries({ queryKey: ["listings"] });
+      toast.success(
+        tr(
+          "تم تجهيز بيانات العرض بنجاح - بانتظار تفعيل الربط السحابي",
+          "Listing data prepared successfully — awaiting cloud integration",
+        ),
+      );
     },
-    onError: (e: unknown) => setError(e instanceof Error ? e.message : String(e)),
+    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : String(e)),
   });
 
   const remove = useMutation({
@@ -101,17 +129,7 @@ function CreateListing() {
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
-    setDone(false);
-    const price = parseUsdt(form.price_usdt) ?? 0;
-    if (!form.title_ar.trim() && !form.title_en.trim()) {
-      setError(tr("العنوان مطلوب.", "A title is required."));
-      return;
-    }
-    if (!Number.isFinite(price) || price < MIN_PRICE) {
-      setError(tr(`الحد الأدنى لسعر العرض هو ${MIN_PRICE} USDT.`, `Minimum listing price is ${MIN_PRICE} USDT.`));
-      return;
-    }
+    if (!canSubmit || create.isPending) return;
     create.mutate();
   };
 
@@ -137,11 +155,11 @@ function CreateListing() {
           <form onSubmit={submit} className="grid gap-4 sm:grid-cols-2">
             <label className="grid gap-1.5 text-sm">
               <span className="text-muted-foreground">{tr("العنوان (عربي)", "Title (Arabic)")}</span>
-              <input className={field} value={form.title_ar} onChange={(e) => setForm({ ...form, title_ar: e.target.value })} />
+              <input className={field} maxLength={120} value={form.title_ar} onChange={(e) => setForm({ ...form, title_ar: e.target.value })} />
             </label>
             <label className="grid gap-1.5 text-sm">
               <span className="text-muted-foreground">{tr("العنوان (إنجليزي)", "Title (English)")}</span>
-              <input className={field} value={form.title_en} onChange={(e) => setForm({ ...form, title_en: e.target.value })} />
+              <input className={field} maxLength={120} value={form.title_en} onChange={(e) => setForm({ ...form, title_en: e.target.value })} />
             </label>
 
             <label className="grid gap-1.5 text-sm">
@@ -160,7 +178,7 @@ function CreateListing() {
             <label className="grid gap-1.5 text-sm">
               <span className="text-muted-foreground">{tr("السعر (USDT)", "Price (USDT)")}</span>
               <input
-                className={field}
+                className={`${field} ${priceInvalid ? "border-destructive focus:border-destructive" : ""}`}
                 type="number"
                 min={MIN_PRICE}
                 step="0.01"
@@ -168,49 +186,51 @@ function CreateListing() {
                 value={form.price_usdt}
                 onChange={(e) => setForm({ ...form, price_usdt: e.target.value })}
                 placeholder={String(MIN_PRICE)}
+                aria-invalid={priceInvalid}
               />
+              {priceInvalid && (
+                <span className="text-xs font-bold text-destructive">
+                  {tr(`الحد الأدنى لقيمة العرض هو ${MIN_PRICE} USDT`, `Minimum listing value is ${MIN_PRICE} USDT`)}
+                </span>
+              )}
             </label>
 
             <label className="grid gap-1.5 text-sm">
               <span className="text-muted-foreground">{tr("وسم قصير (عربي)", "Short tag (Arabic)")}</span>
-              <input className={field} value={form.tag_ar} onChange={(e) => setForm({ ...form, tag_ar: e.target.value })} />
+              <input className={field} maxLength={40} value={form.tag_ar} onChange={(e) => setForm({ ...form, tag_ar: e.target.value })} />
             </label>
             <label className="grid gap-1.5 text-sm">
               <span className="text-muted-foreground">{tr("وسم قصير (إنجليزي)", "Short tag (English)")}</span>
-              <input className={field} value={form.tag_en} onChange={(e) => setForm({ ...form, tag_en: e.target.value })} />
+              <input className={field} maxLength={40} value={form.tag_en} onChange={(e) => setForm({ ...form, tag_en: e.target.value })} />
             </label>
 
-            <div className="sm:col-span-2 grid gap-1.5 text-sm">
-              <span className="text-muted-foreground">{tr("صورة الغلاف", "Cover image")}</span>
-              <div className="flex flex-wrap gap-3">
-                {Object.entries(COVERS).map(([key, src]) => (
-                  <button
-                    type="button"
-                    key={key}
-                    onClick={() => setForm({ ...form, cover_key: key })}
-                    className={`overflow-hidden rounded-lg border-2 transition-colors ${
-                      form.cover_key === key ? "border-primary" : "border-border"
-                    }`}
-                    aria-label={key}
-                  >
-                    <img src={src} alt={key} className="h-16 w-24 object-cover" loading="lazy" />
-                  </button>
-                ))}
-              </div>
-            </div>
+            <label className="grid gap-1.5 text-sm sm:col-span-2">
+              <span className="text-muted-foreground">{tr("وصف الخدمة (عربي)", "Service description (Arabic)")}</span>
+              <textarea
+                className={`${field} min-h-32 resize-y ${descInvalid ? "border-destructive focus:border-destructive" : ""}`}
+                maxLength={2000}
+                value={form.description_ar}
+                onChange={(e) => setForm({ ...form, description_ar: e.target.value })}
+                placeholder={tr("اشرح تفاصيل خدمتك ومخرجاتها ومدة التسليم...", "Describe your service, deliverables and delivery time...")}
+                aria-invalid={descInvalid}
+              />
+              <span className={`text-xs ${descInvalid ? "font-bold text-destructive" : "text-muted-foreground"}`}>
+                {descInvalid
+                  ? tr(`الوصف يجب ألا يقل عن ${MIN_DESC} حرفاً (${descLen}/${MIN_DESC})`, `Description must be at least ${MIN_DESC} characters (${descLen}/${MIN_DESC})`)
+                  : `${descLen}/${MIN_DESC}`}
+              </span>
+            </label>
 
-            {error && <p className="sm:col-span-2 text-sm text-destructive">{error}</p>}
-            {done && (
-              <p className="sm:col-span-2 text-sm text-primary">
-                {tr("تم نشر العرض بنجاح.", "Listing published successfully.")}
-              </p>
-            )}
+            <div className="grid gap-1.5 text-sm sm:col-span-2">
+              <span className="text-muted-foreground">{tr("صورة الغلاف", "Cover image")}</span>
+              <UnsplashPicker selected={cover} onSelect={setCover} />
+            </div>
 
             <div className="sm:col-span-2">
               <button
                 type="submit"
-                disabled={create.isPending}
-                className="flex h-11 items-center gap-2 rounded-xl bg-primary px-5 text-sm font-bold text-primary-foreground disabled:opacity-60"
+                disabled={!canSubmit || create.isPending}
+                className="flex h-11 items-center gap-2 rounded-xl bg-primary px-5 text-sm font-bold text-primary-foreground transition-opacity disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {create.isPending ? <Loader2 className="size-4 animate-spin" /> : <PlusCircle className="size-4" />}
                 {tr("نشر العرض", "Publish listing")}
