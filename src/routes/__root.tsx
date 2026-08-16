@@ -14,6 +14,8 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Shell } from "../components/site/Shell";
 import { LangProvider } from "../lib/lang";
 import { ViewModeProvider } from "../lib/view-mode";
+import { Toaster } from "@/components/ui/sonner";
+
 
 import { supabase } from "@/integrations/supabase/client";
 
