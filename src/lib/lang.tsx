@@ -33,7 +33,10 @@ const dict = {
     wallet: "Wallet",
     workspace: "Workspace",
     admin: "Admin",
+    referrals: "Referrals",
+    pricing: "Plans",
     brand: "Al-Munjaz",
+
     notifications: "Notifications",
     menu: "Menu",
     verified: "Verified",
