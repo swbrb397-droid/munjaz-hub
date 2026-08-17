@@ -18,7 +18,10 @@ const nav = [
   { to: "/dashboard", key: "dashboard" },
   { to: "/wallet", key: "wallet" },
   { to: "/workspace", key: "workspace" },
+  { to: "/referrals", key: "referrals" },
+  { to: "/pricing", key: "pricing" },
   { to: "/admin", key: "admin" },
+
 ] as const satisfies ReadonlyArray<{ to: string; key: TranslationKey }>;
 
 
