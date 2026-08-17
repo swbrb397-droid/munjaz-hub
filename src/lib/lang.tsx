@@ -14,6 +14,8 @@ const dict = {
     admin: "الإدارة",
     referrals: "الإحالات",
     pricing: "الباقات",
+    brand: "الـمُـنْـجِـز",
+
 
     notifications: "التنبيهات",
     menu: "القائمة",
