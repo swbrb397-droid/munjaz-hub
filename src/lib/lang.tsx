@@ -12,7 +12,11 @@ const dict = {
     wallet: "المحفظة",
     workspace: "مساحة الطلب",
     admin: "الإدارة",
+    referrals: "الإحالات",
+    pricing: "الباقات",
     brand: "الـمُـنْـجِـز",
+
+
     notifications: "التنبيهات",
     menu: "القائمة",
     verified: "موثّق",
@@ -29,7 +33,10 @@ const dict = {
     wallet: "Wallet",
     workspace: "Workspace",
     admin: "Admin",
+    referrals: "Referrals",
+    pricing: "Plans",
     brand: "Al-Munjaz",
+
     notifications: "Notifications",
     menu: "Menu",
     verified: "Verified",
