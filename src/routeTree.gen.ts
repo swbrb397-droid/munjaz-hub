@@ -13,6 +13,8 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as LeaderboardRouteImport } from './routes/leaderboard'
+import { Route as PricingRouteImport } from './routes/pricing'
+import { Route as ReferralsRouteImport } from './routes/referrals'
 import { Route as StoreRouteImport } from './routes/store'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
@@ -40,6 +42,16 @@ const AuthRoute = AuthRouteImport.update({
 const LeaderboardRoute = LeaderboardRouteImport.update({
   id: '/leaderboard',
   path: '/leaderboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PricingRoute = PricingRouteImport.update({
+  id: '/pricing',
+  path: '/pricing',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReferralsRoute = ReferralsRouteImport.update({
+  id: '/referrals',
+  path: '/referrals',
   getParentRoute: () => rootRouteImport,
 } as any)
 const StoreRoute = StoreRouteImport.update({
@@ -93,6 +105,8 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/leaderboard': typeof LeaderboardRoute
+  '/pricing': typeof PricingRoute
+  '/referrals': typeof ReferralsRoute
   '/store': typeof StoreRoute
   '/terms': typeof TermsRoute
   '/admin': typeof AuthenticatedAdminRoute
@@ -107,6 +121,8 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/leaderboard': typeof LeaderboardRoute
+  '/pricing': typeof PricingRoute
+  '/referrals': typeof ReferralsRoute
   '/store': typeof StoreRoute
   '/terms': typeof TermsRoute
   '/admin': typeof AuthenticatedAdminRoute
@@ -123,6 +139,8 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/leaderboard': typeof LeaderboardRoute
+  '/pricing': typeof PricingRoute
+  '/referrals': typeof ReferralsRoute
   '/store': typeof StoreRoute
   '/terms': typeof TermsRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
@@ -139,6 +157,8 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/leaderboard'
+    | '/pricing'
+    | '/referrals'
     | '/store'
     | '/terms'
     | '/admin'
@@ -153,6 +173,8 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/leaderboard'
+    | '/pricing'
+    | '/referrals'
     | '/store'
     | '/terms'
     | '/admin'
@@ -168,6 +190,8 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/leaderboard'
+    | '/pricing'
+    | '/referrals'
     | '/store'
     | '/terms'
     | '/_authenticated/admin'
@@ -184,6 +208,8 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   LeaderboardRoute: typeof LeaderboardRoute
+  PricingRoute: typeof PricingRoute
+  ReferralsRoute: typeof ReferralsRoute
   StoreRoute: typeof StoreRoute
   TermsRoute: typeof TermsRoute
   ListingIdRoute: typeof ListingIdRoute
@@ -218,6 +244,20 @@ declare module '@tanstack/react-router' {
       path: '/leaderboard'
       fullPath: '/leaderboard'
       preLoaderRoute: typeof LeaderboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pricing': {
+      id: '/pricing'
+      path: '/pricing'
+      fullPath: '/pricing'
+      preLoaderRoute: typeof PricingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/referrals': {
+      id: '/referrals'
+      path: '/referrals'
+      fullPath: '/referrals'
+      preLoaderRoute: typeof ReferralsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/store': {
@@ -310,6 +350,8 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   LeaderboardRoute: LeaderboardRoute,
+  PricingRoute: PricingRoute,
+  ReferralsRoute: ReferralsRoute,
   StoreRoute: StoreRoute,
   TermsRoute: TermsRoute,
   ListingIdRoute: ListingIdRoute,
