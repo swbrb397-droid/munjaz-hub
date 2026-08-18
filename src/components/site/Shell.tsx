@@ -18,6 +18,8 @@ const nav = [
   { to: "/dashboard", key: "dashboard" },
   { to: "/wallet", key: "wallet" },
   { to: "/workspace", key: "workspace" },
+  { to: "/orders", key: "orders" },
+  { to: "/profile", key: "profile" },
   { to: "/referrals", key: "referrals" },
   { to: "/pricing", key: "pricing" },
   { to: "/admin", key: "admin" },
