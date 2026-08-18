@@ -14,6 +14,8 @@ const dict = {
     admin: "الإدارة",
     referrals: "الإحالات",
     pricing: "الباقات",
+    orders: "الطلبات",
+    profile: "الملف والتوثيق",
     brand: "الـمُـنْـجِـز",
 
 
@@ -35,6 +37,8 @@ const dict = {
     admin: "Admin",
     referrals: "Referrals",
     pricing: "Plans",
+    orders: "Orders",
+    profile: "Profile & KYC",
     brand: "Al-Munjaz",
 
     notifications: "Notifications",
