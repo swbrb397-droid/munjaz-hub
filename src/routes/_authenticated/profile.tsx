@@ -89,7 +89,10 @@ function ProfilePage() {
                 onChange={(e) => {
                   const f = e.target.files?.[0];
                   if (!f) return;
-                  if (f.size > 10 * 1024 * 1024) return toast.error("الحد الأقصى 10MB");
+                  if (f.size > 10 * 1024 * 1024) {
+                    toast.error("الحد الأقصى 10MB");
+                    return;
+                  }
                   setAvatar(URL.createObjectURL(f));
                   toast.success("تم تحديث الصورة الشخصية");
                 }}
@@ -186,8 +189,14 @@ function Dropzone({ label, hint, doc, onPick }: { label: string; hint: string; d
   const handle = (list: FileList | null) => {
     const f = list?.[0];
     if (!f) return;
-    if (f.size > 10 * 1024 * 1024) return toast.error("حجم الملف يتجاوز 10MB");
-    if (!/(jpe?g|png|pdf)$/i.test(f.type) && !/\.(jpe?g|png|pdf)$/i.test(f.name)) return toast.error("الصيغ المسموحة: JPG, PNG, PDF");
+    if (f.size > 10 * 1024 * 1024) {
+      toast.error("حجم الملف يتجاوز 10MB");
+      return;
+    }
+    if (!/(jpe?g|png|pdf)$/i.test(f.type) && !/\.(jpe?g|png|pdf)$/i.test(f.name)) {
+      toast.error("الصيغ المسموحة: JPG, PNG, PDF");
+      return;
+    }
     onPick({ name: f.name, url: f.type.startsWith("image/") ? URL.createObjectURL(f) : "" });
   };
 
@@ -441,16 +450,16 @@ function SettingsPanel({ twoFa, setTwoFa }: { twoFa: boolean; setTwoFa: (v: bool
       <Card>
         <h3 className="text-sm font-black">التنبيهات</h3>
         <div className="mt-3 grid gap-2">
-          {[
+          {([
             ["delivery", "تسليم الطلبات"],
             ["escrow", "تحرير مبالغ الضمان"],
             ["referral", "أرباح الإحالات"],
-          ].map(([k, label]) => (
+          ] as const).map(([k, label]) => (
             <label key={k} className="flex items-center justify-between gap-3 rounded-xl border border-border px-4 py-3 text-sm">
               <span className="min-w-0 truncate font-bold">{label}</span>
               <input
                 type="checkbox"
-                checked={notif[k as keyof typeof notif]}
+                checked={notif[k]}
                 onChange={(e) => setNotif({ ...notif, [k]: e.target.checked })}
                 className="size-4 shrink-0 accent-primary"
               />
