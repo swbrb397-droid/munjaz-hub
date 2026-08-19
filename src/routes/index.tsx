@@ -177,21 +177,43 @@ export function ServiceCard({
 
 export function NftCard({ name, collection, price, hue }: { name: string; collection: string; price: number; hue: number }) {
   return (
-    <Card className="transition-transform hover:-translate-y-1">
+    <Card className="group relative overflow-hidden transition-transform hover:-translate-y-1">
       <div
-        className="h-44 rounded-xl"
-        style={{ background: `radial-gradient(circle at 30% 25%, oklch(0.8 0.18 ${hue}), oklch(0.25 0.08 ${hue + 40}))` }}
-      />
-      <div className="mt-4 flex items-end justify-between">
-        <div>
-          <p className="text-xs text-muted-foreground">{collection}</p>
-          <p className="font-bold">{name}</p>
+        className="relative h-44 overflow-hidden rounded-xl border"
+        style={{
+          borderColor: `oklch(0.75 0.16 ${hue} / 0.45)`,
+          boxShadow: `0 0 24px oklch(0.75 0.16 ${hue} / 0.25), inset 0 0 40px oklch(0.7 0.14 ${hue + 40} / 0.25)`,
+          backgroundColor: `oklch(0.16 0.04 ${hue + 20})`,
+          backgroundImage: [
+            `radial-gradient(60% 60% at 25% 20%, oklch(0.78 0.19 ${hue} / 0.55), transparent 70%)`,
+            `radial-gradient(55% 55% at 80% 75%, oklch(0.7 0.17 ${hue + 60} / 0.45), transparent 70%)`,
+            `linear-gradient(oklch(0.9 0.05 ${hue} / 0.10) 1px, transparent 1px)`,
+            `linear-gradient(90deg, oklch(0.9 0.05 ${hue} / 0.10) 1px, transparent 1px)`,
+          ].join(","),
+          backgroundSize: "100% 100%, 100% 100%, 22px 22px, 22px 22px",
+        }}
+      >
+        <span className="absolute top-2 end-2 rounded-full border border-white/20 bg-background/60 px-2 py-0.5 text-[10px] font-bold tracking-wide text-foreground backdrop-blur">
+          NFT · Web3
+        </span>
+        <span className="absolute bottom-2 start-2 rounded-full border border-primary/40 bg-background/60 px-2 py-0.5 font-mono text-[10px] text-primary backdrop-blur">
+          ERC-721
+        </span>
+        <div className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+          style={{ background: `linear-gradient(120deg, transparent 40%, oklch(0.95 0.05 ${hue} / 0.18) 50%, transparent 60%)` }}
+        />
+      </div>
+      <div className="mt-4 flex items-end justify-between gap-2">
+        <div className="min-w-0">
+          <p className="truncate text-xs text-muted-foreground">{collection}</p>
+          <p className="truncate font-bold">{name}</p>
         </div>
-        <p className="font-black text-primary">{price} USDT</p>
+        <p className="shrink-0 font-black text-primary">{price} USDT</p>
       </div>
     </Card>
   );
 }
+
 
 function AffiliateCalculator() {
   const { tr } = useLang();

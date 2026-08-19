@@ -1,6 +1,7 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { Award, Coins, Copy, ShoppingBag, TrendingUp, Users } from "lucide-react";
+import { ArrowLeft, Award, Coins, Copy, ShoppingBag, TrendingUp, Users } from "lucide-react";
+
 import { Card, Section } from "@/components/site/Shell";
 import { useLang } from "@/lib/lang";
 import { useAuth } from "@/hooks/use-auth";
@@ -148,12 +149,15 @@ function Dashboard() {
           </Card>
 
           <Card>
-            <h3 className="font-bold">{tr("برنامج الإحالة", "Referral program")}</h3>
-            <p className="mt-2 text-sm text-muted-foreground">
-              {tr("18% من رسوم المنصة لمدة 12 شهراً عن كل مستخدم تدعوه.", "18% of platform fees for 12 months for every user you invite.")}
+            <h3 className="font-bold">{tr("برنامج الإحالة المالي", "Affiliate program")}</h3>
+            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+              {tr(
+                "برنامج الإحالة المالي: 20% للشهر الأول ثم 10% لبقية الـ 12 شهراً",
+                "Affiliate program: 20% for the first month, then 10% for the rest of the 12 months",
+              )}
             </p>
             <div className="mt-3 flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-xs">
-              <span className="truncate">{refLink || tr("جارٍ التحميل…", "Loading…")}</span>
+              <span className="truncate font-mono text-accent">{refLink || tr("جارٍ التحميل…", "Loading…")}</span>
               <button
                 type="button"
                 className="ms-auto shrink-0 text-primary"
@@ -164,6 +168,13 @@ function Dashboard() {
               </button>
             </div>
             {copied && <p className="mt-2 text-xs text-primary">{tr("تم النسخ", "Copied")}</p>}
+            <Link
+              to="/referrals"
+              className="mt-4 flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-bold text-primary-foreground"
+            >
+              {tr("فتح مركز الإحالة والعمولات", "Open the referral hub")}
+              <ArrowLeft className="size-4 rtl:rotate-180" />
+            </Link>
             <dl className="mt-3 grid gap-2 text-sm">
               <div className="flex justify-between border-b border-border pb-2">
                 <dt className="text-muted-foreground">{tr("عدد الإحالات", "Referrals")}</dt>
@@ -175,6 +186,7 @@ function Dashboard() {
               </div>
             </dl>
           </Card>
+
         </div>
       </div>
     </Section>

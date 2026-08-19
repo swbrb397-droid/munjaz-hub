@@ -168,16 +168,21 @@ function PricingPage() {
             aria-expanded={openTable}
             className="grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 p-5 text-right"
           >
-            <span className="min-w-0 truncate font-bold">جدول مقارنة المزايا التفصيلي</span>
+            <span className="min-w-0 font-bold">جدول مقارنة المزايا التفصيلية</span>
             <ChevronDown className={`size-4 shrink-0 transition-transform ${openTable ? "rotate-180" : ""}`} />
           </button>
           {openTable && (
             <div className="w-full overflow-x-auto border-t border-border">
-              <table className="w-full min-w-[640px] text-right text-xs">
+              <table className="w-full min-w-[650px] text-right text-xs">
                 <thead className="bg-secondary/60 text-muted-foreground">
                   <tr>
-                    {["الميزة", "المجانية", "المحترفين", "الشركات"].map((h) => (
-                      <th key={h} className="whitespace-nowrap px-4 py-3 font-semibold">{h}</th>
+                    {["الميزة", "المجانية", "المحترفين", "الشركات"].map((h, i) => (
+                      <th
+                        key={h}
+                        className={`whitespace-nowrap px-4 py-3 font-semibold ${i === 0 ? "sticky start-0 z-10 bg-card" : ""}`}
+                      >
+                        {h}
+                      </th>
                     ))}
                   </tr>
                 </thead>
@@ -190,7 +195,7 @@ function PricingPage() {
                     ["الدعم الفني", "قياسي", "أولوية", "مدير حساب مخصص"],
                   ].map((r) => (
                     <tr key={r[0]} className="border-t border-border">
-                      <td className="whitespace-nowrap px-4 py-3 font-semibold">{r[0]}</td>
+                      <td className="sticky start-0 z-10 whitespace-nowrap bg-card px-4 py-3 font-semibold">{r[0]}</td>
                       <td className="whitespace-nowrap px-4 py-3 text-muted-foreground">{r[1]}</td>
                       <td className="whitespace-nowrap px-4 py-3 text-primary">{r[2]}</td>
                       <td className="whitespace-nowrap px-4 py-3 text-accent">{r[3]}</td>
@@ -200,6 +205,7 @@ function PricingPage() {
               </table>
             </div>
           )}
+
         </Card>
       </Section>
 

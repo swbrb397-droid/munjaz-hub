@@ -87,16 +87,18 @@ function ReferralHub() {
                 value={REF_LINK}
                 dir="ltr"
                 aria-label={tr("رابط الإحالة", "Affiliate link")}
-                className="min-w-0 rounded-xl border border-border bg-background px-3 py-2.5 text-xs text-muted-foreground"
+                onFocus={(e) => e.currentTarget.select()}
+                className="min-w-0 overflow-x-auto rounded-xl border border-accent/40 bg-background px-3 py-2.5 font-mono text-[11px] text-accent sm:text-xs"
               />
               <button
                 type="button"
                 onClick={copy}
-                className="flex shrink-0 items-center gap-1.5 rounded-xl bg-primary px-3 py-2.5 text-xs font-bold text-primary-foreground"
+                className="flex shrink-0 items-center gap-1.5 rounded-xl bg-primary px-3 py-2.5 text-xs font-bold text-primary-foreground shadow-lg hover:opacity-90"
               >
                 <Copy className="size-4" /> {tr("نسخ الرابط", "Copy link")}
               </button>
             </div>
+
             <p className="mt-3 flex items-start gap-2 rounded-xl border border-primary/30 bg-primary/10 p-3 text-xs leading-relaxed text-primary">
               <Info className="mt-0.5 size-4 shrink-0" />
               لكل بائع رابط إحالة فريد واحد، ويتم تثبيت المشتري بحسابك بشكل دائم ونهائي فور إتمام التسجيل.
