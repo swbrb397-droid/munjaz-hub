@@ -1,30 +1,53 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import { Bell, Globe, LogIn, LogOut, Menu, Repeat2, Wallet2, X } from "lucide-react";
+import {
+  Bell, Globe, LogIn, LogOut, Menu, Repeat2, Wallet2, X,
+  Home, Store, Trophy, PlusCircle, LayoutDashboard, ClipboardList, Users, UserCog, CreditCard, ShieldCheck,
+  type LucideIcon,
+} from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useLang, type TranslationKey } from "@/lib/lang";
 import { useAuth } from "@/hooks/use-auth";
 import { useViewMode } from "@/lib/view-mode";
 import { ErrorBoundary } from "@/components/site/ErrorBoundary";
-import { useWallet } from "@/lib/queries";
+import { useRoles, useWallet } from "@/lib/queries";
+import { SupportWidget } from "@/components/site/SupportWidget";
 import { supabase } from "@/integrations/supabase/client";
 
+type NavItem = { to: string; key: TranslationKey; icon: LucideIcon };
+type NavGroup = { title: [string, string]; items: ReadonlyArray<NavItem> };
 
-const nav = [
-  { to: "/", key: "home" },
-  { to: "/store", key: "store" },
-  { to: "/leaderboard", key: "leaderboard" },
-  { to: "/create-listing", key: "createListing" },
-  { to: "/dashboard", key: "dashboard" },
-  { to: "/wallet", key: "wallet" },
-  { to: "/workspace", key: "workspace" },
-  { to: "/orders", key: "orders" },
-  { to: "/profile", key: "profile" },
-  { to: "/referrals", key: "referrals" },
-  { to: "/pricing", key: "pricing" },
-  { to: "/admin", key: "admin" },
+const navGroups: ReadonlyArray<NavGroup> = [
+  {
+    title: ["الرئيسية والسوق", "Home & marketplace"],
+    items: [
+      { to: "/", key: "home", icon: Home },
+      { to: "/store", key: "store", icon: Store },
+      { to: "/leaderboard", key: "leaderboard", icon: Trophy },
+      { to: "/create-listing", key: "createListing", icon: PlusCircle },
+    ],
+  },
+  {
+    title: ["النشاط والمالية", "Activity & finance"],
+    items: [
+      { to: "/dashboard", key: "dashboard", icon: LayoutDashboard },
+      { to: "/wallet", key: "wallet", icon: Wallet2 },
+      { to: "/orders", key: "orders", icon: ClipboardList },
+      { to: "/workspace", key: "workspace", icon: ClipboardList },
+      { to: "/referrals", key: "referrals", icon: Users },
+    ],
+  },
+  {
+    title: ["الحساب والأمان", "Account & security"],
+    items: [
+      { to: "/profile", key: "profile", icon: UserCog },
+      { to: "/pricing", key: "pricing", icon: CreditCard },
+    ],
+  },
+];
 
-] as const satisfies ReadonlyArray<{ to: string; key: TranslationKey }>;
+const flatNav = navGroups.flatMap((g) => g.items);
+
 
 
 function AuthButton() {
