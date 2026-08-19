@@ -282,14 +282,21 @@ export function Shell({ children }: { children: ReactNode }) {
             <Link to="/terms" className="hover:text-foreground transition-colors">
               {t("terms")}
             </Link>
+            {isAdmin && (
+              <Link to="/admin" className="flex items-center gap-1.5 text-muted-foreground/70 hover:text-foreground">
+                <ShieldCheck size={18} strokeWidth={1.8} /> {t("admin")}
+              </Link>
+            )}
             <span className="hidden sm:inline">·</span>
             <p className="hidden sm:block">{t("footerSub")}</p>
           </div>
         </div>
       </footer>
+      <SupportWidget />
     </div>
   );
 }
+
 
 export function Section({
   title,
