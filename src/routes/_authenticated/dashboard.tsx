@@ -1,6 +1,7 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { Award, Coins, Copy, ShoppingBag, TrendingUp, Users } from "lucide-react";
+import { ArrowLeft, Award, Coins, Copy, ShoppingBag, TrendingUp, Users } from "lucide-react";
+
 import { Card, Section } from "@/components/site/Shell";
 import { useLang } from "@/lib/lang";
 import { useAuth } from "@/hooks/use-auth";
