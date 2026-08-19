@@ -177,10 +177,11 @@ function Notifications() {
 
 export function Shell({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const { isAuthenticated } = useAuth();
   const wallet = useWallet();
-
+  const roles = useRoles();
+  const isAdmin = (roles.data ?? []).includes("admin");
 
   return (
     <div className="min-h-screen">
@@ -192,12 +193,12 @@ export function Shell({ children }: { children: ReactNode }) {
           </Link>
 
           <nav className="mx-auto hidden items-center gap-1 lg:flex">
-            {nav.map((item) => (
+            {flatNav.map((item) => (
               <Link
                 key={item.to}
                 to={item.to}
-                className="rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-                activeProps={{ className: "rounded-lg px-3 py-2 text-sm bg-secondary text-primary" }}
+                className="rounded-lg px-2.5 py-2.5 text-sm text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                activeProps={{ className: "rounded-lg px-2.5 py-2.5 text-sm bg-secondary text-primary" }}
                 activeOptions={{ exact: item.to === "/" }}
               >
                 {t(item.key)}
@@ -229,22 +230,45 @@ export function Shell({ children }: { children: ReactNode }) {
         </div>
 
         {open && (
-          <nav className="grid gap-1 border-t border-border px-4 py-3 lg:hidden">
-            {nav.map((item) => (
-              <Link
-                key={item.to}
-                to={item.to}
-                onClick={() => setOpen(false)}
-                className="rounded-lg px-3 py-2 text-sm text-muted-foreground hover:bg-secondary"
-                activeProps={{ className: "rounded-lg px-3 py-2 text-sm bg-secondary text-primary" }}
-                activeOptions={{ exact: item.to === "/" }}
-              >
-                {t(item.key)}
-              </Link>
+          <nav className="max-h-[75vh] overflow-y-auto border-t border-border px-4 py-3 lg:hidden">
+            {navGroups.map((group, gi) => (
+              <div key={group.title[0]} className={gi > 0 ? "mt-3 border-t border-border pt-3" : ""}>
+                <p className="px-3 pb-1 text-[11px] font-bold uppercase tracking-wide text-muted-foreground/70">
+                  {lang === "ar" ? group.title[0] : group.title[1]}
+                </p>
+                <div className="grid gap-0.5">
+                  {group.items.map((item) => (
+                    <Link
+                      key={item.to}
+                      to={item.to}
+                      onClick={() => setOpen(false)}
+                      className="flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm text-muted-foreground hover:bg-secondary"
+                      activeProps={{ className: "flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm bg-secondary text-primary" }}
+                      activeOptions={{ exact: item.to === "/" }}
+                    >
+                      <item.icon size={18} strokeWidth={1.8} className="shrink-0" />
+                      {t(item.key)}
+                    </Link>
+                  ))}
+                </div>
+              </div>
             ))}
+            {isAdmin && (
+              <div className="mt-3 border-t border-border pt-3">
+                <Link
+                  to="/admin"
+                  onClick={() => setOpen(false)}
+                  className="flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-xs text-muted-foreground hover:bg-secondary"
+                >
+                  <ShieldCheck size={18} strokeWidth={1.8} className="shrink-0" />
+                  {t("admin")}
+                </Link>
+              </div>
+            )}
           </nav>
         )}
       </header>
+
 
       <main>
         <ErrorBoundary label="page">{children}</ErrorBoundary>
