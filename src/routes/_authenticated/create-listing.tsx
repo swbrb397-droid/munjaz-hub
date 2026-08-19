@@ -142,6 +142,8 @@ function CreateListing() {
 
   const field = "w-full rounded-lg border border-input bg-surface px-3 py-2 text-sm outline-none focus:border-primary";
 
+  const step1Valid = !titleMissing && Number.isFinite(price) && price >= MIN_PRICE;
+
   return (
     <>
       <Section
@@ -152,93 +154,138 @@ function CreateListing() {
         )}
       >
         <Card>
-          <form onSubmit={submit} className="grid gap-4 sm:grid-cols-2">
-            <label className="grid gap-1.5 text-sm">
-              <span className="text-muted-foreground">{tr("العنوان (عربي)", "Title (Arabic)")}</span>
-              <input className={field} maxLength={120} value={form.title_ar} onChange={(e) => setForm({ ...form, title_ar: e.target.value })} />
-            </label>
-            <label className="grid gap-1.5 text-sm">
-              <span className="text-muted-foreground">{tr("العنوان (إنجليزي)", "Title (English)")}</span>
-              <input className={field} maxLength={120} value={form.title_en} onChange={(e) => setForm({ ...form, title_en: e.target.value })} />
-            </label>
-
-            <label className="grid gap-1.5 text-sm">
-              <span className="text-muted-foreground">{tr("التصنيف", "Category")}</span>
-              <select
-                className={field}
-                value={form.category}
-                onChange={(e) => setForm({ ...form, category: e.target.value as ListingCategory })}
-              >
-                {categories.map((c) => (
-                  <option key={c.key} value={c.key}>{c.label}</option>
-                ))}
-              </select>
-            </label>
-
-            <label className="grid gap-1.5 text-sm">
-              <span className="text-muted-foreground">{tr("السعر (USDT)", "Price (USDT)")}</span>
-              <input
-                className={`${field} ${priceInvalid ? "border-destructive focus:border-destructive" : ""}`}
-                type="number"
-                min={MIN_PRICE}
-                step="0.01"
-                inputMode="decimal"
-                value={form.price_usdt}
-                onChange={(e) => setForm({ ...form, price_usdt: e.target.value })}
-                placeholder={String(MIN_PRICE)}
-                aria-invalid={priceInvalid}
-              />
-              {priceInvalid && (
-                <span className="text-xs font-bold text-destructive">
-                  {tr(`الحد الأدنى لقيمة العرض هو ${MIN_PRICE} USDT`, `Minimum listing value is ${MIN_PRICE} USDT`)}
-                </span>
-              )}
-            </label>
-
-            <label className="grid gap-1.5 text-sm">
-              <span className="text-muted-foreground">{tr("وسم قصير (عربي)", "Short tag (Arabic)")}</span>
-              <input className={field} maxLength={40} value={form.tag_ar} onChange={(e) => setForm({ ...form, tag_ar: e.target.value })} />
-            </label>
-            <label className="grid gap-1.5 text-sm">
-              <span className="text-muted-foreground">{tr("وسم قصير (إنجليزي)", "Short tag (English)")}</span>
-              <input className={field} maxLength={40} value={form.tag_en} onChange={(e) => setForm({ ...form, tag_en: e.target.value })} />
-            </label>
-
-            <label className="grid gap-1.5 text-sm sm:col-span-2">
-              <span className="text-muted-foreground">{tr("وصف الخدمة (عربي)", "Service description (Arabic)")}</span>
-              <textarea
-                className={`${field} min-h-32 resize-y ${descInvalid ? "border-destructive focus:border-destructive" : ""}`}
-                maxLength={2000}
-                value={form.description_ar}
-                onChange={(e) => setForm({ ...form, description_ar: e.target.value })}
-                placeholder={tr("اشرح تفاصيل خدمتك ومخرجاتها ومدة التسليم...", "Describe your service, deliverables and delivery time...")}
-                aria-invalid={descInvalid}
-              />
-              <span className={`text-xs ${descInvalid ? "font-bold text-destructive" : "text-muted-foreground"}`}>
-                {descInvalid
-                  ? tr(`الوصف يجب ألا يقل عن ${MIN_DESC} حرفاً (${descLen}/${MIN_DESC})`, `Description must be at least ${MIN_DESC} characters (${descLen}/${MIN_DESC})`)
-                  : `${descLen}/${MIN_DESC}`}
-              </span>
-            </label>
-
-            <div className="grid gap-1.5 text-sm sm:col-span-2">
-              <span className="text-muted-foreground">{tr("صورة الغلاف", "Cover image")}</span>
-              <UnsplashPicker selected={cover} onSelect={setCover} />
-            </div>
-
-            <div className="sm:col-span-2">
+          <div className="mb-5 grid grid-cols-2 gap-2 rounded-xl border border-border p-1">
+            {([1, 2] as const).map((s) => (
               <button
-                type="submit"
-                disabled={!canSubmit || create.isPending}
-                className="flex h-11 items-center gap-2 rounded-xl bg-primary px-5 text-sm font-bold text-primary-foreground transition-opacity disabled:cursor-not-allowed disabled:opacity-50"
+                key={s}
+                type="button"
+                onClick={() => setStep(s)}
+                disabled={s === 2 && !step1Valid}
+                className={`rounded-lg px-3 py-2.5 text-xs font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
+                  step === s ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-secondary"
+                }`}
               >
-                {create.isPending ? <Loader2 className="size-4 animate-spin" /> : <PlusCircle className="size-4" />}
-                {tr("نشر العرض", "Publish listing")}
+                {s === 1
+                  ? tr("الخطوة 1: التفاصيل الأساسية", "Step 1: Basic details")
+                  : tr("الخطوة 2: المحتوى والغلاف", "Step 2: Content & cover")}
               </button>
-            </div>
+            ))}
+          </div>
+
+          <form onSubmit={submit} className="grid gap-4 sm:grid-cols-2">
+            {step === 1 && (
+              <>
+                <label className="grid gap-1.5 text-sm">
+                  <span className="text-muted-foreground">{tr("العنوان (عربي)", "Title (Arabic)")}</span>
+                  <input className={field} maxLength={120} value={form.title_ar} onChange={(e) => setForm({ ...form, title_ar: e.target.value })} />
+                </label>
+                <label className="grid gap-1.5 text-sm">
+                  <span className="text-muted-foreground">{tr("العنوان (إنجليزي)", "Title (English)")}</span>
+                  <input className={field} maxLength={120} value={form.title_en} onChange={(e) => setForm({ ...form, title_en: e.target.value })} />
+                </label>
+
+                <label className="grid gap-1.5 text-sm">
+                  <span className="text-muted-foreground">{tr("التصنيف", "Category")}</span>
+                  <select
+                    className={field}
+                    value={form.category}
+                    onChange={(e) => setForm({ ...form, category: e.target.value as ListingCategory })}
+                  >
+                    {categories.map((c) => (
+                      <option key={c.key} value={c.key}>{c.label}</option>
+                    ))}
+                  </select>
+                </label>
+
+                <label className="grid gap-1.5 text-sm">
+                  <span className="text-muted-foreground">{tr("السعر (USDT)", "Price (USDT)")}</span>
+                  <input
+                    className={`${field} ${priceInvalid ? "border-destructive focus:border-destructive" : ""}`}
+                    type="number"
+                    min={MIN_PRICE}
+                    step="0.01"
+                    inputMode="decimal"
+                    value={form.price_usdt}
+                    onChange={(e) => setForm({ ...form, price_usdt: e.target.value })}
+                    placeholder={String(MIN_PRICE)}
+                    aria-invalid={priceInvalid}
+                  />
+                  {priceInvalid && (
+                    <span className="text-xs font-bold text-destructive">
+                      {tr(`الحد الأدنى لقيمة العرض هو ${MIN_PRICE} USDT`, `Minimum listing value is ${MIN_PRICE} USDT`)}
+                    </span>
+                  )}
+                </label>
+
+                <label className="grid gap-1.5 text-sm">
+                  <span className="text-muted-foreground">{tr("وسم قصير (عربي)", "Short tag (Arabic)")}</span>
+                  <input className={field} maxLength={40} value={form.tag_ar} onChange={(e) => setForm({ ...form, tag_ar: e.target.value })} />
+                </label>
+                <label className="grid gap-1.5 text-sm">
+                  <span className="text-muted-foreground">{tr("وسم قصير (إنجليزي)", "Short tag (English)")}</span>
+                  <input className={field} maxLength={40} value={form.tag_en} onChange={(e) => setForm({ ...form, tag_en: e.target.value })} />
+                </label>
+
+                <div className="sm:col-span-2">
+                  <button
+                    type="button"
+                    onClick={() => setStep(2)}
+                    disabled={!step1Valid}
+                    className="h-11 rounded-xl bg-primary px-5 text-sm font-bold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {tr("التالي: المحتوى والغلاف", "Next: content & cover")}
+                  </button>
+                </div>
+              </>
+            )}
+
+            {step === 2 && (
+              <>
+                <label className="grid gap-1.5 text-sm sm:col-span-2">
+                  <span className="text-muted-foreground">{tr("وصف الخدمة (عربي)", "Service description (Arabic)")}</span>
+                  <textarea
+                    className={`${field} min-h-32 resize-y ${descInvalid ? "border-destructive focus:border-destructive" : ""}`}
+                    maxLength={2000}
+                    value={form.description_ar}
+                    onChange={(e) => setForm({ ...form, description_ar: e.target.value })}
+                    placeholder={tr("اشرح تفاصيل خدمتك ومخرجاتها ومدة التسليم...", "Describe your service, deliverables and delivery time...")}
+                    aria-invalid={descInvalid}
+                  />
+                  <span className={`text-xs ${descInvalid ? "font-bold text-destructive" : "text-muted-foreground"}`}>
+                    {descInvalid
+                      ? tr(`الوصف يجب ألا يقل عن ${MIN_DESC} حرفاً (${descLen}/${MIN_DESC})`, `Description must be at least ${MIN_DESC} characters (${descLen}/${MIN_DESC})`)
+                      : `${descLen}/${MIN_DESC}`}
+                  </span>
+                </label>
+
+                <div className="grid gap-1.5 text-sm sm:col-span-2">
+                  <span className="text-muted-foreground">{tr("صورة الغلاف", "Cover image")}</span>
+                  <UnsplashPicker selected={cover} onSelect={setCover} />
+                </div>
+
+                <div className="flex flex-wrap gap-2 sm:col-span-2">
+                  <button
+                    type="button"
+                    onClick={() => setStep(1)}
+                    className="h-11 rounded-xl border border-border px-5 text-sm font-bold text-muted-foreground hover:bg-secondary"
+                  >
+                    {tr("رجوع", "Back")}
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={!canSubmit || create.isPending}
+                    className="flex h-11 items-center gap-2 rounded-xl bg-primary px-5 text-sm font-bold text-primary-foreground transition-opacity disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {create.isPending ? <Loader2 className="size-4 animate-spin" /> : <PlusCircle className="size-4" />}
+                    {tr("نشر العرض", "Publish listing")}
+                  </button>
+                </div>
+              </>
+            )}
           </form>
         </Card>
       </Section>
+
 
       <Section title={tr("عروضي", "My listings")} subtitle={tr("إدارة كل ما نشرته", "Manage everything you published")}>
         {mine.isLoading ? (
