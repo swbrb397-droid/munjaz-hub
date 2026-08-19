@@ -56,6 +56,8 @@ function CreateListing() {
   const qc = useQueryClient();
   const [form, setForm] = useState<FormState>(emptyForm);
   const [cover, setCover] = useState<StockPhoto | null>(null);
+  const [step, setStep] = useState<1 | 2>(1);
+
 
   const price = useMemo(() => parseUsdt(form.price_usdt) ?? Number.NaN, [form.price_usdt]);
   const priceTouched = form.price_usdt.trim().length > 0;
