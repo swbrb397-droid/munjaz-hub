@@ -106,6 +106,8 @@ function CreateListing() {
     onSuccess: () => {
       setForm(emptyForm);
       setCover(null);
+      setStep(1);
+
       qc.invalidateQueries({ queryKey: ["my-listings"] });
       qc.invalidateQueries({ queryKey: ["listings"] });
       toast.success(
