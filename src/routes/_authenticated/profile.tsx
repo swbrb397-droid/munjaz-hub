@@ -323,7 +323,7 @@ function KycWizard({ state, onSubmitted }: { state: Kyc; onSubmitted: () => void
               </button>
             ))}
           </div>
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid gap-4 sm:grid-cols-2">
             <Dropzone label="الوجه الأمامي للوثيقة" hint="JPG / PNG / PDF — حتى 10MB" doc={front} onPick={setFront} />
             {docType === "id" && <Dropzone label="الوجه الخلفي للوثيقة" hint="JPG / PNG / PDF — حتى 10MB" doc={back} onPick={setBack} />}
           </div>

@@ -132,7 +132,7 @@ function Admin() {
                 <span className="text-muted-foreground">
                   {tr("حكم AI", "AI ruling")}: {d.ai_verdict ?? tr("قيد التحليل", "Analyzing")}
                 </span>
-                <div className="ms-auto flex gap-2">
+                <div className="ms-auto flex flex-wrap gap-2">
                   <button onClick={() => resolveCase.mutate({ id: d.id, status: "resolved" })} className="rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground">{tr("اعتماد", "Approve")}</button>
                   <button onClick={() => resolveCase.mutate({ id: d.id, status: "rejected" })} className="rounded-lg border border-border px-3 py-1.5 text-xs">{tr("رفض", "Reject")}</button>
                 </div>
@@ -231,7 +231,7 @@ function Admin() {
                   </span>
                 )}
                 {i.user_id && (
-                  <div className="ms-auto flex gap-2">
+                  <div className="ms-auto flex flex-wrap gap-2">
                     <button
                       onClick={() => setFrozen.mutate({ userId: i.user_id!, frozen: false })}
                       className="rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground"
@@ -268,7 +268,7 @@ function Admin() {
                   <p className="text-xs text-muted-foreground">{u.kyc_tier}</p>
                 </div>
                 <span className="text-xs text-muted-foreground">{new Date(u.created_at).toLocaleDateString()}</span>
-                <div className="ms-auto flex gap-2">
+                <div className="ms-auto flex flex-wrap gap-2">
                   <button onClick={() => verifyUser.mutate({ id: u.id, verified: true })} className="rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground">{tr("قبول", "Accept")}</button>
                   <button onClick={() => verifyUser.mutate({ id: u.id, verified: false })} className="rounded-lg border border-destructive/50 px-3 py-1.5 text-xs text-destructive">{tr("رفض", "Reject")}</button>
                 </div>
