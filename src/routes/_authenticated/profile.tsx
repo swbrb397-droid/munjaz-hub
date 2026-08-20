@@ -468,6 +468,34 @@ function SettingsPanel({ twoFa, setTwoFa }: { twoFa: boolean; setTwoFa: (v: bool
         </div>
       </Card>
 
+      <PayoutSecurityCard className="lg:col-span-2" />
+
+      <Card className="lg:col-span-2">
+        <h3 className="text-sm font-black">إعدادات الخصوصية</h3>
+        <div className="mt-3 rounded-xl border border-border px-4 py-3">
+          <div className="flex items-center justify-between gap-3">
+            <p className="flex min-w-0 items-center gap-2 text-sm font-bold">
+              <Ghost className="size-4 shrink-0 text-violet" />
+              <span className="min-w-0">وضع التخفي وحماية الخصوصية (Ghost Mode)</span>
+            </p>
+            <Toggle
+              checked={ghost.enabled}
+              label="وضع التخفي"
+              onChange={(v) => {
+                ghost.toggle(v);
+                toast.success(v ? "تم تفعيل وضع التخفي" : "تم إيقاف وضع التخفي");
+              }}
+            />
+          </div>
+          {ghost.enabled && (
+            <p className="mt-3 rounded-lg border border-violet/40 bg-violet/10 px-3 py-2 text-[11px] leading-relaxed text-violet">
+              يتم إخفاء هويتك ومعرفاتك في لوحة المتصدرين وسجلات الصفقات العامة واستبدالها بمعرف رقمي مشفر:{" "}
+              <span className="font-mono font-bold">{ghostTag(user?.id)}</span>
+            </p>
+          )}
+        </div>
+      </Card>
+
       <Card className="lg:col-span-2">
         <h3 className="text-sm font-black">كلمة المرور والمصادقة الثنائية</h3>
         <div className="mt-3 flex flex-wrap gap-2">
