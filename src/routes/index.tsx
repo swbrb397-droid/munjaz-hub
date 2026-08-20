@@ -153,6 +153,7 @@ export function ServiceCard({
   id, title, seller, price, rating, orders, verified, tag, cover,
 }: { id: string; title: string; seller: string; price: number; rating: number; orders: number; verified: boolean; tag: string; cover: string; category?: string }) {
   const { tr } = useLang();
+  const audited = /برمج|develop|code|عقود ذكية|smart contract|web3|crypto|blockchain/i.test(`${tag} ${title}`);
   return (
     <Link to="/listing/$id" params={{ id }} className="block">
       <Card className="flex h-full flex-col transition-colors hover:border-primary/50">
@@ -161,6 +162,14 @@ export function ServiceCard({
           <span className="absolute bottom-2 start-2 rounded-full bg-background/70 px-2 py-0.5 text-[10px] font-semibold text-foreground backdrop-blur">
             {tag}
           </span>
+          {audited && (
+            <span
+              className="absolute top-2 end-2 inline-flex items-center gap-1 rounded-full border border-primary/60 bg-background/70 px-2 py-0.5 text-[10px] font-bold text-primary backdrop-blur"
+              style={{ boxShadow: "0 0 12px oklch(0.76 0.17 165 / 0.55)" }}
+            >
+              <ShieldCheck className="size-3" /> كود مدقق ومحمي 🛡️
+            </span>
+          )}
         </div>
         <h3 className="mt-1 font-bold leading-snug">{title}</h3>
         <p className="mt-1 flex flex-wrap items-center gap-1.5 text-sm text-muted-foreground">
