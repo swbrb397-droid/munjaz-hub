@@ -7,6 +7,7 @@ import {
   Camera,
   CheckCircle2,
   Crown,
+  Ghost,
   KeyRound,
   Loader2,
   Lock,
@@ -19,6 +20,8 @@ import {
 import { Card, Section } from "@/components/site/Shell";
 import { useLang } from "@/lib/lang";
 import { useAuth } from "@/hooks/use-auth";
+import { PayoutSecurityCard, Toggle } from "@/components/site/PayoutSecurityCard";
+import { ghostTag, useGhostMode } from "@/lib/ghost";
 
 export const Route = createFileRoute("/_authenticated/profile")({
   head: () => ({
@@ -406,6 +409,8 @@ function Field({
 
 function SettingsPanel({ twoFa, setTwoFa }: { twoFa: boolean; setTwoFa: (v: boolean) => void }) {
   const { tr } = useLang();
+  const { user } = useAuth();
+  const ghost = useGhostMode();
   const [network, setNetwork] = useState<"TRC-20" | "BEP-20">("TRC-20");
   const [address, setAddress] = useState("");
   const [notif, setNotif] = useState({ delivery: true, escrow: true, referral: false });
