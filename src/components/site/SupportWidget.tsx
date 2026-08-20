@@ -110,8 +110,8 @@ export function SupportWidget() {
         role="dialog"
         aria-hidden={!open}
       >
-        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 border-b border-border p-4">
-          <div className="min-w-0">
+        <div className="flex items-center gap-3 border-b border-border py-4 pe-4 ps-3">
+          <div className="order-2 min-w-0 flex-1">
             <p className="flex min-w-0 items-center gap-2 truncate font-bold">
               <span className="size-2 shrink-0 rounded-full bg-primary" />
               المساعد الذكي لمنصة المنجز
@@ -124,7 +124,7 @@ export function SupportWidget() {
             type="button"
             onClick={() => setOpen(false)}
             aria-label="إغلاق"
-            className="grid size-8 shrink-0 place-items-center rounded-lg border border-border text-muted-foreground hover:text-foreground"
+            className="order-1 grid size-8 shrink-0 place-items-center rounded-lg border border-border text-muted-foreground hover:text-foreground"
           >
             <X className="size-4" />
           </button>

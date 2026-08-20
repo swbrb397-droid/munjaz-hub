@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Loader2, PlusCircle, Trash2 } from "lucide-react";
+import { Loader2, PlusCircle, ShieldCheck, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Card, Section } from "@/components/site/Shell";
 import { UnsplashPicker, type StockPhoto } from "@/components/site/UnsplashPicker";
@@ -57,6 +57,8 @@ function CreateListing() {
   const [form, setForm] = useState<FormState>(emptyForm);
   const [cover, setCover] = useState<StockPhoto | null>(null);
   const [step, setStep] = useState<1 | 2>(1);
+  const [codeAudit, setCodeAudit] = useState(false);
+  const isCodeCategory = form.category === "freelance" || form.category === "product";
 
 
   const price = useMemo(() => parseUsdt(form.price_usdt) ?? Number.NaN, [form.price_usdt]);
@@ -106,6 +108,7 @@ function CreateListing() {
     onSuccess: () => {
       setForm(emptyForm);
       setCover(null);
+      setCodeAudit(false);
       setStep(1);
 
       qc.invalidateQueries({ queryKey: ["my-listings"] });
@@ -138,9 +141,9 @@ function CreateListing() {
   };
 
   const categories: { key: ListingCategory; label: string }[] = [
-    { key: "freelance", label: tr("خدمة مستقل", "Freelance service") },
+    { key: "freelance", label: tr("خدمة مستقل / برمجة", "Freelance / development") },
     { key: "course", label: tr("دورة تدريبية", "Course") },
-    { key: "product", label: tr("منتج رقمي", "Digital product") },
+    { key: "product", label: tr("منتج رقمي / عقود ذكية", "Digital product / smart contracts") },
     { key: "gaming", label: tr("قيمنق", "Gaming") },
   ];
 
@@ -229,6 +232,26 @@ function CreateListing() {
                   <span className="text-muted-foreground">{tr("وسم قصير (إنجليزي)", "Short tag (English)")}</span>
                   <input className={field} maxLength={40} value={form.tag_en} onChange={(e) => setForm({ ...form, tag_en: e.target.value })} />
                 </label>
+
+                {isCodeCategory && (
+                  <label className="flex items-start gap-2 rounded-xl border border-primary/40 bg-primary/5 p-3 text-xs leading-relaxed sm:col-span-2">
+                    <input
+                      type="checkbox"
+                      checked={codeAudit}
+                      onChange={(e) => setCodeAudit(e.target.checked)}
+                      className="mt-0.5 size-4 shrink-0 accent-primary"
+                    />
+                    <span className="min-w-0">
+                      <span className="flex items-center gap-1.5 font-bold text-primary">
+                        <ShieldCheck className="size-3.5 shrink-0" />
+                        طلب فحص النزاهة والأمان التلقائي للكود البرمجي (Smart Contract Integrity Check)
+                      </span>
+                      <span className="mt-1 block text-muted-foreground">
+                        عند اعتماد الفحص تظهر شارة «كود مدقق ومحمي 🛡️» على عرضك في السوق.
+                      </span>
+                    </span>
+                  </label>
+                )}
 
                 <div className="sm:col-span-2">
                   <button

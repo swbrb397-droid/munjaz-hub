@@ -7,6 +7,7 @@ import {
   Camera,
   CheckCircle2,
   Crown,
+  Ghost,
   KeyRound,
   Loader2,
   Lock,
@@ -19,6 +20,8 @@ import {
 import { Card, Section } from "@/components/site/Shell";
 import { useLang } from "@/lib/lang";
 import { useAuth } from "@/hooks/use-auth";
+import { PayoutSecurityCard, Toggle } from "@/components/site/PayoutSecurityCard";
+import { ghostTag, useGhostMode } from "@/lib/ghost";
 
 export const Route = createFileRoute("/_authenticated/profile")({
   head: () => ({
@@ -323,7 +326,7 @@ function KycWizard({ state, onSubmitted }: { state: Kyc; onSubmitted: () => void
               </button>
             ))}
           </div>
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid gap-4 sm:grid-cols-2">
             <Dropzone label="الوجه الأمامي للوثيقة" hint="JPG / PNG / PDF — حتى 10MB" doc={front} onPick={setFront} />
             {docType === "id" && <Dropzone label="الوجه الخلفي للوثيقة" hint="JPG / PNG / PDF — حتى 10MB" doc={back} onPick={setBack} />}
           </div>
@@ -406,6 +409,8 @@ function Field({
 
 function SettingsPanel({ twoFa, setTwoFa }: { twoFa: boolean; setTwoFa: (v: boolean) => void }) {
   const { tr } = useLang();
+  const { user } = useAuth();
+  const ghost = useGhostMode();
   const [network, setNetwork] = useState<"TRC-20" | "BEP-20">("TRC-20");
   const [address, setAddress] = useState("");
   const [notif, setNotif] = useState({ delivery: true, escrow: true, referral: false });
@@ -465,6 +470,34 @@ function SettingsPanel({ twoFa, setTwoFa }: { twoFa: boolean; setTwoFa: (v: bool
               />
             </label>
           ))}
+        </div>
+      </Card>
+
+      <PayoutSecurityCard className="lg:col-span-2" />
+
+      <Card className="lg:col-span-2">
+        <h3 className="text-sm font-black">إعدادات الخصوصية</h3>
+        <div className="mt-3 rounded-xl border border-border px-4 py-3">
+          <div className="flex items-center justify-between gap-3">
+            <p className="flex min-w-0 items-center gap-2 text-sm font-bold">
+              <Ghost className="size-4 shrink-0 text-violet" />
+              <span className="min-w-0">وضع التخفي وحماية الخصوصية (Ghost Mode)</span>
+            </p>
+            <Toggle
+              checked={ghost.enabled}
+              label="وضع التخفي"
+              onChange={(v) => {
+                ghost.toggle(v);
+                toast.success(v ? "تم تفعيل وضع التخفي" : "تم إيقاف وضع التخفي");
+              }}
+            />
+          </div>
+          {ghost.enabled && (
+            <p className="mt-3 rounded-lg border border-violet/40 bg-violet/10 px-3 py-2 text-[11px] leading-relaxed text-violet">
+              يتم إخفاء هويتك ومعرفاتك في لوحة المتصدرين وسجلات الصفقات العامة واستبدالها بمعرف رقمي مشفر:{" "}
+              <span className="font-mono font-bold">{ghostTag(user?.id)}</span>
+            </p>
+          )}
         </div>
       </Card>
 
