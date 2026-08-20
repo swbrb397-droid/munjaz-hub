@@ -14,6 +14,7 @@ import {
   type WithdrawalNetwork,
 } from "@/lib/withdrawals";
 import { formatUsdt, parseUsdt } from "@/lib/security";
+import { PayoutSecurityCard } from "@/components/site/PayoutSecurityCard";
 
 export const Route = createFileRoute("/_authenticated/wallet")({
   head: () => ({
@@ -163,6 +164,8 @@ function WalletPage() {
           </p>
         </Card>
       </div>
+
+      <PayoutSecurityCard className="mt-6" />
 
       <Card className="mt-6">
         <h3 className="flex items-center gap-2 font-bold"><Lock className="size-4 text-accent" /> {tr("قائمة طلبات السحب", "Withdrawal queue")}</h3>

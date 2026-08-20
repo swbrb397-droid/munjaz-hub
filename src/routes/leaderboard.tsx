@@ -4,6 +4,8 @@ import { BadgeCheck, Crown, Medal, Star, TrendingUp, Trophy } from "lucide-react
 import { Card, Section } from "@/components/site/Shell";
 import { useLang } from "@/lib/lang";
 import { rankSellers, type LeaderboardMetric } from "@/lib/sellers";
+import { ghostTag, useGhostMode } from "@/lib/ghost";
+import { useAuth } from "@/hooks/use-auth";
 
 export const Route = createFileRoute("/leaderboard")({
   head: () => ({
@@ -27,6 +29,10 @@ const rankStyles = [
 
 function Leaderboard() {
   const { lang, tr } = useLang();
+  const { user } = useAuth();
+  const ghost = useGhostMode();
+  const myHandle = user?.email?.split("@")[0] ?? "";
+  const tag = ghostTag(user?.id);
   const [metric, setMetric] = useState<LeaderboardMetric>("total_rating");
   const ranked = useMemo(() => rankSellers(metric), [metric]);
 
@@ -44,6 +50,13 @@ function Leaderboard() {
         "Purely meritocratic ranking: rating, completion rate, and total sales — no paid boosting or pinning.",
       )}
     >
+      {ghost.enabled && (
+        <Card className="mb-4 border-violet/40 bg-violet/10 text-xs leading-relaxed text-violet">
+          وضع التخفي مُفعّل — يتم إخفاء هويتك في لوحة المتصدرين وسجلات الصفقات العامة واستبدالها بالمعرف المشفر{" "}
+          <span className="font-mono font-bold">{tag}</span>
+        </Card>
+      )}
+
       <Card className="mb-6 flex flex-wrap items-center gap-2">
         <span className="me-2 text-sm text-muted-foreground">{tr("الفرز حسب", "Sort by")}</span>
         {metrics.map((m) => (
@@ -73,7 +86,9 @@ function Leaderboard() {
             </tr>
           </thead>
           <tbody>
-            {ranked.map((s, i) => (
+            {ranked.map((s, i) => {
+              const masked = ghost.enabled && !!myHandle && s.username === myHandle;
+              return (
               <tr key={s.username} className="border-b border-border/60 last:border-0 hover:bg-surface-2/60">
                 <td className="p-4">
                   <span
@@ -94,11 +109,11 @@ function Leaderboard() {
                     />
                     <span>
                       <span className="flex items-center gap-1 font-bold">
-                        {lang === "ar" ? s.name_ar : s.name_en}
-                        {s.verified && <BadgeCheck className="size-4 text-accent" />}
+                        {masked ? <span className="font-mono text-violet">{tag}</span> : lang === "ar" ? s.name_ar : s.name_en}
+                        {!masked && s.verified && <BadgeCheck className="size-4 text-accent" />}
                       </span>
                       <span className="block text-xs text-muted-foreground">
-                        {lang === "ar" ? s.headline_ar : s.headline_en}
+                        {masked ? "هوية مخفية بوضع التخفي" : lang === "ar" ? s.headline_ar : s.headline_en}
                       </span>
                     </span>
                   </Link>
@@ -107,7 +122,8 @@ function Leaderboard() {
                 <td className="p-4">{s.completion_rate.toFixed(1)}%</td>
                 <td className="p-4">{s.total_sales.toLocaleString("en-US")}</td>
               </tr>
-            ))}
+              );
+            })}
           </tbody>
         </table>
       </Card>
