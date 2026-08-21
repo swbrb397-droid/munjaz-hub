@@ -6,6 +6,7 @@ import { useMock } from "@/lib/mock";
 import { useListings, useNfts } from "@/lib/catalog";
 import { useLang } from "@/lib/lang";
 import { VerifiedBadge } from "@/components/site/VerifiedBadge";
+import { ShareListing } from "@/components/site/ShareListing";
 
 export const Route = createFileRoute("/")({
   head: () => ({
