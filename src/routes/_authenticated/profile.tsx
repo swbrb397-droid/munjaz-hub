@@ -413,7 +413,7 @@ function SettingsPanel({ twoFa, setTwoFa }: { twoFa: boolean; setTwoFa: (v: bool
   const ghost = useGhostMode();
   const [network, setNetwork] = useState<"TRC-20" | "BEP-20">("TRC-20");
   const [address, setAddress] = useState("");
-  const [notif, setNotif] = useState({ delivery: true, escrow: true, referral: false });
+  const [notif, setNotif] = useState({ sales: true, escrow: true, disputes: true, delivery: true, referral: false });
   const [pwOpen, setPwOpen] = useState(false);
 
   const pattern = network === "TRC-20" ? /^T[1-9A-HJ-NP-Za-km-z]{33}$/ : /^0x[a-fA-F0-9]{40}$/;
