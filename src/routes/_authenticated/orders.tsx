@@ -162,11 +162,31 @@ function OrdersPage() {
               )}
 
               {state === "completed" && (
-                <p className="mt-5 flex items-start gap-2 rounded-xl border border-primary/40 bg-primary/10 p-4 text-xs font-bold text-primary">
-                  <ShieldCheck className="mt-0.5 size-4 shrink-0" />
-                  تم تحرير المبلغ للبائع واكتمل الطلب نهائياً.
-                </p>
+                <div className="mt-5 grid gap-3 rounded-xl border border-primary/40 bg-primary/10 p-4">
+                  <p className="flex items-start gap-2 text-xs font-bold text-primary">
+                    <ShieldCheck className="mt-0.5 size-4 shrink-0" />
+                    تم تحرير المبلغ للبائع واكتمل الطلب نهائياً.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setReceipt({
+                        txId: "TX-MJ-8842-RELEASE",
+                        orderId: "#ORD-8842",
+                        type: "تحرير ضمان — طلب مكتمل",
+                        network: "TRC-20",
+                        amount: "180 USDT",
+                        status: "مكتمل ✅",
+                        date: new Date().toLocaleString(),
+                      })
+                    }
+                    className="inline-flex w-fit items-center gap-2 rounded-xl border border-border bg-card px-3 py-2 text-[11px] font-bold hover:border-primary hover:text-primary"
+                  >
+                    <FileText className="size-3.5" /> إيصال المعاملة 📄
+                  </button>
+                </div>
               )}
+              {receipt && <ReceiptModal receipt={receipt} onClose={() => setReceipt(null)} />}
             </Card>
 
             <Card>
