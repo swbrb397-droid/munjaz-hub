@@ -6,6 +6,7 @@ import {
   CheckCircle2,
   Clock,
   Download,
+  FileText,
   FileWarning,
   Loader2,
   Paperclip,
@@ -16,6 +17,7 @@ import {
 } from "lucide-react";
 import { Card, Section } from "@/components/site/Shell";
 import { useLang } from "@/lib/lang";
+import { ReceiptModal, type ReceiptData } from "@/components/site/ReceiptModal";
 
 export const Route = createFileRoute("/_authenticated/orders")({
   head: () => ({
@@ -73,6 +75,7 @@ function OrdersPage() {
   const [state, setState] = useState<OrderState>("escrow");
   const [disputeOpen, setDisputeOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [receipt, setReceipt] = useState<ReceiptData | null>(null);
 
   const totalHold = 12 * 3600;
   const [left, setLeft] = useState(11 * 3600 + 42 * 60 + 15);
