@@ -1,7 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
-import { ArrowDownToLine, ArrowUpFromLine, BadgeCheck, Copy, Lock, QrCode, ShieldAlert, Timer, X } from "lucide-react";
+import { useEffect, useState } from "react";
+import { ArrowDownToLine, ArrowUpFromLine, BadgeCheck, Copy, FileText, Lock, ShieldAlert, Timer, X } from "lucide-react";
 import { Card, Section } from "@/components/site/Shell";
+import { QrCode } from "@/components/site/QrCode";
+import { ReceiptModal, type ReceiptData } from "@/components/site/ReceiptModal";
+import { FiatOnRamp } from "@/components/site/FiatOnRamp";
 import { useLang } from "@/lib/lang";
 import { useProfile, useTransactions, useWallet } from "@/lib/queries";
 import {
