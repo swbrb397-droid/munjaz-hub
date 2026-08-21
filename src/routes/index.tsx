@@ -6,6 +6,7 @@ import { useMock } from "@/lib/mock";
 import { useListings, useNfts } from "@/lib/catalog";
 import { useLang } from "@/lib/lang";
 import { VerifiedBadge } from "@/components/site/VerifiedBadge";
+import { ShareListing } from "@/components/site/ShareListing";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -150,15 +151,17 @@ function Ticker() {
 }
 
 export function ServiceCard({
-  id, title, seller, price, rating, orders, verified, tag, cover,
+  id, title, seller, price, rating, orders, verified, tag, cover, category,
 }: { id: string; title: string; seller: string; price: number; rating: number; orders: number; verified: boolean; tag: string; cover: string; category?: string }) {
   const { tr } = useLang();
   const audited = /برمج|develop|code|عقود ذكية|smart contract|web3|crypto|blockchain/i.test(`${tag} ${title}`);
+  const instant = category === "product" || category === "course" || /nft|قالب|template|أصل رقمي/i.test(`${tag} ${title}`);
   return (
     <Link to="/listing/$id" params={{ id }} className="block">
       <Card className="flex h-full flex-col transition-colors hover:border-primary/50">
         <div className="relative mb-4 h-28 overflow-hidden rounded-xl border border-border">
           <img src={cover} alt={title} loading="lazy" width={768} height={512} className="size-full object-cover" />
+          <ShareListing id={id} title={title} />
           <span className="absolute bottom-2 start-2 rounded-full bg-background/70 px-2 py-0.5 text-[10px] font-semibold text-foreground backdrop-blur">
             {tag}
           </span>
@@ -171,6 +174,11 @@ export function ServiceCard({
             </span>
           )}
         </div>
+        {instant && (
+          <span className="mb-2 inline-flex w-fit items-center gap-1 rounded-full border border-accent/50 bg-accent/10 px-2.5 py-1 text-[10px] font-bold text-accent">
+            <Zap className="size-3" /> تسليم وتحميل فوري بعد الدفع
+          </span>
+        )}
         <h3 className="mt-1 font-bold leading-snug">{title}</h3>
         <p className="mt-1 flex flex-wrap items-center gap-1.5 text-sm text-muted-foreground">
           {seller} {verified && <VerifiedBadge />}

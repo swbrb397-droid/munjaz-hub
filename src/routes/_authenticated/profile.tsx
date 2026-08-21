@@ -413,7 +413,7 @@ function SettingsPanel({ twoFa, setTwoFa }: { twoFa: boolean; setTwoFa: (v: bool
   const ghost = useGhostMode();
   const [network, setNetwork] = useState<"TRC-20" | "BEP-20">("TRC-20");
   const [address, setAddress] = useState("");
-  const [notif, setNotif] = useState({ delivery: true, escrow: true, referral: false });
+  const [notif, setNotif] = useState({ sales: true, escrow: true, disputes: true, delivery: true, referral: false });
   const [pwOpen, setPwOpen] = useState(false);
 
   const pattern = network === "TRC-20" ? /^T[1-9A-HJ-NP-Za-km-z]{33}$/ : /^0x[a-fA-F0-9]{40}$/;
@@ -453,20 +453,25 @@ function SettingsPanel({ twoFa, setTwoFa }: { twoFa: boolean; setTwoFa: (v: bool
       </Card>
 
       <Card>
-        <h3 className="text-sm font-black">التنبيهات</h3>
+        <h3 className="text-sm font-black">تفضيلات التنبيهات</h3>
         <div className="mt-3 grid gap-2">
           {([
-            ["delivery", "تسليم الطلبات"],
-            ["escrow", "تحرير مبالغ الضمان"],
-            ["referral", "أرباح الإحالات"],
-          ] as const).map(([k, label]) => (
-            <label key={k} className="flex items-center justify-between gap-3 rounded-xl border border-border px-4 py-3 text-sm">
-              <span className="min-w-0 truncate font-bold">{label}</span>
+            ["sales", "إشعارات المبيعات الفورية", "تنبيه لحظي عند كل طلب أو عملية بيع جديدة"],
+            ["escrow", "تنبيهات عداد الضمان", "تذكير قبل الإطلاق التلقائي لمبالغ الضمان"],
+            ["disputes", "تنبيهات النزاعات والدعم", "تحديثات النزاعات وردود فريق الدعم"],
+            ["delivery", "تسليم الطلبات", "إشعار عند تسليم أو اعتماد التسليم"],
+            ["referral", "أرباح الإحالات", "إشعار عند احتساب عمولة إحالة جديدة"],
+          ] as const).map(([k, label, hint]) => (
+            <label key={k} className="flex items-start justify-between gap-3 rounded-xl border border-border px-4 py-3 text-sm">
+              <span className="min-w-0">
+                <span className="block truncate font-bold">{label}</span>
+                <span className="mt-0.5 block text-[11px] leading-relaxed text-muted-foreground">{hint}</span>
+              </span>
               <input
                 type="checkbox"
                 checked={notif[k]}
                 onChange={(e) => setNotif({ ...notif, [k]: e.target.checked })}
-                className="size-4 shrink-0 accent-primary"
+                className="mt-1 size-4 shrink-0 accent-primary"
               />
             </label>
           ))}
