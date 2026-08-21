@@ -148,9 +148,25 @@ function Workspace() {
       title={order ? tr(`مساحة عمل الطلب #MJ-${order.order_number}`, `Order workspace #MJ-${order.order_number}`) : tr("مساحة عمل الطلب", "Order workspace")}
       subtitle={order ? `${order.title} · ${Number(order.amount_usdt)} USDT · ${statusLabel(order.status, tr)}` : tr("لا توجد طلبات بعد", "No orders yet")}
       action={
-        <button className="inline-flex items-center gap-2 rounded-xl border border-accent/50 bg-accent/10 px-4 py-2 font-semibold text-accent">
-          <Video className="size-4" /> {tr("بدء مكالمة فيديو", "Start video call")}
-        </button>
+        <div className="flex flex-wrap gap-2">
+          <button className="inline-flex items-center gap-2 rounded-xl border border-accent/50 bg-accent/10 px-4 py-2 text-sm font-semibold text-accent">
+            <Video className="size-4" /> {tr("بدء مكالمة فيديو", "Start video call")}
+          </button>
+          <button
+            type="button"
+            onClick={() => setExtOpen(true)}
+            className="inline-flex items-center gap-2 rounded-xl border border-border px-4 py-2 text-sm font-semibold"
+          >
+            <CalendarClock className="size-4" /> {tr("طلب تمديد مهلة التسليم", "Request deadline extension")}
+          </button>
+          <button
+            type="button"
+            onClick={() => setReviewOpen(true)}
+            className="inline-flex items-center gap-2 rounded-xl border border-border px-4 py-2 text-sm font-semibold"
+          >
+            <Star className="size-4 text-accent" /> {tr("تقييم الطرف الآخر", "Review the other party")}
+          </button>
+        </div>
       }
     >
       <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
