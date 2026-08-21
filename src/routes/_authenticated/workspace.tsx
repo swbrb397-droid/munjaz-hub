@@ -88,6 +88,27 @@ function Workspace() {
   const addDeliverable = useDeliverables();
   const transition = useOrderTransition();
 
+  // Deadline extension request
+  const [extOpen, setExtOpen] = useState(false);
+  const [extHours, setExtHours] = useState<24 | 48>(24);
+  const [extReason, setExtReason] = useState("");
+  const [extDone, setExtDone] = useState<string | null>(null);
+
+  // Post-completion 2-way review
+  const [reviewOpen, setReviewOpen] = useState(false);
+  const [stars, setStars] = useState({ quality: 5, communication: 5, speed: 5 });
+  const [reviewText, setReviewText] = useState("");
+  const [reviewDone, setReviewDone] = useState<string | null>(null);
+
+  // Optional milestones tracker
+  const [milestonesOn, setMilestonesOn] = useState(false);
+  const milestones = [
+    { label: tr("المرحلة 1", "Milestone 1"), pct: 30 },
+    { label: tr("المرحلة 2", "Milestone 2"), pct: 70 },
+    { label: tr("التسليم النهائي", "Final delivery"), pct: 100 },
+  ];
+  const doneUpTo = order?.status === "completed" ? 100 : order?.status === "delivered" ? 70 : order?.status === "in_progress" ? 30 : 0;
+
   function send() {
     const text = draft.trim();
     if (!text) return;
