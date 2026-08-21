@@ -36,6 +36,8 @@ const networks = [
 
 const rates: Record<string, number> = { USD: 1.0002, SAR: 3.7506, AED: 3.6731, EUR: 0.9184 };
 
+type FiatRow = { id: string; type: string; network: string; amount: number; status: string; created_at: string; txId: string };
+
 function WalletPage() {
   const { tr, lang } = useLang();
   const wallet = useWallet();
@@ -44,12 +46,24 @@ function WalletPage() {
   const requests = useMyWithdrawals();
 
   const [deposit, setDeposit] = useState(false);
+  const [depositTab, setDepositTab] = useState<"crypto" | "fiat">("crypto");
   const [network, setNetwork] = useState<WithdrawalNetwork>("trc20");
   const [amount, setAmount] = useState("250");
   const [address, setAddress] = useState("");
   const [feedback, setFeedback] = useState<string | null>(null);
+  const [fiatRows, setFiatRows] = useState<FiatRow[]>([]);
+  const [receipt, setReceipt] = useState<ReceiptData | null>(null);
+  const [lockLeft, setLockLeft] = useState(15 * 60);
 
-  const balance = Number(wallet.data?.available_usdt ?? 0);
+  useEffect(() => {
+    if (!deposit || depositTab !== "crypto") return;
+    setLockLeft(15 * 60);
+    const t = setInterval(() => setLockLeft((s) => (s > 0 ? s - 1 : 0)), 1000);
+    return () => clearInterval(t);
+  }, [deposit, depositTab]);
+
+  const credited = fiatRows.reduce((s, r) => s + r.amount, 0);
+  const balance = Number(wallet.data?.available_usdt ?? 0) + credited;
   const locked = Number(wallet.data?.locked_usdt ?? 0);
   const tier = (profile.data as { account_tier?: string } | null)?.account_tier ?? "free";
   const frozen = Boolean((profile.data as { is_frozen?: boolean } | null)?.is_frozen);
