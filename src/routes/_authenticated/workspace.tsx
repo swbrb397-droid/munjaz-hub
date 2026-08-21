@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { AlertTriangle, CheckCircle2, Circle, FileUp, Languages, Paperclip, Send, ShieldAlert, Video } from "lucide-react";
+import { AlertTriangle, CalendarClock, CheckCircle2, Circle, FileUp, Languages, Lock, Paperclip, Send, ShieldAlert, Star, Unlock, Video, X } from "lucide-react";
 import { Card, Section } from "@/components/site/Shell";
 import { ChatSecurityNotice } from "@/components/site/ChatSecurityNotice";
 
