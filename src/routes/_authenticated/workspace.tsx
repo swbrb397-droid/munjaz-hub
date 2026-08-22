@@ -93,6 +93,7 @@ function Workspace() {
   const [extHours, setExtHours] = useState<24 | 48>(24);
   const [extReason, setExtReason] = useState("");
   const [extDone, setExtDone] = useState<string | null>(null);
+  const [extStatus, setExtStatus] = useState<"none" | "pending" | "approved">("none");
 
   // Post-completion 2-way review
   const [reviewOpen, setReviewOpen] = useState(false);
@@ -102,12 +103,22 @@ function Workspace() {
 
   // Optional milestones tracker
   const [milestonesOn, setMilestonesOn] = useState(false);
+  const [released, setReleased] = useState<number[]>([]);
   const milestones = [
-    { label: tr("المرحلة 1", "Milestone 1"), pct: 30 },
-    { label: tr("المرحلة 2", "Milestone 2"), pct: 70 },
-    { label: tr("التسليم النهائي", "Final delivery"), pct: 100 },
+    {
+      pct: 30,
+      label: tr("المرحلة 1: تسليم المسودة الأولى والتصميم الأولي", "Stage 1: first draft & initial design"),
+      cta: tr("تحرير جزئي للضمان 30%", "Release 30% of escrow"),
+    },
+    {
+      pct: 70,
+      label: tr("المرحلة 2: المراجعة النهائية والتسليم الكامل", "Stage 2: final review & full delivery"),
+      cta: tr("تحرير الرصيد المتبقي 70%", "Release remaining 70%"),
+    },
   ];
-  const doneUpTo = order?.status === "completed" ? 100 : order?.status === "delivered" ? 70 : order?.status === "in_progress" ? 30 : 0;
+  const autoUpTo = order?.status === "completed" ? 100 : order?.status === "delivered" ? 70 : order?.status === "in_progress" ? 30 : 0;
+  const releasedPct = Math.max(autoUpTo, ...released, 0);
+
 
   function send() {
     const text = draft.trim();
@@ -158,7 +169,13 @@ function Workspace() {
             className="inline-flex items-center gap-2 rounded-xl border border-border px-4 py-2 text-sm font-semibold"
           >
             <CalendarClock className="size-4" /> {tr("طلب تمديد مهلة التسليم", "Request deadline extension")}
+            {extStatus !== "none" && (
+              <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${extStatus === "approved" ? "bg-primary/15 text-primary" : "bg-accent/15 text-accent"}`}>
+                {extStatus === "approved" ? tr("تمت الموافقة", "Approved") : tr("قيد الانتظار", "Pending")}
+              </span>
+            )}
           </button>
+
           <button
             type="button"
             onClick={() => setReviewOpen(true)}
@@ -224,9 +241,10 @@ function Workspace() {
                   onChange={(e) => setDraft(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && send()}
                   placeholder={tr(
-                    "حماية الضمان: يمنع مشاركة وسائل التواصل الخارجية لضمان حقوقك المالية",
-                    "Escrow protection: sharing external contact details is not allowed",
+                    "🛡️ حماية الضمان: يمنع مشاركة وسائل التواصل الخارجية لضمان حقوقك المالية وسريان نظام الـ Escrow.",
+                    "🛡️ Escrow protection: sharing external contact details is prohibited to protect your funds and keep escrow valid.",
                   )}
+
                   className="flex-1 rounded-lg border border-input bg-surface px-3 py-2 text-sm outline-none focus:border-primary"
                 />
                 <button onClick={send} className="grid size-9 place-items-center rounded-lg bg-primary text-primary-foreground" aria-label={tr("إرسال", "Send")}>
@@ -334,9 +352,15 @@ function Workspace() {
                       setActionMsg(null);
                       transition.mutate(
                         { id: order.id, status: a.key },
-                        { onError: (e: Error) => setActionMsg(e.message) },
+                        {
+                          onError: (e: Error) => setActionMsg(e.message),
+                          onSuccess: () => {
+                            if (a.key === "completed") setReviewOpen(true);
+                          },
+                        },
                       );
                     }}
+
                     disabled={transition.isPending}
                     className={`w-full rounded-xl px-4 py-2.5 text-sm font-bold disabled:opacity-50 ${
                       a.tone === "danger"
@@ -392,20 +416,36 @@ function Workspace() {
             ) : (
               <div className="mt-3 grid gap-2">
                 <div className="h-2 w-full overflow-hidden rounded-full bg-secondary">
-                  <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${doneUpTo}%` }} />
+                  <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${releasedPct}%` }} />
                 </div>
+                <p className="text-[11px] text-muted-foreground">{tr("نسبة الضمان المُحرَّرة", "Escrow released")}: {releasedPct}%</p>
                 {milestones.map((m) => {
-                  const released = doneUpTo >= m.pct;
+                  const isReleased = releasedPct >= m.pct;
+                  const state = isReleased ? (releasedPct >= 100 ? tr("مكتمل", "Completed") : tr("محرر", "Released")) : tr("معلق", "Pending");
                   return (
                     <div
                       key={m.pct}
-                      className={`flex items-center justify-between gap-2 rounded-lg border px-3 py-2 text-xs ${released ? "border-primary/50 bg-primary/10 text-primary" : "border-border text-muted-foreground"}`}
+                      className={`grid gap-2 rounded-lg border px-3 py-2.5 text-xs ${isReleased ? "border-primary/50 bg-primary/10" : "border-border"}`}
                     >
-                      <span className="min-w-0 truncate font-bold">{m.label}: {m.pct}%</span>
-                      <span className="inline-flex shrink-0 items-center gap-1">
-                        {released ? <Unlock className="size-3.5" /> : <Lock className="size-3.5" />}
-                        {order ? `${((Number(order.amount_usdt) * m.pct) / 100).toFixed(2)} USDT` : "—"}
-                      </span>
+                      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2">
+                        <span className={`min-w-0 font-bold ${isReleased ? "text-primary" : "text-foreground"}`}>{m.label} ({m.pct}%)</span>
+                        <span className={`inline-flex shrink-0 items-center gap-1 rounded-full border px-2 py-0.5 ${isReleased ? "border-primary/50 text-primary" : "border-border text-muted-foreground"}`}>
+                          {isReleased ? <Unlock className="size-3" /> : <Lock className="size-3" />} {state}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-muted-foreground">
+                          {order ? `${((Number(order.amount_usdt) * m.pct) / 100).toFixed(2)} USDT` : "—"}
+                        </span>
+                        <button
+                          type="button"
+                          disabled={isReleased}
+                          onClick={() => setReleased((r) => [...r, m.pct])}
+                          className="shrink-0 rounded-lg border border-primary/50 bg-primary/10 px-3 py-1.5 text-[11px] font-bold text-primary disabled:opacity-40"
+                        >
+                          {isReleased ? tr("تم التحرير", "Released") : m.cta}
+                        </button>
+                      </div>
                     </div>
                   );
                 })}
@@ -414,6 +454,7 @@ function Workspace() {
                 </p>
               </div>
             )}
+
           </Card>
         </div>
       </div>
@@ -450,14 +491,16 @@ function Workspace() {
               type="button"
               disabled={extReason.trim().length < 10}
               onClick={() => {
-                setExtDone(tr(`تم إرسال طلب تمديد ${extHours} ساعة للطرف الآخر.`, `Extension request of ${extHours}h sent to the other party.`));
+                setExtStatus("pending");
+                setExtDone(tr(`تم إرسال طلب تمديد ${extHours} ساعة للمشتري — بانتظار الموافقة.`, `Extension request of ${extHours}h sent to the buyer — awaiting approval.`));
                 setExtOpen(false);
                 setExtReason("");
               }}
               className="mt-3 w-full rounded-xl bg-primary py-2.5 text-sm font-bold text-primary-foreground disabled:opacity-40"
             >
-              {tr("إرسال الطلب", "Send request")}
+              {tr("إرسال طلب التمديد للمشتري", "Send extension request to buyer")}
             </button>
+
             <p className="mt-2 text-[11px] text-muted-foreground">
               {tr("يبقى المبلغ محجوزاً في الضمان ويُؤجَّل الإطلاق التلقائي بعد الموافقة.", "Funds stay in escrow and auto-release is postponed once approved.")}
             </p>
@@ -476,12 +519,13 @@ function Workspace() {
             </div>
             <div className="mt-4 grid gap-3">
               {([
-                ["quality", tr("جودة العمل", "Work quality")],
-                ["communication", tr("التواصل", "Communication")],
-                ["speed", tr("سرعة التسليم", "Delivery speed")],
+                ["quality", tr("جودة العمل والاحترافية", "Work quality & professionalism")],
+                ["communication", tr("سرعة وجودة التواصل", "Communication speed & quality")],
+                ["speed", tr("الالتزام بموعد التسليم", "On-time delivery")],
               ] as const).map(([k, label]) => (
-                <div key={k} className="flex items-center justify-between gap-3 rounded-xl border border-border px-3 py-2.5">
-                  <span className="min-w-0 truncate text-sm font-bold">{label}</span>
+                <div key={k} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-xl border border-border px-3 py-2.5">
+                  <span className="min-w-0 text-sm font-bold">{label}</span>
+
                   <div className="flex shrink-0 gap-1">
                     {[1, 2, 3, 4, 5].map((n) => (
                       <button key={n} type="button" aria-label={`${label} ${n}`} onClick={() => setStars({ ...stars, [k]: n })}>
@@ -495,21 +539,22 @@ function Workspace() {
                 value={reviewText}
                 onChange={(e) => setReviewText(e.target.value)}
                 rows={4}
-                placeholder={tr("اكتب تعليقك عن التجربة...", "Write your comment about the experience...")}
+                placeholder={tr("اكتب تقييمك وتجربتك بالتفصيل...", "Write your review and experience in detail...")}
                 className="w-full rounded-xl border border-input bg-surface p-3 text-sm outline-none focus:border-primary"
               />
               <button
                 type="button"
                 onClick={() => {
                   const avg = ((stars.quality + stars.communication + stars.speed) / 3).toFixed(1);
-                  setReviewDone(tr(`تم إرسال تقييمك (${avg}/5) — سيظهر بعد تقييم الطرف الآخر.`, `Review submitted (${avg}/5) — visible once the other party reviews too.`));
+                  setReviewDone(tr(`تم نشر تقييمك (${avg}/5) واعتماد الطلب.`, `Review published (${avg}/5) and order approved.`));
                   setReviewOpen(false);
                   setReviewText("");
                 }}
                 className="w-full rounded-xl bg-primary py-2.5 text-sm font-bold text-primary-foreground"
               >
-                {tr("إرسال التقييم", "Submit review")}
+                {tr("نشر التقييم واعتماد الطلب", "Publish review & approve order")}
               </button>
+
             </div>
           </Card>
         </div>
