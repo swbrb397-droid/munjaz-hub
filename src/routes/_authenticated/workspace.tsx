@@ -241,9 +241,10 @@ function Workspace() {
                   onChange={(e) => setDraft(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && send()}
                   placeholder={tr(
-                    "حماية الضمان: يمنع مشاركة وسائل التواصل الخارجية لضمان حقوقك المالية",
-                    "Escrow protection: sharing external contact details is not allowed",
+                    "🛡️ حماية الضمان: يمنع مشاركة وسائل التواصل الخارجية لضمان حقوقك المالية وسريان نظام الـ Escrow.",
+                    "🛡️ Escrow protection: sharing external contact details is prohibited to protect your funds and keep escrow valid.",
                   )}
+
                   className="flex-1 rounded-lg border border-input bg-surface px-3 py-2 text-sm outline-none focus:border-primary"
                 />
                 <button onClick={send} className="grid size-9 place-items-center rounded-lg bg-primary text-primary-foreground" aria-label={tr("إرسال", "Send")}>
