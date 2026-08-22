@@ -539,21 +539,22 @@ function Workspace() {
                 value={reviewText}
                 onChange={(e) => setReviewText(e.target.value)}
                 rows={4}
-                placeholder={tr("اكتب تعليقك عن التجربة...", "Write your comment about the experience...")}
+                placeholder={tr("اكتب تقييمك وتجربتك بالتفصيل...", "Write your review and experience in detail...")}
                 className="w-full rounded-xl border border-input bg-surface p-3 text-sm outline-none focus:border-primary"
               />
               <button
                 type="button"
                 onClick={() => {
                   const avg = ((stars.quality + stars.communication + stars.speed) / 3).toFixed(1);
-                  setReviewDone(tr(`تم إرسال تقييمك (${avg}/5) — سيظهر بعد تقييم الطرف الآخر.`, `Review submitted (${avg}/5) — visible once the other party reviews too.`));
+                  setReviewDone(tr(`تم نشر تقييمك (${avg}/5) واعتماد الطلب.`, `Review published (${avg}/5) and order approved.`));
                   setReviewOpen(false);
                   setReviewText("");
                 }}
                 className="w-full rounded-xl bg-primary py-2.5 text-sm font-bold text-primary-foreground"
               >
-                {tr("إرسال التقييم", "Submit review")}
+                {tr("نشر التقييم واعتماد الطلب", "Publish review & approve order")}
               </button>
+
             </div>
           </Card>
         </div>
