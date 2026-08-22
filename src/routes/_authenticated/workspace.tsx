@@ -519,12 +519,13 @@ function Workspace() {
             </div>
             <div className="mt-4 grid gap-3">
               {([
-                ["quality", tr("جودة العمل", "Work quality")],
-                ["communication", tr("التواصل", "Communication")],
-                ["speed", tr("سرعة التسليم", "Delivery speed")],
+                ["quality", tr("جودة العمل والاحترافية", "Work quality & professionalism")],
+                ["communication", tr("سرعة وجودة التواصل", "Communication speed & quality")],
+                ["speed", tr("الالتزام بموعد التسليم", "On-time delivery")],
               ] as const).map(([k, label]) => (
-                <div key={k} className="flex items-center justify-between gap-3 rounded-xl border border-border px-3 py-2.5">
-                  <span className="min-w-0 truncate text-sm font-bold">{label}</span>
+                <div key={k} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-xl border border-border px-3 py-2.5">
+                  <span className="min-w-0 text-sm font-bold">{label}</span>
+
                   <div className="flex shrink-0 gap-1">
                     {[1, 2, 3, 4, 5].map((n) => (
                       <button key={n} type="button" aria-label={`${label} ${n}`} onClick={() => setStars({ ...stars, [k]: n })}>
