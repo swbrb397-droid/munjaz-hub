@@ -403,20 +403,36 @@ function Workspace() {
             ) : (
               <div className="mt-3 grid gap-2">
                 <div className="h-2 w-full overflow-hidden rounded-full bg-secondary">
-                  <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${doneUpTo}%` }} />
+                  <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${releasedPct}%` }} />
                 </div>
+                <p className="text-[11px] text-muted-foreground">{tr("نسبة الضمان المُحرَّرة", "Escrow released")}: {releasedPct}%</p>
                 {milestones.map((m) => {
-                  const released = doneUpTo >= m.pct;
+                  const isReleased = releasedPct >= m.pct;
+                  const state = isReleased ? (releasedPct >= 100 ? tr("مكتمل", "Completed") : tr("محرر", "Released")) : tr("معلق", "Pending");
                   return (
                     <div
                       key={m.pct}
-                      className={`flex items-center justify-between gap-2 rounded-lg border px-3 py-2 text-xs ${released ? "border-primary/50 bg-primary/10 text-primary" : "border-border text-muted-foreground"}`}
+                      className={`grid gap-2 rounded-lg border px-3 py-2.5 text-xs ${isReleased ? "border-primary/50 bg-primary/10" : "border-border"}`}
                     >
-                      <span className="min-w-0 truncate font-bold">{m.label}: {m.pct}%</span>
-                      <span className="inline-flex shrink-0 items-center gap-1">
-                        {released ? <Unlock className="size-3.5" /> : <Lock className="size-3.5" />}
-                        {order ? `${((Number(order.amount_usdt) * m.pct) / 100).toFixed(2)} USDT` : "—"}
-                      </span>
+                      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2">
+                        <span className={`min-w-0 font-bold ${isReleased ? "text-primary" : "text-foreground"}`}>{m.label} ({m.pct}%)</span>
+                        <span className={`inline-flex shrink-0 items-center gap-1 rounded-full border px-2 py-0.5 ${isReleased ? "border-primary/50 text-primary" : "border-border text-muted-foreground"}`}>
+                          {isReleased ? <Unlock className="size-3" /> : <Lock className="size-3" />} {state}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-muted-foreground">
+                          {order ? `${((Number(order.amount_usdt) * m.pct) / 100).toFixed(2)} USDT` : "—"}
+                        </span>
+                        <button
+                          type="button"
+                          disabled={isReleased}
+                          onClick={() => setReleased((r) => [...r, m.pct])}
+                          className="shrink-0 rounded-lg border border-primary/50 bg-primary/10 px-3 py-1.5 text-[11px] font-bold text-primary disabled:opacity-40"
+                        >
+                          {isReleased ? tr("تم التحرير", "Released") : m.cta}
+                        </button>
+                      </div>
                     </div>
                   );
                 })}
@@ -425,6 +441,7 @@ function Workspace() {
                 </p>
               </div>
             )}
+
           </Card>
         </div>
       </div>
