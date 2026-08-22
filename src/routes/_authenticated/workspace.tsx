@@ -491,14 +491,16 @@ function Workspace() {
               type="button"
               disabled={extReason.trim().length < 10}
               onClick={() => {
-                setExtDone(tr(`تم إرسال طلب تمديد ${extHours} ساعة للطرف الآخر.`, `Extension request of ${extHours}h sent to the other party.`));
+                setExtStatus("pending");
+                setExtDone(tr(`تم إرسال طلب تمديد ${extHours} ساعة للمشتري — بانتظار الموافقة.`, `Extension request of ${extHours}h sent to the buyer — awaiting approval.`));
                 setExtOpen(false);
                 setExtReason("");
               }}
               className="mt-3 w-full rounded-xl bg-primary py-2.5 text-sm font-bold text-primary-foreground disabled:opacity-40"
             >
-              {tr("إرسال الطلب", "Send request")}
+              {tr("إرسال طلب التمديد للمشتري", "Send extension request to buyer")}
             </button>
+
             <p className="mt-2 text-[11px] text-muted-foreground">
               {tr("يبقى المبلغ محجوزاً في الضمان ويُؤجَّل الإطلاق التلقائي بعد الموافقة.", "Funds stay in escrow and auto-release is postponed once approved.")}
             </p>
