@@ -169,7 +169,13 @@ function Workspace() {
             className="inline-flex items-center gap-2 rounded-xl border border-border px-4 py-2 text-sm font-semibold"
           >
             <CalendarClock className="size-4" /> {tr("طلب تمديد مهلة التسليم", "Request deadline extension")}
+            {extStatus !== "none" && (
+              <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${extStatus === "approved" ? "bg-primary/15 text-primary" : "bg-accent/15 text-accent"}`}>
+                {extStatus === "approved" ? tr("تمت الموافقة", "Approved") : tr("قيد الانتظار", "Pending")}
+              </span>
+            )}
           </button>
+
           <button
             type="button"
             onClick={() => setReviewOpen(true)}
