@@ -93,6 +93,7 @@ function Workspace() {
   const [extHours, setExtHours] = useState<24 | 48>(24);
   const [extReason, setExtReason] = useState("");
   const [extDone, setExtDone] = useState<string | null>(null);
+  const [extStatus, setExtStatus] = useState<"none" | "pending" | "approved">("none");
 
   // Post-completion 2-way review
   const [reviewOpen, setReviewOpen] = useState(false);
@@ -102,12 +103,22 @@ function Workspace() {
 
   // Optional milestones tracker
   const [milestonesOn, setMilestonesOn] = useState(false);
+  const [released, setReleased] = useState<number[]>([]);
   const milestones = [
-    { label: tr("المرحلة 1", "Milestone 1"), pct: 30 },
-    { label: tr("المرحلة 2", "Milestone 2"), pct: 70 },
-    { label: tr("التسليم النهائي", "Final delivery"), pct: 100 },
+    {
+      pct: 30,
+      label: tr("المرحلة 1: تسليم المسودة الأولى والتصميم الأولي", "Stage 1: first draft & initial design"),
+      cta: tr("تحرير جزئي للضمان 30%", "Release 30% of escrow"),
+    },
+    {
+      pct: 70,
+      label: tr("المرحلة 2: المراجعة النهائية والتسليم الكامل", "Stage 2: final review & full delivery"),
+      cta: tr("تحرير الرصيد المتبقي 70%", "Release remaining 70%"),
+    },
   ];
-  const doneUpTo = order?.status === "completed" ? 100 : order?.status === "delivered" ? 70 : order?.status === "in_progress" ? 30 : 0;
+  const autoUpTo = order?.status === "completed" ? 100 : order?.status === "delivered" ? 70 : order?.status === "in_progress" ? 30 : 0;
+  const releasedPct = Math.max(autoUpTo, ...released, 0);
+
 
   function send() {
     const text = draft.trim();
