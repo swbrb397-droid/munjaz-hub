@@ -238,8 +238,10 @@ function WalletPage() {
                       onClick={() =>
                         setReceipt({
                           txId: t.txId,
+                          orderId: t.id,
                           type: t.type,
                           network: t.network,
+                          gateway: t.network,
                           amount: `${t.amount} USDT`,
                           status: t.status,
                           date: new Date(t.created_at).toLocaleString(),
@@ -247,7 +249,8 @@ function WalletPage() {
                       }
                       className="inline-flex items-center gap-1 rounded-lg border border-border px-2.5 py-1.5 text-[11px] font-bold hover:border-primary hover:text-primary"
                     >
-                      <FileText className="size-3.5" /> {tr("إيصال رسمي 📄", "Receipt 📄")}
+                      <FileText className="size-3.5" /> {tr("إيصال المعاملة 📄", "Receipt 📄")}
+
                     </button>
                   </td>
                 </tr>
