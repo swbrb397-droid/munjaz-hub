@@ -224,7 +224,10 @@ export function NftCard({ name, collection, price, hue }: { name: string; collec
           style={{ background: `linear-gradient(120deg, transparent 40%, oklch(0.95 0.05 ${hue} / 0.18) 50%, transparent 60%)` }}
         />
       </div>
-      <div className="mt-4 flex items-end justify-between gap-2">
+      <span className="mt-3 inline-flex w-fit items-center gap-1 rounded-full bg-accent px-2.5 py-1 text-[10px] font-black text-accent-foreground">
+        <Zap className="size-3" /> ⚡ تسليم وتحميل فوري بعد الدفع
+      </span>
+      <div className="mt-3 flex items-end justify-between gap-2">
         <div className="min-w-0">
           <p className="truncate text-xs text-muted-foreground">{collection}</p>
           <p className="truncate font-bold">{name}</p>
@@ -234,6 +237,7 @@ export function NftCard({ name, collection, price, hue }: { name: string; collec
     </Card>
   );
 }
+
 
 
 function AffiliateCalculator() {
