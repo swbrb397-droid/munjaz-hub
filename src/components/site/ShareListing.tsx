@@ -3,7 +3,7 @@ import { Check, Copy, Share2, X } from "lucide-react";
 import { QrCode } from "@/components/site/QrCode";
 
 /** Share action for a service card: QR popup + copy link. */
-export function ShareListing({ id, title }: { id: string; title: string }) {
+export function ShareListing({ id, title, variant = "icon" }: { id: string; title: string; variant?: "icon" | "button" }) {
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const url = typeof window !== "undefined" ? `${window.location.origin}/listing/${id}` : `/listing/${id}`;
@@ -18,10 +18,16 @@ export function ShareListing({ id, title }: { id: string; title: string }) {
           e.stopPropagation();
           setOpen(true);
         }}
-        className="absolute top-2 start-2 grid size-7 place-items-center rounded-full border border-border bg-background/70 text-foreground backdrop-blur hover:border-primary hover:text-primary"
+        className={
+          variant === "button"
+            ? "inline-flex w-full items-center justify-center gap-2 rounded-xl border border-border bg-surface-2/60 py-2 text-[11px] font-bold text-foreground hover:border-primary hover:text-primary"
+            : "absolute top-2 start-2 grid size-7 place-items-center rounded-full border border-border bg-background/70 text-foreground backdrop-blur hover:border-primary hover:text-primary"
+        }
       >
         <Share2 className="size-3.5" />
+        {variant === "button" && <span>مشاركة العرض 🔗</span>}
       </button>
+
 
       {open && (
         <div
