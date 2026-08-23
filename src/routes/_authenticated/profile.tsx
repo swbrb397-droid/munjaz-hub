@@ -456,25 +456,30 @@ function SettingsPanel({ twoFa, setTwoFa }: { twoFa: boolean; setTwoFa: (v: bool
         <h3 className="text-sm font-black">تفضيلات التنبيهات</h3>
         <div className="mt-3 grid gap-2">
           {([
-            ["sales", "إشعارات المبيعات الفورية", "تنبيه لحظي عند كل طلب أو عملية بيع جديدة"],
-            ["escrow", "تنبيهات عداد الضمان", "تذكير قبل الإطلاق التلقائي لمبالغ الضمان"],
-            ["disputes", "تنبيهات النزاعات والدعم", "تحديثات النزاعات وردود فريق الدعم"],
+            ["sales", "إشعارات المبيعات والطلبات الفورية", "تنبيه لحظي عند شراء خدمة أو أصل رقمي"],
+            ["escrow", "تنبيهات عداد الضمان (Escrow Countdown)", "تنبيهات انتهاء مهل التسليم وتحرير المبالغ"],
+            ["disputes", "تنبيهات النزاعات والدعم الفني", "إشعارات فورية عند فتح تذكرة أو طلب وساطة"],
             ["delivery", "تسليم الطلبات", "إشعار عند تسليم أو اعتماد التسليم"],
             ["referral", "أرباح الإحالات", "إشعار عند احتساب عمولة إحالة جديدة"],
           ] as const).map(([k, label, hint]) => (
-            <label key={k} className="flex items-start justify-between gap-3 rounded-xl border border-border px-4 py-3 text-sm">
+            <label key={k} className="flex cursor-pointer items-start justify-between gap-3 rounded-xl border border-border bg-surface-2/40 px-4 py-3 text-sm hover:border-primary/50">
               <span className="min-w-0">
-                <span className="block truncate font-bold">{label}</span>
+                <span className="block font-bold text-foreground">{label}</span>
                 <span className="mt-0.5 block text-[11px] leading-relaxed text-muted-foreground">{hint}</span>
               </span>
-              <input
-                type="checkbox"
-                checked={notif[k]}
-                onChange={(e) => setNotif({ ...notif, [k]: e.target.checked })}
-                className="mt-1 size-4 shrink-0 accent-primary"
-              />
+              <span className="relative mt-0.5 shrink-0">
+                <input
+                  type="checkbox"
+                  checked={notif[k]}
+                  onChange={(e) => setNotif({ ...notif, [k]: e.target.checked })}
+                  className="peer sr-only"
+                />
+                <span className="block h-6 w-11 rounded-full border border-border bg-muted transition-colors peer-checked:border-primary peer-checked:bg-primary peer-focus-visible:ring-2 peer-focus-visible:ring-ring" />
+                <span className="absolute top-1 start-1 size-4 rounded-full bg-foreground transition-transform peer-checked:translate-x-5 peer-checked:bg-primary-foreground rtl:peer-checked:-translate-x-5" />
+              </span>
             </label>
           ))}
+
         </div>
       </Card>
 
