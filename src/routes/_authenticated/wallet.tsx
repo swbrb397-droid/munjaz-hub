@@ -272,11 +272,13 @@ function WalletPage() {
                           txId: t.id,
                           type: String(t.type),
                           network: t.network ?? tr("داخلي", "Internal"),
+                          gateway: t.network ? `USDT · ${t.network}` : "USDT",
                           amount: `${Number(t.amount)} USDT`,
                           status: String(t.status),
                           date: new Date(t.created_at).toLocaleString(),
                         })
                       }
+
                       className="inline-flex items-center gap-1 rounded-lg border border-border px-2.5 py-1.5 text-[11px] font-bold hover:border-primary hover:text-primary"
                     >
                       <FileText className="size-3.5" /> {tr("إيصال المعاملة 📄", "Receipt 📄")}
