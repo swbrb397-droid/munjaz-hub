@@ -10,6 +10,7 @@ export type ReceiptData = {
   status: string;
   date: string;
   fee?: string;
+  gateway?: string;
 };
 
 /** Printable, high-contrast transaction receipt preview. */
@@ -19,11 +20,13 @@ export function ReceiptModal({ receipt, onClose }: { receipt: ReceiptData; onClo
     ...((receipt.orderId ? [["رقم الطلب (Order ID)", receipt.orderId]] : []) as [string, string][]),
     ["نوع المعاملة", receipt.type],
     ["الشبكة", receipt.network],
-    ["المبلغ", receipt.amount],
-    ...((receipt.fee ? [["الرسوم", receipt.fee]] : []) as [string, string][]),
+    ["وسيلة الدفع", receipt.gateway ?? "USDT"],
+    ["المبلغ الإجمالي", receipt.amount],
+    ["عمولة المنصة", receipt.fee ?? "0.00 USDT"],
     ["الحالة", receipt.status],
-    ["التاريخ", receipt.date],
+    ["التاريخ والوقت", receipt.date],
   ];
+
 
   return (
     <div className="fixed inset-0 z-[70] grid place-items-center overflow-y-auto bg-background/85 p-4 backdrop-blur" role="dialog" aria-modal="true">
