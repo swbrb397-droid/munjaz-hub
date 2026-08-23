@@ -90,20 +90,21 @@ export function FiatOnRamp({ onSuccess }: { onSuccess: (d: FiatDeposit) => void 
 
       {/* Calculator */}
       <div className="grid gap-3 rounded-2xl border border-border p-4">
-        <label className="grid gap-1.5 text-sm">
+        <label className="grid gap-1.5 text-end text-sm">
           <span className="text-muted-foreground">المبلغ بالعملة المحلية</span>
-          <div className="flex gap-2">
+          <div className="flex gap-3">
             <input
               value={amount}
               onChange={(e) => setAmount(e.target.value.replace(/[^\d.]/g, ""))}
               inputMode="decimal"
+              dir="ltr"
               maxLength={10}
-              className="min-w-0 flex-1 rounded-xl border border-input bg-surface px-3 py-2.5 text-sm font-bold outline-none focus:border-primary"
+              className="min-w-0 flex-1 rounded-xl border border-input bg-surface px-3 py-2.5 text-left font-mono text-sm font-bold outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/50"
             />
             <select
               value={currency}
               onChange={(e) => setCurrency(e.target.value as keyof typeof FIAT)}
-              className="shrink-0 rounded-xl border border-input bg-surface px-2 py-2.5 text-xs font-bold outline-none focus:border-primary"
+              className="shrink-0 rounded-xl border border-input bg-surface px-2 py-2.5 text-xs font-bold outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/50"
             >
               {Object.keys(FIAT).map((c) => (
                 <option key={c} value={c}>{c}</option>
@@ -113,12 +114,12 @@ export function FiatOnRamp({ onSuccess }: { onSuccess: (d: FiatDeposit) => void 
         </label>
 
         <p className="text-[11px] text-muted-foreground">
-          سعر السوق اللحظي: <span className="font-bold text-foreground">1 USD ≈ 0.985 USDT</span> بعد المعالجة · عمولة المنصة 0%
+          سعر السوق اللحظي: <span dir="ltr" className="font-mono font-bold text-foreground">1 USD ≈ 0.985 USDT</span> بعد المعالجة · عمولة المنصة 0%
         </p>
 
         <div className="rounded-xl border border-primary/40 bg-primary/10 p-3">
           <p className="text-[11px] text-muted-foreground">المبلغ المستلم في محفظتك</p>
-          <p className="mt-1 text-3xl font-black text-primary">{netUsdt.toFixed(2)} <span className="text-base">USDT</span></p>
+          <p dir="ltr" className="mt-1 text-left font-mono text-3xl font-black text-primary">{netUsdt.toFixed(2)} <span className="text-base">USDT</span></p>
         </div>
 
         <button type="button" onClick={() => setFeesOpen(!feesOpen)} className="flex items-center justify-between rounded-xl border border-border px-3 py-2.5 text-xs font-bold">
@@ -127,9 +128,9 @@ export function FiatOnRamp({ onSuccess }: { onSuccess: (d: FiatDeposit) => void 
         </button>
         {feesOpen && (
           <dl className="grid gap-1.5 rounded-xl border border-border bg-surface-2/60 p-3 text-[11px]">
-            <div className="flex justify-between gap-3"><dt className="text-muted-foreground">رسوم البطاقة وبوابة التحويل (~2.5%–3.5%)</dt><dd className="font-bold">{feeUsd.toFixed(2)} USD</dd></div>
+            <div className="flex justify-between gap-3"><dt className="text-muted-foreground">رسوم البطاقة وبوابة التحويل (~2.5%–3.5%)</dt><dd dir="ltr" className="font-mono font-bold">{feeUsd.toFixed(2)} USD</dd></div>
             <div className="flex justify-between gap-3"><dt className="text-muted-foreground">عمولة منصة الـمُـنْـجِـز</dt><dd className="font-bold text-primary">0% مجاناً</dd></div>
-            <div className="flex justify-between gap-3 border-t border-border pt-1.5"><dt className="text-muted-foreground">الصافي المودع في المحفظة</dt><dd className="font-black text-primary">{netUsdt.toFixed(2)} USDT</dd></div>
+            <div className="flex justify-between gap-3 border-t border-border pt-1.5"><dt className="text-muted-foreground">الصافي المودع في المحفظة</dt><dd dir="ltr" className="font-mono font-black text-primary">{netUsdt.toFixed(2)} USDT</dd></div>
           </dl>
         )}
       </div>
@@ -140,48 +141,66 @@ export function FiatOnRamp({ onSuccess }: { onSuccess: (d: FiatDeposit) => void 
           الدفع بالبطاقة
           <span className="text-[10px] font-bold text-muted-foreground">{brand === "visa" ? "VISA 💳" : brand === "mastercard" ? "Mastercard 💳" : "Visa / Mastercard"}</span>
         </p>
-        <input
-          value={card.number}
-          onChange={(e) => setCard({ ...card, number: e.target.value.replace(/\D/g, "").slice(0, 16).replace(/(.{4})/g, "$1 ").trim() })}
-          inputMode="numeric"
-          placeholder="0000 0000 0000 0000"
-          className="w-full rounded-xl border border-input bg-surface px-3 py-2.5 font-mono text-sm outline-none focus:border-primary"
-        />
-        <div className="grid grid-cols-2 gap-2">
+        <label className="grid gap-1.5 text-end text-[11px] font-bold text-muted-foreground">
+          رقم البطاقة
           <input
-            value={card.exp}
-            onChange={(e) => {
-              const d = e.target.value.replace(/\D/g, "").slice(0, 4);
-              setCard({ ...card, exp: d.length > 2 ? `${d.slice(0, 2)}/${d.slice(2)}` : d });
-            }}
-            placeholder="MM/YY"
-            className="w-full rounded-xl border border-input bg-surface px-3 py-2.5 font-mono text-sm outline-none focus:border-primary"
+            value={card.number}
+            onChange={(e) => setCard({ ...card, number: e.target.value.replace(/\D/g, "").slice(0, 16).replace(/(.{4})/g, "$1 ").trim() })}
+            inputMode="numeric"
+            dir="ltr"
+            placeholder="0000 0000 0000 0000"
+            className="w-full rounded-xl border border-input bg-surface px-3 py-2.5 text-left font-mono text-sm text-foreground outline-none transition placeholder:text-muted-foreground focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/50"
           />
-          <input
-            value={card.cvv}
-            onChange={(e) => setCard({ ...card, cvv: e.target.value.replace(/\D/g, "").slice(0, 4) })}
-            placeholder="CVV"
-            className="w-full rounded-xl border border-input bg-surface px-3 py-2.5 font-mono text-sm outline-none focus:border-primary"
-          />
+        </label>
+        <div className="grid grid-cols-2 gap-3">
+          <label className="grid gap-1.5 text-end text-[11px] font-bold text-muted-foreground">
+            تاريخ الانتهاء
+            <input
+              value={card.exp}
+              onChange={(e) => {
+                const d = e.target.value.replace(/\D/g, "").slice(0, 4);
+                setCard({ ...card, exp: d.length > 2 ? `${d.slice(0, 2)}/${d.slice(2)}` : d });
+              }}
+              dir="ltr"
+              inputMode="numeric"
+              placeholder="MM/YY"
+              className="w-full rounded-xl border border-input bg-surface px-3 py-2.5 text-center font-mono text-sm text-foreground outline-none transition placeholder:text-center placeholder:text-muted-foreground focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/50"
+            />
+          </label>
+          <label className="grid gap-1.5 text-end text-[11px] font-bold text-muted-foreground">
+            رمز الحماية
+            <input
+              value={card.cvv}
+              onChange={(e) => setCard({ ...card, cvv: e.target.value.replace(/\D/g, "").slice(0, 4) })}
+              dir="ltr"
+              inputMode="numeric"
+              placeholder="CVV"
+              className="w-full rounded-xl border border-input bg-surface px-3 py-2.5 text-center font-mono text-sm text-foreground outline-none transition placeholder:text-center placeholder:text-muted-foreground focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/50"
+            />
+          </label>
         </div>
-        <input
-          value={card.name}
-          onChange={(e) => setCard({ ...card, name: e.target.value.replace(/[^A-Za-z\u0600-\u06FF ]/g, "").slice(0, 40) })}
-          placeholder="اسم حامل البطاقة"
-          className="w-full rounded-xl border border-input bg-surface px-3 py-2.5 text-sm outline-none focus:border-primary"
-        />
+        <label className="grid gap-1.5 text-end text-[11px] font-bold text-muted-foreground">
+          اسم حامل البطاقة
+          <input
+            value={card.name}
+            onChange={(e) => setCard({ ...card, name: e.target.value.replace(/[^A-Za-z\u0600-\u06FF ]/g, "").slice(0, 40) })}
+            placeholder="الاسم كما هو على البطاقة"
+            className="w-full rounded-xl border border-input bg-surface px-3 py-2.5 text-sm text-foreground outline-none transition placeholder:text-muted-foreground focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/50"
+          />
+        </label>
         <button
           type="button"
           disabled={!cardValid || !!busy || usd <= 0}
           onClick={() => pay(brand === "visa" ? "Visa" : brand === "mastercard" ? "Mastercard" : "بطاقة بنكية")}
-          className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3 text-sm font-bold text-primary-foreground disabled:opacity-40"
+          className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-500 py-3 text-sm font-bold text-neutral-950 transition-colors hover:bg-emerald-400 active:bg-emerald-600 disabled:opacity-40"
         >
-          <CreditCard className="size-4" /> {busy ? "جارٍ تنفيذ الدفع الآمن..." : "إتمام الدفع الآمن وشحن المحفظة 💳"}
+          <CreditCard className="size-4 text-neutral-950" /> {busy ? "جارٍ تنفيذ الدفع الآمن..." : "إتمام الدفع الآمن وشحن المحفظة 💳"}
         </button>
-        <p className="inline-flex items-center justify-center gap-2 text-[10px] font-bold text-muted-foreground">
-          <Lock className="size-3" /> تشفير SSL 256-bit · مصادقة 3D-Secure
+        <p className="inline-flex items-center justify-center gap-2 text-[11px] font-bold text-foreground antialiased">
+          <Lock className="size-3.5 text-emerald-400" /> <span dir="ltr" className="font-mono">SSL 256-bit</span> · مصادقة 3D-Secure
         </p>
       </div>
+
 
       <div className="grid gap-2 rounded-2xl border border-accent/40 bg-accent/10 p-4 text-[11px] leading-relaxed">
         <p className="flex gap-2 font-bold text-accent"><Zap className="mt-0.5 size-3.5 shrink-0" /> شحن فوري: يتم شراء الـ USDT وتحويله إلى رصيدك المتاح فور إتمام عملية الدفع.</p>

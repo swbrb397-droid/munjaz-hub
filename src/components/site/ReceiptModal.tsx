@@ -10,6 +10,7 @@ export type ReceiptData = {
   status: string;
   date: string;
   fee?: string;
+  gateway?: string;
 };
 
 /** Printable, high-contrast transaction receipt preview. */
@@ -19,11 +20,13 @@ export function ReceiptModal({ receipt, onClose }: { receipt: ReceiptData; onClo
     ...((receipt.orderId ? [["رقم الطلب (Order ID)", receipt.orderId]] : []) as [string, string][]),
     ["نوع المعاملة", receipt.type],
     ["الشبكة", receipt.network],
-    ["المبلغ", receipt.amount],
-    ...((receipt.fee ? [["الرسوم", receipt.fee]] : []) as [string, string][]),
+    ["وسيلة الدفع", receipt.gateway ?? "USDT"],
+    ["المبلغ الإجمالي", receipt.amount],
+    ["عمولة المنصة", receipt.fee ?? "0.00 USDT"],
     ["الحالة", receipt.status],
-    ["التاريخ", receipt.date],
+    ["التاريخ والوقت", receipt.date],
   ];
+
 
   return (
     <div className="fixed inset-0 z-[70] grid place-items-center overflow-y-auto bg-background/85 p-4 backdrop-blur" role="dialog" aria-modal="true">
@@ -38,9 +41,10 @@ export function ReceiptModal({ receipt, onClose }: { receipt: ReceiptData; onClo
         <div id="munjaz-receipt" className="mt-4 rounded-2xl border border-border bg-surface p-4">
           <div className="flex items-center justify-between gap-3 border-b border-dashed border-border pb-3">
             <p className="text-sm font-black">الـمُـنْـجِـز</p>
-            <span className="inline-flex items-center gap-1 rounded-full border border-primary/50 bg-primary/10 px-2.5 py-1 text-[10px] font-bold text-primary">
-              <ShieldCheck className="size-3" /> مختوم بضمان المنصة
+            <span className="inline-flex items-center gap-1 rounded-full bg-primary px-2.5 py-1 text-[10px] font-black text-primary-foreground">
+              <ShieldCheck className="size-3" /> ضمان منصة مُنجز - معتمد ✅
             </span>
+
           </div>
           <dl className="mt-3 grid gap-2 text-xs">
             {rows.map(([k, v]) => (
