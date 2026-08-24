@@ -111,7 +111,7 @@ function Store() {
       {listingId && (
         <ListingDeepLink
           id={listingId}
-          onClose={() => navigate({ to: "/store", search: (prev) => ({ ...prev, listingId: undefined }), replace: true })}
+          onClose={() => navigate({ to: "/store", search: (prev) => (prev.lang ? { lang: prev.lang } : {}), replace: true })}
         />
       )}
       <Section title={tr("المتجر الرقمي", "Digital store")} subtitle={tr("كل شيء بسعر USDT مع ضمان المنصة", "Everything priced in USDT with platform protection")}>
