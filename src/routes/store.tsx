@@ -8,6 +8,8 @@ import { useLang } from "@/lib/lang";
 import { useListings, useNfts, type ListingCategory, type SortKey } from "@/lib/catalog";
 import { NftCard, ServiceCard } from "./index";
 
+type StoreSearch = { listingId?: string; lang?: "ar" | "en" };
+
 export const Route = createFileRoute("/store")({
   head: () => ({
     meta: [
@@ -17,10 +19,12 @@ export const Route = createFileRoute("/store")({
       { property: "og:description", content: "فلترة كاملة للأصول الرقمية والدورات وخدمات المستقلين بعملة USDT." },
     ],
   }),
-  validateSearch: (search: Record<string, unknown>) => ({
-    listingId: typeof search["listingId"] === "string" ? (search["listingId"] as string) : undefined,
-    lang: search["lang"] === "en" || search["lang"] === "ar" ? (search["lang"] as "ar" | "en") : undefined,
-  }),
+  validateSearch: (search: Record<string, unknown>): StoreSearch => {
+    const out: StoreSearch = {};
+    if (typeof search["listingId"] === "string" && search["listingId"]) out.listingId = search["listingId"];
+    if (search["lang"] === "en" || search["lang"] === "ar") out.lang = search["lang"];
+    return out;
+  },
   component: Store,
 });
 
