@@ -73,6 +73,7 @@ function pad(n: number) {
 
 function OrdersPage() {
   const { tr } = useLang();
+  const { notify } = useNotify();
   const [state, setState] = useState<OrderState>("escrow");
   const [disputeOpen, setDisputeOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
