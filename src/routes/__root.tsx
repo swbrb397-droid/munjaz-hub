@@ -14,6 +14,7 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Shell } from "../components/site/Shell";
 import { LangProvider } from "../lib/lang";
 import { ViewModeProvider } from "../lib/view-mode";
+import { NotifyProvider } from "../lib/notify";
 import { Toaster } from "@/components/ui/sonner";
 
 
@@ -140,11 +141,13 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <LangProvider>
         <ViewModeProvider>
+          <NotifyProvider>
           <Shell>
             {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
             <Outlet />
           </Shell>
           <Toaster position="top-center" richColors />
+          </NotifyProvider>
         </ViewModeProvider>
       </LangProvider>
     </QueryClientProvider>

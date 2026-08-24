@@ -111,3 +111,47 @@
     linear-gradient(90deg, color-mix(in oklab, var(--border) 60%, transparent) 1px, transparent 1px);
   background-size: 46px 46px;
 }
+
+@media print {
+  @page {
+    margin: 14mm;
+  }
+
+  html,
+  body {
+    background: #fff !important;
+    color: #000 !important;
+    background-image: none !important;
+  }
+
+  body * {
+    visibility: hidden !important;
+  }
+
+  #munjaz-receipt,
+  #munjaz-receipt * {
+    visibility: visible !important;
+    color: #000 !important;
+    background: #fff !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+
+  #munjaz-receipt {
+    position: absolute;
+    inset-inline-start: 0;
+    top: 0;
+    width: 100%;
+    border: 1px solid #000 !important;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  #munjaz-receipt img,
+  #munjaz-receipt svg,
+  #munjaz-receipt canvas {
+    filter: none !important;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+}

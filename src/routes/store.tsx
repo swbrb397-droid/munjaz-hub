@@ -1,10 +1,14 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
-import { Filter, Loader2 } from "lucide-react";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import { ArrowLeft, Filter, Loader2, Star, X } from "lucide-react";
+import { useListing } from "@/lib/orders";
+import { useLang as useLangCtx } from "@/lib/lang";
 import { Card, Section } from "@/components/site/Shell";
 import { useLang } from "@/lib/lang";
 import { useListings, useNfts, type ListingCategory, type SortKey } from "@/lib/catalog";
 import { NftCard, ServiceCard } from "./index";
+
+type StoreSearch = { listingId?: string; lang?: "ar" | "en" };
 
 export const Route = createFileRoute("/store")({
   head: () => ({
@@ -15,11 +19,70 @@ export const Route = createFileRoute("/store")({
       { property: "og:description", content: "فلترة كاملة للأصول الرقمية والدورات وخدمات المستقلين بعملة USDT." },
     ],
   }),
+  validateSearch: (search: Record<string, unknown>): StoreSearch => {
+    const out: StoreSearch = {};
+    if (typeof search["listingId"] === "string" && search["listingId"]) out.listingId = search["listingId"];
+    if (search["lang"] === "en" || search["lang"] === "ar") out.lang = search["lang"];
+    return out;
+  },
   component: Store,
 });
 
+/** Deep-link quick view: /store?listingId=xyz&lang=ar opens the listing directly. */
+function ListingDeepLink({ id, onClose }: { id: string; onClose: () => void }) {
+  const { tr } = useLangCtx();
+  const listing = useListing(id);
+  const item = listing.data;
+
+  return (
+    <div className="fixed inset-0 z-[70] grid place-items-center overflow-y-auto bg-background/85 p-4 backdrop-blur" role="dialog" aria-modal="true">
+      <div className="w-full max-w-md rounded-2xl border border-border bg-card p-5">
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
+          <h2 className="min-w-0 truncate text-sm font-black">{tr("عرض مشارَك 🔗", "Shared listing 🔗")}</h2>
+          <button type="button" onClick={onClose} aria-label={tr("إغلاق", "Close")} className="grid size-8 shrink-0 place-items-center rounded-lg border border-border">
+            <X className="size-4" />
+          </button>
+        </div>
+
+        {listing.isLoading ? (
+          <div className="grid place-items-center py-10"><Loader2 className="size-5 animate-spin text-primary" /></div>
+        ) : !item ? (
+          <p className="py-8 text-center text-sm text-muted-foreground">{tr("العرض غير متاح أو تم حذفه.", "This listing is unavailable.")}</p>
+        ) : (
+          <>
+            <div className="mt-4 h-32 overflow-hidden rounded-xl border border-border">
+              <img src={item.cover} alt={item.title} className="size-full object-cover" width={768} height={512} />
+            </div>
+            <h3 className="mt-3 font-bold leading-snug">{item.title}</h3>
+            <p className="mt-1 text-sm text-muted-foreground">{item.seller}</p>
+            <p className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
+              <Star className="size-3.5 fill-accent text-accent" /> {item.rating} · {item.orders} {tr("طلب", "orders")}
+            </p>
+            <p className="mt-3 text-lg font-black text-primary">{item.price} USDT</p>
+            <Link
+              to="/listing/$id"
+              params={{ id }}
+              onClick={onClose}
+              className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-2.5 text-sm font-bold text-primary-foreground"
+            >
+              {tr("فتح صفحة العرض كاملة", "Open full listing")} <ArrowLeft className="size-4" />
+            </Link>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function Store() {
-  const { tr } = useLang();
+  const { tr, lang, setLang } = useLang();
+  const { listingId, lang: langParam } = Route.useSearch();
+  const navigate = useNavigate();
+
+  // Respect the language carried by the deep link without an extra redirect.
+  useEffect(() => {
+    if (langParam && langParam !== lang) setLang(langParam);
+  }, [langParam, lang, setLang]);
   const [active, setActive] = useState<ListingCategory | "all">("all");
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<SortKey>("recent");
@@ -45,6 +108,12 @@ function Store() {
 
   return (
     <>
+      {listingId && (
+        <ListingDeepLink
+          id={listingId}
+          onClose={() => navigate({ to: "/store", search: (prev) => (prev.lang ? { lang: prev.lang } : {}), replace: true })}
+        />
+      )}
       <Section title={tr("المتجر الرقمي", "Digital store")} subtitle={tr("كل شيء بسعر USDT مع ضمان المنصة", "Everything priced in USDT with platform protection")}>
         <Card className="mb-6 flex flex-wrap items-center gap-3">
           <Filter className="size-4 text-primary" />

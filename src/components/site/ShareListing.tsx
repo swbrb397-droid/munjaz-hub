@@ -1,12 +1,16 @@
 import { useState } from "react";
 import { Check, Copy, Share2, X } from "lucide-react";
 import { QrCode } from "@/components/site/QrCode";
+import { useLang } from "@/lib/lang";
 
 /** Share action for a service card: QR popup + copy link. */
 export function ShareListing({ id, title, variant = "icon" }: { id: string; title: string; variant?: "icon" | "button" }) {
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
-  const url = typeof window !== "undefined" ? `${window.location.origin}/listing/${id}` : `/listing/${id}`;
+  const { lang } = useLang();
+  // Deep link: scanning the QR opens the exact listing while preserving language + session.
+  const path = `/store?listingId=${encodeURIComponent(id)}&lang=${lang}`;
+  const url = typeof window !== "undefined" ? `${window.location.origin}${path}` : path;
 
   return (
     <>

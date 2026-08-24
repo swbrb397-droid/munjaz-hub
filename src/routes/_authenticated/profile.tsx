@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { Card, Section } from "@/components/site/Shell";
 import { useLang } from "@/lib/lang";
+import { useNotify } from "@/lib/notify";
 import { useAuth } from "@/hooks/use-auth";
 import { PayoutSecurityCard, Toggle } from "@/components/site/PayoutSecurityCard";
 import { ghostTag, useGhostMode } from "@/lib/ghost";
@@ -413,7 +414,7 @@ function SettingsPanel({ twoFa, setTwoFa }: { twoFa: boolean; setTwoFa: (v: bool
   const ghost = useGhostMode();
   const [network, setNetwork] = useState<"TRC-20" | "BEP-20">("TRC-20");
   const [address, setAddress] = useState("");
-  const [notif, setNotif] = useState({ sales: true, escrow: true, disputes: true, delivery: true, referral: false });
+  const { prefs: notif, setPref, notify } = useNotify();
   const [pwOpen, setPwOpen] = useState(false);
 
   const pattern = network === "TRC-20" ? /^T[1-9A-HJ-NP-Za-km-z]{33}$/ : /^0x[a-fA-F0-9]{40}$/;
@@ -471,7 +472,11 @@ function SettingsPanel({ twoFa, setTwoFa }: { twoFa: boolean; setTwoFa: (v: bool
                 <input
                   type="checkbox"
                   checked={notif[k]}
-                  onChange={(e) => setNotif({ ...notif, [k]: e.target.checked })}
+                  onChange={(e) => {
+                    setPref(k, e.target.checked);
+                    if (e.target.checked) notify(k, `تم تفعيل: ${label}`, "success");
+                    else toast(`تم إيقاف: ${label}`);
+                  }}
                   className="peer sr-only"
                 />
                 <span className="block h-6 w-11 rounded-full border border-border bg-muted transition-colors peer-checked:border-primary peer-checked:bg-primary peer-focus-visible:ring-2 peer-focus-visible:ring-ring" />

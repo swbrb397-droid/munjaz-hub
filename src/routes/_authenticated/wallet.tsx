@@ -249,7 +249,7 @@ function WalletPage() {
                       }
                       className="inline-flex items-center gap-1 rounded-lg border border-border px-2.5 py-1.5 text-[11px] font-bold hover:border-primary hover:text-primary"
                     >
-                      <FileText className="size-3.5" /> {tr("إيصال المعاملة 📄", "Receipt 📄")}
+                      <FileText className="size-3.5" /> {tr("عرض الإيصال 📄", "View receipt 📄")}
 
                     </button>
                   </td>
@@ -281,7 +281,7 @@ function WalletPage() {
 
                       className="inline-flex items-center gap-1 rounded-lg border border-border px-2.5 py-1.5 text-[11px] font-bold hover:border-primary hover:text-primary"
                     >
-                      <FileText className="size-3.5" /> {tr("إيصال المعاملة 📄", "Receipt 📄")}
+                      <FileText className="size-3.5" /> {tr("عرض الإيصال 📄", "View receipt 📄")}
                     </button>
                   </td>
                 </tr>

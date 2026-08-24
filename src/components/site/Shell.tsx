@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useLang, type TranslationKey } from "@/lib/lang";
+import { useNotify, type NotifyChannel } from "@/lib/notify";
 import { useAuth } from "@/hooks/use-auth";
 import { useViewMode } from "@/lib/view-mode";
 import { ErrorBoundary } from "@/components/site/ErrorBoundary";
@@ -143,10 +144,18 @@ function Notifications() {
     return () => document.removeEventListener("mousedown", onDown);
   }, [open]);
 
+  const { events, prefs } = useNotify();
+
+  // Static feed respects the same granular preferences as live toasts.
+  const baseline: { channel: NotifyChannel; text: string }[] = [
+    { channel: "escrow", text: tr("تم تحرير 250 USDT من الضمان.", "250 USDT released from escrow.") },
+    { channel: "delivery", text: tr("رسالة جديدة في مساحة الطلب #4821.", "New message in workspace #4821.") },
+    { channel: "sales", text: tr("اكتمل توثيق حسابك (KYC 2).", "Your account verification is complete (KYC 2).") },
+  ];
+
   const items = [
-    tr("تم تحرير 250 USDT من الضمان.", "250 USDT released from escrow."),
-    tr("رسالة جديدة في مساحة الطلب #4821.", "New message in workspace #4821."),
-    tr("اكتمل توثيق حسابك (KYC 2).", "Your account verification is complete (KYC 2)."),
+    ...events.map((e) => ({ id: e.id, text: e.message })),
+    ...baseline.filter((b) => prefs[b.channel]).map((b) => ({ id: b.text, text: b.text })),
   ];
 
   return (
@@ -159,13 +168,16 @@ function Notifications() {
         aria-label={tr("التنبيهات", "Notifications")}
       >
         <Bell className="size-4" />
-        <span className="absolute -top-1 -start-1 size-2 rounded-full bg-primary" />
+        {items.length > 0 && <span className="absolute -top-1 -start-1 size-2 rounded-full bg-primary" />}
       </button>
       {open && (
-        <div className="absolute end-0 top-11 z-50 w-64 rounded-xl border border-border bg-card p-2 shadow-xl">
+        <div className="absolute end-0 top-11 z-50 max-h-72 w-64 overflow-y-auto rounded-xl border border-border bg-card p-2 shadow-xl">
+          {items.length === 0 && (
+            <p className="px-3 py-2 text-xs text-muted-foreground">{tr("لا توجد تنبيهات مفعّلة.", "No active notifications.")}</p>
+          )}
           {items.map((n) => (
-            <p key={n} className="rounded-lg px-3 py-2 text-xs text-muted-foreground hover:bg-secondary">
-              {n}
+            <p key={n.id} className="rounded-lg px-3 py-2 text-xs text-muted-foreground hover:bg-secondary">
+              {n.text}
             </p>
           ))}
         </div>
