@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 
 export type NotifyChannel = "sales" | "escrow" | "disputes" | "delivery" | "referral";
@@ -42,11 +42,17 @@ const NotifyContext = createContext<Ctx>({
 export function NotifyProvider({ children }: { children: ReactNode }) {
   const [prefs, setPrefs] = useState<NotifyPrefs>(DEFAULT_PREFS);
   const [events, setEvents] = useState<NotifyEvent[]>([]);
+  const prefsRef = useRef<NotifyPrefs>(DEFAULT_PREFS);
+  prefsRef.current = prefs;
 
   useEffect(() => {
     try {
       const raw = window.localStorage.getItem(STORAGE_KEY);
-      if (raw) setPrefs({ ...DEFAULT_PREFS, ...(JSON.parse(raw) as Partial<NotifyPrefs>) });
+      if (raw) {
+        const parsed = { ...DEFAULT_PREFS, ...(JSON.parse(raw) as Partial<NotifyPrefs>) };
+        prefsRef.current = parsed;
+        setPrefs(parsed);
+      }
     } catch {
       /* ignore malformed storage */
     }
@@ -55,6 +61,7 @@ export function NotifyProvider({ children }: { children: ReactNode }) {
   const setPref = useCallback((channel: NotifyChannel, value: boolean) => {
     setPrefs((prev) => {
       const next = { ...prev, [channel]: value };
+      prefsRef.current = next;
       try {
         window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
       } catch {
@@ -66,12 +73,7 @@ export function NotifyProvider({ children }: { children: ReactNode }) {
 
   const notify = useCallback<Ctx["notify"]>(
     (channel, message, kind = "info") => {
-      let allowed = false;
-      setPrefs((prev) => {
-        allowed = prev[channel];
-        return prev;
-      });
-      if (!allowed) return false;
+      if (!prefsRef.current[channel]) return false;
       setEvents((prev) => [{ id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, channel, message, at: Date.now() }, ...prev].slice(0, 20));
       if (kind === "success") toast.success(message);
       else if (kind === "error") toast.error(message);
