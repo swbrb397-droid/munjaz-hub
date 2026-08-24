@@ -18,6 +18,7 @@ import {
 import { Card, Section } from "@/components/site/Shell";
 import { useLang } from "@/lib/lang";
 import { ReceiptModal, type ReceiptData } from "@/components/site/ReceiptModal";
+import { useNotify } from "@/lib/notify";
 
 export const Route = createFileRoute("/_authenticated/orders")({
   head: () => ({
@@ -185,7 +186,7 @@ function OrdersPage() {
                     }
                     className="inline-flex w-fit items-center gap-2 rounded-xl border border-border bg-card px-3 py-2 text-[11px] font-bold hover:border-primary hover:text-primary"
                   >
-                    <FileText className="size-3.5" /> إيصال المعاملة 📄
+                    <FileText className="size-3.5" /> عرض الإيصال 📄
                   </button>
                 </div>
               )}
@@ -258,7 +259,7 @@ function OrdersPage() {
               <button
                 type="button"
                 disabled={state !== "escrow"}
-                onClick={() => toast.success("تم إرسال طلب التعديل للبائع")}
+                onClick={() => notify("delivery", "تم إرسال طلب التعديل للبائع", "success")}
                 className="w-full rounded-xl border border-border py-3 text-sm font-bold text-foreground disabled:opacity-40"
               >
                 طلب تعديل
@@ -291,7 +292,7 @@ function OrdersPage() {
               onClick={() => {
                 setState("completed");
                 setConfirmOpen(false);
-                toast.success("تم تحرير المبلغ للبائع واكتمل الطلب");
+                notify("escrow", "تم تحرير المبلغ للبائع واكتمل الطلب", "success");
               }}
               className="flex-1 rounded-xl bg-primary py-3 text-sm font-bold text-primary-foreground"
             >
@@ -310,7 +311,7 @@ function OrdersPage() {
           onSubmitted={() => {
             setState("disputed");
             setDisputeOpen(false);
-            toast.success("تم تقديم طلب التحكيم وتجميد الدفعة");
+            notify("disputes", "تم تقديم طلب التحكيم وتجميد الدفعة", "success");
           }}
         />
       )}
