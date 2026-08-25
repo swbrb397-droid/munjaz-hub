@@ -356,27 +356,60 @@ function Workspace() {
     >
       <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
         <Card className="flex min-h-[560px] flex-col">
-          <div className="flex items-center gap-2 border-b border-border pb-3">
-            {tabs.map((t) => (
-              <button
-                key={t.key}
-                onClick={() => setTab(t.key)}
-                className={`rounded-lg px-3 py-1.5 text-sm ${tab === t.key ? "bg-secondary font-bold text-primary" : "text-muted-foreground"}`}
-              >
-                {t.label}
-              </button>
-            ))}
+          <div className="flex flex-wrap items-center gap-2 border-b border-border pb-3">
+            <div className="-mx-1 flex max-w-full flex-1 gap-1 overflow-x-auto px-1">
+              {tabs.map((t) => (
+                <button
+                  key={t.key}
+                  onClick={() => setTab(t.key)}
+                  className={`shrink-0 rounded-lg px-3 py-1.5 text-sm ${tab === t.key ? "bg-secondary font-bold text-primary" : "text-muted-foreground"}`}
+                >
+                  {t.label}
+                </button>
+              ))}
+            </div>
             <button
-              onClick={() => setTranslate(!translate)}
-              className={`ms-auto inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm ${translate ? "bg-primary font-bold text-primary-foreground" : "border border-border text-muted-foreground"}`}
+              type="button"
+              onClick={() => setTranslatePref(!translate)}
+              className={`inline-flex shrink-0 items-center gap-2 rounded-full px-3 py-1.5 text-xs font-bold ${translate ? "bg-primary text-primary-foreground" : "border border-border text-muted-foreground"}`}
             >
-              <Languages className="size-4" /> {tr("ترجمة AI", "AI Translate")}
+              <Languages className="size-4" /> 🌍 {tr("الترجمة التلقائية", "Auto-translate")}:{" "}
+              {translate ? tr("مفعّلة", "On") : tr("معطّلة", "Off")}
             </button>
           </div>
 
           {tab === "chat" && (
             <>
-              <div className="pt-3"><ChatSecurityNotice /></div>
+              <div className="grid gap-2 pt-3">
+                <ChatSecurityNotice />
+                {translate === null && (
+                  <div className="grid gap-2 rounded-xl border border-accent/40 bg-accent/5 px-3 py-3">
+                    <p className="flex items-start gap-2 text-xs leading-relaxed text-foreground">
+                      <Sparkles className="mt-0.5 size-4 shrink-0 text-accent" />
+                      {tr(
+                        "هل ترغب في تفعيل الترجمة التلقائية الذكية للرسائل إلى لغتك المفضلة؟",
+                        "Would you like to enable smart auto-translation of messages into your preferred language?",
+                      )}
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setTranslatePref(true)}
+                        className="rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground"
+                      >
+                        {tr("تفعيل الترجمة التلقائية ⚡", "Enable auto-translation ⚡")}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setTranslatePref(false)}
+                        className="rounded-lg border border-border px-3 py-1.5 text-xs font-bold text-muted-foreground"
+                      >
+                        {tr("الإبقاء على النص الأصلي", "Keep the original text")}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
               <div className="flex-1 space-y-3 overflow-y-auto py-4">
                 {messages.length === 0 && (
 
@@ -384,15 +417,41 @@ function Workspace() {
                     {tr("ابدأ المحادثة مع الطرف الآخر.", "Start the conversation with the other party.")}
                   </p>
                 )}
-                {messages.map((m) => (
-                  <div key={m.id} className={`flex ${m.from === "them" ? "justify-start" : "justify-end"}`}>
-                    <div className={`max-w-[75%] rounded-2xl px-4 py-3 text-sm ${m.from === "them" ? "bg-secondary" : "bg-primary text-primary-foreground"}`}>
-                      <p className="mb-1 text-xs opacity-70">{m.name} · {m.time}</p>
-                      <p>{m.text}</p>
+                {messages.map((m) => {
+                  const foreign = !!m.translation && m.srcLang !== lang;
+                  const original = showOriginal.includes(m.id);
+                  const shown = translate && foreign && !original ? m.translation! : m.text;
+                  return (
+                    <div key={m.id} className={`flex ${m.from === "them" ? "justify-start" : "justify-end"}`}>
+                      <div className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm sm:max-w-[75%] ${m.from === "them" ? "bg-secondary" : "bg-primary text-primary-foreground"}`}>
+                        <p className="mb-1 text-xs opacity-70">{m.name} · {m.time}</p>
+                        <p className="break-words" dir={translate && foreign && !original ? (lang === "ar" ? "rtl" : "ltr") : "auto"}>
+                          {shown}
+                        </p>
+                        {translate && foreign && (
+                          <div className="mt-2 grid gap-1 border-t border-current/15 pt-2">
+                            {!original && (
+                              <span className="inline-flex items-center gap-1 text-[10px] font-bold text-accent">
+                                <Sparkles className="size-3" /> {tr("مترجم بواسطة الذكاء الاصطناعي", "Translated by AI")}
+                              </span>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setShowOriginal((s) => (s.includes(m.id) ? s.filter((x) => x !== m.id) : [...s, m.id]))
+                              }
+                              className="text-start text-[10px] font-bold underline underline-offset-2 opacity-80"
+                            >
+                              {original ? tr("عرض الترجمة", "Show translation") : tr("عرض النص الأصلي / Show Original", "Show original")}
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
+
 
               {warning && (
                 <p className="mb-2 flex items-center gap-2 rounded-lg border border-destructive/50 bg-destructive/10 px-3 py-2 text-xs text-destructive">
