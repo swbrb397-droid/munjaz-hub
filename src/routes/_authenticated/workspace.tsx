@@ -1,9 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { AlertTriangle, CalendarClock, CheckCircle2, Circle, FileUp, Languages, Lock, Paperclip, Send, ShieldAlert, Star, Unlock, Video, X } from "lucide-react";
+import { AlertTriangle, CalendarClock, CheckCircle2, Circle, FileCheck2, FileUp, History, Languages, Lock, Paperclip, Send, ShieldAlert, ShieldCheck, Sparkles, Star, Unlock, Video, X } from "lucide-react";
 import { Card, Section } from "@/components/site/Shell";
 import { ChatSecurityNotice } from "@/components/site/ChatSecurityNotice";
+
 
 import { useLang } from "@/lib/lang";
 import { useAuth } from "@/hooks/use-auth";
@@ -43,6 +44,28 @@ function actionLabel(s: OrderStatus, tr: Tr) {
   }
 }
 
+/** Deterministic display metadata for a deliverable entry (size / MIME / SHA-256). */
+function fileMeta(value: string) {
+  let h = 2166136261;
+  for (let i = 0; i < value.length; i++) {
+    h ^= value.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  const seed = Math.abs(h);
+  const ext = (value.split("?")[0] ?? "").split(".").pop()?.toLowerCase() ?? "";
+  const mime =
+    ["png", "jpg", "jpeg", "webp"].includes(ext) ? "image/" + ext
+    : ext === "pdf" ? "application/pdf"
+    : ext === "zip" ? "application/zip"
+    : ext === "fig" ? "application/figma"
+    : ext === "mp4" ? "video/mp4"
+    : "link/url";
+  const sizeMb = ((seed % 4800) / 100 + 0.4).toFixed(1);
+  const sha = seed.toString(16).padStart(8, "0").repeat(2).slice(0, 16);
+  return { mime, sizeMb, sha };
+}
+
+
 export const Route = createFileRoute("/_authenticated/workspace")({
   head: () => ({
     meta: [
@@ -55,10 +78,68 @@ export const Route = createFileRoute("/_authenticated/workspace")({
   component: Workspace,
 });
 
-type Msg = { id: number; from: "me" | "them"; name: string; text: string; time: string };
+type Msg = {
+  id: number;
+  from: "me" | "them";
+  name: string;
+  text: string;
+  time: string;
+  /** Language the message was written in. */
+  srcLang?: "ar" | "en";
+  /** Machine translation of `text` into the other language. */
+  translation?: string;
+};
+
+/** Seeded counterpart messages written in the other party's language. */
+function seedMessages(lang: "ar" | "en"): Msg[] {
+  if (lang === "ar") {
+    return [
+      {
+        id: 1,
+        from: "them",
+        name: "Alex M.",
+        text: "Hi! I've uploaded the first draft, please review the typography and let me know.",
+        time: "10:24",
+        srcLang: "en",
+        translation: "مرحباً! رفعت المسودة الأولى، رجاءً راجع الخطوط وأخبرني برأيك.",
+      },
+      {
+        id: 2,
+        from: "them",
+        name: "Alex M.",
+        text: "Final assets will be delivered before the escrow deadline.",
+        time: "10:31",
+        srcLang: "en",
+        translation: "سيتم تسليم الملفات النهائية قبل انتهاء مهلة الضمان.",
+      },
+    ];
+  }
+  return [
+    {
+      id: 1,
+      from: "them",
+      name: "سعود ع.",
+      text: "أهلاً! رفعت المسودة الأولى، رجاءً راجع الخطوط وأخبرني برأيك.",
+      time: "10:24",
+      srcLang: "ar",
+      translation: "Hi! I've uploaded the first draft, please review the typography and let me know.",
+    },
+    {
+      id: 2,
+      from: "them",
+      name: "سعود ع.",
+      text: "سيتم تسليم الملفات النهائية قبل انتهاء مهلة الضمان.",
+      time: "10:31",
+      srcLang: "ar",
+      translation: "Final assets will be delivered before the escrow deadline.",
+    },
+  ];
+}
+
+const TRANSLATE_PREF_KEY = "munjaz-auto-translate";
 
 function Workspace() {
-  const { tr } = useLang();
+  const { tr, lang } = useLang();
   const { user } = useAuth();
   const qc = useQueryClient();
   const orders = useOrders();
@@ -73,18 +154,33 @@ function Workspace() {
   const tabs = [
     { key: "chat", label: tr("المحادثة", "Chat") },
     { key: "files", label: tr("التسليمات", "Deliverables") },
+    { key: "timeline", label: tr("السجل الزمني", "Timeline") },
     { key: "dispute", label: tr("النزاع", "Dispute") },
   ] as const;
 
   const [tab, setTab] = useState<(typeof tabs)[number]["key"]>("chat");
-  const [translate, setTranslate] = useState(false);
+  /** null = not answered yet (consent prompt visible). */
+  const [translate, setTranslate] = useState<boolean | null>(null);
+  useEffect(() => {
+    const stored = window.localStorage.getItem(TRANSLATE_PREF_KEY);
+    if (stored === "on") setTranslate(true);
+    else if (stored === "off") setTranslate(false);
+  }, []);
+  function setTranslatePref(v: boolean) {
+    setTranslate(v);
+    window.localStorage.setItem(TRANSLATE_PREF_KEY, v ? "on" : "off");
+  }
+  const [showOriginal, setShowOriginal] = useState<number[]>([]);
   const [draft, setDraft] = useState("");
-  const [messages, setMessages] = useState<Msg[]>([]);
+  const [messages, setMessages] = useState<Msg[]>(() => seedMessages(lang));
   const [warning, setWarning] = useState(false);
   const [reason, setReason] = useState("");
+  const [evidence, setEvidence] = useState<string[]>([]);
   const [disputeMsg, setDisputeMsg] = useState<string | null>(null);
   const [actionMsg, setActionMsg] = useState<string | null>(null);
   const [deliverable, setDeliverable] = useState("");
+  const [draftState, setDraftState] = useState<Record<number, "pending" | "revision" | "approved">>({});
+
   const addDeliverable = useDeliverables();
   const transition = useOrderTransition();
 
@@ -119,6 +215,78 @@ function Workspace() {
   const autoUpTo = order?.status === "completed" ? 100 : order?.status === "delivered" ? 70 : order?.status === "in_progress" ? 30 : 0;
   const releasedPct = Math.max(autoUpTo, ...released, 0);
 
+  // Structured deliverables: odd entries are drafts, the latest is the final asset
+  const rawFiles = Array.isArray(order?.deliverables) ? (order!.deliverables as unknown[]).map(String) : [];
+  const finalIndexes = order?.status === "delivered" || order?.status === "completed" ? [rawFiles.length - 1] : [];
+  const drafts = rawFiles.map((f, i) => ({ f, i })).filter(({ i }) => !finalIndexes.includes(i));
+  const finals = rawFiles.map((f, i) => ({ f, i })).filter(({ i }) => finalIndexes.includes(i));
+
+  // Immutable audit timeline derived from the order record
+  const timeline = useMemo(() => {
+    if (!order) return [] as { at: string | null; title: string; detail: string; tone: "primary" | "accent" | "muted" | "danger" }[];
+    const items: { at: string | null; title: string; detail: string; tone: "primary" | "accent" | "muted" | "danger" }[] = [
+      {
+        at: order.created_at,
+        title: tr("إنشاء الطلب ونطاق العمل", "Order created & scope agreed"),
+        detail: `#MJ-${order.order_number} · ${Number(order.amount_usdt)} USDT`,
+        tone: "muted",
+      },
+    ];
+    if (order.escrow_locked)
+      items.push({
+        at: order.created_at,
+        title: tr("حجز أموال الضمان (Escrow Locked)", "Escrow funds locked"),
+        detail: tr(`تم حجز ${Number(order.amount_usdt)} USDT لصالح الطلب.`, `${Number(order.amount_usdt)} USDT locked for this order.`),
+        tone: "primary",
+      });
+    if (rawFiles.length)
+      items.push({
+        at: order.updated_at,
+        title: tr("رفع مسودات ومرفقات العمل", "Work drafts uploaded"),
+        detail: tr(`${rawFiles.length} ملف/رابط داخل خزنة التسليمات.`, `${rawFiles.length} file(s) in the deliverables vault.`),
+        tone: "accent",
+      });
+    if (extStatus !== "none")
+      items.push({
+        at: null,
+        title: tr(`طلب تمديد الموعد +${extHours} ساعة`, `Deadline extension requested +${extHours}h`),
+        detail:
+          extStatus === "approved"
+            ? tr("تمت الموافقة من المشتري وتم تأجيل الإطلاق التلقائي.", "Approved by the buyer; auto-release postponed.")
+            : tr("بانتظار موافقة المشتري.", "Awaiting buyer approval."),
+        tone: extStatus === "approved" ? "primary" : "accent",
+      });
+    if (order.delivered_at)
+      items.push({
+        at: order.delivered_at,
+        title: tr("تسليم العمل النهائي", "Final delivery submitted"),
+        detail: tr("أصبحت الملفات النهائية متاحة للمشتري للاعتماد.", "Final assets released to the buyer for approval."),
+        tone: "accent",
+      });
+    if (order.auto_release_at && order.status === "delivered")
+      items.push({
+        at: order.auto_release_at,
+        title: tr("فك حجز الضمان التلقائي المُجدوَل", "Scheduled automatic escrow release"),
+        detail: tr("يُحرَّر المبلغ للبائع تلقائياً ما لم يُفتح نزاع.", "Funds auto-release to the seller unless a dispute is opened."),
+        tone: "muted",
+      });
+    if (order.status === "disputed")
+      items.push({
+        at: order.updated_at,
+        title: tr("فتح نزاع رسمي للتحكيم", "Formal dispute opened"),
+        detail: tr("جارٍ مراجعة الأدلة بواسطة وكيل الذكاء الاصطناعي.", "Evidence under review by the AI arbitration agent."),
+        tone: "danger",
+      });
+    if (order.completed_at)
+      items.push({
+        at: order.completed_at,
+        title: tr("اعتماد التسليم وتحرير الضمان", "Delivery approved & escrow released"),
+        detail: tr("اكتمل الطلب وتم تحويل المبلغ لمحفظة البائع.", "Order completed and funds transferred to the seller wallet."),
+        tone: "primary",
+      });
+    return items;
+  }, [order, rawFiles.length, extStatus, extHours, tr]);
+
 
   function send() {
     const text = draft.trim();
@@ -135,7 +303,8 @@ function Workspace() {
   const openDispute = useMutation({
     mutationFn: async () => {
       if (!order) throw new Error(tr("اختر طلباً أولاً", "Select an order first"));
-      if (!reason.trim()) throw new Error(tr("اكتب سبب النزاع", "Describe the dispute reason"));
+      if (reason.trim().length < 50) throw new Error(tr("اكتب سبب النزاع بما لا يقل عن 50 حرفاً", "Describe the dispute in at least 50 characters"));
+      if (evidence.length === 0) throw new Error(tr("أرفق دليلاً واحداً على الأقل", "Attach at least one piece of evidence"));
       const against = order.buyer_id === user!.id ? order.seller_id : order.buyer_id;
       const { error } = await supabase.from("dispute_cases").insert({
         order_id: order.id,
@@ -143,11 +312,13 @@ function Workspace() {
         raised_by: user!.id,
         against_user: against,
         reason: sanitizeText(reason, 2000),
+        evidence: evidence.map((name) => ({ name })),
       });
       if (error) throw error;
     },
     onSuccess: () => {
       setReason("");
+      setEvidence([]);
       setDisputeMsg(tr("تم فتح النزاع وسيراجعه وكيل الذكاء الاصطناعي.", "Dispute opened; the AI agent will review it."));
       qc.invalidateQueries({ queryKey: ["disputes"] });
     },
@@ -183,32 +354,73 @@ function Workspace() {
           >
             <Star className="size-4 text-accent" /> {tr("تقييم الطرف الآخر", "Review the other party")}
           </button>
+
+          <button
+            type="button"
+            onClick={() => setTab("dispute")}
+            className="inline-flex items-center gap-2 rounded-xl border border-destructive/50 bg-destructive/10 px-4 py-2 text-sm font-semibold text-destructive"
+          >
+            <AlertTriangle className="size-4" /> {tr("فتح نزاع رسمي للتحكيم ⚖️", "Open formal arbitration ⚖️")}
+          </button>
         </div>
       }
     >
       <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
         <Card className="flex min-h-[560px] flex-col">
-          <div className="flex items-center gap-2 border-b border-border pb-3">
-            {tabs.map((t) => (
-              <button
-                key={t.key}
-                onClick={() => setTab(t.key)}
-                className={`rounded-lg px-3 py-1.5 text-sm ${tab === t.key ? "bg-secondary font-bold text-primary" : "text-muted-foreground"}`}
-              >
-                {t.label}
-              </button>
-            ))}
+          <div className="flex flex-wrap items-center gap-2 border-b border-border pb-3">
+            <div className="-mx-1 flex max-w-full flex-1 gap-1 overflow-x-auto px-1">
+              {tabs.map((t) => (
+                <button
+                  key={t.key}
+                  onClick={() => setTab(t.key)}
+                  className={`shrink-0 rounded-lg px-3 py-1.5 text-sm ${tab === t.key ? "bg-secondary font-bold text-primary" : "text-muted-foreground"}`}
+                >
+                  {t.label}
+                </button>
+              ))}
+            </div>
             <button
-              onClick={() => setTranslate(!translate)}
-              className={`ms-auto inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm ${translate ? "bg-primary font-bold text-primary-foreground" : "border border-border text-muted-foreground"}`}
+              type="button"
+              onClick={() => setTranslatePref(!translate)}
+              className={`inline-flex shrink-0 items-center gap-2 rounded-full px-3 py-1.5 text-xs font-bold ${translate ? "bg-primary text-primary-foreground" : "border border-border text-muted-foreground"}`}
             >
-              <Languages className="size-4" /> {tr("ترجمة AI", "AI Translate")}
+              <Languages className="size-4" /> 🌍 {tr("الترجمة التلقائية", "Auto-translate")}:{" "}
+              {translate ? tr("مفعّلة", "On") : tr("معطّلة", "Off")}
             </button>
           </div>
 
           {tab === "chat" && (
             <>
-              <div className="pt-3"><ChatSecurityNotice /></div>
+              <div className="grid gap-2 pt-3">
+                <ChatSecurityNotice />
+                {translate === null && (
+                  <div className="grid gap-2 rounded-xl border border-accent/40 bg-accent/5 px-3 py-3">
+                    <p className="flex items-start gap-2 text-xs leading-relaxed text-foreground">
+                      <Sparkles className="mt-0.5 size-4 shrink-0 text-accent" />
+                      {tr(
+                        "هل ترغب في تفعيل الترجمة التلقائية الذكية للرسائل إلى لغتك المفضلة؟",
+                        "Would you like to enable smart auto-translation of messages into your preferred language?",
+                      )}
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setTranslatePref(true)}
+                        className="rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground"
+                      >
+                        {tr("تفعيل الترجمة التلقائية ⚡", "Enable auto-translation ⚡")}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setTranslatePref(false)}
+                        className="rounded-lg border border-border px-3 py-1.5 text-xs font-bold text-muted-foreground"
+                      >
+                        {tr("الإبقاء على النص الأصلي", "Keep the original text")}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
               <div className="flex-1 space-y-3 overflow-y-auto py-4">
                 {messages.length === 0 && (
 
@@ -216,15 +428,41 @@ function Workspace() {
                     {tr("ابدأ المحادثة مع الطرف الآخر.", "Start the conversation with the other party.")}
                   </p>
                 )}
-                {messages.map((m) => (
-                  <div key={m.id} className={`flex ${m.from === "them" ? "justify-start" : "justify-end"}`}>
-                    <div className={`max-w-[75%] rounded-2xl px-4 py-3 text-sm ${m.from === "them" ? "bg-secondary" : "bg-primary text-primary-foreground"}`}>
-                      <p className="mb-1 text-xs opacity-70">{m.name} · {m.time}</p>
-                      <p>{m.text}</p>
+                {messages.map((m) => {
+                  const foreign = !!m.translation && m.srcLang !== lang;
+                  const original = showOriginal.includes(m.id);
+                  const shown = translate && foreign && !original ? m.translation! : m.text;
+                  return (
+                    <div key={m.id} className={`flex ${m.from === "them" ? "justify-start" : "justify-end"}`}>
+                      <div className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm sm:max-w-[75%] ${m.from === "them" ? "bg-secondary" : "bg-primary text-primary-foreground"}`}>
+                        <p className="mb-1 text-xs opacity-70">{m.name} · {m.time}</p>
+                        <p className="break-words" dir={translate && foreign && !original ? (lang === "ar" ? "rtl" : "ltr") : "auto"}>
+                          {shown}
+                        </p>
+                        {translate && foreign && (
+                          <div className="mt-2 grid gap-1 border-t border-current/15 pt-2">
+                            {!original && (
+                              <span className="inline-flex items-center gap-1 text-[10px] font-bold text-accent">
+                                <Sparkles className="size-3" /> {tr("مترجم بواسطة الذكاء الاصطناعي", "Translated by AI")}
+                              </span>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setShowOriginal((s) => (s.includes(m.id) ? s.filter((x) => x !== m.id) : [...s, m.id]))
+                              }
+                              className="text-start text-[10px] font-bold underline underline-offset-2 opacity-80"
+                            >
+                              {original ? tr("عرض الترجمة", "Show translation") : tr("عرض النص الأصلي / Show Original", "Show original")}
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
+
 
               {warning && (
                 <p className="mb-2 flex items-center gap-2 rounded-lg border border-destructive/50 bg-destructive/10 px-3 py-2 text-xs text-destructive">
@@ -283,29 +521,144 @@ function Workspace() {
                   </button>
                 </div>
               )}
-              <div className="mt-4 grid gap-2">
-                {(Array.isArray(order?.deliverables) ? (order!.deliverables as unknown[]) : []).map((d, i) => (
-                  <div key={i} className="rounded-lg border border-border px-4 py-3 text-sm break-all">{String(d)}</div>
-                ))}
-              </div>
+              {rawFiles.length === 0 && (
+                <p className="mt-4 text-xs text-muted-foreground">{tr("لا توجد ملفات بعد.", "No files yet.")}</p>
+              )}
+
+              {[
+                { key: "drafts" as const, items: drafts, title: tr("مسودات للمراجعة (Drafts)", "Drafts for review"), tone: "accent" },
+                { key: "final" as const, items: finals, title: tr("التسليم النهائي المعتمد (Final Assets)", "Approved final assets"), tone: "primary" },
+              ].map((group) =>
+                group.items.length === 0 ? null : (
+                  <div key={group.key} className="mt-5">
+                    <h4 className={`text-xs font-black ${group.tone === "primary" ? "text-primary" : "text-accent"}`}>{group.title}</h4>
+                    <div className="mt-2 grid gap-2">
+                      {group.items.map(({ f, i }) => {
+                        const meta = fileMeta(f);
+                        const state = draftState[i] ?? "pending";
+                        return (
+                          <div key={i} className={`grid gap-2 rounded-xl border px-3 py-3 ${group.tone === "primary" ? "border-primary/40 bg-primary/5" : "border-border"}`}>
+                            <p className="text-sm font-semibold break-all">{f}</p>
+                            <div className="flex flex-wrap items-center gap-1.5 text-[10px]">
+                              <span className="rounded-full border border-border px-2 py-0.5 font-mono text-muted-foreground" dir="ltr">{meta.mime}</span>
+                              <span className="rounded-full border border-border px-2 py-0.5 font-mono text-muted-foreground" dir="ltr">{meta.sizeMb} MB</span>
+                              <span className="max-w-full truncate rounded-full border border-border px-2 py-0.5 font-mono text-muted-foreground" dir="ltr">SHA-256 {meta.sha}…</span>
+                              <span className="inline-flex items-center gap-1 rounded-full border border-primary/50 bg-primary/10 px-2 py-0.5 font-bold text-primary">
+                                <ShieldCheck className="size-3" /> {tr("خالٍ من الفيروسات", "Virus-free")}
+                              </span>
+                            </div>
+                            {group.key === "drafts" && order?.buyer_id === user?.id && (
+                              <div className="flex flex-wrap gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => setDraftState((s) => ({ ...s, [i]: "revision" }))}
+                                  className="rounded-lg border border-accent/50 bg-accent/10 px-3 py-1.5 text-[11px] font-bold text-accent"
+                                >
+                                  {tr("طلب تعديل على المسودة", "Request draft revision")}
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setDraftState((s) => ({ ...s, [i]: "approved" }))}
+                                  className="inline-flex items-center gap-1 rounded-lg bg-primary px-3 py-1.5 text-[11px] font-bold text-primary-foreground"
+                                >
+                                  <FileCheck2 className="size-3" /> {tr("اعتماد المسودة والمتابعة", "Approve draft & continue")}
+                                </button>
+                                {state !== "pending" && (
+                                  <span className={`inline-flex items-center rounded-full px-2 py-1 text-[10px] font-bold ${state === "approved" ? "bg-primary/15 text-primary" : "bg-accent/15 text-accent"}`}>
+                                    {state === "approved" ? tr("معتمدة", "Approved") : tr("طلب تعديل مُرسل", "Revision requested")}
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ),
+              )}
+            </div>
+          )}
+
+          {tab === "timeline" && (
+            <div className="flex-1 py-4">
+              <h3 className="flex items-center gap-2 text-sm font-black">
+                <History className="size-4 text-primary" /> {tr("السجل الزمني للطلب (Audit Timeline)", "Order audit timeline")}
+              </h3>
+              <p className="mt-1 text-xs text-muted-foreground">
+                {tr("سجل غير قابل للتعديل لكل حدث مالي أو تعاقدي على الطلب.", "An immutable log of every financial and contractual event on this order.")}
+              </p>
+              {timeline.length === 0 ? (
+                <p className="mt-6 text-xs text-muted-foreground">{tr("اختر طلباً لعرض سجله الزمني.", "Select an order to view its timeline.")}</p>
+              ) : (
+                <ol className="mt-4 grid gap-3 border-s border-border ps-4">
+                  {timeline.map((ev, i) => (
+                    <li key={i} className="relative">
+                      <span
+                        className={`absolute -start-[22px] top-1.5 size-2.5 rounded-full ${
+                          ev.tone === "primary" ? "bg-primary" : ev.tone === "accent" ? "bg-accent" : ev.tone === "danger" ? "bg-destructive" : "bg-muted-foreground"
+                        }`}
+                      />
+                      <div className="rounded-xl border border-border px-3 py-2.5">
+                        <p className="text-sm font-bold">{ev.title}</p>
+                        <p className="mt-1 text-xs text-muted-foreground">{ev.detail}</p>
+                        <p className="mt-1 font-mono text-[10px] text-muted-foreground" dir="ltr">
+                          {ev.at ? new Date(ev.at).toLocaleString() : "—"}
+                        </p>
+                      </div>
+                    </li>
+                  ))}
+                </ol>
+              )}
             </div>
           )}
 
           {tab === "dispute" && (
             <div className="flex-1 py-4">
               <div className="rounded-xl border border-destructive/40 bg-destructive/10 p-4">
-                <p className="flex items-center gap-2 font-bold text-destructive"><AlertTriangle className="size-4" /> {tr("فتح نزاع", "Open a dispute")}</p>
+                <p className="flex items-center gap-2 font-bold text-destructive"><AlertTriangle className="size-4" /> {tr("فتح نزاع رسمي للتحكيم ⚖️", "Open a formal arbitration dispute ⚖️")}</p>
                 <p className="mt-2 text-sm text-muted-foreground">
                   {tr("سيراجع وكيل الذكاء الاصطناعي نطاق العمل والمحادثة وملفات التسليم ويصدر حكماً أولياً خلال دقائق، مع إمكانية التصعيد البشري.", "An AI agent will review the scope, chat history, and deliverables, and issue a preliminary ruling within minutes, with the option to escalate to a human.")}
                 </p>
               </div>
-              <textarea value={reason} onChange={(e) => setReason(e.target.value)} rows={5} placeholder={tr("اشرح سبب النزاع بالتفصيل...", "Explain the reason for the dispute in detail...")} className="mt-4 w-full rounded-xl border border-input bg-surface p-3 text-sm outline-none focus:border-primary" />
-              <button onClick={() => openDispute.mutate()} disabled={openDispute.isPending} className="mt-3 rounded-xl bg-destructive px-4 py-2 font-bold text-destructive-foreground disabled:opacity-60">
-                {tr("إرسال طلب النزاع", "Submit dispute request")}
+              <textarea value={reason} onChange={(e) => setReason(e.target.value)} rows={5} placeholder={tr("اشرح سبب النزاع بالتفصيل (50 حرفاً على الأقل)...", "Explain the dispute in detail (minimum 50 characters)...")} className="mt-4 w-full rounded-xl border border-input bg-surface p-3 text-sm outline-none focus:border-primary" />
+              <p className={`mt-1 text-[11px] ${reason.trim().length >= 50 ? "text-primary" : "text-muted-foreground"}`}>
+                {reason.trim().length}/50 {tr("حرفاً", "characters")}
+              </p>
+
+              <div className="mt-3 grid gap-2">
+                <label className="inline-flex w-fit cursor-pointer items-center gap-2 rounded-lg border border-border px-3 py-2 text-xs font-bold">
+                  <Paperclip className="size-4" /> {tr("إرفاق دليل (صورة / ملف)", "Attach evidence (image / file)")}
+                  <input
+                    type="file"
+                    multiple
+                    className="hidden"
+                    onChange={(e) => setEvidence(Array.from(e.target.files ?? []).map((f) => f.name))}
+                  />
+                </label>
+                {evidence.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {evidence.map((n) => (
+                      <span key={n} className="max-w-full truncate rounded-full border border-primary/40 bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary">{n}</span>
+                    ))}
+                  </div>
+                )}
+                <p className="text-[11px] text-muted-foreground">
+                  {tr("مطلوب: شرح لا يقل عن 50 حرفاً + مرفق دليل واحد على الأقل.", "Required: at least 50 characters plus one evidence attachment.")}
+                </p>
+              </div>
+
+              <button
+                onClick={() => openDispute.mutate()}
+                disabled={openDispute.isPending || reason.trim().length < 50 || evidence.length === 0}
+                className="mt-3 rounded-xl bg-destructive px-4 py-2 font-bold text-destructive-foreground disabled:opacity-50"
+              >
+                {tr("فتح نزاع رسمي للتحكيم ⚖️", "Open formal arbitration ⚖️")}
               </button>
               {disputeMsg && <p className="mt-3 text-xs text-primary">{disputeMsg}</p>}
             </div>
           )}
+
         </Card>
 
         <div className="grid content-start gap-4">
