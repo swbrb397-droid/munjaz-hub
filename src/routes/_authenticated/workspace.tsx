@@ -56,10 +56,68 @@ export const Route = createFileRoute("/_authenticated/workspace")({
   component: Workspace,
 });
 
-type Msg = { id: number; from: "me" | "them"; name: string; text: string; time: string };
+type Msg = {
+  id: number;
+  from: "me" | "them";
+  name: string;
+  text: string;
+  time: string;
+  /** Language the message was written in. */
+  srcLang?: "ar" | "en";
+  /** Machine translation of `text` into the other language. */
+  translation?: string;
+};
+
+/** Seeded counterpart messages written in the other party's language. */
+function seedMessages(lang: "ar" | "en"): Msg[] {
+  if (lang === "ar") {
+    return [
+      {
+        id: 1,
+        from: "them",
+        name: "Alex M.",
+        text: "Hi! I've uploaded the first draft, please review the typography and let me know.",
+        time: "10:24",
+        srcLang: "en",
+        translation: "مرحباً! رفعت المسودة الأولى، رجاءً راجع الخطوط وأخبرني برأيك.",
+      },
+      {
+        id: 2,
+        from: "them",
+        name: "Alex M.",
+        text: "Final assets will be delivered before the escrow deadline.",
+        time: "10:31",
+        srcLang: "en",
+        translation: "سيتم تسليم الملفات النهائية قبل انتهاء مهلة الضمان.",
+      },
+    ];
+  }
+  return [
+    {
+      id: 1,
+      from: "them",
+      name: "سعود ع.",
+      text: "أهلاً! رفعت المسودة الأولى، رجاءً راجع الخطوط وأخبرني برأيك.",
+      time: "10:24",
+      srcLang: "ar",
+      translation: "Hi! I've uploaded the first draft, please review the typography and let me know.",
+    },
+    {
+      id: 2,
+      from: "them",
+      name: "سعود ع.",
+      text: "سيتم تسليم الملفات النهائية قبل انتهاء مهلة الضمان.",
+      time: "10:31",
+      srcLang: "ar",
+      translation: "Final assets will be delivered before the escrow deadline.",
+    },
+  ];
+}
+
+const TRANSLATE_PREF_KEY = "munjaz-auto-translate";
 
 function Workspace() {
-  const { tr } = useLang();
+  const { tr, lang } = useLang();
   const { user } = useAuth();
   const qc = useQueryClient();
   const orders = useOrders();
@@ -74,18 +132,33 @@ function Workspace() {
   const tabs = [
     { key: "chat", label: tr("المحادثة", "Chat") },
     { key: "files", label: tr("التسليمات", "Deliverables") },
+    { key: "timeline", label: tr("السجل الزمني", "Timeline") },
     { key: "dispute", label: tr("النزاع", "Dispute") },
   ] as const;
 
   const [tab, setTab] = useState<(typeof tabs)[number]["key"]>("chat");
-  const [translate, setTranslate] = useState(false);
+  /** null = not answered yet (consent prompt visible). */
+  const [translate, setTranslate] = useState<boolean | null>(null);
+  useEffect(() => {
+    const stored = window.localStorage.getItem(TRANSLATE_PREF_KEY);
+    if (stored === "on") setTranslate(true);
+    else if (stored === "off") setTranslate(false);
+  }, []);
+  function setTranslatePref(v: boolean) {
+    setTranslate(v);
+    window.localStorage.setItem(TRANSLATE_PREF_KEY, v ? "on" : "off");
+  }
+  const [showOriginal, setShowOriginal] = useState<number[]>([]);
   const [draft, setDraft] = useState("");
-  const [messages, setMessages] = useState<Msg[]>([]);
+  const [messages, setMessages] = useState<Msg[]>(() => seedMessages(lang));
   const [warning, setWarning] = useState(false);
   const [reason, setReason] = useState("");
+  const [evidence, setEvidence] = useState<string[]>([]);
   const [disputeMsg, setDisputeMsg] = useState<string | null>(null);
   const [actionMsg, setActionMsg] = useState<string | null>(null);
   const [deliverable, setDeliverable] = useState("");
+  const [draftState, setDraftState] = useState<Record<number, "pending" | "revision" | "approved">>({});
+
   const addDeliverable = useDeliverables();
   const transition = useOrderTransition();
 
