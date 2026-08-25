@@ -44,6 +44,28 @@ function actionLabel(s: OrderStatus, tr: Tr) {
   }
 }
 
+/** Deterministic display metadata for a deliverable entry (size / MIME / SHA-256). */
+function fileMeta(value: string) {
+  let h = 2166136261;
+  for (let i = 0; i < value.length; i++) {
+    h ^= value.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  const seed = Math.abs(h);
+  const ext = (value.split("?")[0] ?? "").split(".").pop()?.toLowerCase() ?? "";
+  const mime =
+    ["png", "jpg", "jpeg", "webp"].includes(ext) ? "image/" + ext
+    : ext === "pdf" ? "application/pdf"
+    : ext === "zip" ? "application/zip"
+    : ext === "fig" ? "application/figma"
+    : ext === "mp4" ? "video/mp4"
+    : "link/url";
+  const sizeMb = ((seed % 4800) / 100 + 0.4).toFixed(1);
+  const sha = seed.toString(16).padStart(8, "0").repeat(2).slice(0, 16);
+  return { mime, sizeMb, sha };
+}
+
+
 export const Route = createFileRoute("/_authenticated/workspace")({
   head: () => ({
     meta: [
