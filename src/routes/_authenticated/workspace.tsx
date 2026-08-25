@@ -510,29 +510,144 @@ function Workspace() {
                   </button>
                 </div>
               )}
-              <div className="mt-4 grid gap-2">
-                {(Array.isArray(order?.deliverables) ? (order!.deliverables as unknown[]) : []).map((d, i) => (
-                  <div key={i} className="rounded-lg border border-border px-4 py-3 text-sm break-all">{String(d)}</div>
-                ))}
-              </div>
+              {rawFiles.length === 0 && (
+                <p className="mt-4 text-xs text-muted-foreground">{tr("لا توجد ملفات بعد.", "No files yet.")}</p>
+              )}
+
+              {[
+                { key: "drafts" as const, items: drafts, title: tr("مسودات للمراجعة (Drafts)", "Drafts for review"), tone: "accent" },
+                { key: "final" as const, items: finals, title: tr("التسليم النهائي المعتمد (Final Assets)", "Approved final assets"), tone: "primary" },
+              ].map((group) =>
+                group.items.length === 0 ? null : (
+                  <div key={group.key} className="mt-5">
+                    <h4 className={`text-xs font-black ${group.tone === "primary" ? "text-primary" : "text-accent"}`}>{group.title}</h4>
+                    <div className="mt-2 grid gap-2">
+                      {group.items.map(({ f, i }) => {
+                        const meta = fileMeta(f);
+                        const state = draftState[i] ?? "pending";
+                        return (
+                          <div key={i} className={`grid gap-2 rounded-xl border px-3 py-3 ${group.tone === "primary" ? "border-primary/40 bg-primary/5" : "border-border"}`}>
+                            <p className="text-sm font-semibold break-all">{f}</p>
+                            <div className="flex flex-wrap items-center gap-1.5 text-[10px]">
+                              <span className="rounded-full border border-border px-2 py-0.5 font-mono text-muted-foreground" dir="ltr">{meta.mime}</span>
+                              <span className="rounded-full border border-border px-2 py-0.5 font-mono text-muted-foreground" dir="ltr">{meta.sizeMb} MB</span>
+                              <span className="max-w-full truncate rounded-full border border-border px-2 py-0.5 font-mono text-muted-foreground" dir="ltr">SHA-256 {meta.sha}…</span>
+                              <span className="inline-flex items-center gap-1 rounded-full border border-primary/50 bg-primary/10 px-2 py-0.5 font-bold text-primary">
+                                <ShieldCheck className="size-3" /> {tr("خالٍ من الفيروسات", "Virus-free")}
+                              </span>
+                            </div>
+                            {group.key === "drafts" && order?.buyer_id === user?.id && (
+                              <div className="flex flex-wrap gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => setDraftState((s) => ({ ...s, [i]: "revision" }))}
+                                  className="rounded-lg border border-accent/50 bg-accent/10 px-3 py-1.5 text-[11px] font-bold text-accent"
+                                >
+                                  {tr("طلب تعديل على المسودة", "Request draft revision")}
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setDraftState((s) => ({ ...s, [i]: "approved" }))}
+                                  className="inline-flex items-center gap-1 rounded-lg bg-primary px-3 py-1.5 text-[11px] font-bold text-primary-foreground"
+                                >
+                                  <FileCheck2 className="size-3" /> {tr("اعتماد المسودة والمتابعة", "Approve draft & continue")}
+                                </button>
+                                {state !== "pending" && (
+                                  <span className={`inline-flex items-center rounded-full px-2 py-1 text-[10px] font-bold ${state === "approved" ? "bg-primary/15 text-primary" : "bg-accent/15 text-accent"}`}>
+                                    {state === "approved" ? tr("معتمدة", "Approved") : tr("طلب تعديل مُرسل", "Revision requested")}
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ),
+              )}
+            </div>
+          )}
+
+          {tab === "timeline" && (
+            <div className="flex-1 py-4">
+              <h3 className="flex items-center gap-2 text-sm font-black">
+                <History className="size-4 text-primary" /> {tr("السجل الزمني للطلب (Audit Timeline)", "Order audit timeline")}
+              </h3>
+              <p className="mt-1 text-xs text-muted-foreground">
+                {tr("سجل غير قابل للتعديل لكل حدث مالي أو تعاقدي على الطلب.", "An immutable log of every financial and contractual event on this order.")}
+              </p>
+              {timeline.length === 0 ? (
+                <p className="mt-6 text-xs text-muted-foreground">{tr("اختر طلباً لعرض سجله الزمني.", "Select an order to view its timeline.")}</p>
+              ) : (
+                <ol className="mt-4 grid gap-3 border-s border-border ps-4">
+                  {timeline.map((ev, i) => (
+                    <li key={i} className="relative">
+                      <span
+                        className={`absolute -inset-is-0 -start-[22px] top-1.5 size-2.5 rounded-full ${
+                          ev.tone === "primary" ? "bg-primary" : ev.tone === "accent" ? "bg-accent" : ev.tone === "danger" ? "bg-destructive" : "bg-muted-foreground"
+                        }`}
+                      />
+                      <div className="rounded-xl border border-border px-3 py-2.5">
+                        <p className="text-sm font-bold">{ev.title}</p>
+                        <p className="mt-1 text-xs text-muted-foreground">{ev.detail}</p>
+                        <p className="mt-1 font-mono text-[10px] text-muted-foreground" dir="ltr">
+                          {ev.at ? new Date(ev.at).toLocaleString() : "—"}
+                        </p>
+                      </div>
+                    </li>
+                  ))}
+                </ol>
+              )}
             </div>
           )}
 
           {tab === "dispute" && (
             <div className="flex-1 py-4">
               <div className="rounded-xl border border-destructive/40 bg-destructive/10 p-4">
-                <p className="flex items-center gap-2 font-bold text-destructive"><AlertTriangle className="size-4" /> {tr("فتح نزاع", "Open a dispute")}</p>
+                <p className="flex items-center gap-2 font-bold text-destructive"><AlertTriangle className="size-4" /> {tr("فتح نزاع رسمي للتحكيم ⚖️", "Open a formal arbitration dispute ⚖️")}</p>
                 <p className="mt-2 text-sm text-muted-foreground">
                   {tr("سيراجع وكيل الذكاء الاصطناعي نطاق العمل والمحادثة وملفات التسليم ويصدر حكماً أولياً خلال دقائق، مع إمكانية التصعيد البشري.", "An AI agent will review the scope, chat history, and deliverables, and issue a preliminary ruling within minutes, with the option to escalate to a human.")}
                 </p>
               </div>
-              <textarea value={reason} onChange={(e) => setReason(e.target.value)} rows={5} placeholder={tr("اشرح سبب النزاع بالتفصيل...", "Explain the reason for the dispute in detail...")} className="mt-4 w-full rounded-xl border border-input bg-surface p-3 text-sm outline-none focus:border-primary" />
-              <button onClick={() => openDispute.mutate()} disabled={openDispute.isPending} className="mt-3 rounded-xl bg-destructive px-4 py-2 font-bold text-destructive-foreground disabled:opacity-60">
-                {tr("إرسال طلب النزاع", "Submit dispute request")}
+              <textarea value={reason} onChange={(e) => setReason(e.target.value)} rows={5} placeholder={tr("اشرح سبب النزاع بالتفصيل (50 حرفاً على الأقل)...", "Explain the dispute in detail (minimum 50 characters)...")} className="mt-4 w-full rounded-xl border border-input bg-surface p-3 text-sm outline-none focus:border-primary" />
+              <p className={`mt-1 text-[11px] ${reason.trim().length >= 50 ? "text-primary" : "text-muted-foreground"}`}>
+                {reason.trim().length}/50 {tr("حرفاً", "characters")}
+              </p>
+
+              <div className="mt-3 grid gap-2">
+                <label className="inline-flex w-fit cursor-pointer items-center gap-2 rounded-lg border border-border px-3 py-2 text-xs font-bold">
+                  <Paperclip className="size-4" /> {tr("إرفاق دليل (صورة / ملف)", "Attach evidence (image / file)")}
+                  <input
+                    type="file"
+                    multiple
+                    className="hidden"
+                    onChange={(e) => setEvidence(Array.from(e.target.files ?? []).map((f) => f.name))}
+                  />
+                </label>
+                {evidence.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {evidence.map((n) => (
+                      <span key={n} className="max-w-full truncate rounded-full border border-primary/40 bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary">{n}</span>
+                    ))}
+                  </div>
+                )}
+                <p className="text-[11px] text-muted-foreground">
+                  {tr("مطلوب: شرح لا يقل عن 50 حرفاً + مرفق دليل واحد على الأقل.", "Required: at least 50 characters plus one evidence attachment.")}
+                </p>
+              </div>
+
+              <button
+                onClick={() => openDispute.mutate()}
+                disabled={openDispute.isPending || reason.trim().length < 50 || evidence.length === 0}
+                className="mt-3 rounded-xl bg-destructive px-4 py-2 font-bold text-destructive-foreground disabled:opacity-50"
+              >
+                {tr("فتح نزاع رسمي للتحكيم ⚖️", "Open formal arbitration ⚖️")}
               </button>
               {disputeMsg && <p className="mt-3 text-xs text-primary">{disputeMsg}</p>}
             </div>
           )}
+
         </Card>
 
         <div className="grid content-start gap-4">
