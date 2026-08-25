@@ -303,7 +303,8 @@ function Workspace() {
   const openDispute = useMutation({
     mutationFn: async () => {
       if (!order) throw new Error(tr("اختر طلباً أولاً", "Select an order first"));
-      if (!reason.trim()) throw new Error(tr("اكتب سبب النزاع", "Describe the dispute reason"));
+      if (reason.trim().length < 50) throw new Error(tr("اكتب سبب النزاع بما لا يقل عن 50 حرفاً", "Describe the dispute in at least 50 characters"));
+      if (evidence.length === 0) throw new Error(tr("أرفق دليلاً واحداً على الأقل", "Attach at least one piece of evidence"));
       const against = order.buyer_id === user!.id ? order.seller_id : order.buyer_id;
       const { error } = await supabase.from("dispute_cases").insert({
         order_id: order.id,
@@ -311,11 +312,13 @@ function Workspace() {
         raised_by: user!.id,
         against_user: against,
         reason: sanitizeText(reason, 2000),
+        evidence: evidence.map((name) => ({ name })),
       });
       if (error) throw error;
     },
     onSuccess: () => {
       setReason("");
+      setEvidence([]);
       setDisputeMsg(tr("تم فتح النزاع وسيراجعه وكيل الذكاء الاصطناعي.", "Dispute opened; the AI agent will review it."));
       qc.invalidateQueries({ queryKey: ["disputes"] });
     },
@@ -350,6 +353,14 @@ function Workspace() {
             className="inline-flex items-center gap-2 rounded-xl border border-border px-4 py-2 text-sm font-semibold"
           >
             <Star className="size-4 text-accent" /> {tr("تقييم الطرف الآخر", "Review the other party")}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setTab("dispute")}
+            className="inline-flex items-center gap-2 rounded-xl border border-destructive/50 bg-destructive/10 px-4 py-2 text-sm font-semibold text-destructive"
+          >
+            <AlertTriangle className="size-4" /> {tr("فتح نزاع رسمي للتحكيم ⚖️", "Open formal arbitration ⚖️")}
           </button>
         </div>
       }
@@ -584,7 +595,7 @@ function Workspace() {
                   {timeline.map((ev, i) => (
                     <li key={i} className="relative">
                       <span
-                        className={`absolute -inset-is-0 -start-[22px] top-1.5 size-2.5 rounded-full ${
+                        className={`absolute -start-[22px] top-1.5 size-2.5 rounded-full ${
                           ev.tone === "primary" ? "bg-primary" : ev.tone === "accent" ? "bg-accent" : ev.tone === "danger" ? "bg-destructive" : "bg-muted-foreground"
                         }`}
                       />
