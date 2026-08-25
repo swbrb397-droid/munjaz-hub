@@ -193,6 +193,78 @@ function Workspace() {
   const autoUpTo = order?.status === "completed" ? 100 : order?.status === "delivered" ? 70 : order?.status === "in_progress" ? 30 : 0;
   const releasedPct = Math.max(autoUpTo, ...released, 0);
 
+  // Structured deliverables: odd entries are drafts, the latest is the final asset
+  const rawFiles = Array.isArray(order?.deliverables) ? (order!.deliverables as unknown[]).map(String) : [];
+  const finalIndexes = order?.status === "delivered" || order?.status === "completed" ? [rawFiles.length - 1] : [];
+  const drafts = rawFiles.map((f, i) => ({ f, i })).filter(({ i }) => !finalIndexes.includes(i));
+  const finals = rawFiles.map((f, i) => ({ f, i })).filter(({ i }) => finalIndexes.includes(i));
+
+  // Immutable audit timeline derived from the order record
+  const timeline = useMemo(() => {
+    if (!order) return [] as { at: string | null; title: string; detail: string; tone: "primary" | "accent" | "muted" | "danger" }[];
+    const items: { at: string | null; title: string; detail: string; tone: "primary" | "accent" | "muted" | "danger" }[] = [
+      {
+        at: order.created_at,
+        title: tr("إنشاء الطلب ونطاق العمل", "Order created & scope agreed"),
+        detail: `#MJ-${order.order_number} · ${Number(order.amount_usdt)} USDT`,
+        tone: "muted",
+      },
+    ];
+    if (order.escrow_locked)
+      items.push({
+        at: order.created_at,
+        title: tr("حجز أموال الضمان (Escrow Locked)", "Escrow funds locked"),
+        detail: tr(`تم حجز ${Number(order.amount_usdt)} USDT لصالح الطلب.`, `${Number(order.amount_usdt)} USDT locked for this order.`),
+        tone: "primary",
+      });
+    if (rawFiles.length)
+      items.push({
+        at: order.updated_at,
+        title: tr("رفع مسودات ومرفقات العمل", "Work drafts uploaded"),
+        detail: tr(`${rawFiles.length} ملف/رابط داخل خزنة التسليمات.`, `${rawFiles.length} file(s) in the deliverables vault.`),
+        tone: "accent",
+      });
+    if (extStatus !== "none")
+      items.push({
+        at: null,
+        title: tr(`طلب تمديد الموعد +${extHours} ساعة`, `Deadline extension requested +${extHours}h`),
+        detail:
+          extStatus === "approved"
+            ? tr("تمت الموافقة من المشتري وتم تأجيل الإطلاق التلقائي.", "Approved by the buyer; auto-release postponed.")
+            : tr("بانتظار موافقة المشتري.", "Awaiting buyer approval."),
+        tone: extStatus === "approved" ? "primary" : "accent",
+      });
+    if (order.delivered_at)
+      items.push({
+        at: order.delivered_at,
+        title: tr("تسليم العمل النهائي", "Final delivery submitted"),
+        detail: tr("أصبحت الملفات النهائية متاحة للمشتري للاعتماد.", "Final assets released to the buyer for approval."),
+        tone: "accent",
+      });
+    if (order.auto_release_at && order.status === "delivered")
+      items.push({
+        at: order.auto_release_at,
+        title: tr("فك حجز الضمان التلقائي المُجدوَل", "Scheduled automatic escrow release"),
+        detail: tr("يُحرَّر المبلغ للبائع تلقائياً ما لم يُفتح نزاع.", "Funds auto-release to the seller unless a dispute is opened."),
+        tone: "muted",
+      });
+    if (order.status === "disputed")
+      items.push({
+        at: order.updated_at,
+        title: tr("فتح نزاع رسمي للتحكيم", "Formal dispute opened"),
+        detail: tr("جارٍ مراجعة الأدلة بواسطة وكيل الذكاء الاصطناعي.", "Evidence under review by the AI arbitration agent."),
+        tone: "danger",
+      });
+    if (order.completed_at)
+      items.push({
+        at: order.completed_at,
+        title: tr("اعتماد التسليم وتحرير الضمان", "Delivery approved & escrow released"),
+        detail: tr("اكتمل الطلب وتم تحويل المبلغ لمحفظة البائع.", "Order completed and funds transferred to the seller wallet."),
+        tone: "primary",
+      });
+    return items;
+  }, [order, rawFiles.length, extStatus, extHours, tr]);
+
 
   function send() {
     const text = draft.trim();
