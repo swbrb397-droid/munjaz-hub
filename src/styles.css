@@ -155,3 +155,34 @@
     break-inside: avoid;
   }
 }
+
+/* ── PDF capture mode (html2canvas): force official black-on-white output ── */
+.pdf-mode,
+.pdf-mode * {
+  background-image: none !important;
+  background-color: transparent !important;
+  color: #000 !important;
+  border-color: #000 !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+  filter: none !important;
+}
+
+.pdf-mode {
+  background-color: #fff !important;
+  border: 1px solid #000 !important;
+  border-radius: 0 !important;
+  padding: 20px !important;
+}
+
+.pdf-mode img {
+  filter: none !important;
+}
+
+.pdf-mode .pdf-hide {
+  display: none !important;
+}
+
+.pdf-mode .pdf-only {
+  display: block !important;
+}

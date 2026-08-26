@@ -1,5 +1,7 @@
-import { Printer, ShieldCheck, X } from "lucide-react";
+import { Download, Printer, ShieldCheck, X } from "lucide-react";
+import { useRef, useState } from "react";
 import { QrCode } from "@/components/site/QrCode";
+import { downloadElementPdf } from "@/lib/pdf";
 
 export type ReceiptData = {
   txId: string;
@@ -15,6 +17,19 @@ export type ReceiptData = {
 
 /** Printable, high-contrast transaction receipt preview. */
 export function ReceiptModal({ receipt, onClose }: { receipt: ReceiptData; onClose: () => void }) {
+  const sheetRef = useRef<HTMLDivElement>(null);
+  const [saving, setSaving] = useState(false);
+
+  async function downloadPdf() {
+    if (!sheetRef.current || saving) return;
+    setSaving(true);
+    try {
+      await downloadElementPdf(sheetRef.current, `munjaz-receipt-${receipt.txId}.pdf`);
+    } finally {
+      setSaving(false);
+    }
+  }
+
   const rows: [string, string][] = [
     ["رقم العملية (TxID)", receipt.txId],
     ...((receipt.orderId ? [["رقم الطلب (Order ID)", receipt.orderId]] : []) as [string, string][]),
@@ -38,7 +53,7 @@ export function ReceiptModal({ receipt, onClose }: { receipt: ReceiptData; onClo
           </button>
         </div>
 
-        <div id="munjaz-receipt" className="mt-4 rounded-2xl border border-border bg-surface p-4 print:mt-0 print:rounded-none print:border print:border-black print:bg-white print:p-6 print:text-black">
+        <div ref={sheetRef} id="munjaz-receipt" className="mt-4 rounded-2xl border border-border bg-surface p-4 print:mt-0 print:rounded-none print:border print:border-black print:bg-white print:p-6 print:text-black">
           <div className="flex items-center justify-between gap-3 border-b border-dashed border-border pb-3 print:border-black">
             <p className="text-sm font-black print:text-base print:text-black">الـمُـنْـجِـز</p>
             <span className="inline-flex items-center gap-1 rounded-full bg-primary px-2.5 py-1 text-[10px] font-black text-primary-foreground print:rounded-none print:border print:border-black print:bg-white print:text-[10px] print:text-black">
@@ -59,18 +74,28 @@ export function ReceiptModal({ receipt, onClose }: { receipt: ReceiptData; onClo
               امسح الرمز للتحقق من صحة الإيصال. هذا المستند صادر آلياً من نظام الضمان ولا يحتاج توقيعاً.
             </p>
           </div>
-          <p className="mt-3 hidden text-center text-[10px] font-bold text-black print:block">
+          <p className="pdf-only mt-3 hidden text-center text-[10px] font-bold text-black print:block">
             الختم الرسمي لمنصة الـمُـنْـجِـز · وثيقة معتمدة للضمان الرقمي · طُبعت بتاريخ {new Date().toLocaleString()}
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={() => window.print()}
-          className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-2.5 text-sm font-bold text-primary-foreground print:hidden"
-        >
-          <Printer className="size-4" /> طباعة / حفظ PDF
-        </button>
+        <div className="mt-4 grid gap-2 sm:grid-cols-2 print:hidden">
+          <button
+            type="button"
+            onClick={downloadPdf}
+            disabled={saving}
+            className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-2.5 text-sm font-bold text-primary-foreground disabled:opacity-60"
+          >
+            <Download className="size-4" /> {saving ? "جارٍ التحضير..." : "تحميل الإيصال PDF 📥"}
+          </button>
+          <button
+            type="button"
+            onClick={() => window.print()}
+            className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-border py-2.5 text-sm font-bold"
+          >
+            <Printer className="size-4" /> طباعة
+          </button>
+        </div>
       </div>
     </div>
   );

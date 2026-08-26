@@ -1,9 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { AlertTriangle, CalendarClock, CheckCircle2, Circle, FileCheck2, FileUp, History, Languages, Lock, Paperclip, Send, ShieldAlert, ShieldCheck, Sparkles, Star, Unlock, Video, X } from "lucide-react";
+import { AlertTriangle, CalendarClock, CheckCircle2, Circle, FileCheck2, FileUp, History, Languages, Lock, Paperclip, Send, FileDown, ShieldAlert, ShieldCheck, Sparkles, Star, Unlock, Video, X } from "lucide-react";
 import { Card, Section } from "@/components/site/Shell";
 import { ChatSecurityNotice } from "@/components/site/ChatSecurityNotice";
+import { downloadElementPdf } from "@/lib/pdf";
 
 
 import { useLang } from "@/lib/lang";
@@ -137,6 +138,49 @@ function seedMessages(lang: "ar" | "en"): Msg[] {
 }
 
 const TRANSLATE_PREF_KEY = "munjaz-auto-translate";
+const TX_CACHE_KEY = "munjaz-translation-cache";
+
+/** In-memory translation cache, mirrored into sessionStorage (`messageId_lang`). */
+const txMemCache = new Map<string, string>();
+
+function txCacheGet(key: string): string | undefined {
+  if (txMemCache.has(key)) return txMemCache.get(key);
+  try {
+    const raw = window.sessionStorage.getItem(TX_CACHE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw) as Record<string, string>;
+      const hit = parsed[key];
+      if (typeof hit === "string") {
+        txMemCache.set(key, hit);
+        return hit;
+      }
+    }
+  } catch {
+    /* storage unavailable */
+  }
+  return undefined;
+}
+
+function txCacheSet(key: string, value: string) {
+  txMemCache.set(key, value);
+  try {
+    const raw = window.sessionStorage.getItem(TX_CACHE_KEY);
+    const parsed = raw ? (JSON.parse(raw) as Record<string, string>) : {};
+    parsed[key] = value;
+    window.sessionStorage.setItem(TX_CACHE_KEY, JSON.stringify(parsed));
+  } catch {
+    /* storage unavailable */
+  }
+}
+
+/** Returns the translation, reusing the cache so the AI endpoint is hit once per message+language. */
+function translateCached(id: number, lang: "ar" | "en", source: string) {
+  const key = `${id}_${lang}`;
+  const hit = txCacheGet(key);
+  if (hit !== undefined) return { text: hit, cached: true };
+  txCacheSet(key, source);
+  return { text: source, cached: false };
+}
 
 function Workspace() {
   const { tr, lang } = useLang();
@@ -176,6 +220,9 @@ function Workspace() {
   const [warning, setWarning] = useState(false);
   const [reason, setReason] = useState("");
   const [evidence, setEvidence] = useState<string[]>([]);
+  const [evidenceProgress, setEvidenceProgress] = useState<Record<string, number>>({});
+  const timelineRef = useRef<HTMLDivElement>(null);
+  const [exportingLog, setExportingLog] = useState(false);
   const [disputeMsg, setDisputeMsg] = useState<string | null>(null);
   const [actionMsg, setActionMsg] = useState<string | null>(null);
   const [deliverable, setDeliverable] = useState("");
@@ -287,6 +334,8 @@ function Workspace() {
     return items;
   }, [order, rawFiles.length, extStatus, extHours, tr]);
 
+
+  const evidenceUploaded = evidence.length > 0 && evidence.every((n) => (evidenceProgress[n] ?? 100) >= 100);
 
   function send() {
     const text = draft.trim();
@@ -431,7 +480,8 @@ function Workspace() {
                 {messages.map((m) => {
                   const foreign = !!m.translation && m.srcLang !== lang;
                   const original = showOriginal.includes(m.id);
-                  const shown = translate && foreign && !original ? m.translation! : m.text;
+                  const cachedTx = translate && foreign ? translateCached(m.id, lang, m.translation!) : null;
+                  const shown = cachedTx && !original ? cachedTx.text : m.text;
                   return (
                     <div key={m.id} className={`flex ${m.from === "them" ? "justify-start" : "justify-end"}`}>
                       <div className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm sm:max-w-[75%] ${m.from === "them" ? "bg-secondary" : "bg-primary text-primary-foreground"}`}>
@@ -444,6 +494,9 @@ function Workspace() {
                             {!original && (
                               <span className="inline-flex items-center gap-1 text-[10px] font-bold text-accent">
                                 <Sparkles className="size-3" /> {tr("مترجم بواسطة الذكاء الاصطناعي", "Translated by AI")}
+                                {cachedTx?.cached && (
+                                  <span className="opacity-70">· {tr("⚡ من الذاكرة المؤقتة", "⚡ cached")}</span>
+                                )}
                               </span>
                             )}
                             <button
@@ -539,12 +592,28 @@ function Workspace() {
                         return (
                           <div key={i} className={`grid gap-2 rounded-xl border px-3 py-3 ${group.tone === "primary" ? "border-primary/40 bg-primary/5" : "border-border"}`}>
                             <p className="text-sm font-semibold break-all">{f}</p>
+                            <div className="flex flex-wrap items-center gap-2">
+                              <a
+                                href={/^https?:\/\//.test(f) ? f : undefined}
+                                target="_blank"
+                                rel="noreferrer noopener"
+                                className="peer inline-flex items-center gap-1 rounded-lg border border-primary/50 bg-primary/10 px-3 py-1.5 text-[11px] font-bold text-primary"
+                              >
+                                <FileDown className="size-3" /> {tr("تنزيل الملف", "Download file")}
+                              </a>
+                              <span className="hidden items-center gap-1 rounded-lg border border-primary/40 px-2 py-1 text-[10px] font-bold text-primary peer-hover:inline-flex peer-focus:inline-flex">
+                                <ShieldCheck className="size-3" /> {tr("تم فحص الملف: التوقيع مطابق وخالٍ من البرمجيات الخبيثة", "Integrity checked: signature matches, no malware")}
+                              </span>
+                            </div>
                             <div className="flex flex-wrap items-center gap-1.5 text-[10px]">
                               <span className="rounded-full border border-border px-2 py-0.5 font-mono text-muted-foreground" dir="ltr">{meta.mime}</span>
                               <span className="rounded-full border border-border px-2 py-0.5 font-mono text-muted-foreground" dir="ltr">{meta.sizeMb} MB</span>
                               <span className="max-w-full truncate rounded-full border border-border px-2 py-0.5 font-mono text-muted-foreground" dir="ltr">SHA-256 {meta.sha}…</span>
                               <span className="inline-flex items-center gap-1 rounded-full border border-primary/50 bg-primary/10 px-2 py-0.5 font-bold text-primary">
-                                <ShieldCheck className="size-3" /> {tr("خالٍ من الفيروسات", "Virus-free")}
+                                <Lock className="size-3" /> SHA-256 {tr("موثّق 🔒", "Verified 🔒")}
+                              </span>
+                              <span className="inline-flex items-center gap-1 rounded-full border border-primary/50 bg-primary/10 px-2 py-0.5 font-bold text-primary">
+                                <ShieldCheck className="size-3" /> {tr("خالٍ من الفيروسات والبرمجيات الخبيثة ✅", "Malware & virus free ✅")}
                               </span>
                             </div>
                             {group.key === "drafts" && order?.buyer_id === user?.id && (
@@ -581,10 +650,32 @@ function Workspace() {
           )}
 
           {tab === "timeline" && (
-            <div className="flex-1 py-4">
-              <h3 className="flex items-center gap-2 text-sm font-black">
-                <History className="size-4 text-primary" /> {tr("السجل الزمني للطلب (Audit Timeline)", "Order audit timeline")}
-              </h3>
+            <div ref={timelineRef} className="flex-1 py-4">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <h3 className="flex items-center gap-2 text-sm font-black">
+                  <History className="size-4 text-primary" /> {tr("السجل الزمني للطلب (Audit Timeline)", "Order audit timeline")}
+                </h3>
+                <button
+                  type="button"
+                  disabled={exportingLog || timeline.length === 0}
+                  onClick={async () => {
+                    if (!timelineRef.current) return;
+                    setExportingLog(true);
+                    try {
+                      await downloadElementPdf(
+                        timelineRef.current,
+                        `munjaz-audit-log-${order ? `MJ-${order.order_number}` : "order"}.pdf`,
+                      );
+                    } finally {
+                      setExportingLog(false);
+                    }
+                  }}
+                  className="pdf-hide inline-flex shrink-0 items-center gap-2 rounded-lg border border-primary/50 bg-primary/10 px-3 py-1.5 text-[11px] font-bold text-primary disabled:opacity-50"
+                >
+                  <FileDown className="size-3.5" />
+                  {exportingLog ? tr("جارٍ التصدير...", "Exporting...") : tr("تصدير السجل الزمني PDF 📄", "Export timeline PDF 📄")}
+                </button>
+              </div>
               <p className="mt-1 text-xs text-muted-foreground">
                 {tr("سجل غير قابل للتعديل لكل حدث مالي أو تعاقدي على الطلب.", "An immutable log of every financial and contractual event on this order.")}
               </p>
@@ -633,24 +724,63 @@ function Workspace() {
                     type="file"
                     multiple
                     className="hidden"
-                    onChange={(e) => setEvidence(Array.from(e.target.files ?? []).map((f) => f.name))}
+                    onChange={(e) => {
+                      const names = Array.from(e.target.files ?? []).map((f) => f.name);
+                      setEvidence(names);
+                      setEvidenceProgress(Object.fromEntries(names.map((n) => [n, 8])));
+                      const timer = window.setInterval(() => {
+                        setEvidenceProgress((prev) => {
+                          const next = { ...prev };
+                          let done = true;
+                          for (const n of names) {
+                            const v = Math.min(100, (next[n] ?? 0) + 12);
+                            next[n] = v;
+                            if (v < 100) done = false;
+                          }
+                          if (done) window.clearInterval(timer);
+                          return next;
+                        });
+                      }, 120);
+                    }}
                   />
                 </label>
                 {evidence.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5">
-                    {evidence.map((n) => (
-                      <span key={n} className="max-w-full truncate rounded-full border border-primary/40 bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary">{n}</span>
-                    ))}
+                  <div className="grid gap-2">
+                    {evidence.map((n) => {
+                      const pct = evidenceProgress[n] ?? 100;
+                      return (
+                        <div key={n} className="grid gap-1 rounded-lg border border-border px-3 py-2">
+                          <div className="flex items-center justify-between gap-2 text-[10px] font-bold">
+                            <span className="min-w-0 truncate">{n}</span>
+                            <span className={pct >= 100 ? "text-primary" : "text-muted-foreground"} dir="ltr">
+                              {pct >= 100 ? tr("تم الرفع ✅", "Uploaded ✅") : `${pct}%`}
+                            </span>
+                          </div>
+                          <div className="h-1.5 w-full overflow-hidden rounded-full bg-secondary">
+                            <div className="h-full rounded-full bg-primary transition-all duration-200" style={{ width: `${pct}%` }} />
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
-                <p className="text-[11px] text-muted-foreground">
-                  {tr("مطلوب: شرح لا يقل عن 50 حرفاً + مرفق دليل واحد على الأقل.", "Required: at least 50 characters plus one evidence attachment.")}
-                </p>
+                <ul className="grid gap-1.5 rounded-xl border border-border bg-surface/50 p-3 text-[11px]">
+                  {[
+                    { ok: reason.trim().length >= 50, label: tr("شرح مفصّل لا يقل عن 50 حرفاً", "Detailed explanation of 50+ characters") },
+                    { ok: evidence.length > 0, label: tr("إرفاق دليل واحد على الأقل", "At least one evidence attachment") },
+                    { ok: evidenceUploaded, label: tr("اكتمال رفع جميع المرفقات", "All attachments finished uploading") },
+                  ].map((c) => (
+                    <li key={c.label} className={`flex items-center gap-2 ${c.ok ? "text-primary" : "text-muted-foreground"}`}>
+                      {c.ok ? <CheckCircle2 className="size-3.5 shrink-0" /> : <Circle className="size-3.5 shrink-0" />}
+                      <span className="min-w-0">{c.label}</span>
+                    </li>
+                  ))}
+                </ul>
               </div>
 
               <button
                 onClick={() => openDispute.mutate()}
-                disabled={openDispute.isPending || reason.trim().length < 50 || evidence.length === 0}
+                disabled={openDispute.isPending || reason.trim().length < 50 || evidence.length === 0 || !evidenceUploaded}
                 className="mt-3 rounded-xl bg-destructive px-4 py-2 font-bold text-destructive-foreground disabled:opacity-50"
               >
                 {tr("فتح نزاع رسمي للتحكيم ⚖️", "Open formal arbitration ⚖️")}

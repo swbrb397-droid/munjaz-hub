@@ -16,7 +16,21 @@ const ROLES: ReadonlyArray<{ value: SignupRole; ar: string; en: string }> = [
 ];
 
 
+const REDIRECT_KEY = "munjaz-redirect-to";
+
+/** Only same-origin relative paths are accepted, to avoid open-redirects. */
+function safeRedirect(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  if (!value.startsWith("/") || value.startsWith("//")) return null;
+  if (value.startsWith("/auth")) return null;
+  return value;
+}
+
 export const Route = createFileRoute("/auth")({
+  validateSearch: (search: Record<string, unknown>): { redirectTo?: string } => {
+    const to = safeRedirect(search["redirectTo"]);
+    return to ? { redirectTo: to } : {};
+  },
   head: () => ({
     meta: [
       { title: "تسجيل الدخول | الـمُـنْـجِـز" },
@@ -32,6 +46,12 @@ function AuthPage() {
   const { tr } = useLang();
   const navigate = useNavigate();
   const { isAuthenticated, loading } = useAuth();
+  const { redirectTo } = Route.useSearch();
+
+  // Persist the deep link (path + query) so it survives the signup/confirmation round-trip.
+  useEffect(() => {
+    if (redirectTo) window.sessionStorage.setItem(REDIRECT_KEY, redirectTo);
+  }, [redirectTo]);
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -75,8 +95,16 @@ function AuthPage() {
   }
 
   useEffect(() => {
-    if (!loading && isAuthenticated) navigate({ to: "/dashboard", replace: true });
-  }, [loading, isAuthenticated, navigate]);
+    if (loading || !isAuthenticated) return;
+    const stored = safeRedirect(window.sessionStorage.getItem(REDIRECT_KEY));
+    const target = redirectTo ?? stored;
+    if (target) {
+      window.sessionStorage.removeItem(REDIRECT_KEY);
+      navigate({ href: target, replace: true });
+      return;
+    }
+    navigate({ to: "/dashboard", replace: true });
+  }, [loading, isAuthenticated, navigate, redirectTo]);
 
   useEffect(() => {
     const code = new URLSearchParams(window.location.search).get("ref");
@@ -108,7 +136,7 @@ function AuthPage() {
           email,
           password,
           options: {
-            emailRedirectTo: window.location.origin,
+            emailRedirectTo: window.location.origin + (redirectTo ?? "/dashboard"),
             data: {
               display_name: displayName,
               role,
