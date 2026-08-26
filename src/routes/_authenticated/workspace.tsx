@@ -1,9 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { AlertTriangle, CalendarClock, CheckCircle2, Circle, FileCheck2, FileUp, History, Languages, Lock, Paperclip, Send, ShieldAlert, ShieldCheck, Sparkles, Star, Unlock, Video, X } from "lucide-react";
+import { AlertTriangle, CalendarClock, CheckCircle2, Circle, FileCheck2, FileUp, History, Languages, Lock, Paperclip, Send, FileDown, ShieldAlert, ShieldCheck, Sparkles, Star, Unlock, Video, X } from "lucide-react";
 import { Card, Section } from "@/components/site/Shell";
 import { ChatSecurityNotice } from "@/components/site/ChatSecurityNotice";
+import { downloadElementPdf } from "@/lib/pdf";
 
 
 import { useLang } from "@/lib/lang";
@@ -137,6 +138,49 @@ function seedMessages(lang: "ar" | "en"): Msg[] {
 }
 
 const TRANSLATE_PREF_KEY = "munjaz-auto-translate";
+const TX_CACHE_KEY = "munjaz-translation-cache";
+
+/** In-memory translation cache, mirrored into sessionStorage (`messageId_lang`). */
+const txMemCache = new Map<string, string>();
+
+function txCacheGet(key: string): string | undefined {
+  if (txMemCache.has(key)) return txMemCache.get(key);
+  try {
+    const raw = window.sessionStorage.getItem(TX_CACHE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw) as Record<string, string>;
+      const hit = parsed[key];
+      if (typeof hit === "string") {
+        txMemCache.set(key, hit);
+        return hit;
+      }
+    }
+  } catch {
+    /* storage unavailable */
+  }
+  return undefined;
+}
+
+function txCacheSet(key: string, value: string) {
+  txMemCache.set(key, value);
+  try {
+    const raw = window.sessionStorage.getItem(TX_CACHE_KEY);
+    const parsed = raw ? (JSON.parse(raw) as Record<string, string>) : {};
+    parsed[key] = value;
+    window.sessionStorage.setItem(TX_CACHE_KEY, JSON.stringify(parsed));
+  } catch {
+    /* storage unavailable */
+  }
+}
+
+/** Returns the translation, reusing the cache so the AI endpoint is hit once per message+language. */
+function translateCached(id: number, lang: "ar" | "en", source: string) {
+  const key = `${id}_${lang}`;
+  const hit = txCacheGet(key);
+  if (hit !== undefined) return { text: hit, cached: true };
+  txCacheSet(key, source);
+  return { text: source, cached: false };
+}
 
 function Workspace() {
   const { tr, lang } = useLang();
@@ -431,7 +475,8 @@ function Workspace() {
                 {messages.map((m) => {
                   const foreign = !!m.translation && m.srcLang !== lang;
                   const original = showOriginal.includes(m.id);
-                  const shown = translate && foreign && !original ? m.translation! : m.text;
+                  const cachedTx = translate && foreign ? translateCached(m.id, lang, m.translation!) : null;
+                  const shown = cachedTx && !original ? cachedTx.text : m.text;
                   return (
                     <div key={m.id} className={`flex ${m.from === "them" ? "justify-start" : "justify-end"}`}>
                       <div className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm sm:max-w-[75%] ${m.from === "them" ? "bg-secondary" : "bg-primary text-primary-foreground"}`}>
@@ -444,6 +489,9 @@ function Workspace() {
                             {!original && (
                               <span className="inline-flex items-center gap-1 text-[10px] font-bold text-accent">
                                 <Sparkles className="size-3" /> {tr("مترجم بواسطة الذكاء الاصطناعي", "Translated by AI")}
+                                {cachedTx?.cached && (
+                                  <span className="opacity-70">· {tr("⚡ من الذاكرة المؤقتة", "⚡ cached")}</span>
+                                )}
                               </span>
                             )}
                             <button
