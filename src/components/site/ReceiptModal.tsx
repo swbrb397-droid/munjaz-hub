@@ -17,6 +17,19 @@ export type ReceiptData = {
 
 /** Printable, high-contrast transaction receipt preview. */
 export function ReceiptModal({ receipt, onClose }: { receipt: ReceiptData; onClose: () => void }) {
+  const sheetRef = useRef<HTMLDivElement>(null);
+  const [saving, setSaving] = useState(false);
+
+  async function downloadPdf() {
+    if (!sheetRef.current || saving) return;
+    setSaving(true);
+    try {
+      await downloadElementPdf(sheetRef.current, `munjaz-receipt-${receipt.txId}.pdf`);
+    } finally {
+      setSaving(false);
+    }
+  }
+
   const rows: [string, string][] = [
     ["رقم العملية (TxID)", receipt.txId],
     ...((receipt.orderId ? [["رقم الطلب (Order ID)", receipt.orderId]] : []) as [string, string][]),
