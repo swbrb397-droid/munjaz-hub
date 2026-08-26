@@ -61,12 +61,11 @@ function AuthButton() {
     return (
       <Link
         to="/auth"
-        search={{
-          redirectTo:
-            typeof window !== "undefined" && window.location.pathname !== "/auth"
-              ? window.location.pathname + window.location.search
-              : undefined,
-        }}
+        search={() =>
+          typeof window !== "undefined" && window.location.pathname !== "/auth"
+            ? { redirectTo: window.location.pathname + window.location.search }
+            : {}
+        }
         className="flex h-9 shrink-0 items-center gap-1.5 rounded-lg bg-primary px-3 text-xs font-bold text-primary-foreground"
       >
         <LogIn className="size-4" /> {tr("دخول", "Sign in")}
