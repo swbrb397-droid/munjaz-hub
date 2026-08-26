@@ -1,5 +1,7 @@
-import { Printer, ShieldCheck, X } from "lucide-react";
+import { Download, Printer, ShieldCheck, X } from "lucide-react";
+import { useRef, useState } from "react";
 import { QrCode } from "@/components/site/QrCode";
+import { downloadElementPdf } from "@/lib/pdf";
 
 export type ReceiptData = {
   txId: string;
