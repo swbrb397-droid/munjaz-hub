@@ -88,6 +88,13 @@ export function ReceiptModal({ receipt, onClose }: { receipt: ReceiptData; onClo
           </p>
         </div>
 
+        {stampHash && (
+          <p className="mt-3 break-all rounded-xl border border-primary/40 bg-primary/10 px-3 py-2 text-[10px] font-bold text-primary print:hidden">
+            ✅ تم ختم الملف رقمياً · بصمة التحقق: <span dir="ltr" className="font-mono">{stampHash}</span> · سُجّل الحدث في سجل التدقيق (PDF_DOWNLOAD_EVENT).
+          </p>
+        )}
+
+
         <div className="mt-4 grid gap-2 sm:grid-cols-2 print:hidden">
           <button
             type="button"
