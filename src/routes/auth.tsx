@@ -120,20 +120,38 @@ function AuthPage() {
     const stored = safeRedirect(window.sessionStorage.getItem(REDIRECT_KEY));
     const target = redirectTo ?? stored;
     if (target) {
+      const full = withContext(target);
       window.sessionStorage.removeItem(REDIRECT_KEY);
-      navigate({ href: target, replace: true });
+      window.sessionStorage.removeItem(CTX_KEY);
+      navigate({ href: full, replace: true });
       return;
     }
     navigate({ to: "/dashboard", replace: true });
   }, [loading, isAuthenticated, navigate, redirectTo]);
 
+  // Persist deep-link context (listingId, lang, ref) across failed logins, signup and session timeouts.
   useEffect(() => {
-    const code = new URLSearchParams(window.location.search).get("ref");
+    const url = new URLSearchParams(window.location.search);
+    let stored: Record<string, string> = {};
+    try {
+      stored = JSON.parse(window.sessionStorage.getItem(CTX_KEY) ?? "{}") as Record<string, string>;
+    } catch {
+      stored = {};
+    }
+    const target = new URLSearchParams((redirectTo ?? "").split("?")[1] ?? "");
+    for (const key of CTX_PARAMS) {
+      const v = url.get(key) ?? target.get(key);
+      if (v) stored[key] = v;
+    }
+    window.sessionStorage.setItem(CTX_KEY, JSON.stringify(stored));
+
+    const code = stored["ref"];
     if (code) {
       setReferral(code.toUpperCase());
       setMode("signup");
     }
-  }, []);
+  }, [redirectTo]);
+
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
