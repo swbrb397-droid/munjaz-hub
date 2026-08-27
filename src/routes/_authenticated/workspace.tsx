@@ -857,6 +857,46 @@ function Workspace() {
                   {tr("سيراجع وكيل الذكاء الاصطناعي نطاق العمل والمحادثة وملفات التسليم ويصدر حكماً أولياً خلال دقائق، مع إمكانية التصعيد البشري.", "An AI agent will review the scope, chat history, and deliverables, and issue a preliminary ruling within minutes, with the option to escalate to a human.")}
                 </p>
               </div>
+
+              {assetLocked && (
+                <div className="mt-3 grid gap-2 rounded-xl border border-accent/40 bg-accent/10 p-3 text-xs">
+                  <p className="flex items-start gap-2 font-bold text-accent">
+                    <ShieldAlert className="mt-0.5 size-4 shrink-0" />
+                    {tr(
+                      "درع حماية الأصول الرقمية مفعّل: تم تنزيل الأصل والتحقق من بصمة SHA-256، لذلك أُقفلت طلبات الاسترداد العامة.",
+                      "Digital asset shield active: the asset was downloaded and its SHA-256 checksum confirmed, so standard refund requests are locked.",
+                    )}
+                  </p>
+                  <p className="text-muted-foreground">
+                    {tr("سبب النزاع المتاح حصراً:", "Only this dispute reason is available:")}{" "}
+                    <span className="font-bold text-foreground">{tr("ملف تالف أو غير مطابق للوصف", "Corrupt file or not as described")}</span>
+                  </p>
+                </div>
+              )}
+
+              <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                {([
+                  { key: "general" as const, label: tr("نزاع عام على التنفيذ", "General delivery dispute") },
+                  { key: "corrupt" as const, label: tr("ملف تالف أو غير مطابق للوصف", "Corrupt file / not as described") },
+                ]).map((c) => {
+                  const disabled = assetLocked && c.key === "general";
+                  return (
+                    <button
+                      key={c.key}
+                      type="button"
+                      disabled={disabled}
+                      onClick={() => setDisputeCategory(c.key)}
+                      aria-pressed={disputeCategory === c.key}
+                      className={`min-w-0 rounded-xl border px-3 py-2 text-xs font-bold transition-colors ${
+                        disputeCategory === c.key ? "border-destructive bg-destructive/15 text-destructive" : "border-border text-muted-foreground"
+                      } ${disabled ? "cursor-not-allowed opacity-40" : ""}`}
+                    >
+                      {c.label} {disabled && "🔒"}
+                    </button>
+                  );
+                })}
+              </div>
+
               <textarea value={reason} onChange={(e) => setReason(e.target.value)} rows={5} placeholder={tr("اشرح سبب النزاع بالتفصيل (50 حرفاً على الأقل)...", "Explain the dispute in detail (minimum 50 characters)...")} className="mt-4 w-full rounded-xl border border-input bg-surface p-3 text-sm outline-none focus:border-primary" />
               <p className={`mt-1 text-[11px] ${reason.trim().length >= 50 ? "text-primary" : "text-muted-foreground"}`}>
                 {reason.trim().length}/50 {tr("حرفاً", "characters")}
