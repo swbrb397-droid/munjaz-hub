@@ -246,6 +246,35 @@ function Workspace() {
   const [deliverable, setDeliverable] = useState("");
   const [draftState, setDraftState] = useState<Record<number, "pending" | "revision" | "approved">>({});
 
+  // AI translation: per-message revision drives cache invalidation + credit reconciliation.
+  const [msgRev, setMsgRev] = useState<Record<number, number>>({});
+  const [editing, setEditing] = useState<{ id: number; text: string } | null>(null);
+  const txMap = useMemo(() => {
+    const map = new Map<number, { text: string; cached: boolean }>();
+    let billed = 0;
+    let cached = 0;
+    if (translate) {
+      for (const m of messages) {
+        if (m.translation && m.srcLang !== lang) {
+          const r = translateCached(m.id, lang, m.translation, msgRev[m.id] ?? m.rev ?? 0);
+          map.set(m.id, r);
+          if (r.cached) cached++;
+          else billed++;
+        }
+      }
+    }
+    return { map, billed, cached };
+  }, [messages, translate, lang, msgRev]);
+
+  // Instant digital asset anti-piracy shield
+  const [assetLocked, setAssetLocked] = useState(false);
+  const [disputeCategory, setDisputeCategory] = useState<"general" | "corrupt">("general");
+
+  // Post-delivery warranty escrow
+  const [warrantyOn, setWarrantyOn] = useState(false);
+  const [warrantyPct, setWarrantyPct] = useState(10);
+
+
   const addDeliverable = useDeliverables();
   const transition = useOrderTransition();
 
