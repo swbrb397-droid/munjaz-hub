@@ -89,7 +89,10 @@ type Msg = {
   srcLang?: "ar" | "en";
   /** Machine translation of `text` into the other language. */
   translation?: string;
+  /** Bumped when the message is edited so cached translations are invalidated. */
+  rev?: number;
 };
+
 
 /** Seeded counterpart messages written in the other party's language. */
 function seedMessages(lang: "ar" | "en"): Msg[] {
