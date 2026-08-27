@@ -50,7 +50,9 @@ function WalletPage() {
 
   const [deposit, setDeposit] = useState(false);
   const [depositTab, setDepositTab] = useState<"crypto" | "fiat">("crypto");
-  const [network, setNetwork] = useState<WithdrawalNetwork>("trc20");
+  const [network, setNetwork] = useState<WithdrawalNetwork>("polygon");
+  const gasRows = useMemo(() => gasEstimates(), []);
+
   const [amount, setAmount] = useState("250");
   const [address, setAddress] = useState("");
   const [feedback, setFeedback] = useState<string | null>(null);
