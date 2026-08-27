@@ -716,6 +716,19 @@ function Workspace() {
                                 href={/^https?:\/\//.test(f) ? f : undefined}
                                 target="_blank"
                                 rel="noreferrer noopener"
+                                onClick={() => {
+                                  if (group.key !== "final") return;
+                                  // Instant asset shield: checksum confirmed on download → disputes restricted.
+                                  setAssetLocked(true);
+                                  setDisputeCategory("corrupt");
+                                  logAuditEvent({
+                                    type: "ASSET_DOWNLOAD_EVENT",
+                                    userId: user?.id ?? null,
+                                    target: f,
+                                    hash: meta.sha,
+                                    meta: { orderId: order?.id ?? "", checksum: "SHA-256" },
+                                  });
+                                }}
                                 className="peer inline-flex items-center gap-1 rounded-lg border border-primary/50 bg-primary/10 px-3 py-1.5 text-[11px] font-bold text-primary"
                               >
                                 <FileDown className="size-3" /> {tr("تنزيل الملف", "Download file")}
@@ -724,6 +737,7 @@ function Workspace() {
                                 <ShieldCheck className="size-3" /> {tr("تم فحص الملف: التوقيع مطابق وخالٍ من البرمجيات الخبيثة", "Integrity checked: signature matches, no malware")}
                               </span>
                             </div>
+
                             <div className="flex flex-wrap items-center gap-1.5 text-[10px]">
                               <span className="rounded-full border border-border px-2 py-0.5 font-mono text-muted-foreground" dir="ltr">{meta.mime}</span>
                               <span className="rounded-full border border-border px-2 py-0.5 font-mono text-muted-foreground" dir="ltr">{meta.sizeMb} MB</span>
