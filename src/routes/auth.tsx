@@ -175,7 +175,7 @@ function AuthPage() {
           email,
           password,
           options: {
-            emailRedirectTo: window.location.origin + (redirectTo ?? "/dashboard"),
+            emailRedirectTo: window.location.origin + withContext(redirectTo ?? "/dashboard"),
             data: {
               display_name: displayName,
               role,
