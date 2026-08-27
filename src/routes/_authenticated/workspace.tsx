@@ -241,6 +241,8 @@ function Workspace() {
   const [evidenceProgress, setEvidenceProgress] = useState<Record<string, number>>({});
   const timelineRef = useRef<HTMLDivElement>(null);
   const [exportingLog, setExportingLog] = useState(false);
+  const [logHash, setLogHash] = useState<string | null>(null);
+
   const [disputeMsg, setDisputeMsg] = useState<string | null>(null);
   const [actionMsg, setActionMsg] = useState<string | null>(null);
   const [deliverable, setDeliverable] = useState("");
