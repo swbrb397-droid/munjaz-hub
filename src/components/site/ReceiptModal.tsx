@@ -2,6 +2,7 @@ import { Download, Printer, ShieldCheck, X } from "lucide-react";
 import { useRef, useState } from "react";
 import { QrCode } from "@/components/site/QrCode";
 import { downloadElementPdf } from "@/lib/pdf";
+import { useAuth } from "@/hooks/use-auth";
 
 export type ReceiptData = {
   txId: string;
@@ -19,16 +20,24 @@ export type ReceiptData = {
 export function ReceiptModal({ receipt, onClose }: { receipt: ReceiptData; onClose: () => void }) {
   const sheetRef = useRef<HTMLDivElement>(null);
   const [saving, setSaving] = useState(false);
+  const [stampHash, setStampHash] = useState<string | null>(null);
+  const { user } = useAuth();
 
   async function downloadPdf() {
     if (!sheetRef.current || saving) return;
     setSaving(true);
     try {
-      await downloadElementPdf(sheetRef.current, `munjaz-receipt-${receipt.txId}.pdf`);
+      const hash = await downloadElementPdf(sheetRef.current, `munjaz-receipt-${receipt.txId}.pdf`, {
+        docType: "RECEIPT",
+        reference: receipt.txId,
+        userId: user?.id ?? null,
+      });
+      setStampHash(hash);
     } finally {
       setSaving(false);
     }
   }
+
 
   const rows: [string, string][] = [
     ["رقم العملية (TxID)", receipt.txId],
@@ -78,6 +87,13 @@ export function ReceiptModal({ receipt, onClose }: { receipt: ReceiptData; onClo
             الختم الرسمي لمنصة الـمُـنْـجِـز · وثيقة معتمدة للضمان الرقمي · طُبعت بتاريخ {new Date().toLocaleString()}
           </p>
         </div>
+
+        {stampHash && (
+          <p className="mt-3 break-all rounded-xl border border-primary/40 bg-primary/10 px-3 py-2 text-[10px] font-bold text-primary print:hidden">
+            ✅ تم ختم الملف رقمياً · بصمة التحقق: <span dir="ltr" className="font-mono">{stampHash}</span> · سُجّل الحدث في سجل التدقيق (PDF_DOWNLOAD_EVENT).
+          </p>
+        )}
+
 
         <div className="mt-4 grid gap-2 sm:grid-cols-2 print:hidden">
           <button

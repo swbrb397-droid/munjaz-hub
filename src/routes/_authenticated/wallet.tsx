@@ -1,5 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { gasEstimates } from "@/lib/gas";
+
 import { ArrowDownToLine, ArrowUpFromLine, BadgeCheck, Copy, FileText, Lock, ShieldAlert, Timer, X } from "lucide-react";
 import { Card, Section } from "@/components/site/Shell";
 import { QrCode } from "@/components/site/QrCode";
@@ -50,7 +52,9 @@ function WalletPage() {
 
   const [deposit, setDeposit] = useState(false);
   const [depositTab, setDepositTab] = useState<"crypto" | "fiat">("crypto");
-  const [network, setNetwork] = useState<WithdrawalNetwork>("trc20");
+  const [network, setNetwork] = useState<WithdrawalNetwork>("polygon");
+  const gasRows = useMemo(() => gasEstimates(), []);
+
   const [amount, setAmount] = useState("250");
   const [address, setAddress] = useState("");
   const [feedback, setFeedback] = useState<string | null>(null);
@@ -142,6 +146,46 @@ function WalletPage() {
             </p>
           )}
 
+          <div className="mt-4 grid gap-2">
+            <p className="text-xs font-bold text-muted-foreground">
+              {tr("مُحسِّن رسوم الشبكة (Gas Optimizer) — اختر الشبكة الأوفر", "Network gas optimizer — pick the cheapest route")}
+            </p>
+            <div className="grid gap-2 sm:grid-cols-3">
+              {gasRows.map((g) => {
+                const selected = network === g.value;
+                return (
+                  <button
+                    key={g.value}
+                    type="button"
+                    onClick={() => setNetwork(g.value as WithdrawalNetwork)}
+                    aria-pressed={selected}
+                    className={`grid min-w-0 gap-1 rounded-xl border px-3 py-2.5 text-start transition-colors ${
+                      selected ? "border-primary bg-primary/15" : "border-border hover:border-primary/50"
+                    }`}
+                  >
+                    <span className="flex flex-wrap items-center gap-1.5">
+                      <span className="text-xs font-black">{g.label}</span>
+                      {g.tone === "best" && (
+                        <span className="rounded-full bg-primary px-1.5 py-0.5 text-[9px] font-black text-primary-foreground">
+                          {tr("موصى بها · رسوم فائقة الانخفاض ⚡", "Recommended · ultra-low ⚡")}
+                        </span>
+                      )}
+                      {g.tone === "high" && (
+                        <span className="rounded-full border border-destructive/50 px-1.5 py-0.5 text-[9px] font-black text-destructive">
+                          {tr("رسوم أعلى", "Higher fee")}
+                        </span>
+                      )}
+                    </span>
+                    <span className={`font-mono text-[11px] font-bold ${g.tone === "best" ? "text-primary" : "text-muted-foreground"}`} dir="ltr">
+                      ≈ {g.fee.toFixed(3)} USDT
+                    </span>
+                    <span className="text-[10px] text-muted-foreground">{tr(g.etaAr, g.etaEn)}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
             <label className="grid gap-2 text-sm">
               <span className="text-muted-foreground">{tr("الشبكة", "Network")}</span>
@@ -158,6 +202,7 @@ function WalletPage() {
               <input value={address} onChange={(e) => setAddress(e.target.value.replace(/[^A-Za-z0-9]/g, ""))} placeholder="T… / 0x…" maxLength={64} className="rounded-lg border border-input bg-surface px-3 py-2 outline-none focus:border-primary" />
             </label>
           </div>
+
           <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-surface-2/60 p-4 text-sm">
             <span className="text-muted-foreground">
               {tr("الرسوم:", "Fee:")} <span className="text-foreground">{WITHDRAWAL_FEE} USDT</span>
