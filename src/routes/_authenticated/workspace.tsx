@@ -534,34 +534,88 @@ function Workspace() {
                 {messages.map((m) => {
                   const foreign = !!m.translation && m.srcLang !== lang;
                   const original = showOriginal.includes(m.id);
-                  const cachedTx = translate && foreign ? translateCached(m.id, lang, m.translation!) : null;
+                  const cachedTx = txMap.map.get(m.id) ?? null;
                   const shown = cachedTx && !original ? cachedTx.text : m.text;
+                  const isEditing = editing?.id === m.id;
                   return (
                     <div key={m.id} className={`flex ${m.from === "them" ? "justify-start" : "justify-end"}`}>
                       <div className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm sm:max-w-[75%] ${m.from === "them" ? "bg-secondary" : "bg-primary text-primary-foreground"}`}>
-                        <p className="mb-1 text-xs opacity-70">{m.name} · {m.time}</p>
-                        <p className="break-words" dir={translate && foreign && !original ? (lang === "ar" ? "rtl" : "ltr") : "auto"}>
-                          {shown}
-                        </p>
+                        <p className="mb-1 text-xs opacity-70">{m.name} · {m.time}{(m.rev ?? 0) > 0 && ` · ${tr("مُعدَّلة", "edited")}`}</p>
+                        {isEditing ? (
+                          <div className="grid gap-2">
+                            <textarea
+                              value={editing.text}
+                              onChange={(e) => setEditing({ id: m.id, text: e.target.value })}
+                              rows={2}
+                              className="w-full rounded-lg border border-input bg-surface p-2 text-xs text-foreground outline-none focus:border-primary"
+                            />
+                            <div className="flex flex-wrap gap-2">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const text = sanitizeText(editing.text, 1000);
+                                  if (!text) return;
+                                  txCacheInvalidate(m.id);
+                                  setMsgRev((r) => ({ ...r, [m.id]: (r[m.id] ?? m.rev ?? 0) + 1 }));
+                                  setMessages((list) =>
+                                    list.map((x) => (x.id === m.id ? { ...x, text, translation: text, rev: (x.rev ?? 0) + 1 } : x)),
+                                  );
+                                  setEditing(null);
+                                }}
+                                className="rounded-lg bg-background px-2.5 py-1 text-[10px] font-bold text-primary"
+                              >
+                                {tr("حفظ وإعادة الترجمة", "Save & re-translate")}
+                              </button>
+                              <button type="button" onClick={() => setEditing(null)} className="rounded-lg border border-current/40 px-2.5 py-1 text-[10px] font-bold">
+                                {tr("إلغاء", "Cancel")}
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <p className="break-words" dir={translate && foreign && !original ? (lang === "ar" ? "rtl" : "ltr") : "auto"}>
+                            {shown}
+                          </p>
+                        )}
+                        {m.from === "me" && !isEditing && (
+                          <button
+                            type="button"
+                            onClick={() => setEditing({ id: m.id, text: m.text })}
+                            className="mt-1 text-[10px] font-bold underline underline-offset-2 opacity-70"
+                          >
+                            {tr("تعديل الرسالة", "Edit message")}
+                          </button>
+                        )}
                         {translate && foreign && (
                           <div className="mt-2 grid gap-1 border-t border-current/15 pt-2">
                             {!original && (
-                              <span className="inline-flex items-center gap-1 text-[10px] font-bold text-accent">
+                              <span className="inline-flex flex-wrap items-center gap-1 text-[10px] font-bold text-accent">
                                 <Sparkles className="size-3" /> {tr("مترجم بواسطة الذكاء الاصطناعي", "Translated by AI")}
                                 {cachedTx?.cached && (
                                   <span className="opacity-70">· {tr("⚡ من الذاكرة المؤقتة", "⚡ cached")}</span>
                                 )}
                               </span>
                             )}
-                            <button
-                              type="button"
-                              onClick={() =>
-                                setShowOriginal((s) => (s.includes(m.id) ? s.filter((x) => x !== m.id) : [...s, m.id]))
-                              }
-                              className="text-start text-[10px] font-bold underline underline-offset-2 opacity-80"
-                            >
-                              {original ? tr("عرض الترجمة", "Show translation") : tr("عرض النص الأصلي / Show Original", "Show original")}
-                            </button>
+                            <div className="flex flex-wrap items-center gap-3">
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setShowOriginal((s) => (s.includes(m.id) ? s.filter((x) => x !== m.id) : [...s, m.id]))
+                                }
+                                className="text-start text-[10px] font-bold underline underline-offset-2 opacity-80"
+                              >
+                                {original ? tr("عرض الترجمة", "Show translation") : tr("عرض النص الأصلي / Show Original", "Show original")}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  txCacheInvalidate(m.id);
+                                  setMsgRev((r) => ({ ...r, [m.id]: (r[m.id] ?? 0) + 1 }));
+                                }}
+                                className="text-start text-[10px] font-bold underline underline-offset-2 opacity-80"
+                              >
+                                {tr("إعادة الترجمة (تحديث الذاكرة)", "Re-translate (refresh cache)")}
+                              </button>
+                            </div>
                           </div>
                         )}
                       </div>
@@ -569,6 +623,15 @@ function Workspace() {
                   );
                 })}
               </div>
+
+              {translate && (
+                <p className="mb-2 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg border border-border bg-surface/60 px-3 py-2 text-[10px] text-muted-foreground">
+                  <span className="font-bold text-foreground">{tr("مطابقة أرصدة الترجمة", "Translation credit reconciliation")}</span>
+                  <span>{tr("طلبات مُحتسبة", "Billed calls")}: <span className="font-bold text-accent">{txMap.billed}</span></span>
+                  <span>{tr("من الذاكرة المؤقتة (مجانية)", "Served from cache (free)")}: <span className="font-bold text-primary">{txMap.cached}</span></span>
+                </p>
+              )}
+
 
 
               {warning && (
