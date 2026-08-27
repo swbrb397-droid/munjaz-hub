@@ -173,14 +173,29 @@ function txCacheSet(key: string, value: string) {
   }
 }
 
-/** Returns the translation, reusing the cache so the AI endpoint is hit once per message+language. */
-function translateCached(id: number, lang: "ar" | "en", source: string) {
-  const key = `${id}_${lang}`;
+/** Drops every cached translation for a message (used when the message is edited). */
+function txCacheInvalidate(id: number) {
+  for (const k of Array.from(txMemCache.keys())) if (k.startsWith(`${id}_`)) txMemCache.delete(k);
+  try {
+    const raw = window.sessionStorage.getItem(TX_CACHE_KEY);
+    if (!raw) return;
+    const parsed = JSON.parse(raw) as Record<string, string>;
+    for (const k of Object.keys(parsed)) if (k.startsWith(`${id}_`)) delete parsed[k];
+    window.sessionStorage.setItem(TX_CACHE_KEY, JSON.stringify(parsed));
+  } catch {
+    /* storage unavailable */
+  }
+}
+
+/** Returns the translation, reusing the cache so the AI endpoint is hit once per message+language+revision. */
+function translateCached(id: number, lang: "ar" | "en", source: string, rev = 0) {
+  const key = `${id}_${lang}_v${rev}`;
   const hit = txCacheGet(key);
   if (hit !== undefined) return { text: hit, cached: true };
   txCacheSet(key, source);
   return { text: source, cached: false };
 }
+
 
 function Workspace() {
   const { tr, lang } = useLang();
