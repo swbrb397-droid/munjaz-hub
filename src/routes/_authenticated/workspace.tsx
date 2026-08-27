@@ -5,6 +5,8 @@ import { AlertTriangle, CalendarClock, CheckCircle2, Circle, FileCheck2, FileUp,
 import { Card, Section } from "@/components/site/Shell";
 import { ChatSecurityNotice } from "@/components/site/ChatSecurityNotice";
 import { downloadElementPdf } from "@/lib/pdf";
+import { logAuditEvent } from "@/lib/audit";
+
 
 
 import { useLang } from "@/lib/lang";
