@@ -801,6 +801,13 @@ function Workspace() {
               <p className="mt-1 text-xs text-muted-foreground">
                 {tr("سجل غير قابل للتعديل لكل حدث مالي أو تعاقدي على الطلب.", "An immutable log of every financial and contractual event on this order.")}
               </p>
+              {logHash && (
+                <p className="pdf-hide mt-2 break-all rounded-lg border border-primary/40 bg-primary/10 px-3 py-2 text-[10px] font-bold text-primary">
+                  ✅ {tr("تم ختم المستند رقمياً · بصمة التحقق:", "Document digitally sealed · verification hash:")}{" "}
+                  <span dir="ltr" className="font-mono">{logHash}</span>
+                </p>
+              )}
+
               {timeline.length === 0 ? (
                 <p className="mt-6 text-xs text-muted-foreground">{tr("اختر طلباً لعرض سجله الزمني.", "Select an order to view its timeline.")}</p>
               ) : (
