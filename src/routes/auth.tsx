@@ -17,6 +17,8 @@ const ROLES: ReadonlyArray<{ value: SignupRole; ar: string; en: string }> = [
 
 
 const REDIRECT_KEY = "munjaz-redirect-to";
+const CTX_KEY = "munjaz-auth-context";
+const CTX_PARAMS = ["listingId", "lang", "ref"] as const;
 
 /** Only same-origin relative paths are accepted, to avoid open-redirects. */
 function safeRedirect(value: unknown): string | null {
@@ -25,6 +27,25 @@ function safeRedirect(value: unknown): string | null {
   if (value.startsWith("/auth")) return null;
   return value;
 }
+
+/** Re-attach persisted deep-link params (listingId, lang, ref) to the post-auth target. */
+function withContext(target: string): string {
+  let stored: Record<string, string> = {};
+  try {
+    stored = JSON.parse(window.sessionStorage.getItem(CTX_KEY) ?? "{}") as Record<string, string>;
+  } catch {
+    stored = {};
+  }
+  const [path, query = ""] = target.split("?");
+  const params = new URLSearchParams(query);
+  for (const key of CTX_PARAMS) {
+    const v = stored[key];
+    if (v && !params.has(key)) params.set(key, v);
+  }
+  const qs = params.toString();
+  return qs ? `${path}?${qs}` : (path ?? target);
+}
+
 
 export const Route = createFileRoute("/auth")({
   validateSearch: (search: Record<string, unknown>): { redirectTo?: string } => {
