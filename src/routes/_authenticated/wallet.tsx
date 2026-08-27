@@ -1,5 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { gasEstimates } from "@/lib/gas";
+
 import { ArrowDownToLine, ArrowUpFromLine, BadgeCheck, Copy, FileText, Lock, ShieldAlert, Timer, X } from "lucide-react";
 import { Card, Section } from "@/components/site/Shell";
 import { QrCode } from "@/components/site/QrCode";
