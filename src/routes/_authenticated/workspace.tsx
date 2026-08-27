@@ -307,7 +307,14 @@ function Workspace() {
     },
   ];
   const autoUpTo = order?.status === "completed" ? 100 : order?.status === "delivered" ? 70 : order?.status === "in_progress" ? 30 : 0;
-  const releasedPct = Math.max(autoUpTo, ...released, 0);
+  /** Warranty escrow retains 10–15% for a 7-day stability window after delivery. */
+  const maxReleasable = warrantyOn ? 100 - warrantyPct : 100;
+  const releasedPct = Math.min(maxReleasable, Math.max(autoUpTo, ...released, 0));
+  const warrantyEndsAt = useMemo(
+    () => new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toLocaleDateString(),
+    [],
+  );
+
 
   // Structured deliverables: odd entries are drafts, the latest is the final asset
   const rawFiles = Array.isArray(order?.deliverables) ? (order!.deliverables as unknown[]).map(String) : [];
