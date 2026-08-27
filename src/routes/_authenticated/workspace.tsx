@@ -1145,9 +1145,48 @@ function Workspace() {
                     </div>
                   );
                 })}
+                <div className="grid gap-2 rounded-xl border border-accent/40 bg-accent/5 p-3 text-[11px]">
+                  <label className="flex items-start justify-between gap-3">
+                    <span className="min-w-0">
+                      <span className="block font-bold text-foreground">{tr("ضمان الاستقرار والدعم الفني (Warranty Escrow)", "Stability & support warranty (Warranty Escrow)")}</span>
+                      <span className="mt-1 block text-muted-foreground">
+                        {tr(
+                          "احتجاز جزء من الضمان لمدة 7 أيام إضافية بعد التسليم لتغطية التعديلات والاستقرار في مشاريع الذكاء الاصطناعي والأتمتة.",
+                          "Retain part of the escrow for an extra 7-day stability window covering fixes on complex AI & automation deliverables.",
+                        )}
+                      </span>
+                    </span>
+                    <input type="checkbox" checked={warrantyOn} onChange={(e) => setWarrantyOn(e.target.checked)} className="mt-0.5 size-4 shrink-0 accent-primary" />
+                  </label>
+                  {warrantyOn && (
+                    <>
+                      <div className="flex flex-wrap gap-1.5">
+                        {[10, 15].map((p) => (
+                          <button
+                            key={p}
+                            type="button"
+                            onClick={() => setWarrantyPct(p)}
+                            aria-pressed={warrantyPct === p}
+                            className={`rounded-lg border px-3 py-1.5 font-bold transition-colors ${warrantyPct === p ? "border-accent bg-accent/15 text-accent" : "border-border text-muted-foreground"}`}
+                          >
+                            {p}%
+                          </button>
+                        ))}
+                      </div>
+                      <p className="text-muted-foreground">
+                        {tr("المبلغ المحتجز", "Retained amount")}:{" "}
+                        <span className="font-mono font-bold text-accent" dir="ltr">
+                          {order ? ((Number(order.amount_usdt) * warrantyPct) / 100).toFixed(2) : "0.00"} USDT
+                        </span>{" "}
+                        · {tr("يُحرَّر تلقائياً بعد 7 أيام من التسليم النهائي.", "Auto-released 7 days after final delivery.")}
+                      </p>
+                    </>
+                  )}
+                </div>
                 <p className="text-[11px] text-muted-foreground">
                   {tr("يُحرَّر جزء الضمان تلقائياً عند اعتماد كل مرحلة.", "Each milestone releases its escrow share on approval.")}
                 </p>
+
               </div>
             )}
 
