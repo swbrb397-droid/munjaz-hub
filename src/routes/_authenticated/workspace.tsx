@@ -779,14 +779,17 @@ function Workspace() {
                     if (!timelineRef.current) return;
                     setExportingLog(true);
                     try {
-                      await downloadElementPdf(
+                      const hash = await downloadElementPdf(
                         timelineRef.current,
                         `munjaz-audit-log-${order ? `MJ-${order.order_number}` : "order"}.pdf`,
+                        { docType: "AUDIT LOG", reference: order ? `MJ-${order.order_number}` : "order", userId: user?.id ?? null },
                       );
+                      setLogHash(hash ?? null);
                     } finally {
                       setExportingLog(false);
                     }
                   }}
+
                   className="pdf-hide inline-flex shrink-0 items-center gap-2 rounded-lg border border-primary/50 bg-primary/10 px-3 py-1.5 text-[11px] font-bold text-primary disabled:opacity-50"
                 >
                   <FileDown className="size-3.5" />
