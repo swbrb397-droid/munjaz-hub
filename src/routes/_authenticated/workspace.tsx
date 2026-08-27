@@ -931,6 +931,26 @@ function Workspace() {
                 </label>
                 {evidence.length > 0 && (
                   <div className="grid gap-2">
+                    <div className="flex flex-wrap gap-1.5">
+                      {evidence.map((n) => {
+                        const meta = fileMeta(n);
+                        return (
+                          <span key={`chip-${n}`} className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-border bg-surface px-2.5 py-1 text-[10px]">
+                            <Paperclip className="size-3 shrink-0 text-primary" />
+                            <span className="min-w-0 truncate font-bold">{n}</span>
+                            <span className="shrink-0 font-mono text-muted-foreground" dir="ltr">{meta.sizeMb} MB</span>
+                            <button
+                              type="button"
+                              aria-label={tr("إزالة المرفق", "Remove attachment")}
+                              onClick={() => setEvidence((list) => list.filter((x) => x !== n))}
+                              className="shrink-0 text-muted-foreground hover:text-destructive"
+                            >
+                              <X className="size-3" />
+                            </button>
+                          </span>
+                        );
+                      })}
+                    </div>
                     {evidence.map((n) => {
                       const pct = evidenceProgress[n] ?? 100;
                       return (
@@ -951,9 +971,16 @@ function Workspace() {
                 )}
                 <ul className="grid gap-1.5 rounded-xl border border-border bg-surface/50 p-3 text-[11px]">
                   {[
-                    { ok: reason.trim().length >= 50, label: tr("شرح مفصّل لا يقل عن 50 حرفاً", "Detailed explanation of 50+ characters") },
-                    { ok: evidence.length > 0, label: tr("إرفاق دليل واحد على الأقل", "At least one evidence attachment") },
+                    {
+                      ok: reason.trim().length >= 50,
+                      label: tr(
+                        `شرح مفصّل لا يقل عن 50 حرفاً (${reason.trim().length}/50)`,
+                        `Detailed explanation of 50+ characters (${reason.trim().length}/50)`,
+                      ),
+                    },
+                    { ok: evidence.length > 0, label: tr(`إرفاق دليل واحد على الأقل (${evidence.length})`, `At least one evidence attachment (${evidence.length})`) },
                     { ok: evidenceUploaded, label: tr("اكتمال رفع جميع المرفقات", "All attachments finished uploading") },
+                    { ok: !assetLocked || disputeCategory === "corrupt", label: tr("تحديد سبب نزاع مسموح به", "A permitted dispute reason is selected") },
                   ].map((c) => (
                     <li key={c.label} className={`flex items-center gap-2 ${c.ok ? "text-primary" : "text-muted-foreground"}`}>
                       {c.ok ? <CheckCircle2 className="size-3.5 shrink-0" /> : <Circle className="size-3.5 shrink-0" />}
@@ -961,6 +988,7 @@ function Workspace() {
                     </li>
                   ))}
                 </ul>
+
               </div>
 
               <button
