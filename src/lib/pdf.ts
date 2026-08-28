@@ -137,6 +137,14 @@ export async function downloadElementPdf(el: HTMLElement, filename: string, opti
 
     pdf.save(filename);
 
+    registerDocument({
+      hash,
+      docType: options.docType ?? "DOCUMENT",
+      reference: options.reference ?? "",
+      issuedAt: new Date().toISOString(),
+      target: filename,
+    });
+
     logAuditEvent({
       type: "PDF_DOWNLOAD_EVENT",
       userId: options.userId ?? null,
