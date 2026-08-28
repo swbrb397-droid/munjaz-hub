@@ -713,13 +713,12 @@ function Workspace() {
                         return (
                           <div key={i} className={`grid gap-2 rounded-xl border px-3 py-3 ${group.tone === "primary" ? "border-primary/40 bg-primary/5" : "border-border"}`}>
                             <p className="text-sm font-semibold break-all">{f}</p>
-                            <div className="flex flex-wrap items-center gap-2">
-                              <a
+                            {group.key === "final" ? (
+                              <SecureDownload
+                                target={f}
                                 href={/^https?:\/\//.test(f) ? f : undefined}
-                                target="_blank"
-                                rel="noreferrer noopener"
-                                onClick={() => {
-                                  if (group.key !== "final") return;
+                                userId={user?.id ?? null}
+                                onDownload={() => {
                                   // Instant asset shield: checksum confirmed on download → disputes restricted.
                                   setAssetLocked(true);
                                   setDisputeCategory("corrupt");
@@ -731,6 +730,13 @@ function Workspace() {
                                     meta: { orderId: order?.id ?? "", checksum: "SHA-256" },
                                   });
                                 }}
+                              />
+                            ) : (
+                            <div className="flex flex-wrap items-center gap-2">
+                              <a
+                                href={/^https?:\/\//.test(f) ? f : undefined}
+                                target="_blank"
+                                rel="noreferrer noopener"
                                 className="peer inline-flex items-center gap-1 rounded-lg border border-primary/50 bg-primary/10 px-3 py-1.5 text-[11px] font-bold text-primary"
                               >
                                 <FileDown className="size-3" /> {tr("تنزيل الملف", "Download file")}
@@ -739,6 +745,8 @@ function Workspace() {
                                 <ShieldCheck className="size-3" /> {tr("تم فحص الملف: التوقيع مطابق وخالٍ من البرمجيات الخبيثة", "Integrity checked: signature matches, no malware")}
                               </span>
                             </div>
+                            )}
+
 
                             <div className="flex flex-wrap items-center gap-1.5 text-[10px]">
                               <span className="rounded-full border border-border px-2 py-0.5 font-mono text-muted-foreground" dir="ltr">{meta.mime}</span>
