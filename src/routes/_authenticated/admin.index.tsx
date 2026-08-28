@@ -112,7 +112,14 @@ function Admin() {
             <t.icon className="size-4" /> {t.label}
           </button>
         ))}
+        <Link
+          to="/admin/audit"
+          className="ms-auto inline-flex items-center gap-2 rounded-lg border border-primary/50 bg-primary/10 px-4 py-2 text-sm font-bold text-primary"
+        >
+          <ScrollText className="size-4" /> {tr("سجل التدقيق", "Audit log")}
+        </Link>
       </Card>
+
 
       {tab === "disputes" && (
         <Card>
