@@ -28,6 +28,7 @@ import { Route as AuthenticatedWorkspaceRouteImport } from './routes/_authentica
 import { Route as ListingIdRouteImport } from './routes/listing.$id'
 import { Route as UserUsernameRouteImport } from './routes/user.$username'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
+import { Route as AuthenticatedAdminAuditRouteImport } from './routes/_authenticated/admin.audit'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -124,6 +125,11 @@ const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthenticatedAdminRoute,
 } as any)
+const AuthenticatedAdminAuditRoute = AuthenticatedAdminAuditRouteImport.update({
+  id: '/audit',
+  path: '/audit',
+  getParentRoute: () => AuthenticatedAdminRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -143,6 +149,7 @@ export interface FileRoutesByFullPath {
   '/workspace': typeof AuthenticatedWorkspaceRoute
   '/listing/$id': typeof ListingIdRoute
   '/user/$username': typeof UserUsernameRoute
+  '/admin/audit': typeof AuthenticatedAdminAuditRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
 }
 export interface FileRoutesByTo {
@@ -162,6 +169,7 @@ export interface FileRoutesByTo {
   '/workspace': typeof AuthenticatedWorkspaceRoute
   '/listing/$id': typeof ListingIdRoute
   '/user/$username': typeof UserUsernameRoute
+  '/admin/audit': typeof AuthenticatedAdminAuditRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
 }
 export interface FileRoutesById {
@@ -184,6 +192,7 @@ export interface FileRoutesById {
   '/_authenticated/workspace': typeof AuthenticatedWorkspaceRoute
   '/listing/$id': typeof ListingIdRoute
   '/user/$username': typeof UserUsernameRoute
+  '/_authenticated/admin/audit': typeof AuthenticatedAdminAuditRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
 }
 export interface FileRouteTypes {
@@ -206,6 +215,7 @@ export interface FileRouteTypes {
     | '/workspace'
     | '/listing/$id'
     | '/user/$username'
+    | '/admin/audit'
     | '/admin/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -225,6 +235,7 @@ export interface FileRouteTypes {
     | '/workspace'
     | '/listing/$id'
     | '/user/$username'
+    | '/admin/audit'
     | '/admin'
   id:
     | '__root__'
@@ -246,6 +257,7 @@ export interface FileRouteTypes {
     | '/_authenticated/workspace'
     | '/listing/$id'
     | '/user/$username'
+    | '/_authenticated/admin/audit'
     | '/_authenticated/admin/'
   fileRoutesById: FileRoutesById
 }
@@ -398,14 +410,23 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminIndexRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/audit': {
+      id: '/_authenticated/admin/audit'
+      path: '/audit'
+      fullPath: '/admin/audit'
+      preLoaderRoute: typeof AuthenticatedAdminAuditRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
   }
 }
 
 interface AuthenticatedAdminRouteChildren {
+  AuthenticatedAdminAuditRoute: typeof AuthenticatedAdminAuditRoute
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
 }
 
 const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
+  AuthenticatedAdminAuditRoute: AuthenticatedAdminAuditRoute,
   AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
 }
 
