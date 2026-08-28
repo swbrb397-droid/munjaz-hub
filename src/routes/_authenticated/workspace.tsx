@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { AlertTriangle, CalendarClock, CheckCircle2, Circle, FileCheck2, FileUp, History, Languages, Lock, Paperclip, Send, FileDown, ShieldAlert, ShieldCheck, Sparkles, Star, Unlock, Video, X } from "lucide-react";
 import { Card, Section } from "@/components/site/Shell";
+import { SecureDownload } from "@/components/site/SecureDownload";
 import { ChatSecurityNotice } from "@/components/site/ChatSecurityNotice";
 import { downloadElementPdf } from "@/lib/pdf";
 import { logAuditEvent } from "@/lib/audit";
