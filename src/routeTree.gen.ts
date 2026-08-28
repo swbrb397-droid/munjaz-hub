@@ -17,6 +17,7 @@ import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as ReferralsRouteImport } from './routes/referrals'
 import { Route as StoreRouteImport } from './routes/store'
 import { Route as TermsRouteImport } from './routes/terms'
+import { Route as VerifyRouteImport } from './routes/verify'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedCreateListingRouteImport } from './routes/_authenticated/create-listing'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
@@ -64,6 +65,11 @@ const StoreRoute = StoreRouteImport.update({
 const TermsRoute = TermsRouteImport.update({
   id: '/terms',
   path: '/terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const VerifyRoute = VerifyRouteImport.update({
+  id: '/verify',
+  path: '/verify',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
@@ -121,6 +127,7 @@ export interface FileRoutesByFullPath {
   '/referrals': typeof ReferralsRoute
   '/store': typeof StoreRoute
   '/terms': typeof TermsRoute
+  '/verify': typeof VerifyRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/create-listing': typeof AuthenticatedCreateListingRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
@@ -139,6 +146,7 @@ export interface FileRoutesByTo {
   '/referrals': typeof ReferralsRoute
   '/store': typeof StoreRoute
   '/terms': typeof TermsRoute
+  '/verify': typeof VerifyRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/create-listing': typeof AuthenticatedCreateListingRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
@@ -159,6 +167,7 @@ export interface FileRoutesById {
   '/referrals': typeof ReferralsRoute
   '/store': typeof StoreRoute
   '/terms': typeof TermsRoute
+  '/verify': typeof VerifyRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/create-listing': typeof AuthenticatedCreateListingRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
@@ -179,6 +188,7 @@ export interface FileRouteTypes {
     | '/referrals'
     | '/store'
     | '/terms'
+    | '/verify'
     | '/admin'
     | '/create-listing'
     | '/dashboard'
@@ -197,6 +207,7 @@ export interface FileRouteTypes {
     | '/referrals'
     | '/store'
     | '/terms'
+    | '/verify'
     | '/admin'
     | '/create-listing'
     | '/dashboard'
@@ -216,6 +227,7 @@ export interface FileRouteTypes {
     | '/referrals'
     | '/store'
     | '/terms'
+    | '/verify'
     | '/_authenticated/admin'
     | '/_authenticated/create-listing'
     | '/_authenticated/dashboard'
@@ -236,6 +248,7 @@ export interface RootRouteChildren {
   ReferralsRoute: typeof ReferralsRoute
   StoreRoute: typeof StoreRoute
   TermsRoute: typeof TermsRoute
+  VerifyRoute: typeof VerifyRoute
   ListingIdRoute: typeof ListingIdRoute
   UserUsernameRoute: typeof UserUsernameRoute
 }
@@ -296,6 +309,13 @@ declare module '@tanstack/react-router' {
       path: '/terms'
       fullPath: '/terms'
       preLoaderRoute: typeof TermsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/verify': {
+      id: '/verify'
+      path: '/verify'
+      fullPath: '/verify'
+      preLoaderRoute: typeof VerifyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/admin': {
@@ -396,6 +416,7 @@ const rootRouteChildren: RootRouteChildren = {
   ReferralsRoute: ReferralsRoute,
   StoreRoute: StoreRoute,
   TermsRoute: TermsRoute,
+  VerifyRoute: VerifyRoute,
   ListingIdRoute: ListingIdRoute,
   UserUsernameRoute: UserUsernameRoute,
 }
