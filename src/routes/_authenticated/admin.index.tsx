@@ -1,7 +1,7 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Banknote, Gavel, ShieldAlert, ShieldCheck, TrendingUp } from "lucide-react";
+import { Banknote, Gavel, ScrollText, ShieldAlert, ShieldCheck, TrendingUp } from "lucide-react";
 import { Card, Section } from "@/components/site/Shell";
 import { useLang } from "@/lib/lang";
 import { useDisputes, useKycQueue, useOrders, useRoles } from "@/lib/queries";
