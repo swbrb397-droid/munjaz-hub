@@ -11,6 +11,7 @@
  */
 
 import { documentHash, logAuditEvent } from "@/lib/audit";
+import { registerDocument } from "@/lib/doc-registry";
 
 /** Temporarily forces black-on-white styling while capturing. */
 const PDF_CLASS = "pdf-mode";
