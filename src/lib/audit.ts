@@ -5,8 +5,15 @@
  * listener (admin console, support widget) can react without a round-trip.
  */
 
+export type AuditEventType =
+  | "PDF_DOWNLOAD_EVENT"
+  | "ASSET_DOWNLOAD_EVENT"
+  | "TRANSLATION_CACHE_EVENT"
+  | "DOWNLOAD_TOKEN_EVENT"
+  | "DISPUTE_FLAG";
+
 export type AuditEvent = {
-  type: "PDF_DOWNLOAD_EVENT" | "ASSET_DOWNLOAD_EVENT" | "TRANSLATION_CACHE_EVENT";
+  type: AuditEventType;
   userId: string | null;
   at: string;
   /** Target document / asset identifier. */

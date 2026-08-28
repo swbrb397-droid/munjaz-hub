@@ -11,6 +11,7 @@
  */
 
 import { documentHash, logAuditEvent } from "@/lib/audit";
+import { registerDocument } from "@/lib/doc-registry";
 
 /** Temporarily forces black-on-white styling while capturing. */
 const PDF_CLASS = "pdf-mode";
@@ -136,6 +137,14 @@ export async function downloadElementPdf(el: HTMLElement, filename: string, opti
     stampPages(pdf as unknown as JsPdfDoc, hash, options);
 
     pdf.save(filename);
+
+    registerDocument({
+      hash,
+      docType: options.docType ?? "DOCUMENT",
+      reference: options.reference ?? "",
+      issuedAt: new Date().toISOString(),
+      target: filename,
+    });
 
     logAuditEvent({
       type: "PDF_DOWNLOAD_EVENT",
