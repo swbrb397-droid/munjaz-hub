@@ -5,7 +5,7 @@ import { useListing } from "@/lib/orders";
 import { useLang as useLangCtx } from "@/lib/lang";
 import { Card, Section } from "@/components/site/Shell";
 import { useLang } from "@/lib/lang";
-import { useListings, useNfts, type ListingCategory, type SortKey } from "@/lib/catalog";
+import { PAGE_SIZE, useListings, useNfts, type ListingCategory, type SortKey } from "@/lib/catalog";
 import { NftCard, ServiceCard } from "./index";
 
 type StoreSearch = { listingId?: string; lang?: "ar" | "en" };
@@ -86,6 +86,10 @@ function Store() {
   const [active, setActive] = useState<ListingCategory | "all">("all");
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<SortKey>("recent");
+  const [maxPrice, setMaxPrice] = useState(2000);
+  const [contentLang, setContentLang] = useState<"all" | "ar" | "en">("all");
+  const [delivery, setDelivery] = useState(0);
+  const [page, setPage] = useState(1);
 
   const filters: { key: ListingCategory | "all"; label: string }[] = [
     { key: "all", label: tr("الكل", "All") },
