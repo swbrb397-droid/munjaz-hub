@@ -83,65 +83,18 @@ export const Route = createFileRoute("/_authenticated/workspace")({
 });
 
 type Msg = {
-  id: number;
+  id: string;
   from: "me" | "them";
   name: string;
   text: string;
   time: string;
   /** Language the message was written in. */
   srcLang?: "ar" | "en";
-  /** Machine translation of `text` into the other language. */
+  /** Stored machine translation of `text` into the other language. */
   translation?: string;
   /** Bumped when the message is edited so cached translations are invalidated. */
-  rev?: number;
+  rev: number;
 };
-
-
-/** Seeded counterpart messages written in the other party's language. */
-function seedMessages(lang: "ar" | "en"): Msg[] {
-  if (lang === "ar") {
-    return [
-      {
-        id: 1,
-        from: "them",
-        name: "Alex M.",
-        text: "Hi! I've uploaded the first draft, please review the typography and let me know.",
-        time: "10:24",
-        srcLang: "en",
-        translation: "مرحباً! رفعت المسودة الأولى، رجاءً راجع الخطوط وأخبرني برأيك.",
-      },
-      {
-        id: 2,
-        from: "them",
-        name: "Alex M.",
-        text: "Final assets will be delivered before the escrow deadline.",
-        time: "10:31",
-        srcLang: "en",
-        translation: "سيتم تسليم الملفات النهائية قبل انتهاء مهلة الضمان.",
-      },
-    ];
-  }
-  return [
-    {
-      id: 1,
-      from: "them",
-      name: "سعود ع.",
-      text: "أهلاً! رفعت المسودة الأولى، رجاءً راجع الخطوط وأخبرني برأيك.",
-      time: "10:24",
-      srcLang: "ar",
-      translation: "Hi! I've uploaded the first draft, please review the typography and let me know.",
-    },
-    {
-      id: 2,
-      from: "them",
-      name: "سعود ع.",
-      text: "سيتم تسليم الملفات النهائية قبل انتهاء مهلة الضمان.",
-      time: "10:31",
-      srcLang: "ar",
-      translation: "Final assets will be delivered before the escrow deadline.",
-    },
-  ];
-}
 
 const TRANSLATE_PREF_KEY = "munjaz-auto-translate";
 const TX_CACHE_KEY = "munjaz-translation-cache";
@@ -180,7 +133,7 @@ function txCacheSet(key: string, value: string) {
 }
 
 /** Drops every cached translation for a message (used when the message is edited). */
-function txCacheInvalidate(id: number) {
+function txCacheInvalidate(id: string) {
   for (const k of Array.from(txMemCache.keys())) if (k.startsWith(`${id}_`)) txMemCache.delete(k);
   try {
     const raw = window.sessionStorage.getItem(TX_CACHE_KEY);
@@ -194,13 +147,14 @@ function txCacheInvalidate(id: number) {
 }
 
 /** Returns the translation, reusing the cache so the AI endpoint is hit once per message+language+revision. */
-function translateCached(id: number, lang: "ar" | "en", source: string, rev = 0) {
+function translateCached(id: string, lang: "ar" | "en", source: string, rev = 0) {
   const key = `${id}_${lang}_v${rev}`;
   const hit = txCacheGet(key);
   if (hit !== undefined) return { text: hit, cached: true };
   txCacheSet(key, source);
   return { text: source, cached: false };
 }
+
 
 
 function Workspace() {
