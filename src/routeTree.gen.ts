@@ -30,6 +30,7 @@ import { Route as UserUsernameRouteImport } from './routes/user.$username'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
 import { Route as AuthenticatedAdminAuditRouteImport } from './routes/_authenticated/admin.audit'
 import { Route as AuthenticatedAdminDisputesRouteImport } from './routes/_authenticated/admin.disputes'
+import { Route as AuthenticatedAdminGovernanceRouteImport } from './routes/_authenticated/admin.governance'
 import { Route as AuthenticatedAdminKycRouteImport } from './routes/_authenticated/admin.kyc'
 
 const IndexRoute = IndexRouteImport.update({
@@ -138,6 +139,12 @@ const AuthenticatedAdminDisputesRoute =
     path: '/disputes',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const AuthenticatedAdminGovernanceRoute =
+  AuthenticatedAdminGovernanceRouteImport.update({
+    id: '/governance',
+    path: '/governance',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 const AuthenticatedAdminKycRoute = AuthenticatedAdminKycRouteImport.update({
   id: '/kyc',
   path: '/kyc',
@@ -164,6 +171,7 @@ export interface FileRoutesByFullPath {
   '/user/$username': typeof UserUsernameRoute
   '/admin/audit': typeof AuthenticatedAdminAuditRoute
   '/admin/disputes': typeof AuthenticatedAdminDisputesRoute
+  '/admin/governance': typeof AuthenticatedAdminGovernanceRoute
   '/admin/kyc': typeof AuthenticatedAdminKycRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
 }
@@ -186,6 +194,7 @@ export interface FileRoutesByTo {
   '/user/$username': typeof UserUsernameRoute
   '/admin/audit': typeof AuthenticatedAdminAuditRoute
   '/admin/disputes': typeof AuthenticatedAdminDisputesRoute
+  '/admin/governance': typeof AuthenticatedAdminGovernanceRoute
   '/admin/kyc': typeof AuthenticatedAdminKycRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
 }
@@ -211,6 +220,7 @@ export interface FileRoutesById {
   '/user/$username': typeof UserUsernameRoute
   '/_authenticated/admin/audit': typeof AuthenticatedAdminAuditRoute
   '/_authenticated/admin/disputes': typeof AuthenticatedAdminDisputesRoute
+  '/_authenticated/admin/governance': typeof AuthenticatedAdminGovernanceRoute
   '/_authenticated/admin/kyc': typeof AuthenticatedAdminKycRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
 }
@@ -236,6 +246,7 @@ export interface FileRouteTypes {
     | '/user/$username'
     | '/admin/audit'
     | '/admin/disputes'
+    | '/admin/governance'
     | '/admin/kyc'
     | '/admin/'
   fileRoutesByTo: FileRoutesByTo
@@ -258,6 +269,7 @@ export interface FileRouteTypes {
     | '/user/$username'
     | '/admin/audit'
     | '/admin/disputes'
+    | '/admin/governance'
     | '/admin/kyc'
     | '/admin'
   id:
@@ -282,6 +294,7 @@ export interface FileRouteTypes {
     | '/user/$username'
     | '/_authenticated/admin/audit'
     | '/_authenticated/admin/disputes'
+    | '/_authenticated/admin/governance'
     | '/_authenticated/admin/kyc'
     | '/_authenticated/admin/'
   fileRoutesById: FileRoutesById
@@ -449,6 +462,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminDisputesRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/governance': {
+      id: '/_authenticated/admin/governance'
+      path: '/governance'
+      fullPath: '/admin/governance'
+      preLoaderRoute: typeof AuthenticatedAdminGovernanceRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/admin/kyc': {
       id: '/_authenticated/admin/kyc'
       path: '/kyc'
@@ -462,6 +482,7 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminAuditRoute: typeof AuthenticatedAdminAuditRoute
   AuthenticatedAdminDisputesRoute: typeof AuthenticatedAdminDisputesRoute
+  AuthenticatedAdminGovernanceRoute: typeof AuthenticatedAdminGovernanceRoute
   AuthenticatedAdminKycRoute: typeof AuthenticatedAdminKycRoute
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
 }
@@ -469,6 +490,7 @@ interface AuthenticatedAdminRouteChildren {
 const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminAuditRoute: AuthenticatedAdminAuditRoute,
   AuthenticatedAdminDisputesRoute: AuthenticatedAdminDisputesRoute,
+  AuthenticatedAdminGovernanceRoute: AuthenticatedAdminGovernanceRoute,
   AuthenticatedAdminKycRoute: AuthenticatedAdminKycRoute,
   AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
 }
