@@ -568,9 +568,7 @@ function Workspace() {
                                   if (!text) return;
                                   txCacheInvalidate(m.id);
                                   setMsgRev((r) => ({ ...r, [m.id]: (r[m.id] ?? m.rev ?? 0) + 1 }));
-                                  setMessages((list) =>
-                                    list.map((x) => (x.id === m.id ? { ...x, text, translation: text, rev: (x.rev ?? 0) + 1 } : x)),
-                                  );
+                                  editMessage.mutate({ id: m.id, body: text, version: m.rev });
                                   setEditing(null);
                                 }}
                                 className="rounded-lg bg-background px-2.5 py-1 text-[10px] font-bold text-primary"
