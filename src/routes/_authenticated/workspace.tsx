@@ -1213,7 +1213,7 @@ function Workspace() {
                         <button
                           type="button"
                           disabled={isReleased || releaseMilestone.isPending}
-                          onClick={() => releaseMilestone.mutate({ id: m.id })}
+                          onClick={() => releaseMilestone.mutate(m.id)}
                           className="shrink-0 rounded-lg border border-primary/50 bg-primary/10 px-3 py-1.5 text-[11px] font-bold text-primary disabled:opacity-40"
                         >
                           {isReleased ? tr("تم التحرير", "Released") : tr("تحرير هذه المرحلة", "Release this milestone")}
