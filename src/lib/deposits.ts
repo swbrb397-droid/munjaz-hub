@@ -15,7 +15,7 @@ export function useCreateDeposit() {
       const { data, error } = await supabase.rpc("create_deposit", {
         _amount: input.amount,
         _network: input.network,
-        _address: input.address ?? null,
+        _address: input.address ?? undefined,
       });
       if (error) throw error;
       return data as unknown as WalletTx;
@@ -36,7 +36,7 @@ export function useConfirmDeposit() {
     mutationFn: async (input: { id: string; txHash?: string }) => {
       const { data, error } = await supabase.rpc("confirm_deposit", {
         _tx_id: input.id,
-        _tx_hash: input.txHash ?? null,
+        _tx_hash: input.txHash ?? undefined,
       });
       if (error) throw error;
       return data as unknown as WalletTx;
