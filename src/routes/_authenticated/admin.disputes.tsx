@@ -36,7 +36,7 @@ function CaseModal({ item, onClose }: { item: AdminDispute; onClose: () => void 
 
   const settle = (action: "release" | "refund") => {
     resolve.mutate(
-      { id: item.id, action, ruling: ruling.trim() || undefined },
+      { id: item.id, action, ...(ruling.trim() ? { ruling: ruling.trim() } : {}) },
       {
         onSuccess: () => {
           toast.success(
