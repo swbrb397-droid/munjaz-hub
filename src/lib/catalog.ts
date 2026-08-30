@@ -31,6 +31,7 @@ export type Listing = {
   verified: boolean;
   tag: string;
   cover: string;
+  deliveryDays?: number;
 };
 
 export type NftItem = { id: string; name: string; collection: string; price: number; hue: number };
@@ -50,39 +51,73 @@ function sortColumn(sort: SortKey) {
   }
 }
 
-export function useListings(opts: { search?: string; category?: ListingCategory | "all"; sort?: SortKey } = {}) {
+export type ListingFilters = {
+  search?: string;
+  category?: ListingCategory | "all";
+  sort?: SortKey;
+  minPrice?: number;
+  maxPrice?: number;
+  language?: "all" | "ar" | "en" | "both";
+  maxDeliveryDays?: number;
+  page?: number;
+  pageSize?: number;
+};
+
+export const PAGE_SIZE = 12;
+
+export function useListings(opts: ListingFilters = {}) {
   const { lang } = useLang();
   const search = (opts.search ?? "").trim();
   const category = opts.category ?? "all";
   const sort = opts.sort ?? "recent";
+  const minPrice = opts.minPrice ?? 0;
+  const maxPrice = opts.maxPrice ?? 0;
+  const language = opts.language ?? "all";
+  const maxDeliveryDays = opts.maxDeliveryDays ?? 0;
+  const page = Math.max(1, opts.page ?? 1);
+  const pageSize = opts.pageSize ?? PAGE_SIZE;
 
   return useQuery({
-    queryKey: ["listings", { search, category, sort, lang }],
-    queryFn: async (): Promise<Listing[]> => {
+    queryKey: ["listings", { search, category, sort, lang, minPrice, maxPrice, language, maxDeliveryDays, page, pageSize }],
+    queryFn: async (): Promise<{ items: Listing[]; total: number; page: number; pageSize: number }> => {
       const { column, ascending } = sortColumn(sort);
       let q = supabase
         .from("listings")
-        .select("id,title_ar,title_en,seller_ar,seller_en,category,price_usdt,rating,orders_count,verified,tag_ar,tag_en,cover_key")
+        .select(
+          "id,title_ar,title_en,seller_ar,seller_en,category,price_usdt,rating,orders_count,verified,tag_ar,tag_en,cover_key,delivery_days,language",
+          { count: "exact" },
+        )
         .eq("is_published", true)
-        .order(column, { ascending });
+        .order(column, { ascending })
+        .range((page - 1) * pageSize, page * pageSize - 1);
 
       if (category !== "all") q = q.eq("category", category);
+      if (minPrice > 0) q = q.gte("price_usdt", minPrice);
+      if (maxPrice > 0) q = q.lte("price_usdt", maxPrice);
+      if (maxDeliveryDays > 0) q = q.lte("delivery_days", maxDeliveryDays);
+      if (language !== "all") q = q.in("language", [language, "both"]);
       if (search) q = q.or(`title_ar.ilike.%${search}%,title_en.ilike.%${search}%,seller_ar.ilike.%${search}%,seller_en.ilike.%${search}%`);
 
-      const { data, error } = await q;
+      const { data, error, count } = await q;
       if (error) throw error;
-      return (data ?? []).map((r) => ({
-        id: r.id,
-        title: lang === "ar" ? r.title_ar : r.title_en,
-        seller: lang === "ar" ? r.seller_ar : r.seller_en,
-        category: r.category as ListingCategory,
-        price: Number(r.price_usdt),
-        rating: Number(r.rating),
-        orders: r.orders_count,
-        verified: r.verified,
-        tag: lang === "ar" ? r.tag_ar : r.tag_en,
-        cover: COVERS[r.cover_key] ?? coverProduct,
-      }));
+      return {
+        total: count ?? 0,
+        page,
+        pageSize,
+        items: (data ?? []).map((r) => ({
+          id: r.id,
+          title: lang === "ar" ? r.title_ar : r.title_en,
+          seller: lang === "ar" ? r.seller_ar : r.seller_en,
+          category: r.category as ListingCategory,
+          price: Number(r.price_usdt),
+          rating: Number(r.rating),
+          orders: r.orders_count,
+          verified: r.verified,
+          tag: lang === "ar" ? r.tag_ar : r.tag_en,
+          cover: COVERS[r.cover_key] ?? coverProduct,
+          deliveryDays: r.delivery_days ?? 3,
+        })),
+      };
     },
   });
 }
