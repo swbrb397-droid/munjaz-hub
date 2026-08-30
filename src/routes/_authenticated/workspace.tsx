@@ -290,36 +290,48 @@ function Workspace() {
   const [reviewText, setReviewText] = useState("");
   const [reviewDone, setReviewDone] = useState<string | null>(null);
 
-  // Optional milestones tracker
-  const [milestonesOn, setMilestonesOn] = useState(false);
-  const [released, setReleased] = useState<number[]>([]);
-  const milestones = [
-    {
-      pct: 30,
-      label: tr("المرحلة 1: تسليم المسودة الأولى والتصميم الأولي", "Stage 1: first draft & initial design"),
-      cta: tr("تحرير جزئي للضمان 30%", "Release 30% of escrow"),
-    },
-    {
-      pct: 70,
-      label: tr("المرحلة 2: المراجعة النهائية والتسليم الكامل", "Stage 2: final review & full delivery"),
-      cta: tr("تحرير الرصيد المتبقي 70%", "Release remaining 70%"),
-    },
-  ];
+  // Optional milestones tracker, persisted in order_milestones
+  const milestonesQuery = useOrderMilestones(selected);
+  const createMilestones = useCreateMilestones(selected);
+  const releaseMilestone = useReleaseMilestone(selected);
+  const milestoneRows = milestonesQuery.data ?? [];
+  const milestonesOn = milestoneRows.length > 0;
+  const orderAmount = Number(order?.amount_usdt ?? 0);
+
+  function enableMilestones() {
+    createMilestones.mutate([
+      {
+        title: tr("المرحلة 1: تسليم المسودة الأولى والتصميم الأولي", "Stage 1: first draft & initial design"),
+        pct: 30,
+        amount_usdt: Number(((orderAmount * 30) / 100).toFixed(2)),
+        position: 1,
+      },
+      {
+        title: tr("المرحلة 2: المراجعة النهائية والتسليم الكامل", "Stage 2: final review & full delivery"),
+        pct: 70,
+        amount_usdt: Number(((orderAmount * 70) / 100).toFixed(2)),
+        position: 2,
+      },
+    ]);
+  }
+
   const autoUpTo = order?.status === "completed" ? 100 : order?.status === "delivered" ? 70 : order?.status === "in_progress" ? 30 : 0;
   /** Warranty escrow retains 10–15% for a 7-day stability window after delivery. */
   const maxReleasable = warrantyOn ? 100 - warrantyPct : 100;
-  const releasedPct = Math.min(maxReleasable, Math.max(autoUpTo, ...released, 0));
+  const releasedPct = Math.min(
+    maxReleasable,
+    Math.max(autoUpTo, ...milestoneRows.filter((m) => m.status === "released").map((m) => Number(m.pct)), 0),
+  );
   const warrantyEndsAt = useMemo(
     () => new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toLocaleDateString(),
     [],
   );
 
+  // Structured deliverables vault: drafts vs approved final assets
+  const rawFiles = deliverablesQuery.data ?? [];
+  const drafts = rawFiles.filter((f) => !f.is_final);
+  const finals = rawFiles.filter((f) => f.is_final);
 
-  // Structured deliverables: odd entries are drafts, the latest is the final asset
-  const rawFiles = Array.isArray(order?.deliverables) ? (order!.deliverables as unknown[]).map(String) : [];
-  const finalIndexes = order?.status === "delivered" || order?.status === "completed" ? [rawFiles.length - 1] : [];
-  const drafts = rawFiles.map((f, i) => ({ f, i })).filter(({ i }) => !finalIndexes.includes(i));
-  const finals = rawFiles.map((f, i) => ({ f, i })).filter(({ i }) => finalIndexes.includes(i));
 
   // Immutable audit timeline derived from the order record
   const timeline = useMemo(() => {
