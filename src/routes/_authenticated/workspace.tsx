@@ -1155,7 +1155,15 @@ function Workspace() {
               <h3 className="min-w-0 text-sm font-bold">{tr("المعالم المرحلية للطلب", "Order milestones")}</h3>
               <label className="flex shrink-0 items-center gap-2 text-[11px] text-muted-foreground">
                 {tr("تفعيل", "Enable")}
-                <input type="checkbox" checked={milestonesOn} onChange={(e) => setMilestonesOn(e.target.checked)} className="size-4 accent-primary" />
+                <input
+                  type="checkbox"
+                  checked={milestonesOn}
+                  disabled={milestonesOn || createMilestones.isPending}
+                  onChange={(e) => {
+                    if (e.target.checked) enableMilestones();
+                  }}
+                  className="size-4 accent-primary"
+                />
               </label>
             </div>
             {!milestonesOn ? (
@@ -1168,36 +1176,37 @@ function Workspace() {
                   <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${releasedPct}%` }} />
                 </div>
                 <p className="text-[11px] text-muted-foreground">{tr("نسبة الضمان المُحرَّرة", "Escrow released")}: {releasedPct}%</p>
-                {milestones.map((m) => {
-                  const isReleased = releasedPct >= m.pct;
+                {milestoneRows.map((m) => {
+                  const isReleased = m.status === "released" || releasedPct >= Number(m.pct);
                   const state = isReleased ? (releasedPct >= 100 ? tr("مكتمل", "Completed") : tr("محرر", "Released")) : tr("معلق", "Pending");
                   return (
                     <div
-                      key={m.pct}
+                      key={m.id}
                       className={`grid gap-2 rounded-lg border px-3 py-2.5 text-xs ${isReleased ? "border-primary/50 bg-primary/10" : "border-border"}`}
                     >
                       <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2">
-                        <span className={`min-w-0 font-bold ${isReleased ? "text-primary" : "text-foreground"}`}>{m.label} ({m.pct}%)</span>
+                        <span className={`min-w-0 font-bold ${isReleased ? "text-primary" : "text-foreground"}`}>{m.title} ({m.pct}%)</span>
                         <span className={`inline-flex shrink-0 items-center gap-1 rounded-full border px-2 py-0.5 ${isReleased ? "border-primary/50 text-primary" : "border-border text-muted-foreground"}`}>
                           {isReleased ? <Unlock className="size-3" /> : <Lock className="size-3" />} {state}
                         </span>
                       </div>
                       <div className="flex items-center justify-between gap-2">
                         <span className="text-muted-foreground">
-                          {order ? `${((Number(order.amount_usdt) * m.pct) / 100).toFixed(2)} USDT` : "—"}
+                          {Number(m.amount_usdt).toFixed(2)} USDT
                         </span>
                         <button
                           type="button"
-                          disabled={isReleased}
-                          onClick={() => setReleased((r) => [...r, m.pct])}
+                          disabled={isReleased || releaseMilestone.isPending}
+                          onClick={() => releaseMilestone.mutate({ id: m.id })}
                           className="shrink-0 rounded-lg border border-primary/50 bg-primary/10 px-3 py-1.5 text-[11px] font-bold text-primary disabled:opacity-40"
                         >
-                          {isReleased ? tr("تم التحرير", "Released") : m.cta}
+                          {isReleased ? tr("تم التحرير", "Released") : tr("تحرير هذه المرحلة", "Release this milestone")}
                         </button>
                       </div>
                     </div>
                   );
                 })}
+
                 <div className="grid gap-2 rounded-xl border border-accent/40 bg-accent/5 p-3 text-[11px]">
                   <label className="flex items-start justify-between gap-3">
                     <span className="min-w-0">
