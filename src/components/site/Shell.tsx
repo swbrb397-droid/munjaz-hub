@@ -3,6 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import {
   Bell, Globe, LogIn, LogOut, Menu, Repeat2, Wallet2, X,
   Home, Store, Trophy, PlusCircle, LayoutDashboard, ClipboardList, Users, UserCog, CreditCard, ShieldCheck,
+  Gavel, BadgeCheck, Settings2,
   type LucideIcon,
 } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
@@ -11,7 +12,8 @@ import { useNotify, type NotifyChannel } from "@/lib/notify";
 import { useAuth } from "@/hooks/use-auth";
 import { useViewMode } from "@/lib/view-mode";
 import { ErrorBoundary } from "@/components/site/ErrorBoundary";
-import { useRoles, useWallet } from "@/lib/queries";
+import { useWallet } from "@/lib/queries";
+import { useUserProfile } from "@/hooks/use-user-profile";
 import { SupportWidget } from "@/components/site/SupportWidget";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -43,11 +45,22 @@ const navGroups: ReadonlyArray<NavGroup> = [
     items: [
       { to: "/profile", key: "profile", icon: UserCog },
       { to: "/pricing", key: "pricing", icon: CreditCard },
+      { to: "/kyc", key: "kyc", icon: BadgeCheck },
     ],
   },
 ];
 
 const flatNav = navGroups.flatMap((g) => g.items);
+
+const adminGroup: { title: [string, string]; items: { to: string; label: [string, string]; icon: LucideIcon }[] } = {
+  title: ["الإدارة والحوكمة", "Admin Governance"],
+  items: [
+    { to: "/admin", label: ["لوحة الإدارة العامة", "Admin overview"], icon: ShieldCheck },
+    { to: "/admin/disputes", label: ["مركز تسوية النزاعات والضمان", "Disputes & escrow"], icon: Gavel },
+    { to: "/admin/kyc", label: ["مراجعة توثيق الهوية KYC", "KYC review"], icon: BadgeCheck },
+    { to: "/admin/governance", label: ["مولد الاشتراكات وحوكمة الرسوم", "Passes & governance"], icon: Settings2 },
+  ],
+};
 
 
 
@@ -197,8 +210,7 @@ export function Shell({ children }: { children: ReactNode }) {
   const { t, lang } = useLang();
   const { isAuthenticated } = useAuth();
   const wallet = useWallet();
-  const roles = useRoles();
-  const isAdmin = (roles.data ?? []).includes("admin");
+  const { isAdmin } = useUserProfile();
 
   return (
     <div className="min-h-screen">
@@ -271,15 +283,24 @@ export function Shell({ children }: { children: ReactNode }) {
               </div>
             ))}
             {isAdmin && (
-              <div className="mt-3 border-t border-border pt-3">
-                <Link
-                  to="/admin"
-                  onClick={() => setOpen(false)}
-                  className="flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-xs text-muted-foreground hover:bg-secondary"
-                >
-                  <ShieldCheck size={18} strokeWidth={1.8} className="shrink-0" />
-                  {t("admin")}
-                </Link>
+              <div className="mt-3 border-t border-primary/30 pt-3">
+                <p className="px-3 pb-1 text-[11px] font-bold uppercase tracking-wide text-primary">
+                  {lang === "ar" ? adminGroup.title[0] : adminGroup.title[1]} (Admin Governance)
+                </p>
+                <div className="grid gap-0.5">
+                  {adminGroup.items.map((item) => (
+                    <Link
+                      key={item.to}
+                      to={item.to}
+                      onClick={() => setOpen(false)}
+                      className="flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm text-muted-foreground hover:bg-secondary"
+                      activeProps={{ className: "flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm bg-secondary text-primary" }}
+                    >
+                      <item.icon size={18} strokeWidth={1.8} className="shrink-0" />
+                      {lang === "ar" ? item.label[0] : item.label[1]}
+                    </Link>
+                  ))}
+                </div>
               </div>
             )}
           </nav>
