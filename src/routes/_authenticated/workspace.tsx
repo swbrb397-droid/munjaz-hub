@@ -13,7 +13,20 @@ import { logAuditEvent } from "@/lib/audit";
 import { useLang } from "@/lib/lang";
 import { useAuth } from "@/hooks/use-auth";
 import { useOrders } from "@/lib/queries";
-import { nextActions, useDeliverables, useOrderTransition, type OrderStatus } from "@/lib/orders";
+import { nextActions, useOrderTransition, type OrderStatus } from "@/lib/orders";
+import {
+  useCreateMilestones,
+  useEditMessage,
+  useLinkDeliverable,
+  useOrderDeliverables,
+  useOrderMessages,
+  useOrderMilestones,
+  useReleaseMilestone,
+  useSendMessage,
+  useSetDeliverableApproval,
+  useUploadDeliverable,
+  vaultUrl,
+} from "@/lib/workspace-data";
 import { supabase } from "@/integrations/supabase/client";
 import { sanitizeText } from "@/lib/security";
 
@@ -83,65 +96,18 @@ export const Route = createFileRoute("/_authenticated/workspace")({
 });
 
 type Msg = {
-  id: number;
+  id: string;
   from: "me" | "them";
   name: string;
   text: string;
   time: string;
   /** Language the message was written in. */
   srcLang?: "ar" | "en";
-  /** Machine translation of `text` into the other language. */
+  /** Stored machine translation of `text` into the other language. */
   translation?: string;
   /** Bumped when the message is edited so cached translations are invalidated. */
-  rev?: number;
+  rev: number;
 };
-
-
-/** Seeded counterpart messages written in the other party's language. */
-function seedMessages(lang: "ar" | "en"): Msg[] {
-  if (lang === "ar") {
-    return [
-      {
-        id: 1,
-        from: "them",
-        name: "Alex M.",
-        text: "Hi! I've uploaded the first draft, please review the typography and let me know.",
-        time: "10:24",
-        srcLang: "en",
-        translation: "مرحباً! رفعت المسودة الأولى، رجاءً راجع الخطوط وأخبرني برأيك.",
-      },
-      {
-        id: 2,
-        from: "them",
-        name: "Alex M.",
-        text: "Final assets will be delivered before the escrow deadline.",
-        time: "10:31",
-        srcLang: "en",
-        translation: "سيتم تسليم الملفات النهائية قبل انتهاء مهلة الضمان.",
-      },
-    ];
-  }
-  return [
-    {
-      id: 1,
-      from: "them",
-      name: "سعود ع.",
-      text: "أهلاً! رفعت المسودة الأولى، رجاءً راجع الخطوط وأخبرني برأيك.",
-      time: "10:24",
-      srcLang: "ar",
-      translation: "Hi! I've uploaded the first draft, please review the typography and let me know.",
-    },
-    {
-      id: 2,
-      from: "them",
-      name: "سعود ع.",
-      text: "سيتم تسليم الملفات النهائية قبل انتهاء مهلة الضمان.",
-      time: "10:31",
-      srcLang: "ar",
-      translation: "Final assets will be delivered before the escrow deadline.",
-    },
-  ];
-}
 
 const TRANSLATE_PREF_KEY = "munjaz-auto-translate";
 const TX_CACHE_KEY = "munjaz-translation-cache";
@@ -180,7 +146,7 @@ function txCacheSet(key: string, value: string) {
 }
 
 /** Drops every cached translation for a message (used when the message is edited). */
-function txCacheInvalidate(id: number) {
+function txCacheInvalidate(id: string) {
   for (const k of Array.from(txMemCache.keys())) if (k.startsWith(`${id}_`)) txMemCache.delete(k);
   try {
     const raw = window.sessionStorage.getItem(TX_CACHE_KEY);
@@ -194,13 +160,14 @@ function txCacheInvalidate(id: number) {
 }
 
 /** Returns the translation, reusing the cache so the AI endpoint is hit once per message+language+revision. */
-function translateCached(id: number, lang: "ar" | "en", source: string, rev = 0) {
+function translateCached(id: string, lang: "ar" | "en", source: string, rev = 0) {
   const key = `${id}_${lang}_v${rev}`;
   const hit = txCacheGet(key);
   if (hit !== undefined) return { text: hit, cached: true };
   txCacheSet(key, source);
   return { text: source, cached: false };
 }
+
 
 
 function Workspace() {
@@ -235,9 +202,32 @@ function Workspace() {
     setTranslate(v);
     window.localStorage.setItem(TRANSLATE_PREF_KEY, v ? "on" : "off");
   }
-  const [showOriginal, setShowOriginal] = useState<number[]>([]);
+  const [showOriginal, setShowOriginal] = useState<string[]>([]);
   const [draft, setDraft] = useState("");
-  const [messages, setMessages] = useState<Msg[]>(() => seedMessages(lang));
+
+  // Live chat backed by order_messages (realtime).
+  const messagesQuery = useOrderMessages(selected);
+  const sendMessage = useSendMessage(selected);
+  const editMessage = useEditMessage(selected);
+  const messages: Msg[] = useMemo(() => {
+    const rowsMsg = messagesQuery.data ?? [];
+    return rowsMsg.map((m): Msg => {
+      const srcLang: "ar" | "en" = m.lang === "en" ? "en" : "ar";
+      const stored = (m.translations ?? {}) as Record<string, string>;
+      const base: Msg = {
+        id: m.id,
+        from: m.sender_id === user?.id ? "me" : "them",
+        name: m.sender_id === user?.id ? tr("أنا", "Me") : tr("الطرف الآخر", "Counterparty"),
+        text: m.body,
+        time: new Date(m.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+        srcLang,
+        rev: m.version,
+      };
+      if (srcLang !== lang) base.translation = stored[lang] ?? m.body;
+      return base;
+    });
+  }, [messagesQuery.data, user?.id, lang, tr]);
+
   const [warning, setWarning] = useState(false);
   const [reason, setReason] = useState("");
   const [evidence, setEvidence] = useState<string[]>([]);
@@ -249,13 +239,12 @@ function Workspace() {
   const [disputeMsg, setDisputeMsg] = useState<string | null>(null);
   const [actionMsg, setActionMsg] = useState<string | null>(null);
   const [deliverable, setDeliverable] = useState("");
-  const [draftState, setDraftState] = useState<Record<number, "pending" | "revision" | "approved">>({});
 
   // AI translation: per-message revision drives cache invalidation + credit reconciliation.
-  const [msgRev, setMsgRev] = useState<Record<number, number>>({});
-  const [editing, setEditing] = useState<{ id: number; text: string } | null>(null);
+  const [msgRev, setMsgRev] = useState<Record<string, number>>({});
+  const [editing, setEditing] = useState<{ id: string; text: string } | null>(null);
   const txMap = useMemo(() => {
-    const map = new Map<number, { text: string; cached: boolean }>();
+    const map = new Map<string, { text: string; cached: boolean }>();
     let billed = 0;
     let cached = 0;
     if (translate) {
@@ -271,6 +260,7 @@ function Workspace() {
     return { map, billed, cached };
   }, [messages, translate, lang, msgRev]);
 
+
   // Instant digital asset anti-piracy shield
   const [assetLocked, setAssetLocked] = useState(false);
   const [disputeCategory, setDisputeCategory] = useState<"general" | "corrupt">("general");
@@ -280,7 +270,11 @@ function Workspace() {
   const [warrantyPct, setWarrantyPct] = useState(10);
 
 
-  const addDeliverable = useDeliverables();
+  // Deliverables vault (private digital-vault bucket + order_deliverables rows)
+  const deliverablesQuery = useOrderDeliverables(selected);
+  const uploadDeliverable = useUploadDeliverable(selected);
+  const linkDeliverable = useLinkDeliverable(selected);
+  const setApproval = useSetDeliverableApproval(selected);
   const transition = useOrderTransition();
 
   // Deadline extension request
@@ -296,36 +290,64 @@ function Workspace() {
   const [reviewText, setReviewText] = useState("");
   const [reviewDone, setReviewDone] = useState<string | null>(null);
 
-  // Optional milestones tracker
-  const [milestonesOn, setMilestonesOn] = useState(false);
-  const [released, setReleased] = useState<number[]>([]);
-  const milestones = [
-    {
-      pct: 30,
-      label: tr("المرحلة 1: تسليم المسودة الأولى والتصميم الأولي", "Stage 1: first draft & initial design"),
-      cta: tr("تحرير جزئي للضمان 30%", "Release 30% of escrow"),
-    },
-    {
-      pct: 70,
-      label: tr("المرحلة 2: المراجعة النهائية والتسليم الكامل", "Stage 2: final review & full delivery"),
-      cta: tr("تحرير الرصيد المتبقي 70%", "Release remaining 70%"),
-    },
-  ];
+  // Optional milestones tracker, persisted in order_milestones
+  const milestonesQuery = useOrderMilestones(selected);
+  const createMilestones = useCreateMilestones(selected);
+  const releaseMilestone = useReleaseMilestone(selected);
+  const milestoneRows = milestonesQuery.data ?? [];
+  const milestonesOn = milestoneRows.length > 0;
+  const orderAmount = Number(order?.amount_usdt ?? 0);
+
+  function enableMilestones() {
+    createMilestones.mutate([
+      {
+        title: tr("المرحلة 1: تسليم المسودة الأولى والتصميم الأولي", "Stage 1: first draft & initial design"),
+        pct: 30,
+        amount_usdt: Number(((orderAmount * 30) / 100).toFixed(2)),
+        position: 1,
+      },
+      {
+        title: tr("المرحلة 2: المراجعة النهائية والتسليم الكامل", "Stage 2: final review & full delivery"),
+        pct: 70,
+        amount_usdt: Number(((orderAmount * 70) / 100).toFixed(2)),
+        position: 2,
+      },
+    ]);
+  }
+
   const autoUpTo = order?.status === "completed" ? 100 : order?.status === "delivered" ? 70 : order?.status === "in_progress" ? 30 : 0;
   /** Warranty escrow retains 10–15% for a 7-day stability window after delivery. */
   const maxReleasable = warrantyOn ? 100 - warrantyPct : 100;
-  const releasedPct = Math.min(maxReleasable, Math.max(autoUpTo, ...released, 0));
+  const releasedPct = Math.min(
+    maxReleasable,
+    Math.max(autoUpTo, ...milestoneRows.filter((m) => m.status === "released").map((m) => Number(m.pct)), 0),
+  );
   const warrantyEndsAt = useMemo(
     () => new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toLocaleDateString(),
     [],
   );
 
+  // Structured deliverables vault: drafts vs approved final assets
+  const rawFiles = deliverablesQuery.data ?? [];
+  const drafts = rawFiles.filter((f) => !f.is_final);
+  const finals = rawFiles.filter((f) => f.is_final);
 
-  // Structured deliverables: odd entries are drafts, the latest is the final asset
-  const rawFiles = Array.isArray(order?.deliverables) ? (order!.deliverables as unknown[]).map(String) : [];
-  const finalIndexes = order?.status === "delivered" || order?.status === "completed" ? [rawFiles.length - 1] : [];
-  const drafts = rawFiles.map((f, i) => ({ f, i })).filter(({ i }) => !finalIndexes.includes(i));
-  const finals = rawFiles.map((f, i) => ({ f, i })).filter(({ i }) => finalIndexes.includes(i));
+  // Signed, short-lived URLs for private vault objects.
+  const [signedUrls, setSignedUrls] = useState<Record<string, string>>({});
+  useEffect(() => {
+    let alive = true;
+    void (async () => {
+      const entries = await Promise.all(
+        rawFiles.map(async (f) => [f.id, await vaultUrl(f.storage_path).catch(() => "")] as const),
+      );
+      if (alive) setSignedUrls(Object.fromEntries(entries));
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [rawFiles.map((f) => f.id).join(",")]);
+
+
 
   // Immutable audit timeline derived from the order record
   const timeline = useMemo(() => {
@@ -404,7 +426,7 @@ function Workspace() {
       return;
     }
     setWarning(false);
-    setMessages([...messages, { id: Date.now(), from: "me", name: tr("أنا", "Me"), text, time: tr("الآن", "Now") }]);
+    sendMessage.mutate({ body: text, lang });
     setDraft("");
   }
 
@@ -562,9 +584,7 @@ function Workspace() {
                                   if (!text) return;
                                   txCacheInvalidate(m.id);
                                   setMsgRev((r) => ({ ...r, [m.id]: (r[m.id] ?? m.rev ?? 0) + 1 }));
-                                  setMessages((list) =>
-                                    list.map((x) => (x.id === m.id ? { ...x, text, translation: text, rev: (x.rev ?? 0) + 1 } : x)),
-                                  );
+                                  editMessage.mutate({ id: m.id, body: text, version: m.rev });
                                   setEditing(null);
                                 }}
                                 className="rounded-lg bg-background px-2.5 py-1 text-[10px] font-bold text-primary"
@@ -675,25 +695,58 @@ function Workspace() {
                 <p className="text-xs text-muted-foreground">{tr("حتى 2GB لكل ملف · تُفتح للمشتري بعد اعتماد المرحلة", "Up to 2GB per file · unlocked for the buyer after milestone approval")}</p>
               </div>
               {order && order.seller_id === user?.id && (
-                <div className="mt-4 flex items-center gap-2">
-                  <input
-                    value={deliverable}
-                    onChange={(e) => setDeliverable(e.target.value)}
-                    placeholder={tr("رابط أو وصف التسليم (Drive, Figma, ...)", "Deliverable link or description (Drive, Figma, ...)")}
-                    className="flex-1 rounded-lg border border-input bg-surface px-3 py-2 text-sm outline-none focus:border-primary"
-                  />
-                  <button
-                    onClick={() => {
-                      const v = deliverable.trim();
-                      if (!v) return;
-                      const current = Array.isArray(order.deliverables) ? (order.deliverables as unknown[]).map(String) : [];
-                      addDeliverable.mutate({ id: order.id, deliverables: [...current, v] }, { onSuccess: () => setDeliverable("") });
-                    }}
-                    disabled={addDeliverable.isPending}
-                    className="rounded-lg bg-primary px-4 py-2 text-sm font-bold text-primary-foreground disabled:opacity-50"
-                  >
-                    {tr("إضافة", "Add")}
-                  </button>
+                <div className="mt-4 grid gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-primary/50 bg-primary/10 px-3 py-2 text-xs font-bold text-primary">
+                      <FileUp className="size-4" />
+                      {uploadDeliverable.isPending
+                        ? tr("جارٍ الرفع إلى الخزنة…", "Uploading to the vault…")
+                        : tr("رفع ملف مسودة إلى الخزنة", "Upload a draft file to the vault")}
+                      <input
+                        type="file"
+                        className="hidden"
+                        disabled={uploadDeliverable.isPending}
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) uploadDeliverable.mutate({ file, isFinal: false });
+                          e.target.value = "";
+                        }}
+                      />
+                    </label>
+                    <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-border px-3 py-2 text-xs font-bold text-muted-foreground">
+                      <FileCheck2 className="size-4" />
+                      {tr("رفع التسليم النهائي", "Upload the final asset")}
+                      <input
+                        type="file"
+                        className="hidden"
+                        disabled={uploadDeliverable.isPending}
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) uploadDeliverable.mutate({ file, isFinal: true });
+                          e.target.value = "";
+                        }}
+                      />
+                    </label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      value={deliverable}
+                      onChange={(e) => setDeliverable(e.target.value)}
+                      placeholder={tr("رابط أو وصف التسليم (Drive, Figma, ...)", "Deliverable link or description (Drive, Figma, ...)")}
+                      className="flex-1 rounded-lg border border-input bg-surface px-3 py-2 text-sm outline-none focus:border-primary"
+                    />
+                    <button
+                      onClick={() => {
+                        const v = deliverable.trim();
+                        if (!v) return;
+                        linkDeliverable.mutate({ link: v, isFinal: false }, { onSuccess: () => setDeliverable("") });
+                      }}
+                      disabled={linkDeliverable.isPending}
+                      className="rounded-lg bg-primary px-4 py-2 text-sm font-bold text-primary-foreground disabled:opacity-50"
+                    >
+                      {tr("إضافة", "Add")}
+                    </button>
+                  </div>
                 </div>
               )}
               {rawFiles.length === 0 && (
@@ -708,16 +761,18 @@ function Workspace() {
                   <div key={group.key} className="mt-5">
                     <h4 className={`text-xs font-black ${group.tone === "primary" ? "text-primary" : "text-accent"}`}>{group.title}</h4>
                     <div className="mt-2 grid gap-2">
-                      {group.items.map(({ f, i }) => {
-                        const meta = fileMeta(f);
-                        const state = draftState[i] ?? "pending";
+                      {group.items.map((f) => {
+                        const sha = (f.checksum ?? "").slice(0, 16);
+                        const sizeMb = (f.size_bytes / 1024 / 1024).toFixed(2);
+                        const url = signedUrls[f.id];
+                        const state = f.approval_state as "pending" | "revision" | "approved";
                         return (
-                          <div key={i} className={`grid gap-2 rounded-xl border px-3 py-3 ${group.tone === "primary" ? "border-primary/40 bg-primary/5" : "border-border"}`}>
-                            <p className="text-sm font-semibold break-all">{f}</p>
+                          <div key={f.id} className={`grid gap-2 rounded-xl border px-3 py-3 ${group.tone === "primary" ? "border-primary/40 bg-primary/5" : "border-border"}`}>
+                            <p className="text-sm font-semibold break-all">{f.file_name}</p>
                             {group.key === "final" ? (
                               <SecureDownload
-                                target={f}
-                                href={/^https?:\/\//.test(f) ? f : undefined}
+                                target={f.storage_path}
+                                href={url}
                                 userId={user?.id ?? null}
                                 onDownload={() => {
                                   // Instant asset shield: checksum confirmed on download → disputes restricted.
@@ -726,8 +781,8 @@ function Workspace() {
                                   logAuditEvent({
                                     type: "ASSET_DOWNLOAD_EVENT",
                                     userId: user?.id ?? null,
-                                    target: f,
-                                    hash: meta.sha,
+                                    target: f.file_name,
+                                    hash: sha,
                                     meta: { orderId: order?.id ?? "", checksum: "SHA-256" },
                                   });
                                 }}
@@ -735,7 +790,7 @@ function Workspace() {
                             ) : (
                             <div className="flex flex-wrap items-center gap-2">
                               <a
-                                href={/^https?:\/\//.test(f) ? f : undefined}
+                                href={url}
                                 target="_blank"
                                 rel="noreferrer noopener"
                                 className="peer inline-flex items-center gap-1 rounded-lg border border-primary/50 bg-primary/10 px-3 py-1.5 text-[11px] font-bold text-primary"
@@ -750,12 +805,16 @@ function Workspace() {
 
 
                             <div className="flex flex-wrap items-center gap-1.5 text-[10px]">
-                              <span className="rounded-full border border-border px-2 py-0.5 font-mono text-muted-foreground" dir="ltr">{meta.mime}</span>
-                              <span className="rounded-full border border-border px-2 py-0.5 font-mono text-muted-foreground" dir="ltr">{meta.sizeMb} MB</span>
-                              <span className="max-w-full truncate rounded-full border border-border px-2 py-0.5 font-mono text-muted-foreground" dir="ltr">SHA-256 {meta.sha}…</span>
-                              <span className="inline-flex items-center gap-1 rounded-full border border-primary/50 bg-primary/10 px-2 py-0.5 font-bold text-primary">
-                                <Lock className="size-3" /> SHA-256 {tr("موثّق 🔒", "Verified 🔒")}
-                              </span>
+                              <span className="rounded-full border border-border px-2 py-0.5 font-mono text-muted-foreground" dir="ltr">{f.mime_type}</span>
+                              <span className="rounded-full border border-border px-2 py-0.5 font-mono text-muted-foreground" dir="ltr">{sizeMb} MB</span>
+                              {sha && (
+                                <span className="max-w-full truncate rounded-full border border-border px-2 py-0.5 font-mono text-muted-foreground" dir="ltr">SHA-256 {sha}…</span>
+                              )}
+                              {sha && (
+                                <span className="inline-flex items-center gap-1 rounded-full border border-primary/50 bg-primary/10 px-2 py-0.5 font-bold text-primary">
+                                  <Lock className="size-3" /> SHA-256 {tr("موثّق 🔒", "Verified 🔒")}
+                                </span>
+                              )}
                               <span className="inline-flex items-center gap-1 rounded-full border border-primary/50 bg-primary/10 px-2 py-0.5 font-bold text-primary">
                                 <ShieldCheck className="size-3" /> {tr("خالٍ من الفيروسات والبرمجيات الخبيثة ✅", "Malware & virus free ✅")}
                               </span>
@@ -764,14 +823,14 @@ function Workspace() {
                               <div className="flex flex-wrap gap-2">
                                 <button
                                   type="button"
-                                  onClick={() => setDraftState((s) => ({ ...s, [i]: "revision" }))}
+                                  onClick={() => setApproval.mutate({ id: f.id, state: "revision" })}
                                   className="rounded-lg border border-accent/50 bg-accent/10 px-3 py-1.5 text-[11px] font-bold text-accent"
                                 >
                                   {tr("طلب تعديل على المسودة", "Request draft revision")}
                                 </button>
                                 <button
                                   type="button"
-                                  onClick={() => setDraftState((s) => ({ ...s, [i]: "approved" }))}
+                                  onClick={() => setApproval.mutate({ id: f.id, state: "approved" })}
                                   className="inline-flex items-center gap-1 rounded-lg bg-primary px-3 py-1.5 text-[11px] font-bold text-primary-foreground"
                                 >
                                   <FileCheck2 className="size-3" /> {tr("اعتماد المسودة والمتابعة", "Approve draft & continue")}
@@ -790,6 +849,7 @@ function Workspace() {
                   </div>
                 ),
               )}
+
             </div>
           )}
 
@@ -1111,7 +1171,15 @@ function Workspace() {
               <h3 className="min-w-0 text-sm font-bold">{tr("المعالم المرحلية للطلب", "Order milestones")}</h3>
               <label className="flex shrink-0 items-center gap-2 text-[11px] text-muted-foreground">
                 {tr("تفعيل", "Enable")}
-                <input type="checkbox" checked={milestonesOn} onChange={(e) => setMilestonesOn(e.target.checked)} className="size-4 accent-primary" />
+                <input
+                  type="checkbox"
+                  checked={milestonesOn}
+                  disabled={milestonesOn || createMilestones.isPending}
+                  onChange={(e) => {
+                    if (e.target.checked) enableMilestones();
+                  }}
+                  className="size-4 accent-primary"
+                />
               </label>
             </div>
             {!milestonesOn ? (
@@ -1124,36 +1192,37 @@ function Workspace() {
                   <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${releasedPct}%` }} />
                 </div>
                 <p className="text-[11px] text-muted-foreground">{tr("نسبة الضمان المُحرَّرة", "Escrow released")}: {releasedPct}%</p>
-                {milestones.map((m) => {
-                  const isReleased = releasedPct >= m.pct;
+                {milestoneRows.map((m) => {
+                  const isReleased = m.status === "released" || releasedPct >= Number(m.pct);
                   const state = isReleased ? (releasedPct >= 100 ? tr("مكتمل", "Completed") : tr("محرر", "Released")) : tr("معلق", "Pending");
                   return (
                     <div
-                      key={m.pct}
+                      key={m.id}
                       className={`grid gap-2 rounded-lg border px-3 py-2.5 text-xs ${isReleased ? "border-primary/50 bg-primary/10" : "border-border"}`}
                     >
                       <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2">
-                        <span className={`min-w-0 font-bold ${isReleased ? "text-primary" : "text-foreground"}`}>{m.label} ({m.pct}%)</span>
+                        <span className={`min-w-0 font-bold ${isReleased ? "text-primary" : "text-foreground"}`}>{m.title} ({m.pct}%)</span>
                         <span className={`inline-flex shrink-0 items-center gap-1 rounded-full border px-2 py-0.5 ${isReleased ? "border-primary/50 text-primary" : "border-border text-muted-foreground"}`}>
                           {isReleased ? <Unlock className="size-3" /> : <Lock className="size-3" />} {state}
                         </span>
                       </div>
                       <div className="flex items-center justify-between gap-2">
                         <span className="text-muted-foreground">
-                          {order ? `${((Number(order.amount_usdt) * m.pct) / 100).toFixed(2)} USDT` : "—"}
+                          {Number(m.amount_usdt).toFixed(2)} USDT
                         </span>
                         <button
                           type="button"
-                          disabled={isReleased}
-                          onClick={() => setReleased((r) => [...r, m.pct])}
+                          disabled={isReleased || releaseMilestone.isPending}
+                          onClick={() => releaseMilestone.mutate(m.id)}
                           className="shrink-0 rounded-lg border border-primary/50 bg-primary/10 px-3 py-1.5 text-[11px] font-bold text-primary disabled:opacity-40"
                         >
-                          {isReleased ? tr("تم التحرير", "Released") : m.cta}
+                          {isReleased ? tr("تم التحرير", "Released") : tr("تحرير هذه المرحلة", "Release this milestone")}
                         </button>
                       </div>
                     </div>
                   );
                 })}
+
                 <div className="grid gap-2 rounded-xl border border-accent/40 bg-accent/5 p-3 text-[11px]">
                   <label className="flex items-start justify-between gap-3">
                     <span className="min-w-0">

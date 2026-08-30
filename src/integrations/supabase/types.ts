@@ -14,6 +14,48 @@ export type Database = {
   }
   public: {
     Tables: {
+      custom_subscription_passes: {
+        Row: {
+          code: string
+          created_at: string
+          created_by: string | null
+          duration_days: number
+          expires_at: string
+          id: string
+          note: string | null
+          tier: Database["public"]["Enums"]["account_tier"]
+          updated_at: string
+          used_at: string | null
+          used_by: string | null
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          created_by?: string | null
+          duration_days?: number
+          expires_at?: string
+          id?: string
+          note?: string | null
+          tier?: Database["public"]["Enums"]["account_tier"]
+          updated_at?: string
+          used_at?: string | null
+          used_by?: string | null
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          created_by?: string | null
+          duration_days?: number
+          expires_at?: string
+          id?: string
+          note?: string | null
+          tier?: Database["public"]["Enums"]["account_tier"]
+          updated_at?: string
+          used_at?: string | null
+          used_by?: string | null
+        }
+        Relationships: []
+      }
       dispute_cases: {
         Row: {
           admin_ruling: string | null
@@ -186,6 +228,159 @@ export type Database = {
         }
         Relationships: []
       }
+      order_deliverables: {
+        Row: {
+          approval_state: string
+          checksum: string | null
+          created_at: string
+          file_name: string
+          id: string
+          is_final: boolean
+          mime_type: string
+          order_id: string
+          size_bytes: number
+          storage_path: string
+          updated_at: string
+          uploader_id: string
+        }
+        Insert: {
+          approval_state?: string
+          checksum?: string | null
+          created_at?: string
+          file_name: string
+          id?: string
+          is_final?: boolean
+          mime_type?: string
+          order_id: string
+          size_bytes?: number
+          storage_path: string
+          updated_at?: string
+          uploader_id: string
+        }
+        Update: {
+          approval_state?: string
+          checksum?: string | null
+          created_at?: string
+          file_name?: string
+          id?: string
+          is_final?: boolean
+          mime_type?: string
+          order_id?: string
+          size_bytes?: number
+          storage_path?: string
+          updated_at?: string
+          uploader_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_deliverables_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      order_messages: {
+        Row: {
+          attachment_name: string | null
+          attachment_path: string | null
+          body: string
+          created_at: string
+          edited_at: string | null
+          id: string
+          lang: string
+          order_id: string
+          sender_id: string
+          translations: Json
+          updated_at: string
+          version: number
+        }
+        Insert: {
+          attachment_name?: string | null
+          attachment_path?: string | null
+          body?: string
+          created_at?: string
+          edited_at?: string | null
+          id?: string
+          lang?: string
+          order_id: string
+          sender_id: string
+          translations?: Json
+          updated_at?: string
+          version?: number
+        }
+        Update: {
+          attachment_name?: string | null
+          attachment_path?: string | null
+          body?: string
+          created_at?: string
+          edited_at?: string | null
+          id?: string
+          lang?: string
+          order_id?: string
+          sender_id?: string
+          translations?: Json
+          updated_at?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_messages_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      order_milestones: {
+        Row: {
+          amount_usdt: number
+          created_at: string
+          id: string
+          order_id: string
+          pct: number
+          position: number
+          released_at: string | null
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          amount_usdt?: number
+          created_at?: string
+          id?: string
+          order_id: string
+          pct?: number
+          position?: number
+          released_at?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          amount_usdt?: number
+          created_at?: string
+          id?: string
+          order_id?: string
+          pct?: number
+          position?: number
+          released_at?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_milestones_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       orders: {
         Row: {
           amount_usdt: number
@@ -265,6 +460,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      platform_governance_settings: {
+        Row: {
+          ai_confidence_threshold: number
+          auto_release_hours: number
+          autonomous_ai: boolean
+          created_at: string
+          id: boolean
+          refill_daily_limit: number
+          sla_hours_free: number
+          sla_hours_pro: number
+          updated_at: string
+          updated_by: string | null
+          warranty_escrow_pct: number
+        }
+        Insert: {
+          ai_confidence_threshold?: number
+          auto_release_hours?: number
+          autonomous_ai?: boolean
+          created_at?: string
+          id?: boolean
+          refill_daily_limit?: number
+          sla_hours_free?: number
+          sla_hours_pro?: number
+          updated_at?: string
+          updated_by?: string | null
+          warranty_escrow_pct?: number
+        }
+        Update: {
+          ai_confidence_threshold?: number
+          auto_release_hours?: number
+          autonomous_ai?: boolean
+          created_at?: string
+          id?: boolean
+          refill_daily_limit?: number
+          sla_hours_free?: number
+          sla_hours_pro?: number
+          updated_at?: string
+          updated_by?: string | null
+          warranty_escrow_pct?: number
+        }
+        Relationships: []
       }
       profiles: {
         Row: {
@@ -678,6 +915,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_order_party: {
+        Args: { _order_id: string; _user_id: string }
+        Returns: boolean
+      }
       log_security_event: {
         Args: {
           _detail: string
@@ -687,6 +928,28 @@ export type Database = {
         Returns: string
       }
       process_withdrawal_queue: { Args: never; Returns: number }
+      redeem_subscription_pass: {
+        Args: { _code: string }
+        Returns: {
+          code: string
+          created_at: string
+          created_by: string | null
+          duration_days: number
+          expires_at: string
+          id: string
+          note: string | null
+          tier: Database["public"]["Enums"]["account_tier"]
+          updated_at: string
+          used_at: string | null
+          used_by: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "custom_subscription_passes"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       request_withdrawal: {
         Args: {
           _address: string
