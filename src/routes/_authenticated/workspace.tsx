@@ -13,7 +13,20 @@ import { logAuditEvent } from "@/lib/audit";
 import { useLang } from "@/lib/lang";
 import { useAuth } from "@/hooks/use-auth";
 import { useOrders } from "@/lib/queries";
-import { nextActions, useDeliverables, useOrderTransition, type OrderStatus } from "@/lib/orders";
+import { nextActions, useOrderTransition, type OrderStatus } from "@/lib/orders";
+import {
+  useCreateMilestones,
+  useEditMessage,
+  useLinkDeliverable,
+  useOrderDeliverables,
+  useOrderMessages,
+  useOrderMilestones,
+  useReleaseMilestone,
+  useSendMessage,
+  useSetDeliverableApproval,
+  useUploadDeliverable,
+  vaultUrl,
+} from "@/lib/workspace-data";
 import { supabase } from "@/integrations/supabase/client";
 import { sanitizeText } from "@/lib/security";
 
