@@ -127,13 +127,57 @@ export type Database = {
           },
         ]
       }
+      kyc_submissions: {
+        Row: {
+          admin_note: string | null
+          back_path: string | null
+          created_at: string
+          doc_type: string
+          front_path: string
+          id: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          admin_note?: string | null
+          back_path?: string | null
+          created_at?: string
+          doc_type?: string
+          front_path: string
+          id?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          admin_note?: string | null
+          back_path?: string | null
+          created_at?: string
+          doc_type?: string
+          front_path?: string
+          id?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       listings: {
         Row: {
           category: Database["public"]["Enums"]["listing_category"]
           cover_key: string
           created_at: string
+          delivery_days: number
           id: string
           is_published: boolean
+          language: string
           orders_count: number
           owner_id: string | null
           price_usdt: number
@@ -151,8 +195,10 @@ export type Database = {
           category?: Database["public"]["Enums"]["listing_category"]
           cover_key?: string
           created_at?: string
+          delivery_days?: number
           id?: string
           is_published?: boolean
+          language?: string
           orders_count?: number
           owner_id?: string | null
           price_usdt?: number
@@ -170,8 +216,10 @@ export type Database = {
           category?: Database["public"]["Enums"]["listing_category"]
           cover_key?: string
           created_at?: string
+          delivery_days?: number
           id?: string
           is_published?: boolean
+          language?: string
           orders_count?: number
           owner_id?: string | null
           price_usdt?: number
@@ -518,6 +566,7 @@ export type Database = {
           id: string
           is_frozen: boolean
           is_verified: boolean
+          kyc_status: string
           kyc_tier: Database["public"]["Enums"]["kyc_tier"]
           level: number
           rating: number
@@ -541,6 +590,7 @@ export type Database = {
           id: string
           is_frozen?: boolean
           is_verified?: boolean
+          kyc_status?: string
           kyc_tier?: Database["public"]["Enums"]["kyc_tier"]
           level?: number
           rating?: number
@@ -564,6 +614,7 @@ export type Database = {
           id?: string
           is_frozen?: boolean
           is_verified?: boolean
+          kyc_status?: string
           kyc_tier?: Database["public"]["Enums"]["kyc_tier"]
           level?: number
           rating?: number
@@ -903,10 +954,113 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_resolve_dispute: {
+        Args: { _action: string; _case_id: string; _ruling?: string }
+        Returns: {
+          admin_ruling: string | null
+          against_user: string | null
+          ai_analyzed_at: string | null
+          ai_confidence: number | null
+          ai_refund_pct: number | null
+          ai_verdict: string | null
+          blackmail_score: number | null
+          created_at: string
+          evidence: Json
+          id: string
+          kind: Database["public"]["Enums"]["case_kind"]
+          order_id: string | null
+          raised_by: string
+          reason: string
+          resolved_at: string | null
+          resolved_by: string | null
+          status: Database["public"]["Enums"]["case_status"]
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "dispute_cases"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      admin_review_kyc: {
+        Args: { _approve: boolean; _note?: string; _submission_id: string }
+        Returns: {
+          admin_note: string | null
+          back_path: string | null
+          created_at: string
+          doc_type: string
+          front_path: string
+          id: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "kyc_submissions"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       auto_release_escrow: { Args: never; Returns: number }
       check_rate_limit: {
         Args: { _action: string; _max: number; _window: string }
         Returns: number
+      }
+      confirm_deposit: {
+        Args: { _tx_hash?: string; _tx_id: string }
+        Returns: {
+          address: string | null
+          amount: number
+          created_at: string
+          fee: number
+          id: string
+          network: Database["public"]["Enums"]["usdt_network"] | null
+          note: string | null
+          order_id: string | null
+          status: Database["public"]["Enums"]["tx_status"]
+          tx_hash: string | null
+          type: Database["public"]["Enums"]["tx_type"]
+          updated_at: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "wallet_transactions"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      create_deposit: {
+        Args: {
+          _address?: string
+          _amount: number
+          _network: Database["public"]["Enums"]["usdt_network"]
+        }
+        Returns: {
+          address: string | null
+          amount: number
+          created_at: string
+          fee: number
+          id: string
+          network: Database["public"]["Enums"]["usdt_network"] | null
+          note: string | null
+          order_id: string | null
+          status: Database["public"]["Enums"]["tx_status"]
+          tx_hash: string | null
+          type: Database["public"]["Enums"]["tx_type"]
+          updated_at: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "wallet_transactions"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       has_role: {
         Args: {
@@ -1024,6 +1178,28 @@ export type Database = {
       set_account_frozen: {
         Args: { _frozen: boolean; _reason?: string; _user_id: string }
         Returns: undefined
+      }
+      submit_kyc: {
+        Args: { _back_path?: string; _doc_type: string; _front_path: string }
+        Returns: {
+          admin_note: string | null
+          back_path: string | null
+          created_at: string
+          doc_type: string
+          front_path: string
+          id: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "kyc_submissions"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
     }
     Enums: {

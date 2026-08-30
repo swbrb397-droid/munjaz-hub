@@ -19,6 +19,8 @@ import {
   type WithdrawalNetwork,
 } from "@/lib/withdrawals";
 import { formatUsdt, parseUsdt } from "@/lib/security";
+import { useConfirmDeposit, useCreateDeposit, useWalletRealtime } from "@/lib/deposits";
+import { toast } from "sonner";
 import { PayoutSecurityCard } from "@/components/site/PayoutSecurityCard";
 
 export const Route = createFileRoute("/_authenticated/wallet")({
@@ -49,6 +51,11 @@ function WalletPage() {
   const profile = useProfile();
   const txs = useTransactions();
   const requests = useMyWithdrawals();
+  useWalletRealtime();
+  const createDeposit = useCreateDeposit();
+  const confirmDeposit = useConfirmDeposit();
+  const [depositAmount, setDepositAmount] = useState("100");
+  const [pendingDeposit, setPendingDeposit] = useState<{ id: string; amount: number } | null>(null);
 
   const [deposit, setDeposit] = useState(false);
   const [depositTab, setDepositTab] = useState<"crypto" | "fiat">("crypto");
@@ -394,6 +401,65 @@ function WalletPage() {
                     {tr("صلاحية العنوان", "Address lock")}: {String(Math.floor(lockLeft / 60)).padStart(2, "0")}:{String(lockLeft % 60).padStart(2, "0")}
                   </p>
                 </div>
+                <label className="mt-4 grid gap-1.5 text-sm">
+                  <span className="text-xs text-muted-foreground">{tr("المبلغ المحوَّل (USDT)", "Transferred amount (USDT)")}</span>
+                  <input
+                    value={depositAmount}
+                    dir="ltr"
+                    inputMode="decimal"
+                    onChange={(e) => setDepositAmount(e.target.value.replace(/[^0-9.]/g, ""))}
+                    className="rounded-lg border border-input bg-surface px-3 py-2 outline-none focus:border-primary"
+                  />
+                </label>
+
+                {!pendingDeposit ? (
+                  <button
+                    type="button"
+                    disabled={createDeposit.isPending || !(parseUsdt(depositAmount) ?? 0)}
+                    onClick={() =>
+                      createDeposit.mutate(
+                        { amount: parseUsdt(depositAmount) ?? 0, network },
+                        {
+                          onSuccess: (row) => {
+                            setPendingDeposit({ id: row.id, amount: Number(row.amount) });
+                            toast.success(tr("تم تسجيل تحويل وارد قيد التأكيد ⏳", "Incoming transfer recorded — awaiting confirmation ⏳"));
+                          },
+                          onError: (e: Error) => toast.error(e.message),
+                        },
+                      )
+                    }
+                    className="mt-3 w-full rounded-xl bg-primary py-2.5 text-sm font-bold text-primary-foreground disabled:opacity-60"
+                  >
+                    {tr("سجّلت التحويل — تتبّع الإيداع", "I sent it — track this deposit")}
+                  </button>
+                ) : (
+                  <div className="mt-3 grid gap-2 rounded-xl border border-accent/40 bg-accent/10 p-3 text-xs">
+                    <p className="font-bold text-accent">
+                      {tr("بانتظار تأكيد الشبكة", "Awaiting network confirmation")} · {pendingDeposit.amount} USDT
+                    </p>
+                    <button
+                      type="button"
+                      disabled={confirmDeposit.isPending}
+                      onClick={() =>
+                        confirmDeposit.mutate(
+                          { id: pendingDeposit.id, txHash: `0x${Math.random().toString(16).slice(2, 14)}` },
+                          {
+                            onSuccess: () => {
+                              setPendingDeposit(null);
+                              setDeposit(false);
+                              toast.success(tr("تم تأكيد الإيداع وإضافة الرصيد ✅", "Deposit confirmed and balance credited ✅"));
+                            },
+                            onError: (e: Error) => toast.error(e.message),
+                          },
+                        )
+                      }
+                      className="rounded-lg border border-border px-3 py-1.5 font-bold disabled:opacity-60"
+                    >
+                      {tr("محاكاة تأكيد الشبكة (Webhook)", "Simulate network confirmation (webhook)")}
+                    </button>
+                  </div>
+                )}
+
                 <p className="mt-3 text-xs text-muted-foreground">
                   {tr("يُضاف الرصيد تلقائياً بعد تأكيد الشبكة.", "Balance is credited automatically after network confirmation.")}
                 </p>

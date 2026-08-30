@@ -5,7 +5,7 @@ import { useListing } from "@/lib/orders";
 import { useLang as useLangCtx } from "@/lib/lang";
 import { Card, Section } from "@/components/site/Shell";
 import { useLang } from "@/lib/lang";
-import { useListings, useNfts, type ListingCategory, type SortKey } from "@/lib/catalog";
+import { PAGE_SIZE, useListings, useNfts, type ListingCategory, type SortKey } from "@/lib/catalog";
 import { NftCard, ServiceCard } from "./index";
 
 type StoreSearch = { listingId?: string; lang?: "ar" | "en" };
@@ -86,6 +86,10 @@ function Store() {
   const [active, setActive] = useState<ListingCategory | "all">("all");
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<SortKey>("recent");
+  const [maxPrice, setMaxPrice] = useState(2000);
+  const [contentLang, setContentLang] = useState<"all" | "ar" | "en">("all");
+  const [delivery, setDelivery] = useState(0);
+  const [page, setPage] = useState(1);
 
   const filters: { key: ListingCategory | "all"; label: string }[] = [
     { key: "all", label: tr("الكل", "All") },
@@ -103,8 +107,21 @@ function Store() {
     { key: "popular", label: tr("الأكثر طلباً", "Most ordered") },
   ];
 
-  const listings = useListings({ search: query, category: active, sort });
+  const listings = useListings({
+    search: query,
+    category: active,
+    sort,
+    maxPrice,
+    language: contentLang,
+    maxDeliveryDays: delivery,
+    page,
+    pageSize: PAGE_SIZE,
+  });
   const nfts = useNfts({ search: query, sort });
+
+  const total = listings.data?.total ?? 0;
+  const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const items = listings.data?.items ?? [];
 
   return (
     <>
@@ -115,54 +132,120 @@ function Store() {
         />
       )}
       <Section title={tr("المتجر الرقمي", "Digital store")} subtitle={tr("كل شيء بسعر USDT مع ضمان المنصة", "Everything priced in USDT with platform protection")}>
-        <Card className="mb-6 flex flex-wrap items-center gap-3">
-          <Filter className="size-4 text-primary" />
-          {filters.map((f) => (
-            <button
-              key={f.key}
-              onClick={() => setActive(f.key)}
-              className={`rounded-lg px-3 py-1.5 text-sm transition-colors ${
-                active === f.key ? "bg-primary text-primary-foreground font-bold" : "border border-border text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              {f.label}
-            </button>
-          ))}
-          <select
-            value={sort}
-            onChange={(e) => setSort(e.target.value as SortKey)}
-            className="ms-auto rounded-lg border border-input bg-surface px-3 py-2 text-sm outline-none focus:border-primary"
-            aria-label={tr("الفرز", "Sort")}
-          >
-            {sorts.map((s) => (
-              <option key={s.key} value={s.key}>{s.label}</option>
+        <Card className="mb-6 grid gap-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <Filter className="size-4 text-primary" />
+            {filters.map((f) => (
+              <button
+                key={f.key}
+                onClick={() => { setActive(f.key); setPage(1); }}
+                className={`rounded-lg px-3 py-1.5 text-sm transition-colors ${
+                  active === f.key ? "bg-primary text-primary-foreground font-bold" : "border border-border text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {f.label}
+              </button>
             ))}
-          </select>
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder={tr("ابحث عن خدمة...", "Search for a service...")}
-            className="w-full rounded-lg border border-input bg-surface px-3 py-2 text-sm outline-none focus:border-primary sm:w-64"
-          />
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <input
+              value={query}
+              onChange={(e) => { setQuery(e.target.value); setPage(1); }}
+              placeholder={tr("ابحث عن خدمة...", "Search for a service...")}
+              className="w-full min-w-0 rounded-lg border border-input bg-surface px-3 py-2 text-sm outline-none focus:border-primary"
+            />
+            <select
+              value={sort}
+              onChange={(e) => { setSort(e.target.value as SortKey); setPage(1); }}
+              className="min-w-0 rounded-lg border border-input bg-surface px-3 py-2 text-sm outline-none focus:border-primary"
+              aria-label={tr("الفرز", "Sort")}
+            >
+              {sorts.map((s) => (
+                <option key={s.key} value={s.key}>{s.label}</option>
+              ))}
+            </select>
+            <select
+              value={contentLang}
+              onChange={(e) => { setContentLang(e.target.value as "all" | "ar" | "en"); setPage(1); }}
+              className="min-w-0 rounded-lg border border-input bg-surface px-3 py-2 text-sm outline-none focus:border-primary"
+              aria-label={tr("لغة الخدمة", "Service language")}
+            >
+              <option value="all">{tr("كل اللغات", "All languages")}</option>
+              <option value="ar">{tr("العربية", "Arabic")}</option>
+              <option value="en">{tr("الإنجليزية", "English")}</option>
+            </select>
+            <select
+              value={delivery}
+              onChange={(e) => { setDelivery(Number(e.target.value)); setPage(1); }}
+              className="min-w-0 rounded-lg border border-input bg-surface px-3 py-2 text-sm outline-none focus:border-primary"
+              aria-label={tr("مدة التسليم", "Delivery time")}
+            >
+              <option value={0}>{tr("أي مدة تسليم", "Any delivery time")}</option>
+              <option value={1}>{tr("خلال 24 ساعة", "Within 24 hours")}</option>
+              <option value={3}>{tr("حتى 3 أيام", "Up to 3 days")}</option>
+              <option value={7}>{tr("حتى 7 أيام", "Up to 7 days")}</option>
+              <option value={14}>{tr("حتى 14 يوم", "Up to 14 days")}</option>
+            </select>
+          </div>
+
+          <label className="grid gap-1.5">
+            <span className="text-xs text-muted-foreground">
+              {tr("أقصى سعر", "Max price")}: <span className="font-bold text-primary" dir="ltr">{maxPrice} USDT</span>
+            </span>
+            <input
+              type="range"
+              min={0}
+              max={2000}
+              step={25}
+              value={maxPrice}
+              onChange={(e) => { setMaxPrice(Number(e.target.value)); setPage(1); }}
+              className="w-full accent-[hsl(var(--primary))]"
+              aria-label={tr("نطاق السعر", "Price range")}
+            />
+          </label>
         </Card>
 
         {listings.isLoading ? (
           <div className="flex justify-center py-10"><Loader2 className="size-5 animate-spin text-primary" /></div>
         ) : listings.error ? (
           <p className="py-10 text-center text-muted-foreground">{tr("تعذّر تحميل الخدمات.", "Could not load services.")}</p>
+        ) : items.length === 0 ? (
+          <p className="rounded-2xl border border-dashed border-border py-12 text-center text-muted-foreground">
+            {tr("لا توجد خدمات معروضة حالياً", "No services are currently listed")}
+          </p>
         ) : (
           <>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {(listings.data ?? []).map((s) => (
+              {items.map((s) => (
                 <ServiceCard key={s.id} {...s} />
               ))}
             </div>
-            {(listings.data ?? []).length === 0 && (
-              <p className="py-10 text-center text-muted-foreground">{tr("لا توجد نتائج مطابقة.", "No matching results.")}</p>
-            )}
+
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-2 text-sm">
+              <button
+                type="button"
+                disabled={page <= 1}
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                className="rounded-lg border border-border px-3 py-1.5 disabled:opacity-40"
+              >
+                {tr("السابق", "Previous")}
+              </button>
+              <span className="text-muted-foreground" dir="ltr">{page} / {pages}</span>
+              <button
+                type="button"
+                disabled={page >= pages}
+                onClick={() => setPage((p) => Math.min(pages, p + 1))}
+                className="rounded-lg border border-border px-3 py-1.5 disabled:opacity-40"
+              >
+                {tr("التالي", "Next")}
+              </button>
+              <span className="ms-2 text-xs text-muted-foreground">{tr("النتائج", "Results")}: {total}</span>
+            </div>
           </>
         )}
       </Section>
+
 
       <Section title={tr("معرض NFT", "NFT gallery")} subtitle={tr("مجموعات موثقة قابلة للعرض والبيع", "Verified collections available to display and sell")}>
         {nfts.isLoading ? (

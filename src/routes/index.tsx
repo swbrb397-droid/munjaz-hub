@@ -22,7 +22,8 @@ export const Route = createFileRoute("/")({
 
 function Landing() {
   const { tr } = useLang();
-  const { data: featured = [] } = useListings({ sort: "popular" });
+  const featuredQuery = useListings({ sort: "popular", pageSize: 8 });
+  const featured = featuredQuery.data?.items ?? [];
   const { data: nfts = [] } = useNfts({ sort: "price_desc" });
   return (
     <>
