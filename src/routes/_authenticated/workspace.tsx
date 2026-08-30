@@ -189,9 +189,32 @@ function Workspace() {
     setTranslate(v);
     window.localStorage.setItem(TRANSLATE_PREF_KEY, v ? "on" : "off");
   }
-  const [showOriginal, setShowOriginal] = useState<number[]>([]);
+  const [showOriginal, setShowOriginal] = useState<string[]>([]);
   const [draft, setDraft] = useState("");
-  const [messages, setMessages] = useState<Msg[]>(() => seedMessages(lang));
+
+  // Live chat backed by order_messages (realtime).
+  const messagesQuery = useOrderMessages(selected);
+  const sendMessage = useSendMessage(selected);
+  const editMessage = useEditMessage(selected);
+  const messages: Msg[] = useMemo(() => {
+    const rowsMsg = messagesQuery.data ?? [];
+    return rowsMsg.map((m): Msg => {
+      const srcLang: "ar" | "en" = m.lang === "en" ? "en" : "ar";
+      const stored = (m.translations ?? {}) as Record<string, string>;
+      const base: Msg = {
+        id: m.id,
+        from: m.sender_id === user?.id ? "me" : "them",
+        name: m.sender_id === user?.id ? tr("أنا", "Me") : tr("الطرف الآخر", "Counterparty"),
+        text: m.body,
+        time: new Date(m.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+        srcLang,
+        rev: m.version,
+      };
+      if (srcLang !== lang) base.translation = stored[lang] ?? m.body;
+      return base;
+    });
+  }, [messagesQuery.data, user?.id, lang, tr]);
+
   const [warning, setWarning] = useState(false);
   const [reason, setReason] = useState("");
   const [evidence, setEvidence] = useState<string[]>([]);
@@ -203,13 +226,12 @@ function Workspace() {
   const [disputeMsg, setDisputeMsg] = useState<string | null>(null);
   const [actionMsg, setActionMsg] = useState<string | null>(null);
   const [deliverable, setDeliverable] = useState("");
-  const [draftState, setDraftState] = useState<Record<number, "pending" | "revision" | "approved">>({});
 
   // AI translation: per-message revision drives cache invalidation + credit reconciliation.
-  const [msgRev, setMsgRev] = useState<Record<number, number>>({});
-  const [editing, setEditing] = useState<{ id: number; text: string } | null>(null);
+  const [msgRev, setMsgRev] = useState<Record<string, number>>({});
+  const [editing, setEditing] = useState<{ id: string; text: string } | null>(null);
   const txMap = useMemo(() => {
-    const map = new Map<number, { text: string; cached: boolean }>();
+    const map = new Map<string, { text: string; cached: boolean }>();
     let billed = 0;
     let cached = 0;
     if (translate) {
@@ -224,6 +246,7 @@ function Workspace() {
     }
     return { map, billed, cached };
   }, [messages, translate, lang, msgRev]);
+
 
   // Instant digital asset anti-piracy shield
   const [assetLocked, setAssetLocked] = useState(false);
