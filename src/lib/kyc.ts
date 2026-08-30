@@ -49,7 +49,7 @@ export function useSubmitKyc() {
       const { data, error } = await supabase.rpc("submit_kyc", {
         _doc_type: input.docType,
         _front_path: frontPath,
-        _back_path: backPath,
+        ...(backPath ? { _back_path: backPath } : {}),
       });
       if (error) throw error;
       return data as unknown as KycSubmission;
@@ -99,7 +99,7 @@ export function useReviewKyc() {
       const { error } = await supabase.rpc("admin_review_kyc", {
         _submission_id: input.id,
         _approve: input.approve,
-        _note: input.note ?? undefined,
+        ...(input.note ? { _note: input.note } : {}),
       });
       if (error) throw error;
     },
