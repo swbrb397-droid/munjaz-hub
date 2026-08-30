@@ -679,25 +679,58 @@ function Workspace() {
                 <p className="text-xs text-muted-foreground">{tr("حتى 2GB لكل ملف · تُفتح للمشتري بعد اعتماد المرحلة", "Up to 2GB per file · unlocked for the buyer after milestone approval")}</p>
               </div>
               {order && order.seller_id === user?.id && (
-                <div className="mt-4 flex items-center gap-2">
-                  <input
-                    value={deliverable}
-                    onChange={(e) => setDeliverable(e.target.value)}
-                    placeholder={tr("رابط أو وصف التسليم (Drive, Figma, ...)", "Deliverable link or description (Drive, Figma, ...)")}
-                    className="flex-1 rounded-lg border border-input bg-surface px-3 py-2 text-sm outline-none focus:border-primary"
-                  />
-                  <button
-                    onClick={() => {
-                      const v = deliverable.trim();
-                      if (!v) return;
-                      const current = Array.isArray(order.deliverables) ? (order.deliverables as unknown[]).map(String) : [];
-                      addDeliverable.mutate({ id: order.id, deliverables: [...current, v] }, { onSuccess: () => setDeliverable("") });
-                    }}
-                    disabled={addDeliverable.isPending}
-                    className="rounded-lg bg-primary px-4 py-2 text-sm font-bold text-primary-foreground disabled:opacity-50"
-                  >
-                    {tr("إضافة", "Add")}
-                  </button>
+                <div className="mt-4 grid gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-primary/50 bg-primary/10 px-3 py-2 text-xs font-bold text-primary">
+                      <FileUp className="size-4" />
+                      {uploadDeliverable.isPending
+                        ? tr("جارٍ الرفع إلى الخزنة…", "Uploading to the vault…")
+                        : tr("رفع ملف مسودة إلى الخزنة", "Upload a draft file to the vault")}
+                      <input
+                        type="file"
+                        className="hidden"
+                        disabled={uploadDeliverable.isPending}
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) uploadDeliverable.mutate({ file, isFinal: false });
+                          e.target.value = "";
+                        }}
+                      />
+                    </label>
+                    <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-border px-3 py-2 text-xs font-bold text-muted-foreground">
+                      <FileCheck2 className="size-4" />
+                      {tr("رفع التسليم النهائي", "Upload the final asset")}
+                      <input
+                        type="file"
+                        className="hidden"
+                        disabled={uploadDeliverable.isPending}
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) uploadDeliverable.mutate({ file, isFinal: true });
+                          e.target.value = "";
+                        }}
+                      />
+                    </label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      value={deliverable}
+                      onChange={(e) => setDeliverable(e.target.value)}
+                      placeholder={tr("رابط أو وصف التسليم (Drive, Figma, ...)", "Deliverable link or description (Drive, Figma, ...)")}
+                      className="flex-1 rounded-lg border border-input bg-surface px-3 py-2 text-sm outline-none focus:border-primary"
+                    />
+                    <button
+                      onClick={() => {
+                        const v = deliverable.trim();
+                        if (!v) return;
+                        linkDeliverable.mutate({ link: v, isFinal: false }, { onSuccess: () => setDeliverable("") });
+                      }}
+                      disabled={linkDeliverable.isPending}
+                      className="rounded-lg bg-primary px-4 py-2 text-sm font-bold text-primary-foreground disabled:opacity-50"
+                    >
+                      {tr("إضافة", "Add")}
+                    </button>
+                  </div>
                 </div>
               )}
               {rawFiles.length === 0 && (
@@ -712,16 +745,18 @@ function Workspace() {
                   <div key={group.key} className="mt-5">
                     <h4 className={`text-xs font-black ${group.tone === "primary" ? "text-primary" : "text-accent"}`}>{group.title}</h4>
                     <div className="mt-2 grid gap-2">
-                      {group.items.map(({ f, i }) => {
-                        const meta = fileMeta(f);
-                        const state = draftState[i] ?? "pending";
+                      {group.items.map((f) => {
+                        const sha = (f.checksum ?? "").slice(0, 16);
+                        const sizeMb = (f.size_bytes / 1024 / 1024).toFixed(2);
+                        const url = signedUrls[f.id];
+                        const state = f.approval_state as "pending" | "revision" | "approved";
                         return (
-                          <div key={i} className={`grid gap-2 rounded-xl border px-3 py-3 ${group.tone === "primary" ? "border-primary/40 bg-primary/5" : "border-border"}`}>
-                            <p className="text-sm font-semibold break-all">{f}</p>
+                          <div key={f.id} className={`grid gap-2 rounded-xl border px-3 py-3 ${group.tone === "primary" ? "border-primary/40 bg-primary/5" : "border-border"}`}>
+                            <p className="text-sm font-semibold break-all">{f.file_name}</p>
                             {group.key === "final" ? (
                               <SecureDownload
-                                target={f}
-                                href={/^https?:\/\//.test(f) ? f : undefined}
+                                target={f.storage_path}
+                                href={url}
                                 userId={user?.id ?? null}
                                 onDownload={() => {
                                   // Instant asset shield: checksum confirmed on download → disputes restricted.
@@ -730,8 +765,8 @@ function Workspace() {
                                   logAuditEvent({
                                     type: "ASSET_DOWNLOAD_EVENT",
                                     userId: user?.id ?? null,
-                                    target: f,
-                                    hash: meta.sha,
+                                    target: f.file_name,
+                                    hash: sha,
                                     meta: { orderId: order?.id ?? "", checksum: "SHA-256" },
                                   });
                                 }}
@@ -739,7 +774,7 @@ function Workspace() {
                             ) : (
                             <div className="flex flex-wrap items-center gap-2">
                               <a
-                                href={/^https?:\/\//.test(f) ? f : undefined}
+                                href={url}
                                 target="_blank"
                                 rel="noreferrer noopener"
                                 className="peer inline-flex items-center gap-1 rounded-lg border border-primary/50 bg-primary/10 px-3 py-1.5 text-[11px] font-bold text-primary"
@@ -754,12 +789,16 @@ function Workspace() {
 
 
                             <div className="flex flex-wrap items-center gap-1.5 text-[10px]">
-                              <span className="rounded-full border border-border px-2 py-0.5 font-mono text-muted-foreground" dir="ltr">{meta.mime}</span>
-                              <span className="rounded-full border border-border px-2 py-0.5 font-mono text-muted-foreground" dir="ltr">{meta.sizeMb} MB</span>
-                              <span className="max-w-full truncate rounded-full border border-border px-2 py-0.5 font-mono text-muted-foreground" dir="ltr">SHA-256 {meta.sha}…</span>
-                              <span className="inline-flex items-center gap-1 rounded-full border border-primary/50 bg-primary/10 px-2 py-0.5 font-bold text-primary">
-                                <Lock className="size-3" /> SHA-256 {tr("موثّق 🔒", "Verified 🔒")}
-                              </span>
+                              <span className="rounded-full border border-border px-2 py-0.5 font-mono text-muted-foreground" dir="ltr">{f.mime_type}</span>
+                              <span className="rounded-full border border-border px-2 py-0.5 font-mono text-muted-foreground" dir="ltr">{sizeMb} MB</span>
+                              {sha && (
+                                <span className="max-w-full truncate rounded-full border border-border px-2 py-0.5 font-mono text-muted-foreground" dir="ltr">SHA-256 {sha}…</span>
+                              )}
+                              {sha && (
+                                <span className="inline-flex items-center gap-1 rounded-full border border-primary/50 bg-primary/10 px-2 py-0.5 font-bold text-primary">
+                                  <Lock className="size-3" /> SHA-256 {tr("موثّق 🔒", "Verified 🔒")}
+                                </span>
+                              )}
                               <span className="inline-flex items-center gap-1 rounded-full border border-primary/50 bg-primary/10 px-2 py-0.5 font-bold text-primary">
                                 <ShieldCheck className="size-3" /> {tr("خالٍ من الفيروسات والبرمجيات الخبيثة ✅", "Malware & virus free ✅")}
                               </span>
@@ -768,14 +807,14 @@ function Workspace() {
                               <div className="flex flex-wrap gap-2">
                                 <button
                                   type="button"
-                                  onClick={() => setDraftState((s) => ({ ...s, [i]: "revision" }))}
+                                  onClick={() => setApproval.mutate({ id: f.id, state: "revision" })}
                                   className="rounded-lg border border-accent/50 bg-accent/10 px-3 py-1.5 text-[11px] font-bold text-accent"
                                 >
                                   {tr("طلب تعديل على المسودة", "Request draft revision")}
                                 </button>
                                 <button
                                   type="button"
-                                  onClick={() => setDraftState((s) => ({ ...s, [i]: "approved" }))}
+                                  onClick={() => setApproval.mutate({ id: f.id, state: "approved" })}
                                   className="inline-flex items-center gap-1 rounded-lg bg-primary px-3 py-1.5 text-[11px] font-bold text-primary-foreground"
                                 >
                                   <FileCheck2 className="size-3" /> {tr("اعتماد المسودة والمتابعة", "Approve draft & continue")}
@@ -794,6 +833,7 @@ function Workspace() {
                   </div>
                 ),
               )}
+
             </div>
           )}
 
