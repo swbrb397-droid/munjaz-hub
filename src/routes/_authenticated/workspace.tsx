@@ -270,7 +270,11 @@ function Workspace() {
   const [warrantyPct, setWarrantyPct] = useState(10);
 
 
-  const addDeliverable = useDeliverables();
+  // Deliverables vault (private digital-vault bucket + order_deliverables rows)
+  const deliverablesQuery = useOrderDeliverables(selected);
+  const uploadDeliverable = useUploadDeliverable(selected);
+  const linkDeliverable = useLinkDeliverable(selected);
+  const setApproval = useSetDeliverableApproval(selected);
   const transition = useOrderTransition();
 
   // Deadline extension request
