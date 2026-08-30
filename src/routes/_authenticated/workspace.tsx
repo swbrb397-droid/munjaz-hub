@@ -332,6 +332,22 @@ function Workspace() {
   const drafts = rawFiles.filter((f) => !f.is_final);
   const finals = rawFiles.filter((f) => f.is_final);
 
+  // Signed, short-lived URLs for private vault objects.
+  const [signedUrls, setSignedUrls] = useState<Record<string, string>>({});
+  useEffect(() => {
+    let alive = true;
+    void (async () => {
+      const entries = await Promise.all(
+        rawFiles.map(async (f) => [f.id, await vaultUrl(f.storage_path).catch(() => "")] as const),
+      );
+      if (alive) setSignedUrls(Object.fromEntries(entries));
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [rawFiles.map((f) => f.id).join(",")]);
+
+
 
   // Immutable audit timeline derived from the order record
   const timeline = useMemo(() => {
