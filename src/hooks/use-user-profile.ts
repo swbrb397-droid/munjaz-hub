@@ -6,7 +6,6 @@ import type { Tables } from "@/integrations/supabase/types";
 export type UserProfile = Tables<"profiles"> & { role?: string | null };
 
 /** Hard-coded platform owner fallback (kept only as an emergency escape hatch). */
-const OWNER_EMAIL = "ddjj68513@gmail.com";
 
 /**
  * Reactive profile + role hook.
@@ -39,7 +38,7 @@ export function useUserProfile() {
   });
 
   const roles = query.data?.roles ?? [];
-  const isAdmin = roles.includes("admin") || (user?.email ?? "").toLowerCase() === OWNER_EMAIL;
+  const isAdmin = roles.includes("admin");
 
   return {
     user,
