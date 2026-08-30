@@ -410,7 +410,7 @@ function Workspace() {
       return;
     }
     setWarning(false);
-    setMessages([...messages, { id: Date.now(), from: "me", name: tr("أنا", "Me"), text, time: tr("الآن", "Now") }]);
+    sendMessage.mutate({ body: text, lang });
     setDraft("");
   }
 
