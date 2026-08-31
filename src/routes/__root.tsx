@@ -19,6 +19,7 @@ import { Toaster } from "@/components/ui/sonner";
 
 
 import { supabase } from "@/integrations/supabase/client";
+import { cleanupLegacyStorage } from "@/lib/storage-cleanup";
 
 
 
