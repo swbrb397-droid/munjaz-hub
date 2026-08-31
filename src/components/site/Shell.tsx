@@ -212,8 +212,18 @@ export function Shell({ children }: { children: ReactNode }) {
   const wallet = useWallet();
   const { isAdmin } = useUserProfile();
 
+  // Lock page scroll behind the mobile drawer so scrolling never leaks to the page.
+  useEffect(() => {
+    if (!open) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [open]);
+
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen overflow-x-hidden">
       <header className="sticky top-0 z-50 glass">
         <div className="mx-auto flex h-16 max-w-7xl items-center gap-4 px-4">
           <Link to="/" className="flex items-center gap-2">
