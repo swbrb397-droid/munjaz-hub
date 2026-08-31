@@ -47,6 +47,26 @@ function withContext(target: string): string {
 }
 
 
+/** Maps raw Supabase auth errors to clean localized messages. */
+function authErrorMessage(raw: string, ar: boolean): string {
+  const m = raw.toLowerCase();
+  if (/invalid login credentials|invalid credentials/.test(m))
+    return ar ? "بيانات الدخول غير صحيحة" : "Invalid email or password";
+  if (/email not confirmed|confirm/.test(m))
+    return ar ? "يرجى تأكيد البريد الإلكتروني أولاً" : "Please confirm your email first";
+  if (/user already registered|already registered/.test(m))
+    return ar ? "هذا البريد مسجّل مسبقاً — سجّل الدخول بدلاً من ذلك" : "This email is already registered — sign in instead";
+  if (/password should be at least|weak password/.test(m))
+    return ar ? "كلمة المرور قصيرة جداً (6 أحرف على الأقل)" : "Password is too short (min 6 characters)";
+  if (/rate limit|too many requests|over_email_send_rate/.test(m))
+    return ar ? "عدد المحاولات كبير — حاول مجدداً بعد قليل" : "Too many attempts — please try again shortly";
+  if (/invalid email|unable to validate email/.test(m))
+    return ar ? "صيغة البريد الإلكتروني غير صحيحة" : "Invalid email address";
+  if (/network|fetch/.test(m))
+    return ar ? "تعذّر الاتصال بالخادم — تحقق من الإنترنت" : "Network error — check your connection";
+  return raw;
+}
+
 export const Route = createFileRoute("/auth")({
   validateSearch: (search: Record<string, unknown>): { redirectTo?: string } => {
     const to = safeRedirect(search["redirectTo"]);
