@@ -126,6 +126,11 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const router = useRouter();
 
+  // Purge legacy/demo client storage on mount; Supabase auth tokens are preserved.
+  useEffect(() => {
+    cleanupLegacyStorage();
+  }, []);
+
   useEffect(() => {
     const {
       data: { subscription },
