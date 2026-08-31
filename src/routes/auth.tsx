@@ -47,6 +47,26 @@ function withContext(target: string): string {
 }
 
 
+/** Maps raw Supabase auth errors to clean localized messages. */
+function authErrorMessage(raw: string, ar: boolean): string {
+  const m = raw.toLowerCase();
+  if (/invalid login credentials|invalid credentials/.test(m))
+    return ar ? "بيانات الدخول غير صحيحة" : "Invalid email or password";
+  if (/email not confirmed|confirm/.test(m))
+    return ar ? "يرجى تأكيد البريد الإلكتروني أولاً" : "Please confirm your email first";
+  if (/user already registered|already registered/.test(m))
+    return ar ? "هذا البريد مسجّل مسبقاً — سجّل الدخول بدلاً من ذلك" : "This email is already registered — sign in instead";
+  if (/password should be at least|weak password/.test(m))
+    return ar ? "كلمة المرور قصيرة جداً (6 أحرف على الأقل)" : "Password is too short (min 6 characters)";
+  if (/rate limit|too many requests|over_email_send_rate/.test(m))
+    return ar ? "عدد المحاولات كبير — حاول مجدداً بعد قليل" : "Too many attempts — please try again shortly";
+  if (/invalid email|unable to validate email/.test(m))
+    return ar ? "صيغة البريد الإلكتروني غير صحيحة" : "Invalid email address";
+  if (/network|fetch/.test(m))
+    return ar ? "تعذّر الاتصال بالخادم — تحقق من الإنترنت" : "Network error — check your connection";
+  return raw;
+}
+
 export const Route = createFileRoute("/auth")({
   validateSearch: (search: Record<string, unknown>): { redirectTo?: string } => {
     const to = safeRedirect(search["redirectTo"]);
@@ -64,7 +84,7 @@ export const Route = createFileRoute("/auth")({
 });
 
 function AuthPage() {
-  const { tr } = useLang();
+  const { tr, lang } = useLang();
   const navigate = useNavigate();
   const { isAuthenticated, loading } = useAuth();
   const { redirectTo } = Route.useSearch();
@@ -109,7 +129,7 @@ function AuthPage() {
       setCooldown(60);
       setMsg(tr("أُرسلت رسالة تحقق جديدة إلى ", "A new confirmation email was sent to ") + pendingEmail);
     } catch (e) {
-      setErr(e instanceof Error ? e.message : String(e));
+      setErr(authErrorMessage(e instanceof Error ? e.message : String(e), lang === "ar"));
     } finally {
       setBusy(false);
     }
@@ -203,14 +223,14 @@ function AuthPage() {
         }
       }
     } catch (e) {
-      setErr(e instanceof Error ? e.message : String(e));
+      setErr(authErrorMessage(e instanceof Error ? e.message : String(e), lang === "ar"));
     } finally {
       setBusy(false);
     }
   }
 
   return (
-    <div className="mx-auto max-w-md px-4 py-16">
+    <div className="mx-auto max-w-md px-4 pb-28 pt-10 sm:py-16">
       <Card className="glow">
         <h1 className="text-2xl font-black">
           {mode === "signin" ? tr("تسجيل الدخول", "Sign in") : tr("إنشاء حساب", "Create account")}
@@ -251,11 +271,11 @@ function AuthPage() {
 
           <label className="grid gap-1.5">
             <span className="text-muted-foreground">{tr("البريد الإلكتروني", "Email")}</span>
-            <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className="rounded-lg border border-input bg-surface px-3 py-2 outline-none focus:border-primary" />
+            <input type="email" required autoComplete="email" inputMode="email" dir="ltr" value={email} onChange={(e) => setEmail(e.target.value)} className="min-h-12 w-full rounded-lg border border-input bg-surface px-3 py-2 text-start outline-none focus:border-primary focus:ring-2 focus:ring-primary/40" />
           </label>
           <label className="grid gap-1.5">
             <span className="text-muted-foreground">{tr("كلمة المرور", "Password")}</span>
-            <input type="password" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} className="rounded-lg border border-input bg-surface px-3 py-2 outline-none focus:border-primary" />
+            <input type="password" required minLength={6} autoComplete={mode === "signin" ? "current-password" : "new-password"} dir="ltr" value={password} onChange={(e) => setPassword(e.target.value)} className="min-h-12 w-full rounded-lg border border-input bg-surface px-3 py-2 text-start outline-none focus:border-primary focus:ring-2 focus:ring-primary/40" />
           </label>
           {mode === "signup" && (
             <label className="grid gap-1.5">
@@ -313,7 +333,7 @@ function AuthPage() {
             </div>
           )}
 
-          <button disabled={busy} type="submit" className="mt-2 inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 font-bold text-primary-foreground glow disabled:opacity-60">
+          <button disabled={busy} type="submit" className="mt-2 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 font-bold text-primary-foreground glow disabled:opacity-60">
             {mode === "signin" ? <LogIn className="size-4" /> : <UserPlus className="size-4" />}
             {mode === "signin" ? tr("دخول", "Sign in") : tr("تسجيل", "Sign up")}
           </button>

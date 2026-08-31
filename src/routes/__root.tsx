@@ -19,6 +19,7 @@ import { Toaster } from "@/components/ui/sonner";
 
 
 import { supabase } from "@/integrations/supabase/client";
+import { cleanupLegacyStorage } from "@/lib/storage-cleanup";
 
 
 
@@ -125,6 +126,11 @@ function RootShell({ children }: { children: ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const router = useRouter();
+
+  // Purge legacy/demo client storage on mount; Supabase auth tokens are preserved.
+  useEffect(() => {
+    cleanupLegacyStorage();
+  }, []);
 
   useEffect(() => {
     const {

@@ -56,12 +56,45 @@ async function getSupportReply(question: string): Promise<{ text: string; escala
   };
 }
 
+/** True while a soft keyboard is up or a form control is focused on small screens. */
+function useKeyboardAware() {
+  const [hidden, setHidden] = useState(false);
+
+  useEffect(() => {
+    const isSmall = () => window.innerWidth < 768;
+    const check = () => {
+      if (!isSmall()) return setHidden(false);
+      const vv = window.visualViewport;
+      const keyboard = !!vv && vv.height < window.innerHeight - 120;
+      const el = document.activeElement;
+      const focused =
+        !!el && ["INPUT", "TEXTAREA", "SELECT"].includes(el.tagName) && !el.closest("[data-support-widget]");
+      setHidden(keyboard || focused);
+    };
+
+    check();
+    window.visualViewport?.addEventListener("resize", check);
+    window.addEventListener("resize", check);
+    document.addEventListener("focusin", check);
+    document.addEventListener("focusout", check);
+    return () => {
+      window.visualViewport?.removeEventListener("resize", check);
+      window.removeEventListener("resize", check);
+      document.removeEventListener("focusin", check);
+      document.removeEventListener("focusout", check);
+    };
+  }, []);
+
+  return hidden;
+}
+
 export function SupportWidget() {
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState("");
   const [typing, setTyping] = useState(false);
   const [msgs, setMsgs] = useState<Msg[]>([{ id: "w", role: "ai", text: WELCOME }]);
   const listRef = useRef<HTMLDivElement>(null);
+  const keyboardHidden = useKeyboardAware();
 
   const { isAuthenticated } = useAuth();
   const profile = useProfile();
@@ -90,21 +123,25 @@ export function SupportWidget() {
     if (reply.escalate) toast.success("تم تحويل الطلب للدعم المتقدم");
   };
 
+  const collapsed = keyboardHidden && !open;
+
   return (
-    <>
+    <div data-support-widget className="pointer-events-none">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-label="المساعد الذكي"
         aria-expanded={open}
-        className="fixed bottom-6 start-6 z-50 grid size-14 place-items-center rounded-full bg-primary text-primary-foreground shadow-2xl transition-transform hover:scale-105"
+        className={`pointer-events-auto fixed bottom-6 left-6 z-40 grid place-items-center rounded-full bg-primary text-primary-foreground shadow-2xl transition-all duration-200 hover:scale-105 ${
+          collapsed ? "size-9 opacity-40" : "size-14 opacity-100"
+        }`}
         style={{ boxShadow: "0 0 0 0 oklch(0.76 0.17 165 / 0.6)", animation: "pulse 2.4s ease-in-out infinite" }}
       >
-        {open ? <X className="size-6" /> : <Bot className="size-6" />}
+        {open ? <X className="size-5" /> : <Bot className={collapsed ? "size-4" : "size-6"} />}
       </button>
 
       <div
-        className={`fixed bottom-24 start-4 z-50 flex h-[520px] max-h-[85vh] w-[calc(100vw-2rem)] flex-col rounded-2xl border border-border bg-card/95 shadow-2xl backdrop-blur-md transition-all duration-200 sm:w-[400px] ${
+        className={`fixed bottom-24 left-4 z-40 flex h-[520px] max-h-[85vh] w-[calc(100vw-2rem)] flex-col rounded-2xl border border-border bg-card/95 shadow-2xl backdrop-blur-md transition-all duration-200 sm:w-[400px] ${
           open ? "pointer-events-auto scale-100 opacity-100" : "pointer-events-none scale-95 opacity-0"
         }`}
         role="dialog"
@@ -195,6 +232,6 @@ export function SupportWidget() {
           </button>
         </div>
       </div>
-    </>
+    </div>
   );
 }

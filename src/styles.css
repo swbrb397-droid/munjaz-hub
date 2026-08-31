@@ -86,6 +86,23 @@
       radial-gradient(50rem 34rem at 5% 0%, color-mix(in oklab, var(--primary) 14%, transparent), transparent);
     background-attachment: fixed;
   }
+
+  html,
+  body {
+    overflow-x: hidden;
+    max-width: 100%;
+  }
+
+  /* Comfortable touch targets + no iOS zoom-on-focus for mobile forms. */
+  @media (max-width: 767px) {
+    input:not([type="checkbox"]):not([type="radio"]),
+    select,
+    textarea,
+    button[type="submit"] {
+      min-height: 48px;
+      font-size: 16px;
+    }
+  }
 }
 
 @utility neon-text {

@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { ArrowLeft, BadgeCheck, Gamepad2, ShieldCheck, Sparkle, Star, Zap } from "lucide-react";
 import { Card, Section } from "@/components/site/Shell";
-import { useMock } from "@/lib/mock";
+import { NETWORK_STRIP } from "@/lib/network-strip";
 import { useListings, useNfts } from "@/lib/catalog";
 import { useLang } from "@/lib/lang";
 import { VerifiedBadge } from "@/components/site/VerifiedBadge";
@@ -135,7 +135,7 @@ function Hero() {
 }
 
 function Ticker() {
-  const { tickers } = useMock();
+  const tickers = NETWORK_STRIP;
   return (
     <div className="overflow-hidden border-b border-border bg-surface/60 py-3">
       <div className="flex gap-8 whitespace-nowrap px-4 text-sm">
