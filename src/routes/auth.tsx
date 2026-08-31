@@ -84,7 +84,7 @@ export const Route = createFileRoute("/auth")({
 });
 
 function AuthPage() {
-  const { tr } = useLang();
+  const { tr, lang } = useLang();
   const navigate = useNavigate();
   const { isAuthenticated, loading } = useAuth();
   const { redirectTo } = Route.useSearch();
@@ -129,7 +129,7 @@ function AuthPage() {
       setCooldown(60);
       setMsg(tr("أُرسلت رسالة تحقق جديدة إلى ", "A new confirmation email was sent to ") + pendingEmail);
     } catch (e) {
-      setErr(e instanceof Error ? e.message : String(e));
+      setErr(authErrorMessage(e instanceof Error ? e.message : String(e), lang === "ar"));
     } finally {
       setBusy(false);
     }
@@ -223,14 +223,14 @@ function AuthPage() {
         }
       }
     } catch (e) {
-      setErr(e instanceof Error ? e.message : String(e));
+      setErr(authErrorMessage(e instanceof Error ? e.message : String(e), lang === "ar"));
     } finally {
       setBusy(false);
     }
   }
 
   return (
-    <div className="mx-auto max-w-md px-4 py-16">
+    <div className="mx-auto max-w-md px-4 pb-28 pt-10 sm:py-16">
       <Card className="glow">
         <h1 className="text-2xl font-black">
           {mode === "signin" ? tr("تسجيل الدخول", "Sign in") : tr("إنشاء حساب", "Create account")}
@@ -271,11 +271,11 @@ function AuthPage() {
 
           <label className="grid gap-1.5">
             <span className="text-muted-foreground">{tr("البريد الإلكتروني", "Email")}</span>
-            <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className="rounded-lg border border-input bg-surface px-3 py-2 outline-none focus:border-primary" />
+            <input type="email" required autoComplete="email" inputMode="email" dir="ltr" value={email} onChange={(e) => setEmail(e.target.value)} className="min-h-12 w-full rounded-lg border border-input bg-surface px-3 py-2 text-start outline-none focus:border-primary focus:ring-2 focus:ring-primary/40" />
           </label>
           <label className="grid gap-1.5">
             <span className="text-muted-foreground">{tr("كلمة المرور", "Password")}</span>
-            <input type="password" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} className="rounded-lg border border-input bg-surface px-3 py-2 outline-none focus:border-primary" />
+            <input type="password" required minLength={6} autoComplete={mode === "signin" ? "current-password" : "new-password"} dir="ltr" value={password} onChange={(e) => setPassword(e.target.value)} className="min-h-12 w-full rounded-lg border border-input bg-surface px-3 py-2 text-start outline-none focus:border-primary focus:ring-2 focus:ring-primary/40" />
           </label>
           {mode === "signup" && (
             <label className="grid gap-1.5">
@@ -333,7 +333,7 @@ function AuthPage() {
             </div>
           )}
 
-          <button disabled={busy} type="submit" className="mt-2 inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 font-bold text-primary-foreground glow disabled:opacity-60">
+          <button disabled={busy} type="submit" className="mt-2 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 font-bold text-primary-foreground glow disabled:opacity-60">
             {mode === "signin" ? <LogIn className="size-4" /> : <UserPlus className="size-4" />}
             {mode === "signin" ? tr("دخول", "Sign in") : tr("تسجيل", "Sign up")}
           </button>
