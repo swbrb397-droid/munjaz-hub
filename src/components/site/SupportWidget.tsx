@@ -232,6 +232,6 @@ export function SupportWidget() {
           </button>
         </div>
       </div>
-    </>
+    </div>
   );
 }
