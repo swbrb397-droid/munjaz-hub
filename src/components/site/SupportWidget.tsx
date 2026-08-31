@@ -56,12 +56,45 @@ async function getSupportReply(question: string): Promise<{ text: string; escala
   };
 }
 
+/** True while a soft keyboard is up or a form control is focused on small screens. */
+function useKeyboardAware() {
+  const [hidden, setHidden] = useState(false);
+
+  useEffect(() => {
+    const isSmall = () => window.innerWidth < 768;
+    const check = () => {
+      if (!isSmall()) return setHidden(false);
+      const vv = window.visualViewport;
+      const keyboard = !!vv && vv.height < window.innerHeight - 120;
+      const el = document.activeElement;
+      const focused =
+        !!el && ["INPUT", "TEXTAREA", "SELECT"].includes(el.tagName) && !el.closest("[data-support-widget]");
+      setHidden(keyboard || focused);
+    };
+
+    check();
+    window.visualViewport?.addEventListener("resize", check);
+    window.addEventListener("resize", check);
+    document.addEventListener("focusin", check);
+    document.addEventListener("focusout", check);
+    return () => {
+      window.visualViewport?.removeEventListener("resize", check);
+      window.removeEventListener("resize", check);
+      document.removeEventListener("focusin", check);
+      document.removeEventListener("focusout", check);
+    };
+  }, []);
+
+  return hidden;
+}
+
 export function SupportWidget() {
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState("");
   const [typing, setTyping] = useState(false);
   const [msgs, setMsgs] = useState<Msg[]>([{ id: "w", role: "ai", text: WELCOME }]);
   const listRef = useRef<HTMLDivElement>(null);
+  const keyboardHidden = useKeyboardAware();
 
   const { isAuthenticated } = useAuth();
   const profile = useProfile();
