@@ -135,7 +135,7 @@ function Hero() {
 }
 
 function Ticker() {
-  const { tickers } = useMock();
+  const tickers = NETWORK_STRIP;
   return (
     <div className="overflow-hidden border-b border-border bg-surface/60 py-3">
       <div className="flex gap-8 whitespace-nowrap px-4 text-sm">
