@@ -208,6 +208,12 @@ function Workspace() {
   const [showOriginal, setShowOriginal] = useState<string[]>([]);
   const [draft, setDraft] = useState("");
 
+  // Secure Gemini-backed order assistant (key stays server-side).
+  const askAssistant = useServerFn(orderAiAssistant);
+  const [aiReplies, setAiReplies] = useState<{ id: string; text: string }[]>([]);
+  const [aiBusy, setAiBusy] = useState(false);
+
+
   // Live chat backed by order_messages (realtime).
   const messagesQuery = useOrderMessages(selected);
   const sendMessage = useSendMessage(selected);
