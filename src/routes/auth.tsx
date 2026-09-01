@@ -206,12 +206,17 @@ function AuthPage() {
         });
 
         if (error) throw error;
+        // Supabase obfuscates existing accounts: an empty identities array means the email is taken.
+        if (data.user && (data.user.identities?.length ?? 0) === 0) {
+          throw new Error("__EMAIL_TAKEN__");
+        }
         if (!data.session) {
           setPendingEmail(email);
           setCooldown(60);
           setResends(0);
           setMsg(tr("تم إنشاء الحساب — تحقق من بريدك لتأكيد التسجيل.", "Account created — check your email to confirm."));
         }
+
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) {
