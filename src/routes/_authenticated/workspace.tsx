@@ -29,6 +29,9 @@ import {
 } from "@/lib/workspace-data";
 import { supabase } from "@/integrations/supabase/client";
 import { sanitizeText } from "@/lib/security";
+import { useServerFn } from "@tanstack/react-start";
+import { orderAiAssistant } from "@/lib/order-ai.functions";
+
 
 type Tr = (ar: string, en: string) => string;
 
