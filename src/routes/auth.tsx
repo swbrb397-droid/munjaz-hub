@@ -186,6 +186,10 @@ function AuthPage() {
     setBusy(true);
     setErr(null);
     setMsg(null);
+
+    const normalizedEmail = email.trim().toLowerCase();
+    const normalizedPassword = password;
+
     try {
       if (mode === "signup") {
         if (!role) {
@@ -200,10 +204,10 @@ function AuthPage() {
           );
         }
         const { data, error } = await supabase.auth.signUp({
-          email,
-          password,
+          email: normalizedEmail,
+          password: normalizedPassword,
           options: {
-            emailRedirectTo: window.location.origin + withContext(redirectTo ?? "/dashboard"),
+            emailRedirectTo: window.location.origin + withContext(redirectTo ?? "/"),
             data: {
               display_name: displayName,
               role,
@@ -219,17 +223,20 @@ function AuthPage() {
           throw new Error("__EMAIL_TAKEN__");
         }
         if (!data.session) {
-          setPendingEmail(email);
+          setPendingEmail(normalizedEmail);
           setCooldown(60);
           setResends(0);
           setMsg(tr("تم إنشاء الحساب — تحقق من بريدك لتأكيد التسجيل.", "Account created — check your email to confirm."));
         }
 
       } else {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        const { error } = await supabase.auth.signInWithPassword({
+          email: normalizedEmail,
+          password: normalizedPassword,
+        });
         if (error) {
           if (/confirm/i.test(error.message)) {
-            setPendingEmail(email);
+            setPendingEmail(normalizedEmail);
             setCooldown(0);
           }
           throw error;
@@ -239,7 +246,7 @@ function AuthPage() {
       const raw = e instanceof Error ? e.message : String(e);
       const message = authErrorMessage(raw, lang === "ar");
       setErr(message);
-      if (raw === "__EMAIL_TAKEN__" || /already registered/i.test(raw)) {
+      if (mode === "signup" && (raw === "__EMAIL_TAKEN__" || /already registered/i.test(raw))) {
         toast.error(lang === "ar" ? EMAIL_TAKEN_AR : message);
         setMode("signin");
         setPendingEmail(null);
