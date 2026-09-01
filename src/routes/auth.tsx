@@ -94,6 +94,7 @@ function AuthPage() {
   const { tr, lang } = useLang();
   const navigate = useNavigate();
   const { isAuthenticated, loading } = useAuth();
+  const { isAdmin, loading: profileLoading } = useUserProfile();
   const { redirectTo } = Route.useSearch();
 
   // Persist the deep link (path + query) so it survives the signup/confirmation round-trip.
@@ -143,7 +144,7 @@ function AuthPage() {
   }
 
   useEffect(() => {
-    if (loading || !isAuthenticated) return;
+    if (loading || profileLoading || !isAuthenticated) return;
     const stored = safeRedirect(window.sessionStorage.getItem(REDIRECT_KEY));
     const target = redirectTo ?? stored;
     if (target) {
@@ -153,8 +154,8 @@ function AuthPage() {
       navigate({ href: full, replace: true });
       return;
     }
-    navigate({ to: "/dashboard", replace: true });
-  }, [loading, isAuthenticated, navigate, redirectTo]);
+    navigate({ to: isAdmin ? "/admin" : "/", replace: true });
+  }, [loading, profileLoading, isAuthenticated, isAdmin, navigate, redirectTo]);
 
   // Persist deep-link context (listingId, lang, ref) across failed logins, signup and session timeouts.
   useEffect(() => {
