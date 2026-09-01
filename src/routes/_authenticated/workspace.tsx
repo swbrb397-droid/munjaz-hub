@@ -673,7 +673,21 @@ function Workspace() {
                     </div>
                   );
                 })}
+                {aiReplies.map((r) => (
+                  <div key={r.id} className="flex justify-start">
+                    <div className="max-w-[85%] rounded-2xl border border-accent/40 bg-accent/10 px-4 py-3 text-sm sm:max-w-[75%]">
+                      <p className="mb-1 flex items-center gap-1 text-xs font-bold text-accent">
+                        <Sparkles className="size-3" /> {tr("مساعد مُنجَز الذكي", "Munjaz AI assistant")}
+                      </p>
+                      <p className="break-words whitespace-pre-wrap">{r.text}</p>
+                    </div>
+                  </div>
+                ))}
+                {aiBusy && (
+                  <p className="text-xs text-muted-foreground">{tr("المساعد الذكي يكتب…", "AI assistant is typing…")}</p>
+                )}
               </div>
+
 
               {translate && (
                 <p className="mb-2 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg border border-border bg-surface/60 px-3 py-2 text-[10px] text-muted-foreground">
