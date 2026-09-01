@@ -49,15 +49,19 @@ function withContext(target: string): string {
 }
 
 
+export const EMAIL_TAKEN_AR = "هذا البريد مسجل مسبقاً، يرجى تسجيل الدخول أو استعادة كلمة المرور";
+const EMAIL_TAKEN_EN = "This email is already registered — sign in or reset your password";
+
 /** Maps raw Supabase auth errors to clean localized messages. */
 function authErrorMessage(raw: string, ar: boolean): string {
   const m = raw.toLowerCase();
+  if (raw === "__EMAIL_TAKEN__" || /user already registered|already registered/.test(m))
+    return ar ? EMAIL_TAKEN_AR : EMAIL_TAKEN_EN;
   if (/invalid login credentials|invalid credentials/.test(m))
     return ar ? "بيانات الدخول غير صحيحة" : "Invalid email or password";
   if (/email not confirmed|confirm/.test(m))
     return ar ? "يرجى تأكيد البريد الإلكتروني أولاً" : "Please confirm your email first";
-  if (/user already registered|already registered/.test(m))
-    return ar ? "هذا البريد مسجّل مسبقاً — سجّل الدخول بدلاً من ذلك" : "This email is already registered — sign in instead";
+
   if (/password should be at least|weak password/.test(m))
     return ar ? "كلمة المرور قصيرة جداً (6 أحرف على الأقل)" : "Password is too short (min 6 characters)";
   if (/rate limit|too many requests|over_email_send_rate/.test(m))
