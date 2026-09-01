@@ -1,6 +1,8 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { LogIn, RefreshCw, UserPlus } from "lucide-react";
+
 import { Card } from "@/components/site/Shell";
 import { useLang } from "@/lib/lang";
 import { useAuth } from "@/hooks/use-auth";
@@ -47,15 +49,19 @@ function withContext(target: string): string {
 }
 
 
+export const EMAIL_TAKEN_AR = "هذا البريد مسجل مسبقاً، يرجى تسجيل الدخول أو استعادة كلمة المرور";
+const EMAIL_TAKEN_EN = "This email is already registered — sign in or reset your password";
+
 /** Maps raw Supabase auth errors to clean localized messages. */
 function authErrorMessage(raw: string, ar: boolean): string {
   const m = raw.toLowerCase();
+  if (raw === "__EMAIL_TAKEN__" || /user already registered|already registered/.test(m))
+    return ar ? EMAIL_TAKEN_AR : EMAIL_TAKEN_EN;
   if (/invalid login credentials|invalid credentials/.test(m))
     return ar ? "بيانات الدخول غير صحيحة" : "Invalid email or password";
   if (/email not confirmed|confirm/.test(m))
     return ar ? "يرجى تأكيد البريد الإلكتروني أولاً" : "Please confirm your email first";
-  if (/user already registered|already registered/.test(m))
-    return ar ? "هذا البريد مسجّل مسبقاً — سجّل الدخول بدلاً من ذلك" : "This email is already registered — sign in instead";
+
   if (/password should be at least|weak password/.test(m))
     return ar ? "كلمة المرور قصيرة جداً (6 أحرف على الأقل)" : "Password is too short (min 6 characters)";
   if (/rate limit|too many requests|over_email_send_rate/.test(m))
@@ -206,12 +212,17 @@ function AuthPage() {
         });
 
         if (error) throw error;
+        // Supabase obfuscates existing accounts: an empty identities array means the email is taken.
+        if (data.user && (data.user.identities?.length ?? 0) === 0) {
+          throw new Error("__EMAIL_TAKEN__");
+        }
         if (!data.session) {
           setPendingEmail(email);
           setCooldown(60);
           setResends(0);
           setMsg(tr("تم إنشاء الحساب — تحقق من بريدك لتأكيد التسجيل.", "Account created — check your email to confirm."));
         }
+
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) {
@@ -223,10 +234,18 @@ function AuthPage() {
         }
       }
     } catch (e) {
-      setErr(authErrorMessage(e instanceof Error ? e.message : String(e), lang === "ar"));
+      const raw = e instanceof Error ? e.message : String(e);
+      const message = authErrorMessage(raw, lang === "ar");
+      setErr(message);
+      if (raw === "__EMAIL_TAKEN__" || /already registered/i.test(raw)) {
+        toast.error(lang === "ar" ? EMAIL_TAKEN_AR : message);
+        setMode("signin");
+        setPendingEmail(null);
+      }
     } finally {
       setBusy(false);
     }
+
   }
 
   return (

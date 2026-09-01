@@ -29,6 +29,9 @@ import {
 } from "@/lib/workspace-data";
 import { supabase } from "@/integrations/supabase/client";
 import { sanitizeText } from "@/lib/security";
+import { useServerFn } from "@tanstack/react-start";
+import { orderAiAssistant } from "@/lib/order-ai.functions";
+
 
 type Tr = (ar: string, en: string) => string;
 
@@ -204,6 +207,12 @@ function Workspace() {
   }
   const [showOriginal, setShowOriginal] = useState<string[]>([]);
   const [draft, setDraft] = useState("");
+
+  // Secure Gemini-backed order assistant (key stays server-side).
+  const askAssistant = useServerFn(orderAiAssistant);
+  const [aiReplies, setAiReplies] = useState<{ id: string; text: string }[]>([]);
+  const [aiBusy, setAiBusy] = useState(false);
+
 
   // Live chat backed by order_messages (realtime).
   const messagesQuery = useOrderMessages(selected);
@@ -428,7 +437,24 @@ function Workspace() {
     setWarning(false);
     sendMessage.mutate({ body: text, lang });
     setDraft("");
+
+    // Buyer questions get an automated Arabic assistant reply.
+    if (order && user && order.buyer_id === user.id) {
+      setAiBusy(true);
+      void askAssistant({ data: { orderId: order.id, message: text } })
+        .then((r) => {
+          setAiReplies((prev) => [...prev, { id: `${Date.now()}`, text: r.reply }]);
+        })
+        .catch(() => {
+          setAiReplies((prev) => [
+            ...prev,
+            { id: `${Date.now()}`, text: tr("تعذّر الوصول للمساعد الذكي حالياً.", "The AI assistant is unavailable right now.") },
+          ]);
+        })
+        .finally(() => setAiBusy(false));
+    }
   }
+
 
   const openDispute = useMutation({
     mutationFn: async () => {
@@ -647,7 +673,21 @@ function Workspace() {
                     </div>
                   );
                 })}
+                {aiReplies.map((r) => (
+                  <div key={r.id} className="flex justify-start">
+                    <div className="max-w-[85%] rounded-2xl border border-accent/40 bg-accent/10 px-4 py-3 text-sm sm:max-w-[75%]">
+                      <p className="mb-1 flex items-center gap-1 text-xs font-bold text-accent">
+                        <Sparkles className="size-3" /> {tr("مساعد مُنجَز الذكي", "Munjaz AI assistant")}
+                      </p>
+                      <p className="break-words whitespace-pre-wrap">{r.text}</p>
+                    </div>
+                  </div>
+                ))}
+                {aiBusy && (
+                  <p className="text-xs text-muted-foreground">{tr("المساعد الذكي يكتب…", "AI assistant is typing…")}</p>
+                )}
               </div>
+
 
               {translate && (
                 <p className="mb-2 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg border border-border bg-surface/60 px-3 py-2 text-[10px] text-muted-foreground">
