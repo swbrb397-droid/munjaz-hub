@@ -234,10 +234,18 @@ function AuthPage() {
         }
       }
     } catch (e) {
-      setErr(authErrorMessage(e instanceof Error ? e.message : String(e), lang === "ar"));
+      const raw = e instanceof Error ? e.message : String(e);
+      const message = authErrorMessage(raw, lang === "ar");
+      setErr(message);
+      if (raw === "__EMAIL_TAKEN__" || /already registered/i.test(raw)) {
+        toast.error(lang === "ar" ? EMAIL_TAKEN_AR : message);
+        setMode("signin");
+        setPendingEmail(null);
+      }
     } finally {
       setBusy(false);
     }
+
   }
 
   return (
