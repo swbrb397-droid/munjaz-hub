@@ -6,6 +6,7 @@ import { LogIn, RefreshCw, UserPlus } from "lucide-react";
 import { Card } from "@/components/site/Shell";
 import { useLang } from "@/lib/lang";
 import { useAuth } from "@/hooks/use-auth";
+import { useUserProfile } from "@/hooks/use-user-profile";
 import { supabase } from "@/integrations/supabase/client";
 
 type SignupRole = "buyer" | "seller" | "hybrid" | "corporate";
@@ -58,7 +59,7 @@ function authErrorMessage(raw: string, ar: boolean): string {
   if (raw === "__EMAIL_TAKEN__" || /user already registered|already registered/.test(m))
     return ar ? EMAIL_TAKEN_AR : EMAIL_TAKEN_EN;
   if (/invalid login credentials|invalid credentials/.test(m))
-    return ar ? "بيانات الدخول غير صحيحة" : "Invalid email or password";
+    return ar ? "البريد الإلكتروني أو كلمة المرور غير صحيحة" : "Invalid email or password";
   if (/email not confirmed|confirm/.test(m))
     return ar ? "يرجى تأكيد البريد الإلكتروني أولاً" : "Please confirm your email first";
 
@@ -93,6 +94,7 @@ function AuthPage() {
   const { tr, lang } = useLang();
   const navigate = useNavigate();
   const { isAuthenticated, loading } = useAuth();
+  const { isAdmin, loading: profileLoading } = useUserProfile();
   const { redirectTo } = Route.useSearch();
 
   // Persist the deep link (path + query) so it survives the signup/confirmation round-trip.
@@ -142,7 +144,7 @@ function AuthPage() {
   }
 
   useEffect(() => {
-    if (loading || !isAuthenticated) return;
+    if (loading || profileLoading || !isAuthenticated) return;
     const stored = safeRedirect(window.sessionStorage.getItem(REDIRECT_KEY));
     const target = redirectTo ?? stored;
     if (target) {
@@ -152,8 +154,8 @@ function AuthPage() {
       navigate({ href: full, replace: true });
       return;
     }
-    navigate({ to: "/dashboard", replace: true });
-  }, [loading, isAuthenticated, navigate, redirectTo]);
+    navigate({ to: isAdmin ? "/admin" : "/", replace: true });
+  }, [loading, profileLoading, isAuthenticated, isAdmin, navigate, redirectTo]);
 
   // Persist deep-link context (listingId, lang, ref) across failed logins, signup and session timeouts.
   useEffect(() => {
@@ -184,6 +186,10 @@ function AuthPage() {
     setBusy(true);
     setErr(null);
     setMsg(null);
+
+    const normalizedEmail = email.trim().toLowerCase();
+    const normalizedPassword = password;
+
     try {
       if (mode === "signup") {
         if (!role) {
@@ -198,10 +204,10 @@ function AuthPage() {
           );
         }
         const { data, error } = await supabase.auth.signUp({
-          email,
-          password,
+          email: normalizedEmail,
+          password: normalizedPassword,
           options: {
-            emailRedirectTo: window.location.origin + withContext(redirectTo ?? "/dashboard"),
+            emailRedirectTo: window.location.origin + withContext(redirectTo ?? "/"),
             data: {
               display_name: displayName,
               role,
@@ -217,17 +223,20 @@ function AuthPage() {
           throw new Error("__EMAIL_TAKEN__");
         }
         if (!data.session) {
-          setPendingEmail(email);
+          setPendingEmail(normalizedEmail);
           setCooldown(60);
           setResends(0);
           setMsg(tr("تم إنشاء الحساب — تحقق من بريدك لتأكيد التسجيل.", "Account created — check your email to confirm."));
         }
 
       } else {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        const { error } = await supabase.auth.signInWithPassword({
+          email: normalizedEmail,
+          password: normalizedPassword,
+        });
         if (error) {
           if (/confirm/i.test(error.message)) {
-            setPendingEmail(email);
+            setPendingEmail(normalizedEmail);
             setCooldown(0);
           }
           throw error;
@@ -237,7 +246,7 @@ function AuthPage() {
       const raw = e instanceof Error ? e.message : String(e);
       const message = authErrorMessage(raw, lang === "ar");
       setErr(message);
-      if (raw === "__EMAIL_TAKEN__" || /already registered/i.test(raw)) {
+      if (mode === "signup" && (raw === "__EMAIL_TAKEN__" || /already registered/i.test(raw))) {
         toast.error(lang === "ar" ? EMAIL_TAKEN_AR : message);
         setMode("signin");
         setPendingEmail(null);
