@@ -437,7 +437,24 @@ function Workspace() {
     setWarning(false);
     sendMessage.mutate({ body: text, lang });
     setDraft("");
+
+    // Buyer questions get an automated Arabic assistant reply.
+    if (order && user && order.buyer_id === user.id) {
+      setAiBusy(true);
+      void askAssistant({ data: { orderId: order.id, message: text } })
+        .then((r) => {
+          setAiReplies((prev) => [...prev, { id: `${Date.now()}`, text: r.reply }]);
+        })
+        .catch(() => {
+          setAiReplies((prev) => [
+            ...prev,
+            { id: `${Date.now()}`, text: tr("تعذّر الوصول للمساعد الذكي حالياً.", "The AI assistant is unavailable right now.") },
+          ]);
+        })
+        .finally(() => setAiBusy(false));
+    }
   }
+
 
   const openDispute = useMutation({
     mutationFn: async () => {
