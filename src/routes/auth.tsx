@@ -246,6 +246,9 @@ function AuthPage() {
       const raw = e instanceof Error ? e.message : String(e);
       const message = authErrorMessage(raw, lang === "ar");
       setErr(message);
+      if (mode === "signin") {
+        toast.error(message);
+      }
       if (mode === "signup" && (raw === "__EMAIL_TAKEN__" || /already registered/i.test(raw))) {
         toast.error(lang === "ar" ? EMAIL_TAKEN_AR : message);
         setMode("signin");
