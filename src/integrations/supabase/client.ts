@@ -28,11 +28,15 @@ function createSupabaseFetch(supabaseKey: string): typeof fetch {
 }
 
 
+// Primary project credentials (user-configured): take precedence over env injection.
+const PRIMARY_SUPABASE_URL = 'https://oeizpqnwhvptvkbfjswg.supabase.co';
+const PRIMARY_SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9laXpwcW53aHZwdHZrYmZqc3dnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc5NDc4NDksImV4cCI6MjEwMzUyMzg0OX0.kL_vqZrduw4sl0yrxRFCRZzRBnlW1aboTz3dh6agrJo';
+
 function createSupabaseClient() {
   // Use import.meta.env for client-side (Vite build-time replacement)
   // Fall back to process.env for SSR (server-side rendering)
-  const SUPABASE_URL = import.meta.env['VITE_SUPABASE_URL'] || process.env['SUPABASE_URL'];
-  const SUPABASE_PUBLISHABLE_KEY = import.meta.env['VITE_SUPABASE_PUBLISHABLE_KEY'] || process.env['SUPABASE_PUBLISHABLE_KEY'];
+  const SUPABASE_URL = PRIMARY_SUPABASE_URL || import.meta.env['VITE_SUPABASE_URL'] || process.env['SUPABASE_URL'];
+  const SUPABASE_PUBLISHABLE_KEY = PRIMARY_SUPABASE_ANON_KEY || import.meta.env['VITE_SUPABASE_PUBLISHABLE_KEY'] || process.env['SUPABASE_PUBLISHABLE_KEY'];
 
   if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
     const missing = [
