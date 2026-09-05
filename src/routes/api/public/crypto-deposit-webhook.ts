@@ -94,14 +94,16 @@ export const Route = createFileRoute("/api/public/crypto-deposit-webhook")({
 
         const isUuid = (v: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v);
 
-        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-        const { data, error } = await supabaseAdmin.rpc("process_auto_deposit", {
-          _invoice_id: orderId && isUuid(orderId) ? orderId : undefined,
+        const args: { _invoice_id?: string; _provider?: string; _external_id?: string; _amount?: number; _tx_hash?: string } = {
           _provider: provider,
-          _external_id: externalId ?? undefined,
-          _amount: Number.isFinite(amount) && amount > 0 ? amount : undefined,
-          _tx_hash: txHash ?? undefined,
-        });
+        };
+        if (orderId && isUuid(orderId)) args._invoice_id = orderId;
+        if (externalId) args._external_id = externalId;
+        if (Number.isFinite(amount) && amount > 0) args._amount = amount;
+        if (txHash) args._tx_hash = txHash;
+
+        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+        const { data, error } = await supabaseAdmin.rpc("process_auto_deposit", args);
 
         if (error) {
           console.error("[crypto-deposit-webhook]", error.message);
