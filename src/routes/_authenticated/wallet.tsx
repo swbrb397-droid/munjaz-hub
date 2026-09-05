@@ -109,9 +109,14 @@ function WalletPage() {
       title={tr("المحفظة الداخلية", "Internal wallet")}
       subtitle={tr("جميع الأرصدة بعملة USDT — تحويلات داخلية بدون رسوم غاز", "All balances in USDT — internal transfers with no gas fees")}
       action={
-        <button onClick={() => setDeposit(true)} className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 font-bold text-primary-foreground glow">
-          <ArrowDownToLine className="size-4" /> {tr("إيداع", "Deposit")}
-        </button>
+        <div className="flex flex-wrap gap-2">
+          <button onClick={() => setTopUp(true)} className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 font-bold text-primary-foreground glow">
+            <Sparkles className="size-4" /> {tr("شحن الرصيد (USDT)", "Top up balance (USDT)")}
+          </button>
+          <button onClick={() => setDeposit(true)} className="inline-flex items-center gap-2 rounded-xl border border-border px-4 py-2 font-bold">
+            <ArrowDownToLine className="size-4" /> {tr("إيداع", "Deposit")}
+          </button>
+        </div>
       }
     >
       <div className="grid gap-4 lg:grid-cols-3">
