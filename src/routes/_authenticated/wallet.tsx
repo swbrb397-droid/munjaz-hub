@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { gasEstimates } from "@/lib/gas";
 
-import { ArrowDownToLine, ArrowUpFromLine, BadgeCheck, Copy, FileText, Lock, ShieldAlert, Timer, X } from "lucide-react";
+import { ArrowDownToLine, ArrowUpFromLine, BadgeCheck, Copy, FileText, Lock, ShieldAlert, Sparkles, Timer, X } from "lucide-react";
 import { Card, Section } from "@/components/site/Shell";
 import { QrCode } from "@/components/site/QrCode";
 import { ReceiptModal, type ReceiptData } from "@/components/site/ReceiptModal";
@@ -22,6 +22,7 @@ import { formatUsdt, parseUsdt } from "@/lib/security";
 import { useConfirmDeposit, useCreateDeposit, useWalletRealtime } from "@/lib/deposits";
 import { toast } from "sonner";
 import { PayoutSecurityCard } from "@/components/site/PayoutSecurityCard";
+import { TopUpDialog } from "@/components/site/TopUpDialog";
 
 export const Route = createFileRoute("/_authenticated/wallet")({
   head: () => ({
@@ -58,6 +59,7 @@ function WalletPage() {
   const [pendingDeposit, setPendingDeposit] = useState<{ id: string; amount: number } | null>(null);
 
   const [deposit, setDeposit] = useState(false);
+  const [topUp, setTopUp] = useState(false);
   const [depositTab, setDepositTab] = useState<"crypto" | "fiat">("crypto");
   const [network, setNetwork] = useState<WithdrawalNetwork>("polygon");
   const gasRows = useMemo(() => gasEstimates(), []);
@@ -350,6 +352,8 @@ function WalletPage() {
           )}
         </div>
       </Card>
+
+      {topUp && <TopUpDialog onClose={() => setTopUp(false)} />}
 
       {receipt && <ReceiptModal receipt={receipt} onClose={() => setReceipt(null)} />}
 
