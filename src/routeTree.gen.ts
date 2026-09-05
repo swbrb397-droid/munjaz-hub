@@ -33,6 +33,7 @@ import { Route as AuthenticatedAdminAuditRouteImport } from './routes/_authentic
 import { Route as AuthenticatedAdminDisputesRouteImport } from './routes/_authenticated/admin.disputes'
 import { Route as AuthenticatedAdminGovernanceRouteImport } from './routes/_authenticated/admin.governance'
 import { Route as AuthenticatedAdminKycRouteImport } from './routes/_authenticated/admin.kyc'
+import { Route as ApiPublicCryptoDepositWebhookRouteImport } from './routes/api/public/crypto-deposit-webhook'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -156,6 +157,12 @@ const AuthenticatedAdminKycRoute = AuthenticatedAdminKycRouteImport.update({
   path: '/kyc',
   getParentRoute: () => AuthenticatedAdminRoute,
 } as any)
+const ApiPublicCryptoDepositWebhookRoute =
+  ApiPublicCryptoDepositWebhookRouteImport.update({
+    id: '/api/public/crypto-deposit-webhook',
+    path: '/api/public/crypto-deposit-webhook',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -180,6 +187,7 @@ export interface FileRoutesByFullPath {
   '/admin/disputes': typeof AuthenticatedAdminDisputesRoute
   '/admin/governance': typeof AuthenticatedAdminGovernanceRoute
   '/admin/kyc': typeof AuthenticatedAdminKycRoute
+  '/api/public/crypto-deposit-webhook': typeof ApiPublicCryptoDepositWebhookRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
 }
 export interface FileRoutesByTo {
@@ -204,6 +212,7 @@ export interface FileRoutesByTo {
   '/admin/disputes': typeof AuthenticatedAdminDisputesRoute
   '/admin/governance': typeof AuthenticatedAdminGovernanceRoute
   '/admin/kyc': typeof AuthenticatedAdminKycRoute
+  '/api/public/crypto-deposit-webhook': typeof ApiPublicCryptoDepositWebhookRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
 }
 export interface FileRoutesById {
@@ -231,6 +240,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/disputes': typeof AuthenticatedAdminDisputesRoute
   '/_authenticated/admin/governance': typeof AuthenticatedAdminGovernanceRoute
   '/_authenticated/admin/kyc': typeof AuthenticatedAdminKycRoute
+  '/api/public/crypto-deposit-webhook': typeof ApiPublicCryptoDepositWebhookRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
 }
 export interface FileRouteTypes {
@@ -258,6 +268,7 @@ export interface FileRouteTypes {
     | '/admin/disputes'
     | '/admin/governance'
     | '/admin/kyc'
+    | '/api/public/crypto-deposit-webhook'
     | '/admin/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -282,6 +293,7 @@ export interface FileRouteTypes {
     | '/admin/disputes'
     | '/admin/governance'
     | '/admin/kyc'
+    | '/api/public/crypto-deposit-webhook'
     | '/admin'
   id:
     | '__root__'
@@ -308,6 +320,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/disputes'
     | '/_authenticated/admin/governance'
     | '/_authenticated/admin/kyc'
+    | '/api/public/crypto-deposit-webhook'
     | '/_authenticated/admin/'
   fileRoutesById: FileRoutesById
 }
@@ -323,6 +336,7 @@ export interface RootRouteChildren {
   VerifyRoute: typeof VerifyRoute
   ListingIdRoute: typeof ListingIdRoute
   UserUsernameRoute: typeof UserUsernameRoute
+  ApiPublicCryptoDepositWebhookRoute: typeof ApiPublicCryptoDepositWebhookRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -495,6 +509,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminKycRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/api/public/crypto-deposit-webhook': {
+      id: '/api/public/crypto-deposit-webhook'
+      path: '/api/public/crypto-deposit-webhook'
+      fullPath: '/api/public/crypto-deposit-webhook'
+      preLoaderRoute: typeof ApiPublicCryptoDepositWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -554,6 +575,7 @@ const rootRouteChildren: RootRouteChildren = {
   VerifyRoute: VerifyRoute,
   ListingIdRoute: ListingIdRoute,
   UserUsernameRoute: UserUsernameRoute,
+  ApiPublicCryptoDepositWebhookRoute: ApiPublicCryptoDepositWebhookRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { gasEstimates } from "@/lib/gas";
 
-import { ArrowDownToLine, ArrowUpFromLine, BadgeCheck, Copy, FileText, Lock, ShieldAlert, Timer, X } from "lucide-react";
+import { ArrowDownToLine, ArrowUpFromLine, BadgeCheck, Copy, FileText, Lock, ShieldAlert, Sparkles, Timer, X } from "lucide-react";
 import { Card, Section } from "@/components/site/Shell";
 import { QrCode } from "@/components/site/QrCode";
 import { ReceiptModal, type ReceiptData } from "@/components/site/ReceiptModal";
@@ -22,6 +22,7 @@ import { formatUsdt, parseUsdt } from "@/lib/security";
 import { useConfirmDeposit, useCreateDeposit, useWalletRealtime } from "@/lib/deposits";
 import { toast } from "sonner";
 import { PayoutSecurityCard } from "@/components/site/PayoutSecurityCard";
+import { TopUpDialog } from "@/components/site/TopUpDialog";
 
 export const Route = createFileRoute("/_authenticated/wallet")({
   head: () => ({
@@ -58,6 +59,7 @@ function WalletPage() {
   const [pendingDeposit, setPendingDeposit] = useState<{ id: string; amount: number } | null>(null);
 
   const [deposit, setDeposit] = useState(false);
+  const [topUp, setTopUp] = useState(false);
   const [depositTab, setDepositTab] = useState<"crypto" | "fiat">("crypto");
   const [network, setNetwork] = useState<WithdrawalNetwork>("polygon");
   const gasRows = useMemo(() => gasEstimates(), []);
@@ -109,9 +111,14 @@ function WalletPage() {
       title={tr("المحفظة الداخلية", "Internal wallet")}
       subtitle={tr("جميع الأرصدة بعملة USDT — تحويلات داخلية بدون رسوم غاز", "All balances in USDT — internal transfers with no gas fees")}
       action={
-        <button onClick={() => setDeposit(true)} className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 font-bold text-primary-foreground glow">
-          <ArrowDownToLine className="size-4" /> {tr("إيداع", "Deposit")}
-        </button>
+        <div className="flex flex-wrap gap-2">
+          <button onClick={() => setTopUp(true)} className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 font-bold text-primary-foreground glow">
+            <Sparkles className="size-4" /> {tr("شحن الرصيد (USDT)", "Top up balance (USDT)")}
+          </button>
+          <button onClick={() => setDeposit(true)} className="inline-flex items-center gap-2 rounded-xl border border-border px-4 py-2 font-bold">
+            <ArrowDownToLine className="size-4" /> {tr("إيداع", "Deposit")}
+          </button>
+        </div>
       }
     >
       <div className="grid gap-4 lg:grid-cols-3">
@@ -345,6 +352,8 @@ function WalletPage() {
           )}
         </div>
       </Card>
+
+      {topUp && <TopUpDialog onClose={() => setTopUp(false)} />}
 
       {receipt && <ReceiptModal receipt={receipt} onClose={() => setReceipt(null)} />}
 

@@ -14,6 +14,60 @@ export type Database = {
   }
   public: {
     Tables: {
+      crypto_invoices: {
+        Row: {
+          amount_usdt: number
+          created_at: string
+          credited_at: string | null
+          expires_at: string
+          external_id: string | null
+          id: string
+          network: Database["public"]["Enums"]["usdt_network"]
+          pay_address: string | null
+          pay_url: string | null
+          provider: string
+          status: string
+          transaction_id: string | null
+          tx_hash: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount_usdt: number
+          created_at?: string
+          credited_at?: string | null
+          expires_at?: string
+          external_id?: string | null
+          id?: string
+          network: Database["public"]["Enums"]["usdt_network"]
+          pay_address?: string | null
+          pay_url?: string | null
+          provider?: string
+          status?: string
+          transaction_id?: string | null
+          tx_hash?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount_usdt?: number
+          created_at?: string
+          credited_at?: string | null
+          expires_at?: string
+          external_id?: string | null
+          id?: string
+          network?: Database["public"]["Enums"]["usdt_network"]
+          pay_address?: string | null
+          pay_url?: string | null
+          provider?: string
+          status?: string
+          transaction_id?: string | null
+          tx_hash?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       custom_subscription_passes: {
         Row: {
           code: string
@@ -1080,6 +1134,38 @@ export type Database = {
           _meta?: Json
         }
         Returns: string
+      }
+      process_auto_deposit: {
+        Args: {
+          _amount?: number
+          _external_id?: string
+          _invoice_id?: string
+          _provider?: string
+          _tx_hash?: string
+        }
+        Returns: {
+          amount_usdt: number
+          created_at: string
+          credited_at: string | null
+          expires_at: string
+          external_id: string | null
+          id: string
+          network: Database["public"]["Enums"]["usdt_network"]
+          pay_address: string | null
+          pay_url: string | null
+          provider: string
+          status: string
+          transaction_id: string | null
+          tx_hash: string | null
+          updated_at: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "crypto_invoices"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       process_withdrawal_queue: { Args: never; Returns: number }
       redeem_subscription_pass: {
