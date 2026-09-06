@@ -30,27 +30,27 @@ function Landing() {
       <Hero />
       <Ticker />
       <Section title={tr("خدمات مميزة", "Featured services")} subtitle={tr("بضمان الوساطة ومراحل تسليم موثقة", "With escrow protection and verified delivery milestones")} action={<Link to="/store" className="text-sm text-primary">{tr("تصفح الكل ←", "Browse all ←")}</Link>}>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {featured.slice(0, 4).map((s) => (
-            <ServiceCard key={s.id} {...s} />
-          ))}
-        </div>
+        {featured.length > 0 ? (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {featured.slice(0, 4).map((s) => <ServiceCard key={s.id} {...s} />)}
+          </div>
+        ) : <EmptyState text={tr("لا توجد خدمات مميزة حالياً", "No featured services yet")} />}
       </Section>
 
       <Section title={tr("منتجات رقمية ودورات", "Digital products & courses")} subtitle={tr("تسليم فوري وتشغيل داخل المنصة", "Instant delivery and in-platform access")}>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {featured.filter((s) => s.category === "course" || s.category === "product").map((s) => (
-            <ServiceCard key={s.id} {...s} />
-          ))}
-        </div>
+        {featured.some((s) => s.category === "course" || s.category === "product") ? (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {featured.filter((s) => s.category === "course" || s.category === "product").map((s) => <ServiceCard key={s.id} {...s} />)}
+          </div>
+        ) : <EmptyState text={tr("لا توجد منتجات أو دورات حالياً", "No products or courses yet")} />}
       </Section>
 
       <Section title={tr("معرض NFT", "NFT gallery")} subtitle={tr("أصول رقمية موثقة على Polygon", "Verified digital assets on Polygon")} action={<Link to="/store" className="text-sm text-primary">{tr("المعرض الكامل ←", "Full gallery ←")}</Link>}>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {nfts.slice(0, 3).map((n) => (
-            <NftCard key={n.id} {...n} />
-          ))}
-        </div>
+        {nfts.length > 0 ? (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {nfts.slice(0, 3).map((n) => <NftCard key={n.id} {...n} />)}
+          </div>
+        ) : <EmptyState text={tr("لا توجد أصول NFT معروضة حالياً", "No NFT assets listed yet")} />}
       </Section>
 
 
@@ -64,12 +64,12 @@ function Hero() {
   return (
     <div className="relative overflow-hidden border-b border-border">
       <div className="pointer-events-none absolute inset-0 grid-lines opacity-40" />
-      <div className="relative mx-auto grid max-w-7xl items-center gap-10 px-4 py-20 lg:grid-cols-[1.1fr_.9fr]">
+      <div className="relative mx-auto grid max-w-7xl items-center gap-8 px-4 py-12 sm:py-16 lg:grid-cols-[1.1fr_.9fr] lg:gap-10 lg:py-20">
         <div>
-          <span className="inline-flex items-center gap-2 rounded-full border border-primary/40 bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
+          <span className="inline-flex max-w-full items-center gap-2 rounded-full border border-primary/40 bg-primary/10 px-3 py-1 text-[11px] font-semibold text-primary sm:text-xs">
             <Sparkle className="size-3.5" /> {tr("ضمان ذكي + تسوية نزاعات بالذكاء الاصطناعي", "Smart escrow + AI dispute resolution")}
           </span>
-          <h1 className="mt-5 text-4xl leading-tight font-black sm:text-6xl">
+          <h1 className="mt-5 text-3xl leading-tight font-black sm:text-5xl lg:text-6xl">
             {tr("سوق رقمي كامل يعمل بـ", "A full digital marketplace powered by")} <span className="neon-text">USDT</span>
           </h1>
           <p className="mt-4 max-w-xl text-base text-muted-foreground sm:text-lg">
@@ -78,22 +78,22 @@ function Hero() {
               "Freelance services, instant products, courses, gaming sessions, and NFTs — with a gas-free internal wallet and instant withdrawals for verified accounts.",
             )}
           </p>
-          <div className="mt-7 flex flex-wrap gap-3">
-            <Link to="/store" className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-3 font-bold text-primary-foreground glow">
+          <div className="mt-7 grid grid-cols-2 gap-3 sm:flex sm:flex-wrap">
+            <Link to="/store" className="inline-flex min-w-0 items-center justify-center gap-2 rounded-lg bg-primary px-4 py-3 text-sm font-bold text-primary-foreground glow sm:px-5 sm:text-base">
               {tr("ابدأ التصفح", "Start browsing")} <ArrowLeft className="size-4" />
             </Link>
-            <Link to="/dashboard" className="rounded-xl border border-border px-5 py-3 font-semibold text-foreground hover:bg-secondary">
+            <Link to="/dashboard" className="min-w-0 rounded-lg border border-border px-4 py-3 text-center text-sm font-semibold text-foreground hover:bg-secondary sm:px-5 sm:text-base">
               {tr("لوحة التحكم", "Dashboard")}
             </Link>
           </div>
-          <div className="mt-10 grid max-w-lg grid-cols-3 gap-4">
+          <div className="mt-9 grid max-w-lg grid-cols-3 gap-2 sm:gap-4">
             {[
               { k: "12.4M", v: tr("حجم تداول USDT", "USDT trading volume") },
               { k: "48K", v: tr("طلب مكتمل", "orders completed") },
               { k: "0%", v: tr("رسوم داخلية", "internal fees") },
             ].map((s) => (
               <div key={s.v}>
-                <p className="text-2xl font-black text-primary">{s.k}</p>
+                <p className="text-xl font-black text-primary sm:text-2xl">{s.k}</p>
                 <p className="text-xs text-muted-foreground">{s.v}</p>
               </div>
             ))}
@@ -132,6 +132,10 @@ function Hero() {
       </div>
     </div>
   );
+}
+
+function EmptyState({ text }: { text: string }) {
+  return <p className="rounded-lg border border-dashed border-border px-4 py-8 text-center text-sm text-muted-foreground">{text}</p>;
 }
 
 function Ticker() {
