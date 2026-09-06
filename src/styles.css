@@ -85,6 +85,22 @@
       radial-gradient(60rem 40rem at 85% -10%, color-mix(in oklab, var(--violet) 18%, transparent), transparent),
       radial-gradient(50rem 34rem at 5% 0%, color-mix(in oklab, var(--primary) 14%, transparent), transparent);
     background-attachment: fixed;
+    min-width: 320px;
+  }
+
+  button,
+  a,
+  input,
+  select,
+  textarea {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  img,
+  video,
+  canvas,
+  svg {
+    max-width: 100%;
   }
 
   html,

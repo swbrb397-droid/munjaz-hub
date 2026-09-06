@@ -132,8 +132,8 @@ export function SupportWidget() {
         onClick={() => setOpen((v) => !v)}
         aria-label="المساعد الذكي"
         aria-expanded={open}
-        className={`pointer-events-auto fixed bottom-6 left-6 z-40 grid place-items-center rounded-full bg-primary text-primary-foreground shadow-2xl transition-all duration-200 hover:scale-105 ${
-          collapsed ? "size-9 opacity-40" : "size-14 opacity-100"
+        className={`pointer-events-auto fixed bottom-4 left-3 z-40 grid place-items-center rounded-full bg-primary text-primary-foreground shadow-2xl transition-all duration-200 hover:scale-105 sm:bottom-6 sm:left-6 ${
+          collapsed ? "size-9 opacity-40" : "size-11 opacity-100 sm:size-14"
         }`}
         style={{ boxShadow: "0 0 0 0 oklch(0.76 0.17 165 / 0.6)", animation: "pulse 2.4s ease-in-out infinite" }}
       >
@@ -141,7 +141,7 @@ export function SupportWidget() {
       </button>
 
       <div
-        className={`fixed bottom-24 left-4 z-40 flex h-[520px] max-h-[85vh] w-[calc(100vw-2rem)] flex-col rounded-2xl border border-border bg-card/95 shadow-2xl backdrop-blur-md transition-all duration-200 sm:w-[400px] ${
+        className={`fixed inset-x-2 bottom-16 z-40 flex h-[min(520px,calc(100dvh-5rem))] flex-col rounded-lg border border-border bg-card/95 shadow-2xl backdrop-blur-md transition-all duration-200 sm:inset-x-auto sm:bottom-24 sm:left-4 sm:w-[400px] ${
           open ? "pointer-events-auto scale-100 opacity-100" : "pointer-events-none scale-95 opacity-0"
         }`}
         role="dialog"

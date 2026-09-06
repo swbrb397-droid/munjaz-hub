@@ -1,4 +1,4 @@
-import { Link, useNavigate } from "@tanstack/react-router";
+import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   Bell, Globe, LogIn, LogOut, Menu, Repeat2, Wallet2, X,
@@ -68,6 +68,7 @@ function AuthButton() {
   const { tr } = useLang();
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const qc = useQueryClient();
 
   if (!isAuthenticated) {
@@ -75,11 +76,11 @@ function AuthButton() {
       <Link
         to="/auth"
         search={() =>
-          typeof window !== "undefined" && window.location.pathname !== "/auth"
-            ? { redirectTo: window.location.pathname + window.location.search }
+          location.pathname !== "/auth"
+            ? { redirectTo: location.pathname + location.searchStr }
             : {}
         }
-        className="flex h-9 shrink-0 items-center gap-1.5 rounded-lg bg-primary px-3 text-xs font-bold text-primary-foreground"
+        className="flex h-9 shrink-0 items-center gap-1.5 rounded-lg bg-primary px-2.5 text-xs font-bold text-primary-foreground sm:px-3"
       >
         <LogIn className="size-4" /> {tr("دخول", "Sign in")}
       </Link>
@@ -225,10 +226,10 @@ export function Shell({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen overflow-x-hidden">
       <header className="sticky top-0 z-50 glass">
-        <div className="mx-auto flex h-16 max-w-7xl items-center gap-4 px-4">
-          <Link to="/" className="flex items-center gap-2">
-            <span className="grid size-9 place-items-center rounded-xl bg-primary/15 text-primary glow font-bold">م</span>
-            <span className="text-lg font-extrabold tracking-tight neon-text">{t("brand")}</span>
+        <div className="mx-auto flex h-16 max-w-7xl items-center gap-2 px-3 sm:gap-4 sm:px-4">
+          <Link to="/" className="flex shrink-0 items-center gap-2" aria-label={t("brand")}>
+            <span className="grid size-9 place-items-center rounded-lg bg-primary/15 font-bold text-primary glow">م</span>
+            <span className="hidden text-lg font-extrabold neon-text sm:inline">{t("brand")}</span>
           </Link>
 
           <nav className="mx-auto hidden items-center gap-1 lg:flex">
@@ -245,9 +246,9 @@ export function Shell({ children }: { children: ReactNode }) {
             ))}
           </nav>
 
-          <div className="ms-auto flex shrink-0 items-center gap-2 lg:ms-0">
+          <div className="ms-auto flex shrink-0 items-center gap-1.5 sm:gap-2 lg:ms-0">
             {isAuthenticated && <ViewSwitch />}
-            <Notifications />
+            {isAuthenticated && <Notifications />}
             {isAuthenticated && (
 
               <Link
@@ -269,7 +270,7 @@ export function Shell({ children }: { children: ReactNode }) {
         </div>
 
         {open && (
-          <nav className="max-h-[75vh] overflow-y-auto border-t border-border px-4 py-3 lg:hidden">
+          <nav className="max-h-[calc(100dvh-4rem)] overflow-y-auto border-t border-border px-3 py-3 sm:px-4 lg:hidden">
             {navGroups.map((group, gi) => (
               <div key={group.title[0]} className={gi > 0 ? "mt-3 border-t border-border pt-3" : ""}>
                 <p className="px-3 pb-1 text-[11px] font-bold uppercase tracking-wide text-muted-foreground/70">
@@ -358,10 +359,10 @@ export function Section({
   action?: ReactNode;
 }) {
   return (
-    <section className="mx-auto max-w-7xl px-4 py-12">
+    <section className="mx-auto max-w-7xl px-4 py-9 sm:py-12">
       <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h2 className="text-2xl font-extrabold sm:text-3xl">{title}</h2>
+          <h2 className="text-xl font-extrabold sm:text-3xl">{title}</h2>
           {subtitle && <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p>}
         </div>
         {action}
@@ -372,5 +373,5 @@ export function Section({
 }
 
 export function Card({ children, className = "" }: { children: ReactNode; className?: string }) {
-  return <div className={`rounded-2xl border border-border bg-card/70 p-5 backdrop-blur ${className}`}>{children}</div>;
+  return <div className={`rounded-lg border border-border bg-card/70 p-4 backdrop-blur sm:p-5 ${className}`}>{children}</div>;
 }
