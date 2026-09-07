@@ -215,8 +215,8 @@ function AuthPage() {
 
     try {
       if (mode === "signup") {
-        if (!role) {
-          throw new Error(tr("يجب اختيار نوع الحساب.", "You must select an account type."));
+        if (!EMAIL_RE.test(normalizedEmail)) {
+          throw new Error(tr("صيغة البريد الإلكتروني غير صحيحة", "Invalid email address"));
         }
         if (!acceptedTerms) {
           throw new Error(
