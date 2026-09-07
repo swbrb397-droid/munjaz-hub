@@ -4,6 +4,7 @@ import { ArrowLeft, BadgeCheck, Gamepad2, ShieldCheck, Sparkle, Star, Zap } from
 import { Card, Section } from "@/components/site/Shell";
 import { NETWORK_STRIP } from "@/lib/network-strip";
 import { useListings, useNfts } from "@/lib/catalog";
+import { usePlatformStats } from "@/lib/platform";
 import { useLang } from "@/lib/lang";
 import { VerifiedBadge } from "@/components/site/VerifiedBadge";
 import { ShareListing } from "@/components/site/ShareListing";
@@ -120,6 +121,46 @@ function Hero() {
           </Card>
         </div>
       </div>
+    </div>
+  );
+}
+
+function LiveStats() {
+  const { tr } = useLang();
+  const { data, isLoading } = usePlatformStats();
+  const fmt = (n: number) => (n >= 1000 ? `${(n / 1000).toFixed(1)}K` : n.toLocaleString("en-US"));
+  const hasActivity = !!data && (data.completedOrders > 0 || data.listings > 0);
+
+  if (isLoading) {
+    return (
+      <div className="mt-9 grid max-w-lg grid-cols-3 gap-2 sm:gap-4">
+        {[0, 1, 2].map((i) => <div key={i} className="h-12 animate-pulse rounded-lg bg-secondary/70" />)}
+      </div>
+    );
+  }
+
+  if (!hasActivity) {
+    return (
+      <p className="chip mt-9 max-w-lg !text-muted-foreground">
+        {tr("الإحصائيات المباشرة — تظهر الأرقام فور بدء النشاط الحقيقي على المنصة.", "Live statistics — numbers appear as soon as real activity begins.")}
+      </p>
+    );
+  }
+
+  const stats = [
+    { k: `${fmt(data.volume)}`, v: tr("حجم التداول المكتمل USDT", "Completed USDT volume") },
+    { k: fmt(data.completedOrders), v: tr("طلب مكتمل", "orders completed") },
+    { k: fmt(data.listings), v: tr("عرض منشور", "published offers") },
+  ];
+
+  return (
+    <div className="mt-9 grid max-w-lg grid-cols-3 gap-2 sm:gap-4">
+      {stats.map((s) => (
+        <div key={s.v}>
+          <p className="text-xl font-black text-primary sm:text-2xl">{s.k}</p>
+          <p className="text-xs text-muted-foreground">{s.v}</p>
+        </div>
+      ))}
     </div>
   );
 }
