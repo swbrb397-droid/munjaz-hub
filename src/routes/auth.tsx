@@ -134,6 +134,8 @@ function AuthPage() {
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  // Stays true from a successful sign-in until the redirect lands, so the button never flickers back.
+  const [navigating, setNavigating] = useState(false);
   const [pendingEmail, setPendingEmail] = useState<string | null>(null);
   const [cooldown, setCooldown] = useState(0);
   const [resends, setResends] = useState(0);
