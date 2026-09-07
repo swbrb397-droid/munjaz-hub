@@ -1135,6 +1135,24 @@ export type Database = {
         }
         Returns: string
       }
+      platform_stats: {
+        Args: never
+        Returns: {
+          completed_orders: number
+          listings_count: number
+          sellers_count: number
+          volume_usdt: number
+        }[]
+      }
+      preview_subscription_pass: {
+        Args: { _code: string }
+        Returns: {
+          duration_days: number
+          expires_at: string
+          is_valid: boolean
+          tier: Database["public"]["Enums"]["account_tier"]
+        }[]
+      }
       process_auto_deposit: {
         Args: {
           _amount?: number
@@ -1168,6 +1186,19 @@ export type Database = {
         }
       }
       process_withdrawal_queue: { Args: never; Returns: number }
+      public_leaderboard: {
+        Args: { _limit?: number }
+        Returns: {
+          avatar_url: string
+          completed_orders: number
+          display_name: string
+          id: string
+          is_verified: boolean
+          level: number
+          rating: number
+          xp_points: number
+        }[]
+      }
       redeem_subscription_pass: {
         Args: { _code: string }
         Returns: {
