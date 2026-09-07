@@ -190,21 +190,21 @@ function WalletPage() {
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
             <label className="grid gap-2 text-sm">
               <span className="text-muted-foreground">{tr("الشبكة", "Network")}</span>
-              <select value={network} onChange={(e) => setNetwork(e.target.value as WithdrawalNetwork)} className="rounded-lg border border-input bg-surface px-3 py-2 outline-none focus:border-primary">
+              <select value={network} onChange={(e) => setNetwork(e.target.value as WithdrawalNetwork)} className="field-lux  px-3 py-2 outline-none focus:border-primary">
                 {networks.map((n) => <option key={n.value} value={n.value}>{n.label}</option>)}
               </select>
             </label>
             <label className="grid gap-2 text-sm">
               <span className="text-muted-foreground">{tr(`المبلغ (USDT) — الحد الأدنى ${MIN_WITHDRAWAL}`, `Amount (USDT) — min ${MIN_WITHDRAWAL}`)}</span>
-              <input value={amount} onChange={(e) => setAmount(e.target.value.replace(/[^\d.]/g, ""))} inputMode="decimal" maxLength={16} className="rounded-lg border border-input bg-surface px-3 py-2 outline-none focus:border-primary" />
+              <input value={amount} onChange={(e) => setAmount(e.target.value.replace(/[^\d.]/g, ""))} inputMode="decimal" maxLength={16} className="field-lux  px-3 py-2 outline-none focus:border-primary" />
             </label>
             <label className="grid gap-2 text-sm sm:col-span-2">
               <span className="text-muted-foreground">{tr("عنوان المحفظة", "Wallet address")}</span>
-              <input value={address} onChange={(e) => setAddress(e.target.value.replace(/[^A-Za-z0-9]/g, ""))} placeholder="T… / 0x…" maxLength={64} className="rounded-lg border border-input bg-surface px-3 py-2 outline-none focus:border-primary" />
+              <input value={address} onChange={(e) => setAddress(e.target.value.replace(/[^A-Za-z0-9]/g, ""))} placeholder="T… / 0x…" maxLength={64} className="field-lux  px-3 py-2 outline-none focus:border-primary" />
             </label>
           </div>
 
-          <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-surface-2/60 p-4 text-sm">
+          <div className="field-lux mt-4 flex flex-wrap items-center justify-between gap-3 -2/60 p-4 text-sm">
             <span className="text-muted-foreground">
               {tr("الرسوم:", "Fee:")} <span className="text-foreground">{WITHDRAWAL_FEE} USDT</span>
               {" · "}
