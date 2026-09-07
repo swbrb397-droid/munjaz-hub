@@ -5,6 +5,7 @@ import { Card, Section } from "@/components/site/Shell";
 import { useLang } from "@/lib/lang";
 import { supabase } from "@/integrations/supabase/client";
 import { ServiceCard } from "@/routes/index";
+import { COVERS } from "@/lib/catalog";
 
 export const Route = createFileRoute("/user/$username")({
   head: ({ params }) => ({
@@ -130,7 +131,7 @@ function SellerProfilePage() {
               orders={l.orders_count}
               verified={l.verified}
               tag={lang === "ar" ? l.tag_ar : l.tag_en}
-              cover={l.cover_key}
+              cover={COVERS[l.cover_key] ?? COVERS.product}
               category={l.category}
             />
           ))}
