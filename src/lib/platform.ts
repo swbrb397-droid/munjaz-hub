@@ -65,7 +65,7 @@ export type PassPreview = {
 
 /** Preview a subscription pass before redeeming it (code lookup only). */
 export function usePassPreview(code: string) {
-  const normalized = code.trim().toUpperCase();
+  const normalized = code.replace(/\s+/g, "").toUpperCase();
   return useQuery({
     queryKey: ["pass-preview", normalized],
     enabled: normalized.length >= 8,
