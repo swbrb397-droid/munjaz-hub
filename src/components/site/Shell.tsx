@@ -329,6 +329,14 @@ export function Shell({ children }: { children: ReactNode }) {
                 </div>
               </div>
             )}
+            <button
+              type="button"
+              onClick={() => { setOpen(false); setManifesto(true); }}
+              className="mt-3 flex w-full items-center gap-2.5 rounded-lg border border-primary/40 bg-primary/10 px-3 py-2.5 text-sm font-bold text-primary"
+            >
+              <ScrollText size={18} strokeWidth={1.8} className="shrink-0" />
+              {lang === "ar" ? "ميثاق المنصة" : "Platform manifesto"}
+            </button>
           </nav>
         )}
       </header>
