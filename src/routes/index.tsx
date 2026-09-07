@@ -86,18 +86,8 @@ function Hero() {
               {tr("لوحة التحكم", "Dashboard")}
             </Link>
           </div>
-          <div className="mt-9 grid max-w-lg grid-cols-3 gap-2 sm:gap-4">
-            {[
-              { k: "12.4M", v: tr("حجم تداول USDT", "USDT trading volume") },
-              { k: "48K", v: tr("طلب مكتمل", "orders completed") },
-              { k: "0%", v: tr("رسوم داخلية", "internal fees") },
-            ].map((s) => (
-              <div key={s.v}>
-                <p className="text-xl font-black text-primary sm:text-2xl">{s.k}</p>
-                <p className="text-xs text-muted-foreground">{s.v}</p>
-              </div>
-            ))}
-          </div>
+          <LiveStats />
+
         </div>
 
         <div className="grid gap-4">
