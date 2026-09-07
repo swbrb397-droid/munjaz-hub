@@ -128,7 +128,7 @@ function AuthPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
-  const [role, setRole] = useState<SignupRole | "">("");
+  const [role, setRole] = useState<SignupRole>("hybrid");
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [referral, setReferral] = useState("");
   const [msg, setMsg] = useState<string | null>(null);
