@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { LogIn, RefreshCw, UserPlus } from "lucide-react";
+import { Loader2, LogIn, RefreshCw, UserPlus } from "lucide-react";
 
 import { Card } from "@/components/site/Shell";
 import { useLang } from "@/lib/lang";
@@ -9,14 +9,37 @@ import { useAuth } from "@/hooks/use-auth";
 import { useUserProfile } from "@/hooks/use-user-profile";
 import { supabase } from "@/integrations/supabase/client";
 
-type SignupRole = "buyer" | "seller" | "hybrid" | "corporate";
+type SignupRole = "hybrid" | "corporate";
 
-const ROLES: ReadonlyArray<{ value: SignupRole; ar: string; en: string }> = [
-  { value: "buyer", ar: "مشتري", en: "Buyer" },
-  { value: "seller", ar: "بائع", en: "Seller" },
-  { value: "hybrid", ar: "مشتري وبائع", en: "Hybrid" },
-  { value: "corporate", ar: "شركة", en: "Corporate" },
+/** Unified dual selector: one account buys and sells freely. */
+const ROLES: ReadonlyArray<{ value: SignupRole; ar: string; en: string; hintAr: string; hintEn: string }> = [
+  {
+    value: "hybrid",
+    ar: "حساب شخصي",
+    en: "Individual",
+    hintAr: "اشترِ وقدّم خدماتك بحرية من حساب واحد.",
+    hintEn: "Buy and offer services freely from one account.",
+  },
+  {
+    value: "corporate",
+    ar: "حساب أعمال / شركات",
+    en: "Business / Entity",
+    hintAr: "للفرق الموثقة والمؤسسات التجارية.",
+    hintEn: "For verified teams and commercial institutions.",
+  },
 ];
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i;
+
+/** 0..4 password strength score used for the inline meter. */
+function passwordScore(v: string): number {
+  let s = 0;
+  if (v.length >= 6) s++;
+  if (v.length >= 10) s++;
+  if (/[A-Z]/.test(v) && /[a-z]/.test(v)) s++;
+  if (/\d/.test(v) && /[^A-Za-z0-9]/.test(v)) s++;
+  return s;
+}
 
 
 const REDIRECT_KEY = "munjaz-redirect-to";
@@ -105,12 +128,14 @@ function AuthPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
-  const [role, setRole] = useState<SignupRole | "">("");
+  const [role, setRole] = useState<SignupRole>("hybrid");
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [referral, setReferral] = useState("");
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  // Stays true from a successful sign-in until the redirect lands, so the button never flickers back.
+  const [navigating, setNavigating] = useState(false);
   const [pendingEmail, setPendingEmail] = useState<string | null>(null);
   const [cooldown, setCooldown] = useState(0);
   const [resends, setResends] = useState(0);
@@ -192,8 +217,8 @@ function AuthPage() {
 
     try {
       if (mode === "signup") {
-        if (!role) {
-          throw new Error(tr("يجب اختيار نوع الحساب.", "You must select an account type."));
+        if (!EMAIL_RE.test(normalizedEmail)) {
+          throw new Error(tr("صيغة البريد الإلكتروني غير صحيحة", "Invalid email address"));
         }
         if (!acceptedTerms) {
           throw new Error(
@@ -241,6 +266,7 @@ function AuthPage() {
           }
           throw error;
         }
+        setNavigating(true);
       }
     } catch (e) {
       const raw = e instanceof Error ? e.message : String(e);
@@ -249,6 +275,7 @@ function AuthPage() {
       if (mode === "signin") {
         toast.error(message);
       }
+      setNavigating(false);
       if (mode === "signup" && (raw === "__EMAIL_TAKEN__" || /already registered/i.test(raw))) {
         toast.error(lang === "ar" ? EMAIL_TAKEN_AR : message);
         setMode("signin");
@@ -260,9 +287,12 @@ function AuthPage() {
 
   }
 
+  const emailInvalid = email.trim().length > 0 && !EMAIL_RE.test(email.trim());
+  const score = passwordScore(password);
+
   return (
-    <div className="mx-auto max-w-md px-4 pb-28 pt-10 sm:py-16">
-      <Card className="glow">
+    <div className="mx-auto max-w-md animate-in fade-in duration-500 px-4 pb-28 pt-10 sm:py-16">
+      <Card className="glow transition-opacity duration-300">
         <h1 className="text-2xl font-black">
           {mode === "signin" ? tr("تسجيل الدخول", "Sign in") : tr("إنشاء حساب", "Create account")}
         </h1>
@@ -279,21 +309,22 @@ function AuthPage() {
           )}
           {mode === "signup" && (
             <div className="grid gap-1.5">
-              <span className="text-muted-foreground">{tr("نوع الحساب *", "Account type *")}</span>
-              <div className="grid grid-cols-2 gap-2">
+              <span className="text-muted-foreground">{tr("نوع الحساب", "Account type")}</span>
+              <div className="grid gap-2 sm:grid-cols-2">
                 {ROLES.map((r) => (
                   <button
                     key={r.value}
                     type="button"
                     onClick={() => setRole(r.value)}
                     aria-pressed={role === r.value}
-                    className={`rounded-lg border px-3 py-2 text-xs font-bold transition-colors ${
+                    className={`rounded-xl border p-3 text-start transition-all duration-200 ${
                       role === r.value
-                        ? "border-primary bg-primary/15 text-primary"
-                        : "border-input bg-surface text-muted-foreground hover:text-foreground"
+                        ? "border-primary bg-primary/15 text-primary shadow-[0_0_28px_-10px_var(--primary)]"
+                        : "border-input bg-surface text-muted-foreground hover:border-primary/40 hover:text-foreground"
                     }`}
                   >
-                    {tr(r.ar, r.en)}
+                    <span className="block text-xs font-black">{tr(r.ar, r.en)}</span>
+                    <span className="mt-1 block text-[11px] leading-relaxed opacity-80">{tr(r.hintAr, r.hintEn)}</span>
                   </button>
                 ))}
               </div>
@@ -302,11 +333,30 @@ function AuthPage() {
 
           <label className="grid gap-1.5">
             <span className="text-muted-foreground">{tr("البريد الإلكتروني", "Email")}</span>
-            <input type="email" required autoComplete="email" inputMode="email" dir="ltr" value={email} onChange={(e) => setEmail(e.target.value)} className="min-h-12 w-full rounded-lg border border-input bg-surface px-3 py-2 text-start outline-none focus:border-primary focus:ring-2 focus:ring-primary/40" />
+            <input type="email" required autoComplete="email" inputMode="email" dir="ltr" value={email} onChange={(e) => setEmail(e.target.value)} aria-invalid={emailInvalid} className={`min-h-12 w-full rounded-lg border bg-surface px-3 py-2 text-start outline-none focus:ring-2 focus:ring-primary/40 ${emailInvalid ? "border-destructive" : "border-input focus:border-primary"}`} />
+            {emailInvalid && (
+              <span className="text-[11px] text-destructive">{tr("صيغة البريد الإلكتروني غير صحيحة", "Invalid email address")}</span>
+            )}
           </label>
           <label className="grid gap-1.5">
             <span className="text-muted-foreground">{tr("كلمة المرور", "Password")}</span>
             <input type="password" required minLength={6} autoComplete={mode === "signin" ? "current-password" : "new-password"} dir="ltr" value={password} onChange={(e) => setPassword(e.target.value)} className="min-h-12 w-full rounded-lg border border-input bg-surface px-3 py-2 text-start outline-none focus:border-primary focus:ring-2 focus:ring-primary/40" />
+            {mode === "signup" && password.length > 0 && (
+              <>
+                <span className="flex gap-1">
+                  {[1, 2, 3, 4].map((i) => (
+                    <span key={i} className={`h-1 flex-1 rounded-full transition-colors ${i <= score ? (score >= 3 ? "bg-primary" : "bg-accent") : "bg-secondary"}`} />
+                  ))}
+                </span>
+                <span className="text-[11px] text-muted-foreground">
+                  {score <= 1
+                    ? tr("كلمة مرور ضعيفة — أضف أحرفاً وأرقاماً ورموزاً.", "Weak password — add letters, numbers and symbols.")
+                    : score === 2
+                      ? tr("متوسطة — يمكن تقويتها أكثر.", "Medium — can be stronger.")
+                      : tr("قوية.", "Strong.")}
+                </span>
+              </>
+            )}
           </label>
           {mode === "signup" && (
             <label className="grid gap-1.5">
@@ -364,9 +414,26 @@ function AuthPage() {
             </div>
           )}
 
-          <button disabled={busy} type="submit" className="mt-2 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 font-bold text-primary-foreground glow disabled:opacity-60">
-            {mode === "signin" ? <LogIn className="size-4" /> : <UserPlus className="size-4" />}
-            {mode === "signin" ? tr("دخول", "Sign in") : tr("تسجيل", "Sign up")}
+          <button
+            disabled={busy || navigating || emailInvalid}
+            aria-busy={busy || navigating}
+            type="submit"
+            className="mt-2 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 font-bold text-primary-foreground glow transition-all duration-200 hover:scale-[1.01] disabled:opacity-60"
+          >
+            {busy || navigating ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : mode === "signin" ? (
+              <LogIn className="size-4" />
+            ) : (
+              <UserPlus className="size-4" />
+            )}
+            {busy || navigating
+              ? mode === "signin"
+                ? tr("جارٍ تسجيل الدخول…", "Signing in…")
+                : tr("جارٍ إنشاء الحساب…", "Creating your account…")
+              : mode === "signin"
+                ? tr("دخول", "Sign in")
+                : tr("تسجيل", "Sign up")}
           </button>
         </form>
 

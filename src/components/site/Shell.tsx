@@ -3,7 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import {
   Bell, Globe, LogIn, LogOut, Menu, Repeat2, Wallet2, X,
   Home, Store, Trophy, PlusCircle, LayoutDashboard, ClipboardList, Users, UserCog, CreditCard, ShieldCheck,
-  Gavel, BadgeCheck, Settings2,
+  Gavel, BadgeCheck, Settings2, ScrollText,
   type LucideIcon,
 } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
@@ -15,6 +15,7 @@ import { ErrorBoundary } from "@/components/site/ErrorBoundary";
 import { useWallet } from "@/lib/queries";
 import { useUserProfile } from "@/hooks/use-user-profile";
 import { SupportWidget } from "@/components/site/SupportWidget";
+import { ManifestoModal, useManifestoFirstRun } from "@/components/site/ManifestoModal";
 import { supabase } from "@/integrations/supabase/client";
 
 type NavItem = { to: string; key: TranslationKey; icon: LucideIcon };
@@ -212,6 +213,7 @@ export function Shell({ children }: { children: ReactNode }) {
   const { isAuthenticated } = useAuth();
   const wallet = useWallet();
   const { isAdmin } = useUserProfile();
+  const [manifesto, setManifesto] = useManifestoFirstRun(isAuthenticated);
 
   // Lock page scroll behind the mobile drawer so scrolling never leaks to the page.
   useEffect(() => {
@@ -262,6 +264,16 @@ export function Shell({ children }: { children: ReactNode }) {
                 {Number(wallet.data?.available_usdt ?? 0).toLocaleString()} USDT
               </Link>
             )}
+            <button
+              type="button"
+              onClick={() => setManifesto(true)}
+              title={t("brand")}
+              aria-label={lang === "ar" ? "ميثاق المنصة" : "Platform manifesto"}
+              className="hidden h-9 shrink-0 items-center gap-1.5 rounded-lg border border-primary/40 bg-primary/10 px-2.5 text-xs font-bold text-primary transition-colors hover:bg-primary/20 sm:flex"
+            >
+              <ScrollText className="size-4" />
+              <span className="hidden lg:inline">{lang === "ar" ? "ميثاق المنصة" : "Manifesto"}</span>
+            </button>
             <AuthButton />
             <LangSwitch />
 
@@ -317,6 +329,14 @@ export function Shell({ children }: { children: ReactNode }) {
                 </div>
               </div>
             )}
+            <button
+              type="button"
+              onClick={() => { setOpen(false); setManifesto(true); }}
+              className="mt-3 flex w-full items-center gap-2.5 rounded-lg border border-primary/40 bg-primary/10 px-3 py-2.5 text-sm font-bold text-primary"
+            >
+              <ScrollText size={18} strokeWidth={1.8} className="shrink-0" />
+              {lang === "ar" ? "ميثاق المنصة" : "Platform manifesto"}
+            </button>
           </nav>
         )}
       </header>
@@ -345,6 +365,7 @@ export function Shell({ children }: { children: ReactNode }) {
         </div>
       </footer>
       <SupportWidget />
+      <ManifestoModal open={manifesto} onClose={() => setManifesto(false)} />
     </div>
   );
 }
