@@ -264,6 +264,16 @@ export function Shell({ children }: { children: ReactNode }) {
                 {Number(wallet.data?.available_usdt ?? 0).toLocaleString()} USDT
               </Link>
             )}
+            <button
+              type="button"
+              onClick={() => setManifesto(true)}
+              title={t("brand")}
+              aria-label={lang === "ar" ? "ميثاق المنصة" : "Platform manifesto"}
+              className="hidden h-9 shrink-0 items-center gap-1.5 rounded-lg border border-primary/40 bg-primary/10 px-2.5 text-xs font-bold text-primary transition-colors hover:bg-primary/20 sm:flex"
+            >
+              <ScrollText className="size-4" />
+              <span className="hidden lg:inline">{lang === "ar" ? "ميثاق المنصة" : "Manifesto"}</span>
+            </button>
             <AuthButton />
             <LangSwitch />
 
