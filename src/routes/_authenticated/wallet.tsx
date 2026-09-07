@@ -2,11 +2,9 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { gasEstimates } from "@/lib/gas";
 
-import { ArrowDownToLine, ArrowUpFromLine, BadgeCheck, Copy, FileText, Lock, ShieldAlert, Sparkles, Timer, X } from "lucide-react";
+import { ArrowUpFromLine, BadgeCheck, FileText, Lock, ShieldAlert, Sparkles, Timer } from "lucide-react";
 import { Card, Section } from "@/components/site/Shell";
-import { QrCode } from "@/components/site/QrCode";
 import { ReceiptModal, type ReceiptData } from "@/components/site/ReceiptModal";
-import { FiatOnRamp } from "@/components/site/FiatOnRamp";
 import { useLang } from "@/lib/lang";
 import { useProfile, useTransactions, useWallet } from "@/lib/queries";
 import {
@@ -19,7 +17,7 @@ import {
   type WithdrawalNetwork,
 } from "@/lib/withdrawals";
 import { formatUsdt, parseUsdt } from "@/lib/security";
-import { useConfirmDeposit, useCreateDeposit, useWalletRealtime } from "@/lib/deposits";
+import { useWalletRealtime } from "@/lib/deposits";
 import { toast } from "sonner";
 import { PayoutSecurityCard } from "@/components/site/PayoutSecurityCard";
 import { TopUpDialog } from "@/components/site/TopUpDialog";
@@ -44,8 +42,6 @@ const networks = [
 
 const rates: Record<string, number> = { USD: 1.0002, SAR: 3.7506, AED: 3.6731, EUR: 0.9184 };
 
-type FiatRow = { id: string; type: string; network: string; amount: number; status: string; created_at: string; txId: string };
-
 function WalletPage() {
   const { tr, lang } = useLang();
   const wallet = useWallet();
@@ -53,33 +49,16 @@ function WalletPage() {
   const txs = useTransactions();
   const requests = useMyWithdrawals();
   useWalletRealtime();
-  const createDeposit = useCreateDeposit();
-  const confirmDeposit = useConfirmDeposit();
-  const [depositAmount, setDepositAmount] = useState("100");
-  const [pendingDeposit, setPendingDeposit] = useState<{ id: string; amount: number } | null>(null);
-
-  const [deposit, setDeposit] = useState(false);
   const [topUp, setTopUp] = useState(false);
-  const [depositTab, setDepositTab] = useState<"crypto" | "fiat">("crypto");
   const [network, setNetwork] = useState<WithdrawalNetwork>("polygon");
   const gasRows = useMemo(() => gasEstimates(), []);
 
   const [amount, setAmount] = useState("250");
   const [address, setAddress] = useState("");
   const [feedback, setFeedback] = useState<string | null>(null);
-  const [fiatRows, setFiatRows] = useState<FiatRow[]>([]);
   const [receipt, setReceipt] = useState<ReceiptData | null>(null);
-  const [lockLeft, setLockLeft] = useState(15 * 60);
 
-  useEffect(() => {
-    if (!deposit || depositTab !== "crypto") return;
-    setLockLeft(15 * 60);
-    const t = setInterval(() => setLockLeft((s) => (s > 0 ? s - 1 : 0)), 1000);
-    return () => clearInterval(t);
-  }, [deposit, depositTab]);
-
-  const credited = fiatRows.reduce((s, r) => s + r.amount, 0);
-  const balance = Number(wallet.data?.available_usdt ?? 0) + credited;
+  const balance = Number(wallet.data?.available_usdt ?? 0);
   const locked = Number(wallet.data?.locked_usdt ?? 0);
   const tier = (profile.data as { account_tier?: string } | null)?.account_tier ?? "free";
   const frozen = Boolean((profile.data as { is_frozen?: boolean } | null)?.is_frozen);
@@ -112,11 +91,17 @@ function WalletPage() {
       subtitle={tr("جميع الأرصدة بعملة USDT — تحويلات داخلية بدون رسوم غاز", "All balances in USDT — internal transfers with no gas fees")}
       action={
         <div className="flex flex-wrap gap-2">
-          <button onClick={() => setTopUp(true)} className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 font-bold text-primary-foreground glow">
-            <Sparkles className="size-4" /> {tr("شحن الرصيد (USDT)", "Top up balance (USDT)")}
+          <button
+            onClick={() => setTopUp(true)}
+            className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 font-bold text-primary-foreground glow"
+          >
+            <Sparkles className="size-4" /> {tr("شحن المحفظة", "Top up wallet")}
           </button>
-          <button onClick={() => setDeposit(true)} className="inline-flex items-center gap-2 rounded-xl border border-border px-4 py-2 font-bold">
-            <ArrowDownToLine className="size-4" /> {tr("إيداع", "Deposit")}
+          <button
+            onClick={() => document.getElementById("withdraw-card")?.scrollIntoView({ behavior: "smooth", block: "center" })}
+            className="inline-flex items-center gap-2 rounded-xl border border-primary/50 px-4 py-2 font-bold text-primary"
+          >
+            <ArrowUpFromLine className="size-4" /> {tr("طلب سحب", "Request withdrawal")}
           </button>
         </div>
       }
@@ -143,7 +128,7 @@ function WalletPage() {
           </p>
         </Card>
 
-        <Card className="lg:col-span-2">
+        <Card id="withdraw-card" className="lg:col-span-2">
           <h3 className="flex items-center gap-2 font-bold"><ArrowUpFromLine className="size-4 text-accent" /> {tr("طلب سحب", "Withdrawal request")}</h3>
           <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
             <span className="rounded-lg border border-accent/40 bg-accent/10 px-2.5 py-1 font-bold uppercase text-accent">{tier}</span>
@@ -284,36 +269,6 @@ function WalletPage() {
               </tr>
             </thead>
             <tbody>
-              {fiatRows.map((t) => (
-                <tr key={t.id} className="border-b border-border/60">
-                  <td className="py-3 font-bold">{t.type}</td>
-                  <td className="text-muted-foreground">{t.network}</td>
-                  <td className="font-semibold text-primary">+{t.amount} USDT</td>
-                  <td className="text-primary">{t.status}</td>
-                  <td className="text-muted-foreground">{new Date(t.created_at).toLocaleDateString()}</td>
-                  <td>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setReceipt({
-                          txId: t.txId,
-                          orderId: t.id,
-                          type: t.type,
-                          network: t.network,
-                          gateway: t.network,
-                          amount: `${t.amount} USDT`,
-                          status: t.status,
-                          date: new Date(t.created_at).toLocaleString(),
-                        })
-                      }
-                      className="inline-flex items-center gap-1 rounded-lg border border-border px-2.5 py-1.5 text-[11px] font-bold hover:border-primary hover:text-primary"
-                    >
-                      <FileText className="size-3.5" /> {tr("عرض الإيصال 📄", "View receipt 📄")}
-
-                    </button>
-                  </td>
-                </tr>
-              ))}
               {(txs.data ?? []).map((t) => (
                 <tr key={t.id} className="border-b border-border/60 last:border-0">
                   <td className="py-3">{t.type}</td>
@@ -347,7 +302,7 @@ function WalletPage() {
               ))}
             </tbody>
           </table>
-          {!txs.isLoading && (txs.data ?? []).length === 0 && fiatRows.length === 0 && (
+          {!txs.isLoading && (txs.data ?? []).length === 0 && (
             <p className="py-8 text-center text-sm text-muted-foreground">{tr("لا توجد معاملات بعد.", "No transactions yet.")}</p>
           )}
         </div>
@@ -357,153 +312,6 @@ function WalletPage() {
 
       {receipt && <ReceiptModal receipt={receipt} onClose={() => setReceipt(null)} />}
 
-      {deposit && (
-        <div className="fixed inset-0 z-50 grid place-items-start justify-center overflow-y-auto bg-background/80 p-4 backdrop-blur">
-          <Card className="my-4 w-full max-w-md px-4 sm:px-5">
-            <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
-              <h3 className="min-w-0 truncate font-black">{tr("إيداع الأموال", "Deposit funds")}</h3>
-              <button onClick={() => setDeposit(false)} aria-label={tr("إغلاق", "Close")} className="grid size-8 shrink-0 place-items-center rounded-lg border border-border"><X className="size-4" /></button>
-            </div>
-
-            <div className="mt-4 grid grid-cols-2 gap-1 rounded-xl border border-border p-1">
-              {([
-                ["crypto", tr("USDT كريبتو مباشر", "Direct USDT crypto")],
-                ["fiat", tr("بطاقة ودفع سريع", "Card & express pay")],
-              ] as const).map(([k, label]) => (
-                <button
-                  key={k}
-                  type="button"
-                  onClick={() => setDepositTab(k)}
-                  className={`rounded-lg px-2 py-2 text-[11px] font-bold ${depositTab === k ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-
-            {depositTab === "crypto" ? (
-              <div className="mt-4">
-                <div className="flex gap-2">
-                  {networks.map((n) => (
-                    <button
-                      key={n.value}
-                      onClick={() => setNetwork(n.value)}
-                      className={`flex-1 rounded-lg px-2 py-2 text-[11px] ${network === n.value ? "bg-primary font-bold text-primary-foreground" : "border border-border text-muted-foreground"}`}
-                    >
-                      {n.label}
-                    </button>
-                  ))}
-                </div>
-                <div className="mt-4 grid place-items-center rounded-xl border border-border p-5">
-                  <QrCode value={network === "trc20" ? "TJ9xMunjazEscrowDeposit7fKq2Zb" : "0x8fMunjazEscrowDeposit19aB4cD7"} size={168} />
-                  <p className="mt-3 break-all text-center font-mono text-[11px] text-muted-foreground">
-                    {network === "trc20" ? "TJ9xMunjazEscrowDeposit7fKq2Zb" : "0x8fMunjazEscrowDeposit19aB4cD7"}
-                  </p>
-                  <button
-                    onClick={() => navigator.clipboard.writeText(network === "trc20" ? "TJ9xMunjazEscrowDeposit7fKq2Zb" : "0x8fMunjazEscrowDeposit19aB4cD7")}
-                    className="mt-3 inline-flex items-center gap-2 rounded-lg border border-border px-3 py-1.5 text-xs"
-                  >
-                    <Copy className="size-3.5" /> {tr("نسخ العنوان", "Copy address")}
-                  </button>
-                  <p className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-accent/40 bg-accent/10 px-3 py-1.5 text-[11px] font-bold text-accent">
-                    <Timer className="size-3.5" />
-                    {tr("صلاحية العنوان", "Address lock")}: {String(Math.floor(lockLeft / 60)).padStart(2, "0")}:{String(lockLeft % 60).padStart(2, "0")}
-                  </p>
-                </div>
-                <label className="mt-4 grid gap-1.5 text-sm">
-                  <span className="text-xs text-muted-foreground">{tr("المبلغ المحوَّل (USDT)", "Transferred amount (USDT)")}</span>
-                  <input
-                    value={depositAmount}
-                    dir="ltr"
-                    inputMode="decimal"
-                    onChange={(e) => setDepositAmount(e.target.value.replace(/[^0-9.]/g, ""))}
-                    className="rounded-lg border border-input bg-surface px-3 py-2 outline-none focus:border-primary"
-                  />
-                </label>
-
-                {!pendingDeposit ? (
-                  <button
-                    type="button"
-                    disabled={createDeposit.isPending || !(parseUsdt(depositAmount) ?? 0)}
-                    onClick={() =>
-                      createDeposit.mutate(
-                        { amount: parseUsdt(depositAmount) ?? 0, network },
-                        {
-                          onSuccess: (row) => {
-                            setPendingDeposit({ id: row.id, amount: Number(row.amount) });
-                            toast.success(tr("تم تسجيل تحويل وارد قيد التأكيد ⏳", "Incoming transfer recorded — awaiting confirmation ⏳"));
-                          },
-                          onError: (e: Error) => toast.error(e.message),
-                        },
-                      )
-                    }
-                    className="mt-3 w-full rounded-xl bg-primary py-2.5 text-sm font-bold text-primary-foreground disabled:opacity-60"
-                  >
-                    {tr("سجّلت التحويل — تتبّع الإيداع", "I sent it — track this deposit")}
-                  </button>
-                ) : (
-                  <div className="mt-3 grid gap-2 rounded-xl border border-accent/40 bg-accent/10 p-3 text-xs">
-                    <p className="font-bold text-accent">
-                      {tr("بانتظار تأكيد الشبكة", "Awaiting network confirmation")} · {pendingDeposit.amount} USDT
-                    </p>
-                    <button
-                      type="button"
-                      disabled={confirmDeposit.isPending}
-                      onClick={() =>
-                        confirmDeposit.mutate(
-                          { id: pendingDeposit.id, txHash: `0x${Math.random().toString(16).slice(2, 14)}` },
-                          {
-                            onSuccess: () => {
-                              setPendingDeposit(null);
-                              setDeposit(false);
-                              toast.success(tr("تم تأكيد الإيداع وإضافة الرصيد ✅", "Deposit confirmed and balance credited ✅"));
-                            },
-                            onError: (e: Error) => toast.error(e.message),
-                          },
-                        )
-                      }
-                      className="rounded-lg border border-border px-3 py-1.5 font-bold disabled:opacity-60"
-                    >
-                      {tr("محاكاة تأكيد الشبكة (Webhook)", "Simulate network confirmation (webhook)")}
-                    </button>
-                  </div>
-                )}
-
-                <p className="mt-3 text-xs text-muted-foreground">
-                  {tr("يُضاف الرصيد تلقائياً بعد تأكيد الشبكة.", "Balance is credited automatically after network confirmation.")}
-                </p>
-              </div>
-            ) : (
-              <div className="mt-4">
-                <FiatOnRamp
-                  onSuccess={(d) => {
-                    const row: FiatRow = {
-                      id: `fiat-${Date.now()}`,
-                      type: `إيداع ${d.method}`,
-                      network: "Fiat On-Ramp",
-                      amount: d.usdt,
-                      status: "مكتمل ✅",
-                      created_at: new Date().toISOString(),
-                      txId: `MJF-${Math.random().toString(36).slice(2, 10).toUpperCase()}`,
-                    };
-                    setFiatRows((r) => [row, ...r]);
-                    setDeposit(false);
-                    setReceipt({
-                      txId: row.txId,
-                      type: row.type,
-                      network: row.network,
-                      amount: `${d.usdt} USDT`,
-                      fee: `${d.fee} USD`,
-                      status: row.status,
-                      date: new Date().toLocaleString(),
-                    });
-                  }}
-                />
-              </div>
-            )}
-          </Card>
-        </div>
-      )}
     </Section>
   );
 }
