@@ -10,9 +10,9 @@ import { useUserProfile } from "@/hooks/use-user-profile";
 export const Route = createFileRoute("/_authenticated/kyc")({
   head: () => ({
     meta: [
-      { title: "توثيق الهوية KYC | الـمُـنْـجِـز" },
+      { title: "توثيق الهوية KYC | المُنجِز" },
       { name: "description", content: "ارفع صورة الهوية أو جواز السفر (الوجهين) بشكل مشفّر لرفع مستوى التوثيق وتفعيل السحب الفوري بعملة USDT." },
-      { property: "og:title", content: "توثيق الهوية KYC | الـمُـنْـجِـز" },
+      { property: "og:title", content: "توثيق الهوية KYC | المُنجِز" },
       { property: "og:description", content: "رفع آمن لمستندات الهوية ومتابعة حالة المراجعة." },
     ],
   }),

@@ -21,13 +21,15 @@ import { useWalletRealtime } from "@/lib/deposits";
 import { toast } from "sonner";
 import { PayoutSecurityCard } from "@/components/site/PayoutSecurityCard";
 import { TopUpDialog } from "@/components/site/TopUpDialog";
+import { ReferralWidget } from "@/components/site/ReferralWidget";
+import { RedeemPassCard } from "@/components/site/RedeemPassCard";
 
 export const Route = createFileRoute("/_authenticated/wallet")({
   head: () => ({
     meta: [
-      { title: "المحفظة الداخلية USDT | الـمُـنْـجِـز" },
+      { title: "المحفظة الداخلية USDT | المُنجِز" },
       { name: "description", content: "أودع واسحب USDT عبر TRC-20 و BEP-20 و Polygon، وتابع سجل المعاملات والمبالغ المحجوزة في الضمان." },
-      { property: "og:title", content: "المحفظة الداخلية USDT | الـمُـنْـجِـز" },
+      { property: "og:title", content: "المحفظة الداخلية USDT | المُنجِز" },
       { property: "og:description", content: "إيداع وسحب USDT بدون رسوم داخلية مع سحب فوري للحسابات الموثقة." },
     ],
   }),
@@ -188,17 +190,17 @@ function WalletPage() {
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
             <label className="grid gap-2 text-sm">
               <span className="text-muted-foreground">{tr("الشبكة", "Network")}</span>
-              <select value={network} onChange={(e) => setNetwork(e.target.value as WithdrawalNetwork)} className="rounded-lg border border-input bg-surface px-3 py-2 outline-none focus:border-primary">
+              <select value={network} onChange={(e) => setNetwork(e.target.value as WithdrawalNetwork)} className="field-lux  px-3 py-2 outline-none focus:border-primary">
                 {networks.map((n) => <option key={n.value} value={n.value}>{n.label}</option>)}
               </select>
             </label>
             <label className="grid gap-2 text-sm">
               <span className="text-muted-foreground">{tr(`المبلغ (USDT) — الحد الأدنى ${MIN_WITHDRAWAL}`, `Amount (USDT) — min ${MIN_WITHDRAWAL}`)}</span>
-              <input value={amount} onChange={(e) => setAmount(e.target.value.replace(/[^\d.]/g, ""))} inputMode="decimal" maxLength={16} className="rounded-lg border border-input bg-surface px-3 py-2 outline-none focus:border-primary" />
+              <input value={amount} onChange={(e) => setAmount(e.target.value.replace(/[^\d.]/g, ""))} inputMode="decimal" maxLength={16} className="field-lux  px-3 py-2 outline-none focus:border-primary" />
             </label>
             <label className="grid gap-2 text-sm sm:col-span-2">
               <span className="text-muted-foreground">{tr("عنوان المحفظة", "Wallet address")}</span>
-              <input value={address} onChange={(e) => setAddress(e.target.value.replace(/[^A-Za-z0-9]/g, ""))} placeholder="T… / 0x…" maxLength={64} className="rounded-lg border border-input bg-surface px-3 py-2 outline-none focus:border-primary" />
+              <input value={address} onChange={(e) => setAddress(e.target.value.replace(/[^A-Za-z0-9]/g, ""))} placeholder="T… / 0x…" maxLength={64} className="field-lux  px-3 py-2 outline-none focus:border-primary" />
             </label>
           </div>
 
@@ -224,6 +226,11 @@ function WalletPage() {
             )}
           </p>
         </Card>
+      </div>
+
+      <div className="mt-6 grid gap-4 lg:grid-cols-2">
+        <RedeemPassCard />
+        <ReferralWidget />
       </div>
 
       <PayoutSecurityCard className="mt-6" />

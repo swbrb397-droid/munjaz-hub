@@ -18,6 +18,7 @@ import {
   X,
 } from "lucide-react";
 import { Card, Section } from "@/components/site/Shell";
+import { ReferralWidget } from "@/components/site/ReferralWidget";
 import { useLang } from "@/lib/lang";
 import { useNotify } from "@/lib/notify";
 import { useAuth } from "@/hooks/use-auth";
@@ -27,12 +28,12 @@ import { ghostTag, useGhostMode } from "@/lib/ghost";
 export const Route = createFileRoute("/_authenticated/profile")({
   head: () => ({
     meta: [
-      { title: "الملف الشخصي وتوثيق الهوية | الـمُـنْـجِـز" },
+      { title: "الملف الشخصي وتوثيق الهوية | المُنجِز" },
       {
         name: "description",
         content: "أدر ملفك الشخصي، وثّق هويتك (KYC) عبر ثلاث خطوات، واضبط محفظة السحب والتنبيهات والمصادقة الثنائية.",
       },
-      { property: "og:title", content: "الملف الشخصي وتوثيق الهوية | الـمُـنْـجِـز" },
+      { property: "og:title", content: "الملف الشخصي وتوثيق الهوية | المُنجِز" },
       { property: "og:description", content: "توثيق KYC، دورة الضمان، عمولة الباقة، وإعدادات الأمان في مكان واحد." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -136,14 +137,15 @@ function ProfilePage() {
               key={t.id}
               type="button"
               onClick={() => setTab(t.id)}
-              className={`rounded-lg px-4 py-2 text-xs font-bold transition-colors ${
-                tab === t.id ? "bg-primary text-primary-foreground" : "border border-border text-muted-foreground"
-              }`}
+              aria-pressed={tab === t.id}
+              className={`chip ${tab === t.id ? "chip-active" : "chip-hover"}`}
             >
               {t.label}
             </button>
           ))}
         </div>
+
+        <ReferralWidget className="mt-4" />
 
         <div className="mt-4">
           {tab === "kyc" ? <KycWizard state={kyc} onSubmitted={() => setKyc("review")} /> : <SettingsPanel twoFa={twoFa} setTwoFa={setTwoFa} />}

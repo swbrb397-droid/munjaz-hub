@@ -13,9 +13,9 @@ type StoreSearch = { listingId?: string; lang?: "ar" | "en" };
 export const Route = createFileRoute("/store")({
   head: () => ({
     meta: [
-      { title: "المتجر الرقمي و NFT | الـمُـنْـجِـز" },
-      { name: "description", content: "تصفح خدمات المستقلين، المنتجات الرقمية، الدورات، جلسات القيمنق، ومعرض NFT على منصة الـمُـنْـجِـز بعملة USDT." },
-      { property: "og:title", content: "المتجر الرقمي و NFT | الـمُـنْـجِـز" },
+      { title: "المتجر الرقمي و NFT | المُنجِز" },
+      { name: "description", content: "تصفح خدمات المستقلين، المنتجات الرقمية، الدورات، جلسات القيمنق، ومعرض NFT على منصة المُنجِز بعملة USDT." },
+      { property: "og:title", content: "المتجر الرقمي و NFT | المُنجِز" },
       { property: "og:description", content: "فلترة كاملة للأصول الرقمية والدورات وخدمات المستقلين بعملة USDT." },
     ],
   }),
@@ -139,9 +139,9 @@ function Store() {
               <button
                 key={f.key}
                 onClick={() => { setActive(f.key); setPage(1); }}
-                className={`rounded-lg px-3 py-1.5 text-sm transition-colors ${
-                  active === f.key ? "bg-primary text-primary-foreground font-bold" : "border border-border text-muted-foreground hover:text-foreground"
-                }`}
+                type="button"
+                aria-pressed={active === f.key}
+                className={`chip ${active === f.key ? "chip-active" : "chip-hover"}`}
               >
                 {f.label}
               </button>
@@ -153,12 +153,12 @@ function Store() {
               value={query}
               onChange={(e) => { setQuery(e.target.value); setPage(1); }}
               placeholder={tr("ابحث عن خدمة...", "Search for a service...")}
-              className="w-full min-w-0 rounded-lg border border-input bg-surface px-3 py-2 text-sm outline-none focus:border-primary"
+              className="field-lux w-full min-w-0 px-3 py-2 text-sm text-foreground outline-none"
             />
             <select
               value={sort}
               onChange={(e) => { setSort(e.target.value as SortKey); setPage(1); }}
-              className="min-w-0 rounded-lg border border-input bg-surface px-3 py-2 text-sm outline-none focus:border-primary"
+              className="field-lux min-w-0 px-3 py-2 text-sm text-foreground outline-none"
               aria-label={tr("الفرز", "Sort")}
             >
               {sorts.map((s) => (
@@ -168,7 +168,7 @@ function Store() {
             <select
               value={contentLang}
               onChange={(e) => { setContentLang(e.target.value as "all" | "ar" | "en"); setPage(1); }}
-              className="min-w-0 rounded-lg border border-input bg-surface px-3 py-2 text-sm outline-none focus:border-primary"
+              className="field-lux min-w-0 px-3 py-2 text-sm text-foreground outline-none"
               aria-label={tr("لغة الخدمة", "Service language")}
             >
               <option value="all">{tr("كل اللغات", "All languages")}</option>
@@ -178,7 +178,7 @@ function Store() {
             <select
               value={delivery}
               onChange={(e) => { setDelivery(Number(e.target.value)); setPage(1); }}
-              className="min-w-0 rounded-lg border border-input bg-surface px-3 py-2 text-sm outline-none focus:border-primary"
+              className="field-lux min-w-0 px-3 py-2 text-sm text-foreground outline-none"
               aria-label={tr("مدة التسليم", "Delivery time")}
             >
               <option value={0}>{tr("أي مدة تسليم", "Any delivery time")}</option>
@@ -227,7 +227,7 @@ function Store() {
                 type="button"
                 disabled={page <= 1}
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
-                className="rounded-lg border border-border px-3 py-1.5 disabled:opacity-40"
+                className="chip chip-hover disabled:opacity-40"
               >
                 {tr("السابق", "Previous")}
               </button>
@@ -236,7 +236,7 @@ function Store() {
                 type="button"
                 disabled={page >= pages}
                 onClick={() => setPage((p) => Math.min(pages, p + 1))}
-                className="rounded-lg border border-border px-3 py-1.5 disabled:opacity-40"
+                className="chip chip-hover disabled:opacity-40"
               >
                 {tr("التالي", "Next")}
               </button>

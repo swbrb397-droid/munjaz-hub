@@ -10,9 +10,9 @@ import { useCreatePass, useGovernance, usePasses, useUpdateGovernance, type Acco
 export const Route = createFileRoute("/_authenticated/admin/governance")({
   head: () => ({
     meta: [
-      { title: "مولد الاشتراكات وحوكمة الرسوم | الـمُـنْـجِـز" },
+      { title: "مولد الاشتراكات وحوكمة الرسوم | المُنجِز" },
       { name: "description", content: "توليد بطاقات اشتراك أحادية الاستخدام وضبط إعدادات الحوكمة: الذكاء المستقل، مدة SLA، وحدود التعبئة." },
-      { property: "og:title", content: "مولد الاشتراكات وحوكمة الرسوم | الـمُـنْـجِـز" },
+      { property: "og:title", content: "مولد الاشتراكات وحوكمة الرسوم | المُنجِز" },
       { property: "og:description", content: "التحكم الكامل بسياسات المنصة وبطاقات الاشتراك." },
     ],
   }),

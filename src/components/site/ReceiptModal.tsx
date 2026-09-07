@@ -64,7 +64,7 @@ export function ReceiptModal({ receipt, onClose }: { receipt: ReceiptData; onClo
 
         <div ref={sheetRef} id="munjaz-receipt" className="mt-4 rounded-2xl border border-border bg-surface p-4 print:mt-0 print:rounded-none print:border print:border-black print:bg-white print:p-6 print:text-black">
           <div className="flex items-center justify-between gap-3 border-b border-dashed border-border pb-3 print:border-black">
-            <p className="text-sm font-black print:text-base print:text-black">الـمُـنْـجِـز</p>
+            <p className="text-sm font-black print:text-base print:text-black">المُنجِز</p>
             <span className="inline-flex items-center gap-1 rounded-full bg-primary px-2.5 py-1 text-[10px] font-black text-primary-foreground print:rounded-none print:border print:border-black print:bg-white print:text-[10px] print:text-black">
               <ShieldCheck className="size-3 print:hidden" /> ضمان منصة مُنجز - معتمد ✅
             </span>
@@ -84,7 +84,7 @@ export function ReceiptModal({ receipt, onClose }: { receipt: ReceiptData; onClo
             </p>
           </div>
           <p className="pdf-only mt-3 hidden text-center text-[10px] font-bold text-black print:block">
-            الختم الرسمي لمنصة الـمُـنْـجِـز · وثيقة معتمدة للضمان الرقمي · طُبعت بتاريخ {new Date().toLocaleString()}
+            الختم الرسمي لمنصة المُنجِز · وثيقة معتمدة للضمان الرقمي · طُبعت بتاريخ {new Date().toLocaleString()}
           </p>
         </div>
 

@@ -7,7 +7,7 @@ import { useProfile } from "@/lib/queries";
 type Msg = { id: string; role: "ai" | "user"; text: string };
 
 const WELCOME =
-  "مرحباً بك في منصة المنجز! كيف يمكنني مساعدتك اليوم بخصوص خدماتك، الضمان المالي، أو حسابك؟";
+  "مرحباً بك في منصة المُنجِز! كيف يمكنني مساعدتك اليوم بخصوص خدماتك، الضمان المالي، أو حسابك؟";
 
 const QUICK = [
   "كيف يعمل حجز الضمان؟",
@@ -151,7 +151,7 @@ export function SupportWidget() {
           <div className="order-2 min-w-0 flex-1">
             <p className="flex min-w-0 items-center gap-2 truncate font-bold">
               <span className="size-2 shrink-0 rounded-full bg-primary" />
-              المساعد الذكي لمنصة المنجز
+              المساعد الذكي لمنصة المُنجِز
             </p>
             <span className="mt-1 inline-block rounded-full border border-accent/40 bg-accent/10 px-2 py-0.5 text-[10px] font-bold text-accent">
               {badge}
