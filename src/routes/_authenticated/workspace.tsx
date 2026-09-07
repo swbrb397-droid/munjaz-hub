@@ -340,22 +340,7 @@ function Workspace() {
   }
 
 
-  function enableMilestones() {
-    createMilestones.mutate([
-      {
-        title: tr("المرحلة 1: تسليم المسودة الأولى والتصميم الأولي", "Stage 1: first draft & initial design"),
-        pct: 30,
-        amount_usdt: Number(((orderAmount * 30) / 100).toFixed(2)),
-        position: 1,
-      },
-      {
-        title: tr("المرحلة 2: المراجعة النهائية والتسليم الكامل", "Stage 2: final review & full delivery"),
-        pct: 70,
-        amount_usdt: Number(((orderAmount * 70) / 100).toFixed(2)),
-        position: 2,
-      },
-    ]);
-  }
+
 
   const autoUpTo = order?.status === "completed" ? 100 : order?.status === "delivered" ? 70 : order?.status === "in_progress" ? 30 : 0;
   /** Warranty escrow retains 10–15% for a 7-day stability window after delivery. */
