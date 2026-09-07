@@ -3,7 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import {
   Bell, Globe, LogIn, LogOut, Menu, Repeat2, Wallet2, X,
   Home, Store, Trophy, PlusCircle, LayoutDashboard, ClipboardList, Users, UserCog, CreditCard, ShieldCheck,
-  Gavel, BadgeCheck, Settings2,
+  Gavel, BadgeCheck, Settings2, ScrollText,
   type LucideIcon,
 } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
