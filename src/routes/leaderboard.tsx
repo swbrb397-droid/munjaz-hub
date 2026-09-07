@@ -10,9 +10,9 @@ import { useAuth } from "@/hooks/use-auth";
 export const Route = createFileRoute("/leaderboard")({
   head: () => ({
     meta: [
-      { title: "لوحة المتصدرين | الـمُـنْـجِـز" },
-      { name: "description", content: "ترتيب البائعين في الـمُـنْـجِـز وفق التقييم الرقمي ونسبة الإنجاز وعدد المبيعات — بدون أي ترقية مدفوعة." },
-      { property: "og:title", content: "لوحة المتصدرين | الـمُـنْـجِـز" },
+      { title: "لوحة المتصدرين | المُنجِز" },
+      { name: "description", content: "ترتيب البائعين في المُنجِز وفق التقييم الرقمي ونسبة الإنجاز وعدد المبيعات — بدون أي ترقية مدفوعة." },
+      { property: "og:title", content: "لوحة المتصدرين | المُنجِز" },
       { property: "og:description", content: "ترتيب استحقاقي بالكامل يعتمد على الأداء الرقمي فقط." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },

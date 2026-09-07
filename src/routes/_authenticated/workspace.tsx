@@ -89,9 +89,9 @@ function fileMeta(value: string) {
 export const Route = createFileRoute("/_authenticated/workspace")({
   head: () => ({
     meta: [
-      { title: "مساحة عمل الطلب | الـمُـنْـجِـز" },
+      { title: "مساحة عمل الطلب | المُنجِز" },
       { name: "description", content: "محادثة لحظية مع ترجمة فورية بالذكاء الاصطناعي، مكالمات فيديو، تسليم الملفات، وفتح نزاع محمي بضمان المنصة." },
-      { property: "og:title", content: "مساحة عمل الطلب | الـمُـنْـجِـز" },
+      { property: "og:title", content: "مساحة عمل الطلب | المُنجِز" },
       { property: "og:description", content: "تواصل، سلّم، وأدر نزاعاتك داخل مساحة عمل واحدة آمنة." },
     ],
   }),

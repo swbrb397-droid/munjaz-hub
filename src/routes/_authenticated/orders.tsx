@@ -23,12 +23,12 @@ import { useNotify } from "@/lib/notify";
 export const Route = createFileRoute("/_authenticated/orders")({
   head: () => ({
     meta: [
-      { title: "إدارة الطلبات والضمان | الـمُـنْـجِـز" },
+      { title: "إدارة الطلبات والضمان | المُنجِز" },
       {
         name: "description",
         content: "تتبّع دورة حياة الطلب من التنفيذ حتى تحرير المبلغ، مع مؤقت الضمان، تحميل التسليمات، وفتح نزاع مالي للتحكيم.",
       },
-      { property: "og:title", content: "إدارة الطلبات والضمان | الـمُـنْـجِـز" },
+      { property: "og:title", content: "إدارة الطلبات والضمان | المُنجِز" },
       { property: "og:description", content: "مؤقت ضمان حي، تأكيد استلام، طلب تعديل، ونافذة تحكيم للنزاعات المالية." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },

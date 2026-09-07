@@ -8,9 +8,9 @@ import { lookupDocument, type StampedDoc } from "@/lib/doc-registry";
 export const Route = createFileRoute("/verify")({
   head: () => ({
     meta: [
-      { title: "التحقق من المستندات | الـمُـنْـجِـز" },
-      { name: "description", content: "تحقّق من أصالة إيصالات وسجلات الـمُـنْـجِـز عبر بصمة التحقق المطبوعة على ملف PDF." },
-      { property: "og:title", content: "التحقق من المستندات | الـمُـنْـجِـز" },
+      { title: "التحقق من المستندات | المُنجِز" },
+      { name: "description", content: "تحقّق من أصالة إيصالات وسجلات المُنجِز عبر بصمة التحقق المطبوعة على ملف PDF." },
+      { property: "og:title", content: "التحقق من المستندات | المُنجِز" },
       { property: "og:description", content: "أدخل بصمة التحقق لعرض حالة الأصالة ونوع المستند وتاريخ الإصدار." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -99,7 +99,7 @@ function Verify() {
               </p>
               <p className="inline-flex items-center gap-2 text-xs text-muted-foreground">
                 <ShieldCheck className="size-4 text-primary" />
-                {tr("موقّع رقمياً بختم منصة الـمُـنْـجِـز للضمان.", "Digitally signed with the Al-Munjaz escrow platform seal.")}
+                {tr("موقّع رقمياً بختم منصة المُنجِز للضمان.", "Digitally signed with the Al-Munjaz escrow platform seal.")}
               </p>
             </div>
           ) : (

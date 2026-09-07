@@ -8,9 +8,9 @@ import { useLang } from "@/lib/lang";
 export const Route = createFileRoute("/pricing")({
   head: () => ({
     meta: [
-      { title: "باقات الاشتراك والمقاعد | الـمُـنْـجِـز" },
+      { title: "باقات الاشتراك والمقاعد | المُنجِز" },
       { name: "description", content: "باقات المجانية والمحترفين والشركات بعملة USDT — مقاعد محدودة، حجز فوري، وتسريع دورة الضمان." },
-      { property: "og:title", content: "باقات الاشتراك والمقاعد | الـمُـنْـجِـز" },
+      { property: "og:title", content: "باقات الاشتراك والمقاعد | المُنجِز" },
       { property: "og:description", content: "10 USDT للمحترفين و49 USDT للشركات — الظهور يعتمد على الكفاءة فقط." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -92,7 +92,7 @@ function PricingPage() {
     <div className="overflow-x-hidden">
       <section className="border-b border-border">
         <div className="mx-auto max-w-7xl px-4 py-14 text-center">
-          <h1 className="text-3xl font-black sm:text-5xl">اختر باقتك وانطلق في منظومة «الـمُـنْـجِـز»</h1>
+          <h1 className="text-3xl font-black sm:text-5xl">اختر باقتك وانطلق في منظومة «المُنجِز»</h1>
           <p className="mx-auto mt-4 max-w-2xl text-sm text-muted-foreground sm:text-base">
             محرك البحث والظهور الداخلي يعتمد 100% على الكفاءة والتقييم الحقيقي لجميع المستخدمين بلا تمييز.
           </p>

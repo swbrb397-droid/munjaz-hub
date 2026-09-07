@@ -8,9 +8,9 @@ import { useLang } from "@/lib/lang";
 export const Route = createFileRoute("/referrals")({
   head: () => ({
     meta: [
-      { title: "مركز الإحالة والعمولات | الـمُـنْـجِـز" },
+      { title: "مركز الإحالة والعمولات | المُنجِز" },
       { name: "description", content: "تتبع رابط الإحالة الفريد، أرباح العمولات لمدة 12 شهراً، وسجل الإحالات مع الشروط القانونية الكاملة." },
-      { property: "og:title", content: "مركز الإحالة والعمولات | الـمُـنْـجِـز" },
+      { property: "og:title", content: "مركز الإحالة والعمولات | المُنجِز" },
       { property: "og:description", content: "20% ترويجية أول 30 يوماً ثم 10% للأشهر المتبقية — من صافي أرباح المنصة فقط." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },

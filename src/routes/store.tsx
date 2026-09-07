@@ -13,9 +13,9 @@ type StoreSearch = { listingId?: string; lang?: "ar" | "en" };
 export const Route = createFileRoute("/store")({
   head: () => ({
     meta: [
-      { title: "المتجر الرقمي و NFT | الـمُـنْـجِـز" },
-      { name: "description", content: "تصفح خدمات المستقلين، المنتجات الرقمية، الدورات، جلسات القيمنق، ومعرض NFT على منصة الـمُـنْـجِـز بعملة USDT." },
-      { property: "og:title", content: "المتجر الرقمي و NFT | الـمُـنْـجِـز" },
+      { title: "المتجر الرقمي و NFT | المُنجِز" },
+      { name: "description", content: "تصفح خدمات المستقلين، المنتجات الرقمية، الدورات، جلسات القيمنق، ومعرض NFT على منصة المُنجِز بعملة USDT." },
+      { property: "og:title", content: "المتجر الرقمي و NFT | المُنجِز" },
       { property: "og:description", content: "فلترة كاملة للأصول الرقمية والدورات وخدمات المستقلين بعملة USDT." },
     ],
   }),
