@@ -266,6 +266,7 @@ function AuthPage() {
           }
           throw error;
         }
+        setNavigating(true);
       }
     } catch (e) {
       const raw = e instanceof Error ? e.message : String(e);
