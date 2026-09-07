@@ -306,6 +306,39 @@ function Workspace() {
   const milestoneRows = milestonesQuery.data ?? [];
   const milestonesOn = milestoneRows.length > 0;
   const orderAmount = Number(order?.amount_usdt ?? 0);
+  type DraftMilestone = { title: string; amount: string; due: string };
+  const [builderOn, setBuilderOn] = useState(false);
+  const [draftMilestones, setDraftMilestones] = useState<DraftMilestone[]>([
+    { title: "", amount: "", due: "" },
+    { title: "", amount: "", due: "" },
+  ]);
+
+  const updateDraft = (index: number, patch: Partial<DraftMilestone>) =>
+    setDraftMilestones((rows) => rows.map((r, i) => (i === index ? { ...r, ...patch } : r)));
+
+  const draftTotal = draftMilestones.reduce((s, d) => s + (Number(d.amount) || 0), 0);
+  const draftValid =
+    orderAmount > 0 &&
+    draftMilestones.length > 0 &&
+    draftMilestones.every((d) => d.title.trim().length > 1 && (Number(d.amount) || 0) > 0) &&
+    Math.abs(draftTotal - orderAmount) < 0.01;
+
+  function saveMilestones() {
+    if (!draftValid) return;
+    createMilestones.mutate(
+      draftMilestones.map((d, i) => {
+        const amount = Number(d.amount);
+        return {
+          title: d.due ? `${d.title.trim()} · ${tr("تسليم", "due")} ${d.due}` : d.title.trim(),
+          pct: Number((((i === draftMilestones.length - 1 ? orderAmount : draftMilestones.slice(0, i + 1).reduce((s, r) => s + Number(r.amount), 0)) / orderAmount) * 100).toFixed(2)),
+          amount_usdt: Number(amount.toFixed(2)),
+          position: i + 1,
+        };
+      }),
+      { onSuccess: () => setBuilderOn(false) },
+    );
+  }
+
 
   function enableMilestones() {
     createMilestones.mutate([
