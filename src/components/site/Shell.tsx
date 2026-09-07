@@ -227,9 +227,11 @@ export function Shell({ children }: { children: ReactNode }) {
     <div className="min-h-screen overflow-x-hidden">
       <header className="sticky top-0 z-50 glass">
         <div className="mx-auto flex h-16 max-w-7xl items-center gap-2 px-3 sm:gap-4 sm:px-4">
-          <Link to="/" className="flex shrink-0 items-center gap-2" aria-label={t("brand")}>
-            <span className="grid size-9 place-items-center rounded-lg bg-primary/15 font-bold text-primary glow">م</span>
-            <span className="hidden text-lg font-extrabold neon-text sm:inline">{t("brand")}</span>
+          <Link to="/" className="flex min-w-0 shrink items-center gap-1.5 sm:gap-2" aria-label={t("brand")}>
+            <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-primary/15 text-sm font-bold text-primary glow sm:size-9 sm:text-base">م</span>
+            <span className="whitespace-nowrap text-[11px] font-extrabold leading-none neon-text sm:text-base lg:text-lg">
+              مُنجز هَب <span className="opacity-60">|</span> Munjaz Hub
+            </span>
           </Link>
 
           <nav className="mx-auto hidden items-center gap-1 lg:flex">
@@ -372,6 +374,6 @@ export function Section({
   );
 }
 
-export function Card({ children, className = "" }: { children: ReactNode; className?: string }) {
-  return <div className={`rounded-lg border border-border bg-card/70 p-4 backdrop-blur sm:p-5 ${className}`}>{children}</div>;
+export function Card({ children, className = "", id }: { children: ReactNode; className?: string; id?: string }) {
+  return <div id={id} className={`rounded-lg border border-border bg-card/70 p-4 backdrop-blur sm:p-5 ${className}`}>{children}</div>;
 }

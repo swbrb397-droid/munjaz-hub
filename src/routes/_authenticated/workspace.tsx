@@ -306,23 +306,41 @@ function Workspace() {
   const milestoneRows = milestonesQuery.data ?? [];
   const milestonesOn = milestoneRows.length > 0;
   const orderAmount = Number(order?.amount_usdt ?? 0);
+  type DraftMilestone = { title: string; amount: string; due: string };
+  const [builderOn, setBuilderOn] = useState(false);
+  const [draftMilestones, setDraftMilestones] = useState<DraftMilestone[]>([
+    { title: "", amount: "", due: "" },
+    { title: "", amount: "", due: "" },
+  ]);
 
-  function enableMilestones() {
-    createMilestones.mutate([
-      {
-        title: tr("المرحلة 1: تسليم المسودة الأولى والتصميم الأولي", "Stage 1: first draft & initial design"),
-        pct: 30,
-        amount_usdt: Number(((orderAmount * 30) / 100).toFixed(2)),
-        position: 1,
-      },
-      {
-        title: tr("المرحلة 2: المراجعة النهائية والتسليم الكامل", "Stage 2: final review & full delivery"),
-        pct: 70,
-        amount_usdt: Number(((orderAmount * 70) / 100).toFixed(2)),
-        position: 2,
-      },
-    ]);
+  const updateDraft = (index: number, patch: Partial<DraftMilestone>) =>
+    setDraftMilestones((rows) => rows.map((r, i) => (i === index ? { ...r, ...patch } : r)));
+
+  const draftTotal = draftMilestones.reduce((s, d) => s + (Number(d.amount) || 0), 0);
+  const draftValid =
+    orderAmount > 0 &&
+    draftMilestones.length > 0 &&
+    draftMilestones.every((d) => d.title.trim().length > 1 && (Number(d.amount) || 0) > 0) &&
+    Math.abs(draftTotal - orderAmount) < 0.01;
+
+  function saveMilestones() {
+    if (!draftValid) return;
+    createMilestones.mutate(
+      draftMilestones.map((d, i) => {
+        const amount = Number(d.amount);
+        return {
+          title: d.due ? `${d.title.trim()} · ${tr("تسليم", "due")} ${d.due}` : d.title.trim(),
+          pct: Number((((i === draftMilestones.length - 1 ? orderAmount : draftMilestones.slice(0, i + 1).reduce((s, r) => s + Number(r.amount), 0)) / orderAmount) * 100).toFixed(2)),
+          amount_usdt: Number(amount.toFixed(2)),
+          position: i + 1,
+        };
+      }),
+      { onSuccess: () => setBuilderOn(false) },
+    );
   }
+
+
+
 
   const autoUpTo = order?.status === "completed" ? 100 : order?.status === "delivered" ? 70 : order?.status === "in_progress" ? 30 : 0;
   /** Warranty escrow retains 10–15% for a 7-day stability window after delivery. */
@@ -1209,24 +1227,98 @@ function Workspace() {
           <Card>
             <div className="flex items-center justify-between gap-3">
               <h3 className="min-w-0 text-sm font-bold">{tr("المعالم المرحلية للطلب", "Order milestones")}</h3>
-              <label className="flex shrink-0 items-center gap-2 text-[11px] text-muted-foreground">
-                {tr("تفعيل", "Enable")}
-                <input
-                  type="checkbox"
-                  checked={milestonesOn}
-                  disabled={milestonesOn || createMilestones.isPending}
-                  onChange={(e) => {
-                    if (e.target.checked) enableMilestones();
-                  }}
-                  className="size-4 accent-primary"
+              <button
+                type="button"
+                role="switch"
+                aria-checked={milestonesOn || builderOn}
+                aria-label={tr("تفعيل المعالم المرحلية للطلب", "Enable order milestones")}
+                disabled={milestonesOn || createMilestones.isPending}
+                onClick={() => setBuilderOn((v) => !v)}
+                className={`relative inline-flex h-7 w-12 shrink-0 cursor-pointer touch-manipulation items-center rounded-full border transition-colors disabled:cursor-default disabled:opacity-70 ${
+                  milestonesOn || builderOn ? "border-primary bg-primary/80" : "border-border bg-secondary"
+                }`}
+              >
+                <span
+                  className={`absolute top-1/2 size-5 -translate-y-1/2 rounded-full bg-background shadow transition-all ${
+                    milestonesOn || builderOn ? "start-[calc(100%-1.5rem)]" : "start-1"
+                  }`}
                 />
-              </label>
+              </button>
             </div>
-            {!milestonesOn ? (
+            {!milestonesOn && !builderOn ? (
               <p className="mt-2 text-xs text-muted-foreground">
                 {tr("اختياري — قسّم الطلب إلى مراحل مع تحرير جزئي للضمان.", "Optional — split the order into milestones with partial escrow release.")}
               </p>
+            ) : !milestonesOn ? (
+              <div className="mt-3 grid gap-2">
+                <p className="text-[11px] text-muted-foreground">
+                  {tr("أضف مراحل التسليم — يجب أن يساوي مجموع المبالغ قيمة الطلب.", "Add delivery stages — the amounts must add up to the order total.")}
+                </p>
+                {draftMilestones.map((d, i) => (
+                  <div key={i} className="grid gap-2 rounded-xl border border-border p-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-[11px] font-bold text-muted-foreground">{tr("المرحلة", "Stage")} {i + 1}</span>
+                      {draftMilestones.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => setDraftMilestones((rows) => rows.filter((_, k) => k !== i))}
+                          className="rounded-lg border border-destructive/40 px-2 py-1 text-[10px] font-bold text-destructive"
+                        >
+                          {tr("حذف", "Remove")}
+                        </button>
+                      )}
+                    </div>
+                    <input
+                      value={d.title}
+                      onChange={(e) => updateDraft(i, { title: e.target.value.slice(0, 90) })}
+                      placeholder={tr("اسم المرحلة", "Stage name")}
+                      className="w-full rounded-lg border border-input bg-surface px-3 py-2 text-xs outline-none focus:border-primary"
+                    />
+                    <div className="grid grid-cols-2 gap-2">
+                      <input
+                        value={d.amount}
+                        dir="ltr"
+                        inputMode="decimal"
+                        onChange={(e) => updateDraft(i, { amount: e.target.value.replace(/[^0-9.]/g, "") })}
+                        placeholder={tr("المبلغ USDT", "Amount USDT")}
+                        className="w-full rounded-lg border border-input bg-surface px-3 py-2 text-xs outline-none focus:border-primary"
+                      />
+                      <input
+                        value={d.due}
+                        type="date"
+                        onChange={(e) => updateDraft(i, { due: e.target.value })}
+                        className="w-full rounded-lg border border-input bg-surface px-3 py-2 text-xs outline-none focus:border-primary"
+                      />
+                    </div>
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => setDraftMilestones((rows) => [...rows, { title: "", amount: "", due: "" }])}
+                  className="rounded-xl border border-border py-2 text-[11px] font-bold"
+                >
+                  + {tr("إضافة مرحلة", "Add stage")}
+                </button>
+                <p className={`text-[11px] font-bold ${draftValid ? "text-primary" : "text-destructive"}`} dir="auto">
+                  {tr("مجموع المراحل", "Milestones total")}: <span dir="ltr" className="font-mono">{draftTotal.toFixed(2)}</span> /{" "}
+                  <span dir="ltr" className="font-mono">{orderAmount.toFixed(2)} USDT</span>
+                </p>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    disabled={!draftValid || createMilestones.isPending}
+                    onClick={saveMilestones}
+                    className="rounded-xl bg-primary py-2.5 text-xs font-bold text-primary-foreground disabled:opacity-40"
+                  >
+                    {tr("حفظ المعالم", "Save milestones")}
+                  </button>
+                  <button type="button" onClick={() => setBuilderOn(false)} className="rounded-xl border border-border py-2.5 text-xs font-bold">
+                    {tr("إلغاء", "Cancel")}
+                  </button>
+                </div>
+              </div>
             ) : (
+
               <div className="mt-3 grid gap-2">
                 <div className="h-2 w-full overflow-hidden rounded-full bg-secondary">
                   <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${releasedPct}%` }} />

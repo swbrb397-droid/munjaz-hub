@@ -3,9 +3,9 @@ import { useServerFn } from "@tanstack/react-start";
 import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
-import { createTopUpInvoice, type TopUpInvoice, type TopUpNetwork } from "@/lib/topup.functions";
+import { createTopUpInvoice, type TopUpInvoice, type TopUpMethod, type TopUpNetwork } from "@/lib/topup.functions";
 
-export type { TopUpInvoice, TopUpNetwork };
+export type { TopUpInvoice, TopUpMethod, TopUpNetwork };
 
 export function topUpErrorMessage(raw: string, ar: boolean): string {
   const map: Record<string, [string, string]> = {
@@ -28,7 +28,7 @@ export function topUpErrorMessage(raw: string, ar: boolean): string {
 export function useCreateTopUp() {
   const create = useServerFn(createTopUpInvoice);
   return useMutation({
-    mutationFn: (input: { amount: number; network: TopUpNetwork }) => create({ data: input }),
+    mutationFn: (input: { amount: number; network: TopUpNetwork; method: TopUpMethod }) => create({ data: input }),
   });
 }
 
