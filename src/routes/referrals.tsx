@@ -1,9 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Copy, Info, ShieldAlert, Users, CheckCircle2, Wallet2, Clock, X } from "lucide-react";
 import { Card, Section } from "@/components/site/Shell";
 import { useLang } from "@/lib/lang";
+import { useProfile, useReferrals } from "@/lib/queries";
 
 export const Route = createFileRoute("/referrals")({
   head: () => ({
@@ -19,53 +20,38 @@ export const Route = createFileRoute("/referrals")({
   component: ReferralHub,
 });
 
-const REF_LINK = "https://munjaz.com/register?ref=MUNJAZ_PRO_492";
-
-type Row = {
-  date: string;
-  buyer: string;
-  asset: "خدمة" | "منتج" | "دورة";
-  amount: number;
-  rate: 20 | 10;
-  daysLeft: number;
-  commission: number;
-  status: "completed" | "escrow";
-};
-
-const ROWS: Row[] = [
-  { date: "2026-08-02", buyer: "usr_***98", asset: "خدمة", amount: 420, rate: 20, daysLeft: 350, commission: 8.4, status: "completed" },
-  { date: "2026-07-21", buyer: "usr_***41", asset: "دورة", amount: 150, rate: 20, daysLeft: 332, commission: 3.0, status: "escrow" },
-  { date: "2026-05-11", buyer: "usr_***07", asset: "منتج", amount: 90, rate: 10, daysLeft: 268, commission: 0.9, status: "completed" },
-  { date: "2026-03-04", buyer: "usr_***23", asset: "خدمة", amount: 1200, rate: 10, daysLeft: 200, commission: 12.0, status: "escrow" },
-];
-
 function Skel({ className = "" }: { className?: string }) {
   return <div className={`animate-pulse rounded-lg bg-secondary ${className}`} />;
 }
 
 function ReferralHub() {
   const { tr } = useLang();
-  const [loading, setLoading] = useState(true);
-  const [rows, setRows] = useState<Row[]>([]);
+  const profile = useProfile();
+  const data = useReferrals();
   const [terms, setTerms] = useState(false);
 
-  useEffect(() => {
-    const t = setTimeout(() => {
-      setRows(ROWS);
-      setLoading(false);
-    }, 700);
-    return () => clearTimeout(t);
-  }, []);
+  const loading = data.isLoading || profile.isLoading;
+  const code = (profile.data as { referral_code?: string } | null)?.referral_code ?? "";
+  const origin = typeof window !== "undefined" ? window.location.origin : "";
+  const refLink = code ? `${origin}/auth?ref=${code}` : "";
+
+  const referrals = data.data?.referrals ?? [];
+  const commissions = data.data?.commissions ?? [];
 
   const kpis = useMemo(() => {
-    const available = rows.filter((r) => r.status === "completed").reduce((s, r) => s + r.commission, 0);
-    const pending = rows.filter((r) => r.status === "escrow").reduce((s, r) => s + r.commission, 0);
-    return { joined: rows.length, completed: rows.filter((r) => r.status === "completed").length, available, pending };
-  }, [rows]);
+    const total = commissions.reduce((s, c) => s + Number(c.commission_usdt ?? 0), 0);
+    return {
+      joined: referrals.length,
+      active: referrals.filter((r) => r.is_active).length,
+      total,
+      lifetime: referrals.reduce((s, r) => s + Number(r.total_earned_usdt ?? 0), 0),
+    };
+  }, [referrals, commissions]);
 
   const copy = async () => {
+    if (!refLink) return;
     try {
-      await navigator.clipboard.writeText(REF_LINK);
+      await navigator.clipboard.writeText(refLink);
       toast.success(tr("تم نسخ رابط الإحالة", "Referral link copied"));
     } catch {
       toast.error(tr("تعذّر النسخ", "Copy failed"));
@@ -84,16 +70,17 @@ function ReferralHub() {
             <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-2">
               <input
                 readOnly
-                value={REF_LINK}
+                value={refLink || tr("سجّل الدخول لإنشاء رابطك", "Sign in to generate your link")}
                 dir="ltr"
                 aria-label={tr("رابط الإحالة", "Affiliate link")}
                 onFocus={(e) => e.currentTarget.select()}
-                className="min-w-0 overflow-x-auto rounded-xl border border-accent/40 bg-background px-3 py-2.5 font-mono text-[11px] text-accent sm:text-xs"
+                className="field-lux min-w-0 overflow-x-auto px-3 py-2.5 font-mono text-[11px] text-accent sm:text-xs"
               />
               <button
                 type="button"
                 onClick={copy}
-                className="flex shrink-0 items-center gap-1.5 rounded-xl bg-primary px-3 py-2.5 text-xs font-bold text-primary-foreground shadow-lg hover:opacity-90"
+                disabled={!refLink}
+                className="chip chip-hover shrink-0 !text-primary disabled:opacity-50"
               >
                 <Copy className="size-4" /> {tr("نسخ الرابط", "Copy link")}
               </button>
@@ -117,9 +104,9 @@ function ReferralHub() {
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {[
               { icon: Users, label: tr("إجمالي المسجلين", "Total joined"), value: kpis.joined.toString(), tone: "text-foreground" },
-              { icon: CheckCircle2, label: tr("الطلبات المكتملة", "Completed orders"), value: kpis.completed.toString(), tone: "text-foreground" },
-              { icon: Wallet2, label: tr("الأرباح المتاحة (USDT)", "Available earnings (USDT)"), value: kpis.available.toFixed(2), tone: "text-primary" },
-              { icon: Clock, label: tr("الأرباح المعلقة في الضمان (USDT)", "Pending in escrow (USDT)"), value: kpis.pending.toFixed(2), tone: "text-accent" },
+              { icon: CheckCircle2, label: tr("الإحالات النشطة", "Active referrals"), value: kpis.active.toString(), tone: "text-foreground" },
+              { icon: Wallet2, label: tr("إجمالي العمولات (USDT)", "Total commissions (USDT)"), value: kpis.total.toFixed(2), tone: "text-primary" },
+              { icon: Clock, label: tr("الأرباح التراكمية (USDT)", "Lifetime earnings (USDT)"), value: kpis.lifetime.toFixed(2), tone: "text-accent" },
             ].map((k) => (
               <Card key={k.label}>
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
@@ -133,64 +120,47 @@ function ReferralHub() {
 
           <Card className="p-0">
             <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-b border-border p-5">
-              <p className="min-w-0 truncate font-bold">{tr("سجل الإحالات", "Referral activity log")}</p>
+              <p className="min-w-0 truncate font-bold">{tr("سجل العمولات", "Commission log")}</p>
               <button
                 type="button"
                 onClick={() => setTerms(true)}
-                className="shrink-0 rounded-lg border border-border px-3 py-2 text-xs font-semibold hover:bg-secondary"
+                className="chip chip-hover shrink-0"
               >
-                {tr("عرض الشروط والأحكام الخاصة بنظام الإحالة", "Referral terms")}
+                {tr("شروط نظام الإحالة", "Referral terms")}
               </button>
             </div>
 
-            <div className="w-full overflow-x-auto">
-              <table className="w-full min-w-[880px] text-right text-xs">
-                <thead className="bg-secondary/60 text-muted-foreground">
-                  <tr>
-                    {["تاريخ التسجيل", "معرف المشتري", "الأصل المشترى", "قيمة الصفقة", "النسبة المطبقة", "المتبقي من 12 شهراً", "قيمة العمولة", "حالة العمولة"].map((h) => (
-                      <th key={h} className="whitespace-nowrap px-4 py-3 font-semibold">{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {loading &&
-                    Array.from({ length: 3 }).map((_, i) => (
-                      <tr key={i} className="border-t border-border">
-                        {Array.from({ length: 8 }).map((__, j) => (
-                          <td key={j} className="px-4 py-3"><Skel className="h-4 w-16" /></td>
-                        ))}
-                      </tr>
-                    ))}
-                  {!loading &&
-                    rows.map((r) => (
-                      <tr key={r.buyer} className="border-t border-border">
-                        <td className="whitespace-nowrap px-4 py-3 text-muted-foreground">{r.date}</td>
-                        <td className="whitespace-nowrap px-4 py-3 font-mono">{r.buyer}</td>
-                        <td className="whitespace-nowrap px-4 py-3">{r.asset}</td>
-                        <td className="whitespace-nowrap px-4 py-3">{r.amount} USDT</td>
-                        <td className="whitespace-nowrap px-4 py-3">
-                          <span className={`rounded-full px-2 py-0.5 ${r.rate === 20 ? "bg-accent/15 text-accent" : "bg-secondary text-muted-foreground"}`}>
-                            {r.rate === 20 ? "20% ترويجي" : "10% أساسي"}
-                          </span>
-                        </td>
-                        <td className="whitespace-nowrap px-4 py-3 text-muted-foreground">{r.daysLeft} يوم</td>
-                        <td className="whitespace-nowrap px-4 py-3 font-bold text-primary">{r.commission.toFixed(2)}</td>
-                        <td className="whitespace-nowrap px-4 py-3">
-                          <span className={`rounded-full px-2 py-0.5 ${r.status === "completed" ? "bg-primary/15 text-primary" : "bg-accent/15 text-accent"}`}>
-                            {r.status === "completed" ? "مكتملة" : "معلقة في الضمان"}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                </tbody>
-              </table>
-            </div>
-
-            {!loading && rows.length === 0 && (
+            {loading ? (
+              <div className="grid gap-2 p-5">
+                {[0, 1, 2].map((i) => <Skel key={i} className="h-10 w-full" />)}
+              </div>
+            ) : commissions.length === 0 ? (
               <div className="grid place-items-center gap-2 px-4 py-14 text-center">
                 <Users className="size-8 text-muted-foreground" />
                 <p className="font-bold">{tr("لا توجد إحالات بعد", "No referrals yet")}</p>
                 <p className="text-xs text-muted-foreground">{tr("شارك رابطك الفريد لتبدأ بجمع العمولات.", "Share your unique link to start earning.")}</p>
+              </div>
+            ) : (
+              <div className="w-full overflow-x-auto">
+                <table className="w-full min-w-[560px] text-right text-xs">
+                  <thead className="bg-secondary/60 text-muted-foreground">
+                    <tr>
+                      {[tr("التاريخ", "Date"), tr("رسوم المنصة", "Platform fee"), tr("قيمة العمولة", "Commission"), tr("الطلب", "Order")].map((h) => (
+                        <th key={h} className="whitespace-nowrap px-4 py-3 font-semibold">{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {commissions.map((c) => (
+                      <tr key={c.id} className="border-t border-border">
+                        <td className="whitespace-nowrap px-4 py-3 text-muted-foreground">{new Date(c.created_at).toLocaleDateString()}</td>
+                        <td className="whitespace-nowrap px-4 py-3">{Number(c.platform_fee_usdt).toFixed(2)} USDT</td>
+                        <td className="whitespace-nowrap px-4 py-3 font-bold text-primary">{Number(c.commission_usdt).toFixed(2)}</td>
+                        <td className="whitespace-nowrap px-4 py-3 font-mono text-muted-foreground">{c.order_id ? String(c.order_id).slice(0, 8) : "—"}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             )}
           </Card>
