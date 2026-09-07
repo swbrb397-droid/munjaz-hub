@@ -275,6 +275,7 @@ function AuthPage() {
       if (mode === "signin") {
         toast.error(message);
       }
+      setNavigating(false);
       if (mode === "signup" && (raw === "__EMAIL_TAKEN__" || /already registered/i.test(raw))) {
         toast.error(lang === "ar" ? EMAIL_TAKEN_AR : message);
         setMode("signin");
@@ -414,19 +415,19 @@ function AuthPage() {
           )}
 
           <button
-            disabled={busy || emailInvalid}
-            aria-busy={busy}
+            disabled={busy || navigating || emailInvalid}
+            aria-busy={busy || navigating}
             type="submit"
             className="mt-2 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 font-bold text-primary-foreground glow transition-all duration-200 hover:scale-[1.01] disabled:opacity-60"
           >
-            {busy ? (
+            {busy || navigating ? (
               <Loader2 className="size-4 animate-spin" />
             ) : mode === "signin" ? (
               <LogIn className="size-4" />
             ) : (
               <UserPlus className="size-4" />
             )}
-            {busy
+            {busy || navigating
               ? mode === "signin"
                 ? tr("جارٍ تسجيل الدخول…", "Signing in…")
                 : tr("جارٍ إنشاء الحساب…", "Creating your account…")
