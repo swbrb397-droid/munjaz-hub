@@ -695,7 +695,7 @@ function Workspace() {
                   <div key={r.id} className="flex justify-start">
                     <div className="max-w-[85%] rounded-2xl border border-accent/40 bg-accent/10 px-4 py-3 text-sm sm:max-w-[75%]">
                       <p className="mb-1 flex items-center gap-1 text-xs font-bold text-accent">
-                        <Sparkles className="size-3" /> {tr("مساعد مُنجَز الذكي", "Munjaz AI assistant")}
+                        <Sparkles className="size-3" /> {tr("مساعد المُنجِز الذكي", "Munjaz AI assistant")}
                       </p>
                       <p className="break-words whitespace-pre-wrap">{r.text}</p>
                     </div>
