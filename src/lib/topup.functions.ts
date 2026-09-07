@@ -43,22 +43,9 @@ export const createTopUpInvoice = createServerFn({ method: "POST" })
     const fallbackAddress =
       data.network === "trc20" ? process.env["DEPOSIT_ADDRESS_TRC20"] : process.env["DEPOSIT_ADDRESS_BEP20"];
 
-    const expiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString();
-    const simulated = !apiKey && (data.method === "card" || !fallbackAddress);
-
-    if (simulated) {
-      return {
-        id: `sim-${Date.now().toString(36)}`,
-        amount_usdt: data.amount,
-        network: data.network,
-        method: data.method,
-        provider: "simulation",
-        pay_address: null,
-        pay_url: null,
-        simulated: true,
-        expires_at: expiresAt,
-      };
-    }
+    // Live/production mode: no simulated invoices — the NOWPayments API key
+    // must be configured so every top-up creates a real payment.
+    if (!apiKey) throw new Error("GATEWAY_NOT_CONFIGURED");
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
