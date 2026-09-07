@@ -3,6 +3,7 @@ import { useMemo, useState } from "react";
 import { ArrowLeft, Award, Coins, Copy, ShoppingBag, TrendingUp, Users } from "lucide-react";
 
 import { Card, Section } from "@/components/site/Shell";
+import { PrestigeTracker } from "@/components/site/PrestigeTracker";
 import { useLang } from "@/lib/lang";
 import { useAuth } from "@/hooks/use-auth";
 import { useOrders, useProfile, useReferrals, useWallet } from "@/lib/queries";
@@ -61,6 +62,23 @@ function Dashboard() {
   const nextLevelXp = level * 500;
   const pct = Math.min(100, Math.round((xp / Math.max(1, nextLevelXp)) * 100));
 
+  // Prestige metrics come from real seller activity only.
+  const sellerCompleted = asSeller.filter((o) => o.status === "completed");
+  const prestige = {
+    orders: profile.data?.completed_orders ?? sellerCompleted.length,
+    volume: sellerCompleted.reduce((s, o) => s + num(o.amount_usdt), 0),
+    rating: num(profile.data?.rating),
+    onTime: sellerCompleted.length
+      ? Math.round(
+          (sellerCompleted.filter((o) => !o.due_at || !o.completed_at || new Date(o.completed_at) <= new Date(o.due_at)).length /
+            sellerCompleted.length) *
+            100,
+        )
+      : 0,
+  };
+
+  const loadingCore = profile.isLoading || wallet.isLoading || orders.isLoading;
+
   const refLink = typeof window !== "undefined" && profile.data?.referral_code
     ? `${window.location.origin}/auth?ref=${profile.data.referral_code}`
     : "";
@@ -83,7 +101,20 @@ function Dashboard() {
         </div>
       }
     >
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {loadingCore && (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {[0, 1, 2, 3].map((i) => (
+            <Card key={i}>
+              <div className="h-5 w-5 animate-pulse rounded bg-secondary" />
+              <div className="mt-3 h-3 w-24 animate-pulse rounded bg-secondary" />
+              <div className="mt-2 h-7 w-32 animate-pulse rounded bg-secondary" />
+              <div className="mt-2 h-3 w-20 animate-pulse rounded bg-secondary" />
+            </Card>
+          ))}
+        </div>
+      )}
+
+      <div className={`grid gap-4 sm:grid-cols-2 lg:grid-cols-4 ${loadingCore ? "hidden" : "animate-in fade-in duration-500"}`}>
         {stats.map((s) => (
           <Card key={s.label}>
             <s.icon className="size-5 text-primary" />
@@ -92,6 +123,10 @@ function Dashboard() {
             <p className="mt-1 text-xs text-muted-foreground">{s.sub}</p>
           </Card>
         ))}
+      </div>
+
+      <div className="mt-6">
+        <PrestigeTracker metrics={prestige} />
       </div>
 
       <div className="mt-6 grid gap-4 lg:grid-cols-[1.4fr_1fr]">
