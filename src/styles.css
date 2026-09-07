@@ -145,6 +145,63 @@
   background-size: 46px 46px;
 }
 
+/* Sovereign fintech selection chip: hairline border, ambient hover glow. */
+@utility chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border-radius: 0.85rem;
+  border: 1px solid color-mix(in oklab, var(--primary) 20%, transparent);
+  background: color-mix(in oklab, var(--surface) 70%, transparent);
+  padding: 0.5rem 0.9rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--muted-foreground);
+  line-height: 1.1;
+  transition:
+    color 180ms ease,
+    border-color 180ms ease,
+    background-color 180ms ease,
+    box-shadow 220ms ease,
+    transform 180ms ease;
+}
+
+@utility chip-hover {
+  &:hover {
+    color: var(--foreground);
+    border-color: color-mix(in oklab, var(--primary) 45%, transparent);
+    box-shadow: 0 0 0 1px color-mix(in oklab, var(--primary) 18%, transparent),
+      0 8px 26px -14px color-mix(in oklab, var(--primary) 70%, transparent);
+    transform: translateY(-1px);
+  }
+}
+
+@utility chip-active {
+  color: var(--primary);
+  border-color: color-mix(in oklab, var(--primary) 70%, transparent);
+  background: color-mix(in oklab, var(--primary) 14%, transparent);
+  box-shadow: 0 0 0 1px color-mix(in oklab, var(--primary) 35%, transparent),
+    0 10px 30px -16px color-mix(in oklab, var(--primary) 90%, transparent);
+}
+
+/* Fintech select: same hairline language as chips. */
+@utility field-lux {
+  border-radius: 0.85rem;
+  border: 1px solid color-mix(in oklab, var(--primary) 20%, transparent);
+  background: color-mix(in oklab, var(--surface) 70%, transparent);
+  transition:
+    border-color 180ms ease,
+    box-shadow 220ms ease;
+
+  &:hover,
+  &:focus {
+    border-color: color-mix(in oklab, var(--primary) 45%, transparent);
+    box-shadow: 0 0 0 1px color-mix(in oklab, var(--primary) 20%, transparent);
+    outline: none;
+  }
+}
+
+
 @media print {
   @page {
     margin: 14mm;
