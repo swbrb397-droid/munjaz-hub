@@ -283,9 +283,12 @@ function AuthPage() {
 
   }
 
+  const emailInvalid = email.trim().length > 0 && !EMAIL_RE.test(email.trim());
+  const score = passwordScore(password);
+
   return (
-    <div className="mx-auto max-w-md px-4 pb-28 pt-10 sm:py-16">
-      <Card className="glow">
+    <div className="mx-auto max-w-md animate-in fade-in duration-500 px-4 pb-28 pt-10 sm:py-16">
+      <Card className="glow transition-opacity duration-300">
         <h1 className="text-2xl font-black">
           {mode === "signin" ? tr("تسجيل الدخول", "Sign in") : tr("إنشاء حساب", "Create account")}
         </h1>
