@@ -213,6 +213,7 @@ export function Shell({ children }: { children: ReactNode }) {
   const { isAuthenticated } = useAuth();
   const wallet = useWallet();
   const { isAdmin } = useUserProfile();
+  const [manifesto, setManifesto] = useManifestoFirstRun(isAuthenticated);
 
   // Lock page scroll behind the mobile drawer so scrolling never leaks to the page.
   useEffect(() => {
