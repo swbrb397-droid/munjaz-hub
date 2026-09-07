@@ -15,6 +15,7 @@ import { ErrorBoundary } from "@/components/site/ErrorBoundary";
 import { useWallet } from "@/lib/queries";
 import { useUserProfile } from "@/hooks/use-user-profile";
 import { SupportWidget } from "@/components/site/SupportWidget";
+import { ManifestoModal, useManifestoFirstRun } from "@/components/site/ManifestoModal";
 import { supabase } from "@/integrations/supabase/client";
 
 type NavItem = { to: string; key: TranslationKey; icon: LucideIcon };
