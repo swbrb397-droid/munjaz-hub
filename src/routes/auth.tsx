@@ -9,14 +9,37 @@ import { useAuth } from "@/hooks/use-auth";
 import { useUserProfile } from "@/hooks/use-user-profile";
 import { supabase } from "@/integrations/supabase/client";
 
-type SignupRole = "buyer" | "seller" | "hybrid" | "corporate";
+type SignupRole = "hybrid" | "corporate";
 
-const ROLES: ReadonlyArray<{ value: SignupRole; ar: string; en: string }> = [
-  { value: "buyer", ar: "مشتري", en: "Buyer" },
-  { value: "seller", ar: "بائع", en: "Seller" },
-  { value: "hybrid", ar: "مشتري وبائع", en: "Hybrid" },
-  { value: "corporate", ar: "شركة", en: "Corporate" },
+/** Unified dual selector: one account buys and sells freely. */
+const ROLES: ReadonlyArray<{ value: SignupRole; ar: string; en: string; hintAr: string; hintEn: string }> = [
+  {
+    value: "hybrid",
+    ar: "حساب شخصي",
+    en: "Individual",
+    hintAr: "اشترِ وقدّم خدماتك بحرية من حساب واحد.",
+    hintEn: "Buy and offer services freely from one account.",
+  },
+  {
+    value: "corporate",
+    ar: "حساب أعمال / شركات",
+    en: "Business / Entity",
+    hintAr: "للفرق الموثقة والمؤسسات التجارية.",
+    hintEn: "For verified teams and commercial institutions.",
+  },
 ];
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i;
+
+/** 0..4 password strength score used for the inline meter. */
+function passwordScore(v: string): number {
+  let s = 0;
+  if (v.length >= 6) s++;
+  if (v.length >= 10) s++;
+  if (/[A-Z]/.test(v) && /[a-z]/.test(v)) s++;
+  if (/\d/.test(v) && /[^A-Za-z0-9]/.test(v)) s++;
+  return s;
+}
 
 
 const REDIRECT_KEY = "munjaz-redirect-to";
