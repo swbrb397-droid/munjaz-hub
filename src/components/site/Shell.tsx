@@ -365,6 +365,7 @@ export function Shell({ children }: { children: ReactNode }) {
         </div>
       </footer>
       <SupportWidget />
+      <ManifestoModal open={manifesto} onClose={() => setManifesto(false)} />
     </div>
   );
 }
