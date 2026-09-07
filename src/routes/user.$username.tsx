@@ -131,7 +131,7 @@ function SellerProfilePage() {
               orders={l.orders_count}
               verified={l.verified}
               tag={lang === "ar" ? l.tag_ar : l.tag_en}
-              cover={COVERS[l.cover_key] ?? COVERS.product}
+              cover={COVERS[l.cover_key] ?? COVERS["product"] ?? ""}
               category={l.category}
             />
           ))}
