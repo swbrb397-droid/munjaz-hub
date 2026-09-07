@@ -18,6 +18,7 @@ import {
   X,
 } from "lucide-react";
 import { Card, Section } from "@/components/site/Shell";
+import { ReferralWidget } from "@/components/site/ReferralWidget";
 import { useLang } from "@/lib/lang";
 import { useNotify } from "@/lib/notify";
 import { useAuth } from "@/hooks/use-auth";
@@ -136,14 +137,15 @@ function ProfilePage() {
               key={t.id}
               type="button"
               onClick={() => setTab(t.id)}
-              className={`rounded-lg px-4 py-2 text-xs font-bold transition-colors ${
-                tab === t.id ? "bg-primary text-primary-foreground" : "border border-border text-muted-foreground"
-              }`}
+              aria-pressed={tab === t.id}
+              className={`chip ${tab === t.id ? "chip-active" : "chip-hover"}`}
             >
               {t.label}
             </button>
           ))}
         </div>
+
+        <ReferralWidget className="mt-4" />
 
         <div className="mt-4">
           {tab === "kyc" ? <KycWizard state={kyc} onSubmitted={() => setKyc("review")} /> : <SettingsPanel twoFa={twoFa} setTwoFa={setTwoFa} />}

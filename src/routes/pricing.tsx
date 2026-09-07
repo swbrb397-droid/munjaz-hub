@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Check, ChevronDown, Copy, Crown, Loader2, QrCode, Sparkles, X } from "lucide-react";
 import { Card, Section } from "@/components/site/Shell";
+import { RedeemPassCard } from "@/components/site/RedeemPassCard";
 import { useLang } from "@/lib/lang";
 
 export const Route = createFileRoute("/pricing")({
@@ -160,6 +161,8 @@ function PricingPage() {
             </Card>
           ))}
         </div>
+
+        <RedeemPassCard className="mt-8" />
 
         <Card className="mt-8 p-0">
           <button

@@ -21,6 +21,8 @@ import { useWalletRealtime } from "@/lib/deposits";
 import { toast } from "sonner";
 import { PayoutSecurityCard } from "@/components/site/PayoutSecurityCard";
 import { TopUpDialog } from "@/components/site/TopUpDialog";
+import { ReferralWidget } from "@/components/site/ReferralWidget";
+import { RedeemPassCard } from "@/components/site/RedeemPassCard";
 
 export const Route = createFileRoute("/_authenticated/wallet")({
   head: () => ({
@@ -224,6 +226,11 @@ function WalletPage() {
             )}
           </p>
         </Card>
+      </div>
+
+      <div className="mt-6 grid gap-4 lg:grid-cols-2">
+        <RedeemPassCard />
+        <ReferralWidget />
       </div>
 
       <PayoutSecurityCard className="mt-6" />
