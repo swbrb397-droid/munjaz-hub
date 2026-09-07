@@ -229,7 +229,7 @@ export function Shell({ children }: { children: ReactNode }) {
         <div className="mx-auto flex h-16 max-w-7xl items-center gap-2 px-3 sm:gap-4 sm:px-4">
           <Link to="/" className="flex min-w-0 shrink items-center gap-1.5 sm:gap-2" aria-label={t("brand")}>
             <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-primary/15 text-sm font-bold text-primary glow sm:size-9 sm:text-base">م</span>
-            <span className="whitespace-nowrap text-[11px] font-extrabold leading-none neon-text xs:text-xs sm:text-base lg:text-lg">
+            <span className="whitespace-nowrap text-[11px] font-extrabold leading-none neon-text sm:text-base lg:text-lg">
               مُنجز هَب <span className="opacity-60">|</span> Munjaz Hub
             </span>
           </Link>
