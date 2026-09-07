@@ -43,7 +43,7 @@ export function RedeemPassCard({ className = "" }: { className?: string }) {
 
       <input
         value={code}
-        onChange={(e) => setCode(e.target.value.toUpperCase())}
+        onChange={(e) => setCode(e.target.value.replace(/\s+/g, "").toUpperCase())}
         dir="ltr"
         maxLength={32}
         placeholder="MJ-XXXX-XXXX-XXXX"
