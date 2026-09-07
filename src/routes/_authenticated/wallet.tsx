@@ -204,7 +204,7 @@ function WalletPage() {
             </label>
           </div>
 
-          <div className="field-lux mt-4 flex flex-wrap items-center justify-between gap-3 -2/60 p-4 text-sm">
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-surface-2/60 p-4 text-sm">
             <span className="text-muted-foreground">
               {tr("الرسوم:", "Fee:")} <span className="text-foreground">{WITHDRAWAL_FEE} USDT</span>
               {" · "}
