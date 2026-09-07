@@ -305,21 +305,22 @@ function AuthPage() {
           )}
           {mode === "signup" && (
             <div className="grid gap-1.5">
-              <span className="text-muted-foreground">{tr("نوع الحساب *", "Account type *")}</span>
-              <div className="grid grid-cols-2 gap-2">
+              <span className="text-muted-foreground">{tr("نوع الحساب", "Account type")}</span>
+              <div className="grid gap-2 sm:grid-cols-2">
                 {ROLES.map((r) => (
                   <button
                     key={r.value}
                     type="button"
                     onClick={() => setRole(r.value)}
                     aria-pressed={role === r.value}
-                    className={`rounded-lg border px-3 py-2 text-xs font-bold transition-colors ${
+                    className={`rounded-xl border p-3 text-start transition-all duration-200 ${
                       role === r.value
-                        ? "border-primary bg-primary/15 text-primary"
-                        : "border-input bg-surface text-muted-foreground hover:text-foreground"
+                        ? "border-primary bg-primary/15 text-primary shadow-[0_0_28px_-10px_var(--primary)]"
+                        : "border-input bg-surface text-muted-foreground hover:border-primary/40 hover:text-foreground"
                     }`}
                   >
-                    {tr(r.ar, r.en)}
+                    <span className="block text-xs font-black">{tr(r.ar, r.en)}</span>
+                    <span className="mt-1 block text-[11px] leading-relaxed opacity-80">{tr(r.hintAr, r.hintEn)}</span>
                   </button>
                 ))}
               </div>
@@ -328,11 +329,30 @@ function AuthPage() {
 
           <label className="grid gap-1.5">
             <span className="text-muted-foreground">{tr("البريد الإلكتروني", "Email")}</span>
-            <input type="email" required autoComplete="email" inputMode="email" dir="ltr" value={email} onChange={(e) => setEmail(e.target.value)} className="min-h-12 w-full rounded-lg border border-input bg-surface px-3 py-2 text-start outline-none focus:border-primary focus:ring-2 focus:ring-primary/40" />
+            <input type="email" required autoComplete="email" inputMode="email" dir="ltr" value={email} onChange={(e) => setEmail(e.target.value)} aria-invalid={emailInvalid} className={`min-h-12 w-full rounded-lg border bg-surface px-3 py-2 text-start outline-none focus:ring-2 focus:ring-primary/40 ${emailInvalid ? "border-destructive" : "border-input focus:border-primary"}`} />
+            {emailInvalid && (
+              <span className="text-[11px] text-destructive">{tr("صيغة البريد الإلكتروني غير صحيحة", "Invalid email address")}</span>
+            )}
           </label>
           <label className="grid gap-1.5">
             <span className="text-muted-foreground">{tr("كلمة المرور", "Password")}</span>
             <input type="password" required minLength={6} autoComplete={mode === "signin" ? "current-password" : "new-password"} dir="ltr" value={password} onChange={(e) => setPassword(e.target.value)} className="min-h-12 w-full rounded-lg border border-input bg-surface px-3 py-2 text-start outline-none focus:border-primary focus:ring-2 focus:ring-primary/40" />
+            {mode === "signup" && password.length > 0 && (
+              <>
+                <span className="flex gap-1">
+                  {[1, 2, 3, 4].map((i) => (
+                    <span key={i} className={`h-1 flex-1 rounded-full transition-colors ${i <= score ? (score >= 3 ? "bg-primary" : "bg-accent") : "bg-secondary"}`} />
+                  ))}
+                </span>
+                <span className="text-[11px] text-muted-foreground">
+                  {score <= 1
+                    ? tr("كلمة مرور ضعيفة — أضف أحرفاً وأرقاماً ورموزاً.", "Weak password — add letters, numbers and symbols.")
+                    : score === 2
+                      ? tr("متوسطة — يمكن تقويتها أكثر.", "Medium — can be stronger.")
+                      : tr("قوية.", "Strong.")}
+                </span>
+              </>
+            )}
           </label>
           {mode === "signup" && (
             <label className="grid gap-1.5">
