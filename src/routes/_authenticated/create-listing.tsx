@@ -326,7 +326,45 @@ function CreateListing() {
 
                 <div className="grid gap-1.5 text-sm sm:col-span-2">
                   <span className="text-muted-foreground">{tr("صورة الغلاف", "Cover image")}</span>
-                  <UnsplashPicker selected={cover} onSelect={setCover} />
+                  <input
+                    ref={fileInput}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    className="hidden"
+                    onChange={(e) => pickCover(e.target.files?.[0] ?? null)}
+                  />
+                  {coverPreview ? (
+                    <div className="relative w-full max-w-sm overflow-hidden rounded-xl border border-border">
+                      <img src={coverPreview} alt={tr("معاينة الغلاف", "Cover preview")} className="h-40 w-full object-cover" />
+                      <div className="absolute top-2 end-2 flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => fileInput.current?.click()}
+                          className="rounded-lg border border-border bg-background/80 px-3 py-1.5 text-xs font-bold backdrop-blur hover:text-primary"
+                        >
+                          {tr("تغيير", "Change")}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setCoverFile(null)}
+                          aria-label={tr("إزالة الصورة", "Remove image")}
+                          className="grid size-8 place-items-center rounded-lg border border-border bg-background/80 text-muted-foreground backdrop-blur hover:text-destructive"
+                        >
+                          <X className="size-4" />
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => fileInput.current?.click()}
+                      className="grid h-32 w-full max-w-sm place-items-center gap-2 rounded-xl border border-dashed border-border bg-surface text-muted-foreground transition-colors hover:border-primary/60 hover:text-primary"
+                    >
+                      <ImagePlus className="size-6" />
+                      <span className="text-xs font-bold">{tr("اختر صورة من جهازك (JPEG / PNG / WebP · حتى 5MB)", "Choose an image (JPEG / PNG / WebP · up to 5MB)")}</span>
+                    </button>
+                  )}
+                  {coverError && <span className="text-xs font-bold text-destructive">{coverError}</span>}
                 </div>
 
                 <div className="flex flex-wrap gap-2 sm:col-span-2">
