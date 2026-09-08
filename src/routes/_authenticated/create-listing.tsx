@@ -1,10 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Loader2, PlusCircle, ShieldCheck, Trash2 } from "lucide-react";
+import { ImagePlus, Loader2, PlusCircle, ShieldCheck, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import { Card, Section } from "@/components/site/Shell";
-import { UnsplashPicker, type StockPhoto } from "@/components/site/UnsplashPicker";
 import { useLang } from "@/lib/lang";
 import { useAuth } from "@/hooks/use-auth";
 import { useProfile } from "@/lib/queries";
@@ -27,7 +26,10 @@ export const Route = createFileRoute("/_authenticated/create-listing")({
 });
 
 const MIN_PRICE = 3;
-const MIN_DESC = 50;
+const MIN_DESC = 40;
+const MIN_TITLE = 10;
+const MAX_COVER_BYTES = 5 * 1024 * 1024;
+const COVER_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
 type FormState = {
   title_ar: string;
@@ -55,11 +57,37 @@ function CreateListing() {
   const profile = useProfile();
   const qc = useQueryClient();
   const [form, setForm] = useState<FormState>(emptyForm);
-  const [cover, setCover] = useState<StockPhoto | null>(null);
+  const [coverFile, setCoverFile] = useState<File | null>(null);
+  const [coverPreview, setCoverPreview] = useState<string | null>(null);
+  const [coverError, setCoverError] = useState<string | null>(null);
+  const fileInput = useRef<HTMLInputElement>(null);
   const [step, setStep] = useState<1 | 2>(1);
   const [codeAudit, setCodeAudit] = useState(false);
   const isCodeCategory = form.category === "freelance" || form.category === "product";
 
+  useEffect(() => {
+    if (!coverFile) {
+      setCoverPreview(null);
+      return;
+    }
+    const url = URL.createObjectURL(coverFile);
+    setCoverPreview(url);
+    return () => URL.revokeObjectURL(url);
+  }, [coverFile]);
+
+  const pickCover = (file: File | null) => {
+    if (!file) return;
+    if (!COVER_TYPES.includes(file.type)) {
+      setCoverError(tr("يُسمح فقط بصور JPEG أو PNG أو WebP.", "Only JPEG, PNG or WebP images are allowed."));
+      return;
+    }
+    if (file.size > MAX_COVER_BYTES) {
+      setCoverError(tr("الحد الأقصى لحجم الصورة 5MB.", "Maximum image size is 5MB."));
+      return;
+    }
+    setCoverError(null);
+    setCoverFile(file);
+  };
 
   const price = useMemo(() => parseUsdt(form.price_usdt) ?? Number.NaN, [form.price_usdt]);
   const priceTouched = form.price_usdt.trim().length > 0;
@@ -67,7 +95,9 @@ function CreateListing() {
   const descLen = form.description_ar.trim().length;
   const descTouched = descLen > 0;
   const descInvalid = descTouched && descLen < MIN_DESC;
-  const titleMissing = !form.title_ar.trim() && !form.title_en.trim();
+  const titleArLen = form.title_ar.trim().length;
+  const titleEnLen = form.title_en.trim().length;
+  const titleMissing = titleArLen < MIN_TITLE && titleEnLen < MIN_TITLE;
 
   const canSubmit =
     !titleMissing && Number.isFinite(price) && price >= MIN_PRICE && descLen >= MIN_DESC;
@@ -88,6 +118,14 @@ function CreateListing() {
 
   const create = useMutation({
     mutationFn: async () => {
+      let coverUrl: string | null = null;
+      if (coverFile) {
+        const ext = coverFile.type === "image/png" ? "png" : coverFile.type === "image/webp" ? "webp" : "jpg";
+        const path = `${user!.id}/${Date.now()}.${ext}`;
+        const { error: upErr } = await supabase.storage.from("covers").upload(path, coverFile, { upsert: false });
+        if (upErr) throw upErr;
+        coverUrl = path;
+      }
       const sellerName = profile.data?.display_name || tr("بائع", "Seller");
       const { error } = await supabase.from("listings").insert({
         owner_id: user!.id,
@@ -100,6 +138,7 @@ function CreateListing() {
         tag_ar: sanitizeText(form.tag_ar, 40),
         tag_en: sanitizeText(form.tag_en, 40) || sanitizeText(form.tag_ar, 40),
         cover_key: "product",
+        cover_url: coverUrl,
         verified: !!profile.data?.is_verified,
         is_published: true,
       });
@@ -107,7 +146,7 @@ function CreateListing() {
     },
     onSuccess: () => {
       setForm(emptyForm);
-      setCover(null);
+      setCoverFile(null);
       setCodeAudit(false);
       setStep(1);
 
@@ -182,11 +221,16 @@ function CreateListing() {
           <form onSubmit={submit} className="grid gap-4 sm:grid-cols-2">
             {step === 1 && (
               <>
-                <label className="grid gap-1.5 text-sm">
+                <label className="grid gap-1.5 text-sm sm:col-span-2">
                   <span className="text-muted-foreground">{tr("العنوان (عربي)", "Title (Arabic)")}</span>
                   <input className={field} maxLength={120} value={form.title_ar} onChange={(e) => setForm({ ...form, title_ar: e.target.value })} />
+                  <span className={`text-xs ${titleMissing && (titleArLen > 0 || titleEnLen > 0) ? "font-bold text-destructive" : "text-muted-foreground"}`}>
+                    {titleMissing && (titleArLen > 0 || titleEnLen > 0)
+                      ? tr(`العنوان يجب ألا يقل عن ${MIN_TITLE} أحرف`, `Title must be at least ${MIN_TITLE} characters`)
+                      : tr(`على الأقل ${MIN_TITLE} أحرف بإحدى اللغتين`, `At least ${MIN_TITLE} characters in either language`)}
+                  </span>
                 </label>
-                <label className="grid gap-1.5 text-sm">
+                <label className="grid gap-1.5 text-sm sm:col-span-2">
                   <span className="text-muted-foreground">{tr("العنوان (إنجليزي)", "Title (English)")}</span>
                   <input className={field} maxLength={120} value={form.title_en} onChange={(e) => setForm({ ...form, title_en: e.target.value })} />
                 </label>
@@ -287,7 +331,45 @@ function CreateListing() {
 
                 <div className="grid gap-1.5 text-sm sm:col-span-2">
                   <span className="text-muted-foreground">{tr("صورة الغلاف", "Cover image")}</span>
-                  <UnsplashPicker selected={cover} onSelect={setCover} />
+                  <input
+                    ref={fileInput}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    className="hidden"
+                    onChange={(e) => pickCover(e.target.files?.[0] ?? null)}
+                  />
+                  {coverPreview ? (
+                    <div className="relative w-full max-w-sm overflow-hidden rounded-xl border border-border">
+                      <img src={coverPreview} alt={tr("معاينة الغلاف", "Cover preview")} className="h-40 w-full object-cover" />
+                      <div className="absolute top-2 end-2 flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => fileInput.current?.click()}
+                          className="rounded-lg border border-border bg-background/80 px-3 py-1.5 text-xs font-bold backdrop-blur hover:text-primary"
+                        >
+                          {tr("تغيير", "Change")}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setCoverFile(null)}
+                          aria-label={tr("إزالة الصورة", "Remove image")}
+                          className="grid size-8 place-items-center rounded-lg border border-border bg-background/80 text-muted-foreground backdrop-blur hover:text-destructive"
+                        >
+                          <X className="size-4" />
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => fileInput.current?.click()}
+                      className="grid h-32 w-full max-w-sm place-items-center gap-2 rounded-xl border border-dashed border-border bg-surface text-muted-foreground transition-colors hover:border-primary/60 hover:text-primary"
+                    >
+                      <ImagePlus className="size-6" />
+                      <span className="text-xs font-bold">{tr("اختر صورة من جهازك (JPEG / PNG / WebP · حتى 5MB)", "Choose an image (JPEG / PNG / WebP · up to 5MB)")}</span>
+                    </button>
+                  )}
+                  {coverError && <span className="text-xs font-bold text-destructive">{coverError}</span>}
                 </div>
 
                 <div className="flex flex-wrap gap-2 sm:col-span-2">
