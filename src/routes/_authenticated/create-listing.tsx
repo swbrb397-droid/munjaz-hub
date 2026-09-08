@@ -26,7 +26,10 @@ export const Route = createFileRoute("/_authenticated/create-listing")({
 });
 
 const MIN_PRICE = 3;
-const MIN_DESC = 50;
+const MIN_DESC = 40;
+const MIN_TITLE = 10;
+const MAX_COVER_BYTES = 5 * 1024 * 1024;
+const COVER_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
 type FormState = {
   title_ar: string;
