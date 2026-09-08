@@ -118,6 +118,14 @@ function CreateListing() {
 
   const create = useMutation({
     mutationFn: async () => {
+      let coverUrl: string | null = null;
+      if (coverFile) {
+        const ext = coverFile.type === "image/png" ? "png" : coverFile.type === "image/webp" ? "webp" : "jpg";
+        const path = `${user!.id}/${Date.now()}.${ext}`;
+        const { error: upErr } = await supabase.storage.from("covers").upload(path, coverFile, { upsert: false });
+        if (upErr) throw upErr;
+        coverUrl = path;
+      }
       const sellerName = profile.data?.display_name || tr("بائع", "Seller");
       const { error } = await supabase.from("listings").insert({
         owner_id: user!.id,
@@ -130,6 +138,7 @@ function CreateListing() {
         tag_ar: sanitizeText(form.tag_ar, 40),
         tag_en: sanitizeText(form.tag_en, 40) || sanitizeText(form.tag_ar, 40),
         cover_key: "product",
+        cover_url: coverUrl,
         verified: !!profile.data?.is_verified,
         is_published: true,
       });
@@ -137,7 +146,7 @@ function CreateListing() {
     },
     onSuccess: () => {
       setForm(emptyForm);
-      setCover(null);
+      setCoverFile(null);
       setCodeAudit(false);
       setStep(1);
 
