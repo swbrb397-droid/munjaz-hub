@@ -57,11 +57,37 @@ function CreateListing() {
   const profile = useProfile();
   const qc = useQueryClient();
   const [form, setForm] = useState<FormState>(emptyForm);
-  const [cover, setCover] = useState<StockPhoto | null>(null);
+  const [coverFile, setCoverFile] = useState<File | null>(null);
+  const [coverPreview, setCoverPreview] = useState<string | null>(null);
+  const [coverError, setCoverError] = useState<string | null>(null);
+  const fileInput = useRef<HTMLInputElement>(null);
   const [step, setStep] = useState<1 | 2>(1);
   const [codeAudit, setCodeAudit] = useState(false);
   const isCodeCategory = form.category === "freelance" || form.category === "product";
 
+  useEffect(() => {
+    if (!coverFile) {
+      setCoverPreview(null);
+      return;
+    }
+    const url = URL.createObjectURL(coverFile);
+    setCoverPreview(url);
+    return () => URL.revokeObjectURL(url);
+  }, [coverFile]);
+
+  const pickCover = (file: File | null) => {
+    if (!file) return;
+    if (!COVER_TYPES.includes(file.type)) {
+      setCoverError(tr("يُسمح فقط بصور JPEG أو PNG أو WebP.", "Only JPEG, PNG or WebP images are allowed."));
+      return;
+    }
+    if (file.size > MAX_COVER_BYTES) {
+      setCoverError(tr("الحد الأقصى لحجم الصورة 5MB.", "Maximum image size is 5MB."));
+      return;
+    }
+    setCoverError(null);
+    setCoverFile(file);
+  };
 
   const price = useMemo(() => parseUsdt(form.price_usdt) ?? Number.NaN, [form.price_usdt]);
   const priceTouched = form.price_usdt.trim().length > 0;
@@ -69,7 +95,9 @@ function CreateListing() {
   const descLen = form.description_ar.trim().length;
   const descTouched = descLen > 0;
   const descInvalid = descTouched && descLen < MIN_DESC;
-  const titleMissing = !form.title_ar.trim() && !form.title_en.trim();
+  const titleArLen = form.title_ar.trim().length;
+  const titleEnLen = form.title_en.trim().length;
+  const titleMissing = titleArLen < MIN_TITLE && titleEnLen < MIN_TITLE;
 
   const canSubmit =
     !titleMissing && Number.isFinite(price) && price >= MIN_PRICE && descLen >= MIN_DESC;
