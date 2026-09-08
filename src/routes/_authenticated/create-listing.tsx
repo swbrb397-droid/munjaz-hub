@@ -221,11 +221,16 @@ function CreateListing() {
           <form onSubmit={submit} className="grid gap-4 sm:grid-cols-2">
             {step === 1 && (
               <>
-                <label className="grid gap-1.5 text-sm">
+                <label className="grid gap-1.5 text-sm sm:col-span-2">
                   <span className="text-muted-foreground">{tr("العنوان (عربي)", "Title (Arabic)")}</span>
                   <input className={field} maxLength={120} value={form.title_ar} onChange={(e) => setForm({ ...form, title_ar: e.target.value })} />
+                  <span className={`text-xs ${titleMissing && (titleArLen > 0 || titleEnLen > 0) ? "font-bold text-destructive" : "text-muted-foreground"}`}>
+                    {titleMissing && (titleArLen > 0 || titleEnLen > 0)
+                      ? tr(`العنوان يجب ألا يقل عن ${MIN_TITLE} أحرف`, `Title must be at least ${MIN_TITLE} characters`)
+                      : tr(`على الأقل ${MIN_TITLE} أحرف بإحدى اللغتين`, `At least ${MIN_TITLE} characters in either language`)}
+                  </span>
                 </label>
-                <label className="grid gap-1.5 text-sm">
+                <label className="grid gap-1.5 text-sm sm:col-span-2">
                   <span className="text-muted-foreground">{tr("العنوان (إنجليزي)", "Title (English)")}</span>
                   <input className={field} maxLength={120} value={form.title_en} onChange={(e) => setForm({ ...form, title_en: e.target.value })} />
                 </label>
