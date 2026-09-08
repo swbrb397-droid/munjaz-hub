@@ -227,6 +227,7 @@ export type Database = {
         Row: {
           category: Database["public"]["Enums"]["listing_category"]
           cover_key: string
+          cover_url: string | null
           created_at: string
           delivery_days: number
           id: string
@@ -248,6 +249,7 @@ export type Database = {
         Insert: {
           category?: Database["public"]["Enums"]["listing_category"]
           cover_key?: string
+          cover_url?: string | null
           created_at?: string
           delivery_days?: number
           id?: string
@@ -269,6 +271,7 @@ export type Database = {
         Update: {
           category?: Database["public"]["Enums"]["listing_category"]
           cover_key?: string
+          cover_url?: string | null
           created_at?: string
           delivery_days?: number
           id?: string
