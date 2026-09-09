@@ -7,19 +7,38 @@ export function useAuth() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, s) => {
-      setSession(s);
-      setLoading(false);
-    });
+    let mounted = true;
 
+    // Restore the persisted session first; only after this resolves may the
+    // app treat the user as unauthenticated.
     supabase.auth.getSession().then(({ data }) => {
+      if (!mounted) return;
       setSession(data.session);
       setLoading(false);
     });
 
-    return () => subscription.unsubscribe();
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, s) => {
+      if (!mounted) return;
+      // Ignore the initial-mount event; getSession() above owns first paint.
+      if (event === "INITIAL_SESSION") return;
+      // Only clear the session on an explicit sign-out; never on empty/unknown events.
+      if (event === "SIGNED_OUT") {
+        setSession(null);
+        setLoading(false);
+        return;
+      }
+      if (s) {
+        setSession(s);
+        setLoading(false);
+      }
+    });
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const user: User | null = session?.user ?? null;
