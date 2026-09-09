@@ -5,6 +5,7 @@ import { Copy, Info, ShieldAlert, Users, CheckCircle2, Wallet2, Clock, X } from 
 import { Card, Section } from "@/components/site/Shell";
 import { useLang } from "@/lib/lang";
 import { useProfile, useReferrals } from "@/lib/queries";
+import { useAuth } from "@/hooks/use-auth";
 
 export const Route = createFileRoute("/referrals")({
   head: () => ({
@@ -26,6 +27,7 @@ function Skel({ className = "" }: { className?: string }) {
 
 function ReferralHub() {
   const { tr } = useLang();
+  const { user } = useAuth();
   const profile = useProfile();
   const data = useReferrals();
   const [terms, setTerms] = useState(false);
