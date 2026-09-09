@@ -32,7 +32,7 @@ const MIN_TITLE = 10;
 const MAX_COVER_BYTES = 5 * 1024 * 1024;
 const COVER_TYPES = ["image/jpeg", "image/png", "image/webp"];
 const COVER_BUCKET = "covers";
-const FALLBACK_COVER_URL = "https://images.unsplash.com/photo-1626785774573-4b799315345d?w=800";
+
 
 type FormState = {
   title_ar: string;
@@ -167,21 +167,21 @@ function CreateListing() {
   const create = useMutation({
     mutationFn: async () => {
       let coverUrl: string | null = null;
-      let usedFallbackCover = false;
       if (coverFile) {
         // Cover was already screened at pick time (permissive profile, fail-open).
-        const ext = coverFile.type === "image/png" ? "png" : coverFile.type === "image/webp" ? "webp" : "jpg";
-        const path = `${user!.id}/${Date.now()}.${ext}`;
-        try {
-          console.info("Uploading cover to bucket:", COVER_BUCKET, "path:", path);
-          const { error: upErr } = await supabase.storage.from(COVER_BUCKET).upload(path, coverFile, { upsert: false });
-          if (upErr) throw upErr;
-          coverUrl = path;
-        } catch (upErr) {
+        const safeName = coverFile.name.replace(/[^\w.\-]+/g, "_").slice(-80);
+        const filePath = `${user!.id}/${Date.now()}-${safeName}`;
+        console.info("Uploading cover to bucket:", COVER_BUCKET, "path:", filePath);
+        const { error: upErr } = await supabase.storage
+          .from(COVER_BUCKET)
+          .upload(filePath, coverFile, { upsert: false });
+        if (upErr) {
           console.error(`Cover upload error (bucket "${COVER_BUCKET}"):`, upErr);
-          coverUrl = FALLBACK_COVER_URL;
-          usedFallbackCover = true;
+          throw new Error(
+            tr("فشل رفع صورة الغلاف: تحقق من الاتصال وحاول مجدداً", "Cover upload failed: check your connection and try again"),
+          );
         }
+        coverUrl = supabase.storage.from(COVER_BUCKET).getPublicUrl(filePath).data.publicUrl;
       }
       const sellerName = profile.data?.display_name || tr("بائع", "Seller");
       const { error } = await supabase.from("listings").insert({
@@ -206,9 +206,8 @@ function CreateListing() {
         }
         throw error;
       }
-      return { usedFallbackCover };
     },
-    onSuccess: (res) => {
+    onSuccess: () => {
       setForm(emptyForm);
       setCoverFile(null);
       setCodeAudit(false);
@@ -216,11 +215,7 @@ function CreateListing() {
 
       qc.invalidateQueries({ queryKey: ["my-listings"] });
       qc.invalidateQueries({ queryKey: ["listings"] });
-      toast.success(
-        res.usedFallbackCover
-          ? tr("تم نشر العرض بنجاح (مع صورة افتراضية مؤقتاً)", "Listing published (with a temporary default image)")
-          : tr("تم نشر العرض بنجاح", "Listing published successfully"),
-      );
+      toast.success(tr("تم نشر العرض بنجاح", "Listing published successfully"));
     },
     onError: (e: unknown) => {
       console.error("Full Submission Error:", e);
