@@ -147,6 +147,21 @@ function CreateListing() {
     },
   });
 
+  const formatError = (e: unknown): string => {
+    if (e instanceof Error) return e.message;
+    if (e && typeof e === "object") {
+      const rec = e as Record<string, unknown>;
+      const msg = rec.message ?? rec.error_description ?? rec.error;
+      if (typeof msg === "string" && msg) return msg;
+      try {
+        return JSON.stringify(e);
+      } catch {
+        /* fall through */
+      }
+    }
+    return String(e);
+  };
+
   const create = useMutation({
     mutationFn: async () => {
       let coverUrl: string | null = null;
@@ -155,7 +170,10 @@ function CreateListing() {
         const ext = coverFile.type === "image/png" ? "png" : coverFile.type === "image/webp" ? "webp" : "jpg";
         const path = `${user!.id}/${Date.now()}.${ext}`;
         const { error: upErr } = await supabase.storage.from("covers").upload(path, coverFile, { upsert: false });
-        if (upErr) throw upErr;
+        if (upErr) {
+          console.error("Cover upload error:", upErr);
+          throw new Error(tr("فشل رفع صورة الغلاف: تأكد من صلاحيات مجلد التخزين", "Cover upload failed: check storage permissions"));
+        }
         coverUrl = path;
       }
       const sellerName = profile.data?.display_name || tr("بائع", "Seller");
