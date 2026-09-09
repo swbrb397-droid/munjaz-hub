@@ -206,9 +206,8 @@ function CreateListing() {
         }
         throw error;
       }
-      return { usedFallbackCover };
     },
-    onSuccess: (res) => {
+    onSuccess: () => {
       setForm(emptyForm);
       setCoverFile(null);
       setCodeAudit(false);
@@ -216,11 +215,7 @@ function CreateListing() {
 
       qc.invalidateQueries({ queryKey: ["my-listings"] });
       qc.invalidateQueries({ queryKey: ["listings"] });
-      toast.success(
-        res.usedFallbackCover
-          ? tr("تم نشر العرض بنجاح (مع صورة افتراضية مؤقتاً)", "Listing published (with a temporary default image)")
-          : tr("تم نشر العرض بنجاح", "Listing published successfully"),
-      );
+      toast.success(tr("تم نشر العرض بنجاح", "Listing published successfully"));
     },
     onError: (e: unknown) => {
       console.error("Full Submission Error:", e);
