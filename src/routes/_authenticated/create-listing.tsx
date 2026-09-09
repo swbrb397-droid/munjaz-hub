@@ -32,7 +32,7 @@ const MIN_TITLE = 10;
 const MAX_COVER_BYTES = 5 * 1024 * 1024;
 const COVER_TYPES = ["image/jpeg", "image/png", "image/webp"];
 const COVER_BUCKET = "covers";
-const FALLBACK_COVER_URL = "https://images.unsplash.com/photo-1626785774573-4b799315345d?w=800";
+
 
 type FormState = {
   title_ar: string;
