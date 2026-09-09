@@ -11,5 +11,12 @@ export const Route = createFileRoute("/_authenticated")({
     }
     return { user: data.user };
   },
+  // Keep a minimal loader on screen while the session is restored instead of
+  // flashing a blank/black screen or bouncing to the auth page.
+  pendingComponent: () => (
+    <div className="flex min-h-[60vh] items-center justify-center">
+      <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+    </div>
+  ),
   component: () => <Outlet />,
 });
