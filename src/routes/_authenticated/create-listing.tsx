@@ -206,8 +206,9 @@ function CreateListing() {
         }
         throw error;
       }
+      return { usedFallbackCover };
     },
-    onSuccess: () => {
+    onSuccess: (res) => {
       setForm(emptyForm);
       setCoverFile(null);
       setCodeAudit(false);
