@@ -76,7 +76,7 @@ function CreateListing() {
     return () => URL.revokeObjectURL(url);
   }, [coverFile]);
 
-  const pickCover = (file: File | null) => {
+  const pickCover = async (file: File | null) => {
     if (!file) return;
     if (!COVER_TYPES.includes(file.type)) {
       setCoverError(tr("يُسمح فقط بصور JPEG أو PNG أو WebP.", "Only JPEG, PNG or WebP images are allowed."));
@@ -87,7 +87,36 @@ function CreateListing() {
       return;
     }
     setCoverError(null);
-    setCoverFile(file);
+    setCoverChecking(true);
+    try {
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result));
+        reader.onerror = () => reject(new Error("COVER_READ_FAILED"));
+        reader.readAsDataURL(file);
+      });
+      // Fail-open after 3s so sellers are never stuck on a slow check.
+      const verdict = await Promise.race([
+        screenCoverImage({ data: { dataUrl } }),
+        new Promise<null>((resolve) => setTimeout(() => resolve(null), 3000)),
+      ]);
+      if (verdict && !verdict.allowed) {
+        if (fileInput.current) fileInput.current.value = "";
+        setCoverFile(null);
+        toast.error(
+          tr(
+            "يرجى اختيار صورة غلاف لا تحتوي على أرقام هواتف أو وسائل تواصل خارجية",
+            "Please choose a cover image without phone numbers or external contact details",
+          ),
+        );
+        return;
+      }
+      setCoverFile(file);
+    } catch {
+      setCoverFile(file); // any unexpected error approves the image (fail-open)
+    } finally {
+      setCoverChecking(false);
+    }
   };
 
   const price = useMemo(() => parseUsdt(form.price_usdt) ?? Number.NaN, [form.price_usdt]);
