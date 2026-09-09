@@ -192,7 +192,13 @@ function CreateListing() {
         verified: !!profile.data?.is_verified,
         is_published: true,
       });
-      if (error) throw error;
+      if (error) {
+        console.error("Listing insert error:", error);
+        if (error.code === "42501" || /row.level security/i.test(error.message ?? "")) {
+          throw new Error(tr("خطأ في صلاحيات قاعدة البيانات (RLS)", "Database permission error (RLS)"));
+        }
+        throw error;
+      }
     },
     onSuccess: () => {
       setForm(emptyForm);
@@ -209,7 +215,10 @@ function CreateListing() {
         ),
       );
     },
-    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : String(e)),
+    onError: (e: unknown) => {
+      console.error("Full Submission Error:", e);
+      toast.error(formatError(e));
+    },
   });
 
   const remove = useMutation({
