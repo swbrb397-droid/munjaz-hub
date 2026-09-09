@@ -217,10 +217,9 @@ function CreateListing() {
       qc.invalidateQueries({ queryKey: ["my-listings"] });
       qc.invalidateQueries({ queryKey: ["listings"] });
       toast.success(
-        tr(
-          "تم تجهيز بيانات العرض بنجاح - بانتظار تفعيل الربط السحابي",
-          "Listing data prepared successfully — awaiting cloud integration",
-        ),
+        res.usedFallbackCover
+          ? tr("تم نشر العرض بنجاح (مع صورة افتراضية مؤقتاً)", "Listing published (with a temporary default image)")
+          : tr("تم نشر العرض بنجاح", "Listing published successfully"),
       );
     },
     onError: (e: unknown) => {
