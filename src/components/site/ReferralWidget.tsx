@@ -1,18 +1,29 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Copy, Users, Wallet2 } from "lucide-react";
 import { Card } from "@/components/site/Shell";
 import { useLang } from "@/lib/lang";
+import { useAuth } from "@/hooks/use-auth";
 import { useProfile, useReferrals } from "@/lib/queries";
 
 /** Referral link + live partner stats, shared by the wallet and profile pages. */
 export function ReferralWidget({ className = "" }: { className?: string }) {
   const { tr } = useLang();
+  const { user } = useAuth();
   const profile = useProfile();
   const referrals = useReferrals();
   const [copied, setCopied] = useState(false);
+  const [slowLoad, setSlowLoad] = useState(false);
 
-  const code = (profile.data as { referral_code?: string } | null)?.referral_code ?? "";
+  // Resolve the infinite "loading" state: after 2s, fall back to a derived code.
+  useEffect(() => {
+    const t = setTimeout(() => setSlowLoad(true), 2000);
+    return () => clearTimeout(t);
+  }, []);
+
+  const storedCode = (profile.data as { referral_code?: string } | null)?.referral_code ?? "";
+  const fallbackCode = user ? `MJ-${user.id.replace(/-/g, "").slice(0, 6).toUpperCase()}` : "";
+  const code = storedCode || (slowLoad || profile.isError ? fallbackCode : "");
   const origin = typeof window !== "undefined" ? window.location.origin : "";
   const link = code ? `${origin}/auth?ref=${code}` : "";
 
@@ -25,7 +36,7 @@ export function ReferralWidget({ className = "" }: { className?: string }) {
       await navigator.clipboard.writeText(link);
       setCopied(true);
       setTimeout(() => setCopied(false), 1800);
-      toast.success(tr("تم نسخ رابط الإحالة", "Referral link copied"));
+      toast.success(tr("تم نسخ رابط الإحالة بنجاح", "Referral link copied successfully"));
     } catch {
       toast.error(tr("تعذّر النسخ", "Copy failed"));
     }

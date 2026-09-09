@@ -9,6 +9,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useProfile } from "@/lib/queries";
 import { supabase } from "@/integrations/supabase/client";
 import { parseUsdt, sanitizeText } from "@/lib/security";
+import { screenCoverImage } from "@/lib/moderation.functions";
 import { type ListingCategory } from "@/lib/catalog";
 
 export const Route = createFileRoute("/_authenticated/create-listing")({
@@ -120,6 +121,20 @@ function CreateListing() {
     mutationFn: async () => {
       let coverUrl: string | null = null;
       if (coverFile) {
+        // Permissive AI policy check — only blatant contact/payment leakage or explicit material is rejected.
+        const dataUrl = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(String(reader.result));
+          reader.onerror = () => reject(new Error("COVER_READ_FAILED"));
+          reader.readAsDataURL(coverFile);
+        });
+        const verdict = await screenCoverImage({ data: { dataUrl } });
+        if (!verdict.allowed) {
+          throw new Error(
+            verdict.reason ||
+              tr("تم رفض صورة الغلاف: لا يُسمح ببيانات تواصل أو روابط دفع خارجية.", "Cover rejected: external contact or payment details are not allowed."),
+          );
+        }
         const ext = coverFile.type === "image/png" ? "png" : coverFile.type === "image/webp" ? "webp" : "jpg";
         const path = `${user!.id}/${Date.now()}.${ext}`;
         const { error: upErr } = await supabase.storage.from("covers").upload(path, coverFile, { upsert: false });
