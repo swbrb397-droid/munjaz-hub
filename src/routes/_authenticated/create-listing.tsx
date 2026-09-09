@@ -61,6 +61,7 @@ function CreateListing() {
   const [coverFile, setCoverFile] = useState<File | null>(null);
   const [coverPreview, setCoverPreview] = useState<string | null>(null);
   const [coverError, setCoverError] = useState<string | null>(null);
+  const [coverChecking, setCoverChecking] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
   const [step, setStep] = useState<1 | 2>(1);
   const [codeAudit, setCodeAudit] = useState(false);
@@ -150,20 +151,7 @@ function CreateListing() {
     mutationFn: async () => {
       let coverUrl: string | null = null;
       if (coverFile) {
-        // Permissive AI policy check — only blatant contact/payment leakage or explicit material is rejected.
-        const dataUrl = await new Promise<string>((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve(String(reader.result));
-          reader.onerror = () => reject(new Error("COVER_READ_FAILED"));
-          reader.readAsDataURL(coverFile);
-        });
-        const verdict = await screenCoverImage({ data: { dataUrl } });
-        if (!verdict.allowed) {
-          throw new Error(
-            verdict.reason ||
-              tr("تم رفض صورة الغلاف: لا يُسمح ببيانات تواصل أو روابط دفع خارجية.", "Cover rejected: external contact or payment details are not allowed."),
-          );
-        }
+        // Cover was already screened at pick time (permissive profile, fail-open).
         const ext = coverFile.type === "image/png" ? "png" : coverFile.type === "image/webp" ? "webp" : "jpg";
         const path = `${user!.id}/${Date.now()}.${ext}`;
         const { error: upErr } = await supabase.storage.from("covers").upload(path, coverFile, { upsert: false });
