@@ -151,7 +151,7 @@ function CreateListing() {
     if (e instanceof Error) return e.message;
     if (e && typeof e === "object") {
       const rec = e as Record<string, unknown>;
-      const msg = rec.message ?? rec.error_description ?? rec.error;
+      const msg = rec["message"] ?? rec["error_description"] ?? rec["error"];
       if (typeof msg === "string" && msg) return msg;
       try {
         return JSON.stringify(e);
