@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Copy, Info, ShieldAlert, Users, CheckCircle2, Wallet2, Clock, X } from "lucide-react";
 import { Card, Section } from "@/components/site/Shell";
@@ -31,7 +31,14 @@ function ReferralHub() {
   const [terms, setTerms] = useState(false);
 
   const loading = data.isLoading || profile.isLoading;
-  const code = (profile.data as { referral_code?: string } | null)?.referral_code ?? "";
+  const [slowLoad, setSlowLoad] = useState(false);
+  useEffect(() => {
+    const t = setTimeout(() => setSlowLoad(true), 2000);
+    return () => clearTimeout(t);
+  }, []);
+  const storedCode = (profile.data as { referral_code?: string } | null)?.referral_code ?? "";
+  const fallbackCode = user ? `MJ-${user.id.replace(/-/g, "").slice(0, 6).toUpperCase()}` : "";
+  const code = storedCode || (slowLoad || profile.isError ? fallbackCode : "");
   const origin = typeof window !== "undefined" ? window.location.origin : "";
   const refLink = code ? `${origin}/auth?ref=${code}` : "";
 
@@ -52,7 +59,7 @@ function ReferralHub() {
     if (!refLink) return;
     try {
       await navigator.clipboard.writeText(refLink);
-      toast.success(tr("تم نسخ رابط الإحالة", "Referral link copied"));
+      toast.success(tr("تم نسخ رابط الإحالة بنجاح", "Referral link copied successfully"));
     } catch {
       toast.error(tr("تعذّر النسخ", "Copy failed"));
     }
