@@ -401,6 +401,12 @@ function CreateListing() {
                       <span className="text-xs font-bold">{tr("اختر صورة من جهازك (JPEG / PNG / WebP · حتى 5MB)", "Choose an image (JPEG / PNG / WebP · up to 5MB)")}</span>
                     </button>
                   )}
+                  {coverChecking && (
+                    <span className="flex items-center gap-2 text-xs font-bold text-primary">
+                      <Loader2 className="size-4 animate-spin" />
+                      {tr("جاري فحص الغلاف...", "Checking cover...")}
+                    </span>
+                  )}
                   {coverError && <span className="text-xs font-bold text-destructive">{coverError}</span>}
                 </div>
 
