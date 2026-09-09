@@ -61,6 +61,7 @@ function CreateListing() {
   const [coverFile, setCoverFile] = useState<File | null>(null);
   const [coverPreview, setCoverPreview] = useState<string | null>(null);
   const [coverError, setCoverError] = useState<string | null>(null);
+  const [coverChecking, setCoverChecking] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
   const [step, setStep] = useState<1 | 2>(1);
   const [codeAudit, setCodeAudit] = useState(false);
@@ -76,7 +77,7 @@ function CreateListing() {
     return () => URL.revokeObjectURL(url);
   }, [coverFile]);
 
-  const pickCover = (file: File | null) => {
+  const pickCover = async (file: File | null) => {
     if (!file) return;
     if (!COVER_TYPES.includes(file.type)) {
       setCoverError(tr("يُسمح فقط بصور JPEG أو PNG أو WebP.", "Only JPEG, PNG or WebP images are allowed."));
@@ -87,7 +88,36 @@ function CreateListing() {
       return;
     }
     setCoverError(null);
-    setCoverFile(file);
+    setCoverChecking(true);
+    try {
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result));
+        reader.onerror = () => reject(new Error("COVER_READ_FAILED"));
+        reader.readAsDataURL(file);
+      });
+      // Fail-open after 3s so sellers are never stuck on a slow check.
+      const verdict = await Promise.race([
+        screenCoverImage({ data: { dataUrl } }),
+        new Promise<null>((resolve) => setTimeout(() => resolve(null), 3000)),
+      ]);
+      if (verdict && !verdict.allowed) {
+        if (fileInput.current) fileInput.current.value = "";
+        setCoverFile(null);
+        toast.error(
+          tr(
+            "يرجى اختيار صورة غلاف لا تحتوي على أرقام هواتف أو وسائل تواصل خارجية",
+            "Please choose a cover image without phone numbers or external contact details",
+          ),
+        );
+        return;
+      }
+      setCoverFile(file);
+    } catch {
+      setCoverFile(file); // any unexpected error approves the image (fail-open)
+    } finally {
+      setCoverChecking(false);
+    }
   };
 
   const price = useMemo(() => parseUsdt(form.price_usdt) ?? Number.NaN, [form.price_usdt]);
@@ -121,20 +151,7 @@ function CreateListing() {
     mutationFn: async () => {
       let coverUrl: string | null = null;
       if (coverFile) {
-        // Permissive AI policy check — only blatant contact/payment leakage or explicit material is rejected.
-        const dataUrl = await new Promise<string>((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve(String(reader.result));
-          reader.onerror = () => reject(new Error("COVER_READ_FAILED"));
-          reader.readAsDataURL(coverFile);
-        });
-        const verdict = await screenCoverImage({ data: { dataUrl } });
-        if (!verdict.allowed) {
-          throw new Error(
-            verdict.reason ||
-              tr("تم رفض صورة الغلاف: لا يُسمح ببيانات تواصل أو روابط دفع خارجية.", "Cover rejected: external contact or payment details are not allowed."),
-          );
-        }
+        // Cover was already screened at pick time (permissive profile, fail-open).
         const ext = coverFile.type === "image/png" ? "png" : coverFile.type === "image/webp" ? "webp" : "jpg";
         const path = `${user!.id}/${Date.now()}.${ext}`;
         const { error: upErr } = await supabase.storage.from("covers").upload(path, coverFile, { upsert: false });
@@ -383,6 +400,12 @@ function CreateListing() {
                       <ImagePlus className="size-6" />
                       <span className="text-xs font-bold">{tr("اختر صورة من جهازك (JPEG / PNG / WebP · حتى 5MB)", "Choose an image (JPEG / PNG / WebP · up to 5MB)")}</span>
                     </button>
+                  )}
+                  {coverChecking && (
+                    <span className="flex items-center gap-2 text-xs font-bold text-primary">
+                      <Loader2 className="size-4 animate-spin" />
+                      {tr("جاري فحص الغلاف...", "Checking cover...")}
+                    </span>
                   )}
                   {coverError && <span className="text-xs font-bold text-destructive">{coverError}</span>}
                 </div>
