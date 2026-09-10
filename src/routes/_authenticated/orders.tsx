@@ -25,8 +25,6 @@ export const Route = createFileRoute("/_authenticated/orders")({
   component: OrdersPage,
 });
 
-type Tr = (ar: string, en: string) => string;
-
 const STATUS_LABEL: Record<OrderStatus, [string, string]> = {
   pending: ["بانتظار الدفع", "Awaiting payment"],
   in_progress: ["الضمان مموّل — قيد التنفيذ", "Escrow funded — in progress"],
@@ -214,5 +212,3 @@ function OrdersPage() {
     </Section>
   );
 }
-
-export type { Tr };
