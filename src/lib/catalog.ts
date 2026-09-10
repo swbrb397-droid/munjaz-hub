@@ -84,7 +84,7 @@ export function useListings(opts: ListingFilters = {}) {
       let q = supabase
         .from("listings")
         .select(
-          "id,title_ar,title_en,seller_ar,seller_en,category,price_usdt,rating,orders_count,verified,tag_ar,tag_en,cover_key,delivery_days,language",
+          "id,title_ar,title_en,seller_ar,seller_en,category,price_usdt,rating,orders_count,verified,tag_ar,tag_en,cover_key,cover_url,delivery_days,language",
           { count: "exact" },
         )
         .eq("is_published", true)
@@ -114,7 +114,7 @@ export function useListings(opts: ListingFilters = {}) {
           orders: r.orders_count,
           verified: r.verified,
           tag: lang === "ar" ? r.tag_ar : r.tag_en,
-          cover: COVERS[r.cover_key] ?? coverProduct,
+          cover: (r.cover_url ?? "").trim() || COVERS[r.cover_key] || coverProduct,
           deliveryDays: r.delivery_days ?? 3,
         })),
       };

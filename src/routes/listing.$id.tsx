@@ -126,12 +126,7 @@ function ListingDetail() {
           />
 
           <MediaShowcase
-            items={[
-              { id: "m1", src: item.cover, title: tr("الغلاف الرئيسي", "Primary cover"), format: "image" },
-              { id: "m2", src: item.cover, title: tr("معاينة حية للواجهة", "Live interface preview"), format: "live" },
-              { id: "m3", src: item.cover, title: tr("مقتطف من الكود المصدري", "Source code snippet"), format: "code" },
-              { id: "m4", src: item.cover, title: tr("فيديو توضيحي", "Walkthrough video"), format: "video" },
-            ]}
+            items={[{ id: "cover", src: item.cover, title: tr("غلاف الخدمة", "Service cover"), format: "image" }]}
           />
         </Card>
 
