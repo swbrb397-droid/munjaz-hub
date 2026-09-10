@@ -95,6 +95,8 @@ export const Route = createFileRoute("/_authenticated/workspace")({
       { property: "og:description", content: "تواصل، سلّم، وأدر نزاعاتك داخل مساحة عمل واحدة آمنة." },
     ],
   }),
+  validateSearch: (search: Record<string, unknown>): { order?: string } =>
+    typeof search["order"] === "string" && search["order"] ? { order: search["order"] } : {},
   component: Workspace,
 });
 
@@ -180,7 +182,11 @@ function Workspace() {
   const orders = useOrders();
   const rows = orders.data ?? [];
 
-  const [selected, setSelected] = useState<string | null>(null);
+  const { order: orderParam } = Route.useSearch();
+  const [selected, setSelected] = useState<string | null>(orderParam ?? null);
+  useEffect(() => {
+    if (orderParam) setSelected(orderParam);
+  }, [orderParam]);
   useEffect(() => {
     if (!selected && rows.length) setSelected(rows[0]!.id);
   }, [rows, selected]);

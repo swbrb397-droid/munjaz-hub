@@ -22,10 +22,10 @@ const nets: ReadonlyArray<{ value: TopUpNetwork; label: string }> = [
 
 const PRESETS = [50, 100, 250, 500];
 
-export function TopUpDialog({ onClose }: { onClose: () => void }) {
+export function TopUpDialog({ onClose, defaultAmount }: { onClose: () => void; defaultAmount?: number }) {
   const { tr, lang } = useLang();
   const [method, setMethod] = useState<TopUpMethod>("crypto");
-  const [amount, setAmount] = useState("100");
+  const [amount, setAmount] = useState(defaultAmount && defaultAmount > 0 ? String(Math.ceil(defaultAmount)) : "100");
   const [network, setNetwork] = useState<TopUpNetwork>("trc20");
   const [invoice, setInvoice] = useState<TopUpInvoice | null>(null);
   const [paid, setPaid] = useState(false);

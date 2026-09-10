@@ -35,7 +35,7 @@ export function useListing(id: string) {
         orders: data.orders_count,
         verified: data.verified,
         ownerId: data.owner_id,
-        cover: COVERS[data.cover_key] ?? COVERS["product"]!,
+        cover: (data.cover_url ?? "").trim() || COVERS[data.cover_key] || COVERS["product"]!,
       };
     },
   });
@@ -137,5 +137,27 @@ export function useDeliverables() {
       if (error) throw new Error(error.message);
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["orders"] }),
+  });
+}
+
+/** Released milestone totals per order, used to show the remaining escrow amount. */
+export function useReleasedByOrder(orderIds: string[]) {
+  const key = [...orderIds].sort().join(",");
+  return useQuery({
+    queryKey: ["released-milestones", key],
+    enabled: orderIds.length > 0,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("order_milestones")
+        .select("order_id,amount_usdt,status")
+        .in("order_id", orderIds);
+      if (error) throw error;
+      const out: Record<string, number> = {};
+      for (const row of data ?? []) {
+        if (row.status !== "released") continue;
+        out[row.order_id] = (out[row.order_id] ?? 0) + Number(row.amount_usdt ?? 0);
+      }
+      return out;
+    },
   });
 }
