@@ -418,19 +418,19 @@ function AuthPage() {
           )}
 
           <button
-            disabled={busy || navigating || emailInvalid}
-            aria-busy={busy || navigating}
+            disabled={loading || emailInvalid}
+            aria-busy={loading}
             type="submit"
             className="mt-2 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 font-bold text-primary-foreground glow transition-all duration-200 hover:scale-[1.01] disabled:opacity-60"
           >
-            {busy || navigating ? (
+            {loading ? (
               <Loader2 className="size-4 animate-spin" />
             ) : mode === "signin" ? (
               <LogIn className="size-4" />
             ) : (
               <UserPlus className="size-4" />
             )}
-            {busy || navigating
+            {loading
               ? mode === "signin"
                 ? tr("جارٍ تسجيل الدخول…", "Signing in…")
                 : tr("جارٍ إنشاء الحساب…", "Creating your account…")
