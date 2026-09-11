@@ -58,7 +58,7 @@ function KycPage() {
       return;
     }
     submit.mutate(
-      { docType, front, back },
+      { docType, front, back, fullName },
       {
         onSuccess: () => {
           toast.success(tr("تم إرسال المستندات — قيد المراجعة.", "Documents submitted — under review."));
@@ -78,7 +78,23 @@ function KycPage() {
             <badge.icon className="size-4" /> {badge.label}
           </span>
 
+          {rejectionReason && (
+            <p className="mt-3 rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-xs text-destructive">
+              {tr("سبب الرفض: ", "Rejection reason: ")}{rejectionReason}
+            </p>
+          )}
+
           <label className="mt-5 grid gap-1.5 text-sm">
+            <span className="text-xs text-muted-foreground">{tr("الاسم الكامل كما في المستند", "Full name as on the document")}</span>
+            <input
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              placeholder={tr("الاسم الرباعي", "Full legal name")}
+              className="rounded-lg border border-input bg-surface px-3 py-2 outline-none focus:border-primary"
+            />
+          </label>
+
+          <label className="mt-4 grid gap-1.5 text-sm">
             <span className="text-xs text-muted-foreground">{tr("نوع المستند", "Document type")}</span>
             <select value={docType} onChange={(e) => setDocType(e.target.value)} className="rounded-lg border border-input bg-surface px-3 py-2 outline-none focus:border-primary">
               <option value="id">{tr("بطاقة هوية", "National ID")}</option>
