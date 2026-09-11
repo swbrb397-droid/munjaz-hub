@@ -268,13 +268,15 @@ function AuthPage() {
           throw error;
         }
         setNavigating(true);
+        toast.success("تم تسجيل الدخول بنجاح");
+        navigate({ to: "/dashboard", replace: true });
       }
     } catch (e) {
       const raw = e instanceof Error ? e.message : String(e);
       const message = authErrorMessage(raw, lang === "ar");
       setErr(message);
       if (mode === "signin") {
-        toast.error(message);
+        toast.error(raw);
       }
       setNavigating(false);
       if (mode === "signup" && (raw === "__EMAIL_TAKEN__" || /already registered/i.test(raw))) {
