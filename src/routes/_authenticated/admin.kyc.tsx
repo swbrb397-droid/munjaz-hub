@@ -50,6 +50,7 @@ function AdminKyc() {
         onError: (e: Error) => toast.error(e.message),
       },
     );
+  };
 
   const filters: [StatusFilter, string][] = [
     ["pending", tr("قيد المراجعة", "Pending")],
