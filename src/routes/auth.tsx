@@ -116,7 +116,7 @@ export const Route = createFileRoute("/auth")({
 function AuthPage() {
   const { tr, lang } = useLang();
   const navigate = useNavigate();
-  const { isAuthenticated, loading } = useAuth();
+  const { isAuthenticated, loading: authLoading } = useAuth();
   const { isAdmin, loading: profileLoading } = useUserProfile();
   const { redirectTo } = Route.useSearch();
 
@@ -136,6 +136,7 @@ function AuthPage() {
   const [busy, setBusy] = useState(false);
   // Stays true from a successful sign-in until the redirect lands, so the button never flickers back.
   const [navigating, setNavigating] = useState(false);
+  const loading = busy || navigating;
   const [pendingEmail, setPendingEmail] = useState<string | null>(null);
   const [cooldown, setCooldown] = useState(0);
   const [resends, setResends] = useState(0);
@@ -169,7 +170,7 @@ function AuthPage() {
   }
 
   useEffect(() => {
-    if (loading || profileLoading || !isAuthenticated) return;
+    if (navigating || authLoading || profileLoading || !isAuthenticated) return;
     const stored = safeRedirect(window.sessionStorage.getItem(REDIRECT_KEY));
     const target = redirectTo ?? stored;
     if (target) {
@@ -180,7 +181,7 @@ function AuthPage() {
       return;
     }
     navigate({ to: isAdmin ? "/admin" : "/", replace: true });
-  }, [loading, profileLoading, isAuthenticated, isAdmin, navigate, redirectTo]);
+  }, [navigating, authLoading, profileLoading, isAuthenticated, isAdmin, navigate, redirectTo]);
 
   // Persist deep-link context (listingId, lang, ref) across failed logins, signup and session timeouts.
   useEffect(() => {
@@ -267,13 +268,15 @@ function AuthPage() {
           throw error;
         }
         setNavigating(true);
+        toast.success("تم تسجيل الدخول بنجاح");
+        navigate({ to: "/dashboard", replace: true });
       }
     } catch (e) {
       const raw = e instanceof Error ? e.message : String(e);
       const message = authErrorMessage(raw, lang === "ar");
       setErr(message);
       if (mode === "signin") {
-        toast.error(message);
+        toast.error(raw);
       }
       setNavigating(false);
       if (mode === "signup" && (raw === "__EMAIL_TAKEN__" || /already registered/i.test(raw))) {
@@ -415,19 +418,19 @@ function AuthPage() {
           )}
 
           <button
-            disabled={busy || navigating || emailInvalid}
-            aria-busy={busy || navigating}
+            disabled={loading || emailInvalid}
+            aria-busy={loading}
             type="submit"
             className="mt-2 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 font-bold text-primary-foreground glow transition-all duration-200 hover:scale-[1.01] disabled:opacity-60"
           >
-            {busy || navigating ? (
+            {loading ? (
               <Loader2 className="size-4 animate-spin" />
             ) : mode === "signin" ? (
               <LogIn className="size-4" />
             ) : (
               <UserPlus className="size-4" />
             )}
-            {busy || navigating
+            {loading
               ? mode === "signin"
                 ? tr("جارٍ تسجيل الدخول…", "Signing in…")
                 : tr("جارٍ إنشاء الحساب…", "Creating your account…")
