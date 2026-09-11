@@ -72,10 +72,11 @@ export function useCreatePass() {
   return useMutation({
     mutationFn: async (input: { tier: AccountTier; durationDays: number; validDays: number; note?: string }) => {
       const code = randomCode();
-      const { error } = await supabase.from("custom_subscription_passes").insert({
+      const { error } = await supabase.from("subscription_codes").insert({
         code,
-        tier: input.tier,
+        plan: input.tier === "free" ? "pro" : input.tier,
         duration_days: input.durationDays,
+        is_redeemed: false,
         expires_at: new Date(Date.now() + input.validDays * 86_400_000).toISOString(),
         note: input.note?.slice(0, 200) ?? null,
         created_by: user?.id ?? null,
