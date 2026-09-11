@@ -48,8 +48,9 @@ export function usePasses(enabled = true) {
     enabled,
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("custom_subscription_passes")
+        .from("subscription_codes")
         .select("*")
+        .eq("is_redeemed", false)
         .order("created_at", { ascending: false })
         .limit(50);
       if (error) throw error;
