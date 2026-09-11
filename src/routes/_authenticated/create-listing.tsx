@@ -67,6 +67,9 @@ function CreateListing() {
   const fileInput = useRef<HTMLInputElement>(null);
   const [step, setStep] = useState<1 | 2>(1);
   const [codeAudit, setCodeAudit] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [menuFor, setMenuFor] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; title: string } | null>(null);
   const isCodeCategory = form.category === "freelance" || form.category === "product";
 
   useEffect(() => {
@@ -141,7 +144,7 @@ function CreateListing() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("listings")
-        .select("id,title_ar,title_en,category,price_usdt,is_published,created_at")
+        .select("id,title_ar,title_en,category,price_usdt,is_published,created_at,tag_ar,tag_en")
         .eq("owner_id", user!.id)
         .order("created_at", { ascending: false });
       if (error) throw error;
