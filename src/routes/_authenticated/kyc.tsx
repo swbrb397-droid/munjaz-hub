@@ -35,11 +35,14 @@ function KycPage() {
   const submit = useSubmitKyc();
 
   const [docType, setDocType] = useState("id");
+  const [fullName, setFullName] = useState("");
   const [front, setFront] = useState<File | null>(null);
   const [back, setBack] = useState<File | null>(null);
 
-  const status = (profile?.kyc_status as string | undefined) ?? "unverified";
+  const latest = (mine.data ?? [])[0];
+  const status = (profile?.is_verified ? "approved" : (latest?.status as string | undefined)) ?? (profile?.kyc_status as string | undefined) ?? "unverified";
   const badge = statusBadge(status, tr);
+  const rejectionReason = status === "rejected" ? latest?.admin_note : null;
 
   const pick = (file: File | null, set: (f: File | null) => void) => {
     if (file && file.size > MAX_MB * 1024 * 1024) {
