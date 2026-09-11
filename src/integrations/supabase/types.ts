@@ -1195,6 +1195,15 @@ export type Database = {
           volume_usdt: number
         }[]
       }
+      preview_subscription_code: {
+        Args: { p_code: string }
+        Returns: {
+          duration_days: number
+          expires_at: string
+          is_valid: boolean
+          plan: Database["public"]["Enums"]["account_tier"]
+        }[]
+      }
       preview_subscription_pass: {
         Args: { _code: string }
         Returns: {
