@@ -181,6 +181,48 @@ export type Database = {
           },
         ]
       }
+      governance_settings: {
+        Row: {
+          ai_autonomous_enabled: boolean
+          ai_confidence_threshold: number
+          auto_release_hours: number
+          created_at: string
+          daily_deposit_limit: number
+          escrow_stability_fee: number
+          id: number
+          sla_free_hours: number
+          sla_pro_hours: number
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          ai_autonomous_enabled?: boolean
+          ai_confidence_threshold?: number
+          auto_release_hours?: number
+          created_at?: string
+          daily_deposit_limit?: number
+          escrow_stability_fee?: number
+          id?: number
+          sla_free_hours?: number
+          sla_pro_hours?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          ai_autonomous_enabled?: boolean
+          ai_confidence_threshold?: number
+          auto_release_hours?: number
+          created_at?: string
+          daily_deposit_limit?: number
+          escrow_stability_fee?: number
+          id?: number
+          sla_free_hours?: number
+          sla_pro_hours?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       kyc_submissions: {
         Row: {
           admin_note: string | null
