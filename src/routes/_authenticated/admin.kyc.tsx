@@ -5,7 +5,7 @@ import { Eye, Loader2, ShieldCheck } from "lucide-react";
 import { Card, Section } from "@/components/site/Shell";
 import { useLang } from "@/lib/lang";
 import { useUserProfile } from "@/hooks/use-user-profile";
-import { kycDocUrl, useKycSubmissions, useReviewKyc } from "@/lib/kyc";
+import { kycDocUrl, useKycDocPreview, useKycSubmissions, useReviewKyc } from "@/lib/kyc";
 
 export const Route = createFileRoute("/_authenticated/admin/kyc")({
   head: () => ({
@@ -20,6 +20,28 @@ export const Route = createFileRoute("/_authenticated/admin/kyc")({
 });
 
 type StatusFilter = "pending" | "approved" | "rejected" | "all";
+
+function DocPreviews({ front, back }: { front: string | null; back: string | null }) {
+  const urls = useKycDocPreview([front, back]);
+  const items = [front, back].filter(Boolean) as string[];
+  if (items.length === 0) return null;
+  return (
+    <div className="mt-3 flex flex-wrap gap-2">
+      {items.map((p) => {
+        const url = urls.data?.[p];
+        return url ? (
+          <a key={p} href={url} target="_blank" rel="noopener noreferrer" className="block">
+            <img src={url} alt="KYC document" loading="lazy" className="h-28 w-40 rounded-lg border border-border object-cover" />
+          </a>
+        ) : (
+          <div key={p} className="grid h-28 w-40 place-items-center rounded-lg border border-dashed border-border">
+            <Loader2 className="size-4 animate-spin text-primary" />
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
 function AdminKyc() {
   const { tr } = useLang();
