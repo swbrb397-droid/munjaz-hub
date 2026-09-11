@@ -5,6 +5,8 @@ import { Card, Section } from "@/components/site/Shell";
 import { TopUpDialog } from "@/components/site/TopUpDialog";
 import { useLang } from "@/lib/lang";
 import { useAuth } from "@/hooks/use-auth";
+import { useUserProfile } from "@/hooks/use-user-profile";
+import { VerifiedBadge } from "@/components/site/VerifiedBadge";
 import { useOrders, useWallet } from "@/lib/queries";
 import { useOrderTransition, useReleasedByOrder, type OrderStatus } from "@/lib/orders";
 
@@ -126,8 +128,9 @@ function OrdersPage() {
                   #{o.order_number}
                 </span>
                 <span className={`rounded-lg border px-2.5 py-1 text-[11px] font-bold ${statusTone(o.status)}`}>{tr(ar, en)}</span>
-                <span className="rounded-lg border border-border px-2.5 py-1 text-[11px] text-muted-foreground">
+                <span className="inline-flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-1 text-[11px] text-muted-foreground">
                   {isBuyer ? tr("مشترٍ", "Buyer") : tr("بائع", "Seller")}
+                  {myProfile?.is_verified && <VerifiedBadge label={false} />}
                 </span>
                 {o.escrow_locked && (
                   <span className="inline-flex items-center gap-1 rounded-lg border border-primary/40 bg-primary/10 px-2.5 py-1 text-[11px] font-bold text-primary">
