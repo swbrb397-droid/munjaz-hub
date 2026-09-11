@@ -4,8 +4,8 @@ import { useAuth } from "@/hooks/use-auth";
 import type { Tables } from "@/integrations/supabase/types";
 
 export type Governance = Tables<"platform_governance_settings">;
-export type SubscriptionPass = Tables<"custom_subscription_passes">;
-export type AccountTier = SubscriptionPass["tier"];
+export type SubscriptionPass = Tables<"subscription_codes">;
+export type AccountTier = SubscriptionPass["plan"];
 
 /* ------------------------------------------------- governance settings */
 
