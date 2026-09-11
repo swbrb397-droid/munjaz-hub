@@ -132,8 +132,8 @@ function AdminGovernance() {
             {(passes.data ?? []).slice(0, 10).map((p) => (
               <div key={p.id} className="flex flex-wrap items-center gap-2 rounded-lg border border-border px-3 py-2 text-xs">
                 <span className="font-mono font-bold" dir="ltr">{p.code}</span>
-                <span className="uppercase text-accent">{p.tier}</span>
-                <span className="text-muted-foreground">{p.used_by ? tr("مستخدمة", "Used") : tr("متاحة", "Available")}</span>
+                <span className="uppercase text-accent">{p.plan}</span>
+                <span className="text-muted-foreground">{p.is_redeemed ? tr("مستخدمة", "Used") : tr("متاحة", "Available")}</span>
                 <button
                   type="button"
                   onClick={() => void navigator.clipboard.writeText(p.code)}
