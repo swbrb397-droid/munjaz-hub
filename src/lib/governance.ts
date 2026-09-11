@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import type { Tables } from "@/integrations/supabase/types";
 
-export type Governance = Tables<"platform_governance_settings">;
+export type Governance = Tables<"governance_settings">;
 export type SubscriptionPass = Tables<"subscription_codes">;
 export type AccountTier = SubscriptionPass["plan"];
 
@@ -15,9 +15,9 @@ export function useGovernance(enabled = true) {
     enabled,
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("platform_governance_settings")
+        .from("governance_settings")
         .select("*")
-        .eq("id", true)
+        .eq("id", 1)
         .maybeSingle();
       if (error) throw error;
       return data;
@@ -31,9 +31,9 @@ export function useUpdateGovernance() {
   return useMutation({
     mutationFn: async (patch: Partial<Governance>) => {
       const { error } = await supabase
-        .from("platform_governance_settings")
+        .from("governance_settings")
         .update({ ...patch, updated_by: user?.id ?? null })
-        .eq("id", true);
+        .eq("id", 1);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["governance"] }),

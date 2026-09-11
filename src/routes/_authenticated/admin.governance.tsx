@@ -52,34 +52,37 @@ function AdminGovernance() {
             <div className="grid place-items-center py-8"><Loader2 className="size-5 animate-spin text-primary" /></div>
           ) : (
             <div className="mt-4 grid gap-3 text-sm">
-              <label className="flex items-center justify-between gap-3 rounded-xl border border-border p-3">
+              <label className={`flex items-center justify-between gap-3 rounded-xl border border-border p-3 ${!isAdmin ? "opacity-60" : ""}`}>
                 <span>{tr("الذكاء الاصطناعي المستقل", "Autonomous AI")}</span>
                 <input
                   type="checkbox"
-                  checked={g.autonomous_ai}
-                  onChange={(e) => patch({ autonomous_ai: e.target.checked })}
+                  disabled={!isAdmin}
+                  checked={g.ai_autonomous_enabled}
+                  onChange={(e) => patch({ ai_autonomous_enabled: e.target.checked })}
                   className="size-5 accent-[hsl(var(--primary))]"
                 />
               </label>
               {([
                 ["ai_confidence_threshold", tr("حد ثقة الذكاء الاصطناعي (%)", "AI confidence threshold (%)"), Number(g.ai_confidence_threshold)],
-                ["sla_hours_free", tr("SLA للحساب المجاني (ساعة)", "Free tier SLA (hours)"), g.sla_hours_free],
-                ["sla_hours_pro", tr("SLA لحساب Pro (ساعة)", "Pro tier SLA (hours)"), g.sla_hours_pro],
-                ["refill_daily_limit", tr("حد التعبئة اليومي (USDT)", "Daily refill limit (USDT)"), Number(g.refill_daily_limit)],
-                ["warranty_escrow_pct", tr("نسبة ضمان الاستقرار (%)", "Warranty escrow (%)"), g.warranty_escrow_pct],
+                ["sla_free_hours", tr("SLA للحساب المجاني (ساعة)", "Free tier SLA (hours)"), g.sla_free_hours],
+                ["sla_pro_hours", tr("SLA لحساب Pro (ساعة)", "Pro tier SLA (hours)"), g.sla_pro_hours],
+                ["daily_deposit_limit", tr("حد التعبئة اليومي (USDT)", "Daily deposit limit (USDT)"), Number(g.daily_deposit_limit)],
+                ["escrow_stability_fee", tr("نسبة ضمان الاستقرار (%)", "Escrow stability fee (%)"), g.escrow_stability_fee],
                 ["auto_release_hours", tr("التحرير التلقائي (ساعة)", "Auto-release (hours)"), g.auto_release_hours],
               ] as const).map(([key, label, value]) => (
-                <label key={key} className="grid gap-1.5">
+                <label key={key} className={`grid gap-1.5 ${!isAdmin ? "opacity-60" : ""}`}>
                   <span className="text-xs text-muted-foreground">{label}</span>
                   <input
                     type="number"
+                    disabled={!isAdmin}
                     defaultValue={value}
                     dir="ltr"
                     onBlur={(e) => {
+                      if (!isAdmin) return;
                       const next = Number(e.target.value);
                       if (Number.isFinite(next) && next !== value) patch({ [key]: next });
                     }}
-                    className="rounded-lg border border-input bg-surface px-3 py-2 outline-none focus:border-primary"
+                    className="rounded-lg border border-input bg-surface px-3 py-2 outline-none focus:border-primary disabled:cursor-not-allowed"
                   />
                 </label>
               ))}
