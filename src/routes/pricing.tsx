@@ -4,7 +4,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Check, ChevronDown, Crown, Loader2, Sparkles } from "lucide-react";
 import { Card, Section } from "@/components/site/Shell";
-import { RedeemPassCard } from "@/components/site/RedeemPassCard";
+
 import { TopUpDialog } from "@/components/site/TopUpDialog";
 import { useLang } from "@/lib/lang";
 import { useAuth } from "@/hooks/use-auth";
