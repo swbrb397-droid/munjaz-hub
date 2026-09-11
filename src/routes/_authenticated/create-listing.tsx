@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ImagePlus, Loader2, PlusCircle, ShieldCheck, Trash2, X } from "lucide-react";
+import { ImagePlus, Loader2, MoreHorizontal, Pencil, PlusCircle, Power, ShieldCheck, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import { Card, Section } from "@/components/site/Shell";
 import { useLang } from "@/lib/lang";
