@@ -227,14 +227,20 @@ function CreateListing() {
       }
     },
     onSuccess: () => {
+      const wasEditing = !!editingId;
       setForm(emptyForm);
       setCoverFile(null);
       setCodeAudit(false);
       setStep(1);
+      setEditingId(null);
 
       qc.invalidateQueries({ queryKey: ["my-listings"] });
       qc.invalidateQueries({ queryKey: ["listings"] });
-      toast.success(tr("تم نشر العرض بنجاح", "Listing published successfully"));
+      toast.success(
+        wasEditing
+          ? tr("تم حفظ تعديلات العرض", "Listing changes saved")
+          : tr("تم نشر العرض بنجاح", "Listing published successfully"),
+      );
     },
     onError: (e: unknown) => {
       console.error("Full Submission Error:", e);
@@ -246,12 +252,40 @@ function CreateListing() {
     mutationFn: async (id: string) => {
       const { error } = await supabase.from("listings").delete().eq("id", id);
       if (error) throw error;
+      return id;
     },
-    onSuccess: () => {
+    onSuccess: (id) => {
+      // Remove from the cached list immediately, then revalidate.
+      qc.setQueryData<Array<{ id: string }>>(["my-listings", user?.id], (prev) =>
+        (prev ?? []).filter((l) => l.id !== id),
+      );
       qc.invalidateQueries({ queryKey: ["my-listings"] });
       qc.invalidateQueries({ queryKey: ["listings"] });
+      setDeleteTarget(null);
+      toast.success(tr("تم حذف العرض بنجاح", "Listing deleted successfully"));
     },
+    onError: (e: unknown) => toast.error(formatError(e)),
   });
+
+  const toggleStatus = useMutation({
+    mutationFn: async (l: { id: string; is_published: boolean }) => {
+      const { error } = await supabase
+        .from("listings")
+        .update({ is_published: !l.is_published })
+        .eq("id", l.id);
+      if (error) throw error;
+      return !l.is_published;
+    },
+    onSuccess: (nowPublished) => {
+      qc.invalidateQueries({ queryKey: ["my-listings"] });
+      qc.invalidateQueries({ queryKey: ["listings"] });
+      toast.success(
+        nowPublished ? tr("تم تفعيل العرض", "Listing activated") : tr("تم إيقاف العرض", "Listing paused"),
+      );
+    },
+    onError: (e: unknown) => toast.error(formatError(e)),
+  });
+
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
