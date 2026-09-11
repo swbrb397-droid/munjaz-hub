@@ -18,6 +18,8 @@ import {
   X,
 } from "lucide-react";
 import { Card, Section } from "@/components/site/Shell";
+import { VerifiedBadge } from "@/components/site/VerifiedBadge";
+import { useUserProfile } from "@/hooks/use-user-profile";
 import { ReferralWidget } from "@/components/site/ReferralWidget";
 import { useLang } from "@/lib/lang";
 import { useNotify } from "@/lib/notify";
@@ -56,6 +58,7 @@ const NATIONALITIES = ["فلسطين", "السعودية", "الإمارات", "
 function ProfilePage() {
   const { tr } = useLang();
   const { user } = useAuth();
+  const { profile: liveProfile } = useUserProfile();
   const [tab, setTab] = useState<"kyc" | "settings">("kyc");
   const [kyc, setKyc] = useState<Kyc>("unverified");
   const [tier] = useState<Tier>("pro");
@@ -105,7 +108,10 @@ function ProfilePage() {
             </div>
 
             <div className="min-w-0 flex-1">
-              <h2 className="truncate text-lg font-black">{handle}</h2>
+              <h2 className="flex items-center gap-1.5 truncate text-lg font-black">
+                {handle}
+                {liveProfile?.is_verified && <VerifiedBadge />}
+              </h2>
               <p className="text-xs text-muted-foreground">عضو منذ مارس 2026</p>
               <div className="mt-3 flex flex-wrap gap-2">
                 <KycBadge state={kyc} />

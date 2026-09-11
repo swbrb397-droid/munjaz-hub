@@ -230,6 +230,7 @@ export type Database = {
           created_at: string
           doc_type: string
           front_path: string
+          full_name: string | null
           id: string
           reviewed_at: string | null
           reviewed_by: string | null
@@ -243,6 +244,7 @@ export type Database = {
           created_at?: string
           doc_type?: string
           front_path: string
+          full_name?: string | null
           id?: string
           reviewed_at?: string | null
           reviewed_by?: string | null
@@ -256,6 +258,7 @@ export type Database = {
           created_at?: string
           doc_type?: string
           front_path?: string
+          full_name?: string | null
           id?: string
           reviewed_at?: string | null
           reviewed_by?: string | null
@@ -1138,6 +1141,7 @@ export type Database = {
           created_at: string
           doc_type: string
           front_path: string
+          full_name: string | null
           id: string
           reviewed_at: string | null
           reviewed_by: string | null
@@ -1405,28 +1409,62 @@ export type Database = {
         Args: { _frozen: boolean; _reason?: string; _user_id: string }
         Returns: undefined
       }
-      submit_kyc: {
-        Args: { _back_path?: string; _doc_type: string; _front_path: string }
-        Returns: {
-          admin_note: string | null
-          back_path: string | null
-          created_at: string
-          doc_type: string
-          front_path: string
-          id: string
-          reviewed_at: string | null
-          reviewed_by: string | null
-          status: string
-          updated_at: string
-          user_id: string
-        }
-        SetofOptions: {
-          from: "*"
-          to: "kyc_submissions"
-          isOneToOne: true
-          isSetofReturn: false
-        }
-      }
+      submit_kyc:
+        | {
+            Args: {
+              _back_path?: string
+              _doc_type: string
+              _front_path: string
+            }
+            Returns: {
+              admin_note: string | null
+              back_path: string | null
+              created_at: string
+              doc_type: string
+              front_path: string
+              full_name: string | null
+              id: string
+              reviewed_at: string | null
+              reviewed_by: string | null
+              status: string
+              updated_at: string
+              user_id: string
+            }
+            SetofOptions: {
+              from: "*"
+              to: "kyc_submissions"
+              isOneToOne: true
+              isSetofReturn: false
+            }
+          }
+        | {
+            Args: {
+              _back_path?: string
+              _doc_type: string
+              _front_path: string
+              _full_name?: string
+            }
+            Returns: {
+              admin_note: string | null
+              back_path: string | null
+              created_at: string
+              doc_type: string
+              front_path: string
+              full_name: string | null
+              id: string
+              reviewed_at: string | null
+              reviewed_by: string | null
+              status: string
+              updated_at: string
+              user_id: string
+            }
+            SetofOptions: {
+              from: "*"
+              to: "kyc_submissions"
+              isOneToOne: true
+              isSetofReturn: false
+            }
+          }
     }
     Enums: {
       account_tier: "free" | "pro" | "corporate"

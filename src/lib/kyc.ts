@@ -17,8 +17,24 @@ async function uploadDoc(userId: string, side: "front" | "back", file: File) {
 
 /** Signed preview URL for a stored KYC document (valid 5 minutes). */
 export async function kycDocUrl(path: string): Promise<string | null> {
-  const { data } = await supabase.storage.from(BUCKET).createSignedUrl(path, 300);
+  const { data } = await supabase.storage.from(BUCKET).createSignedUrl(path, 3600);
   return data?.signedUrl ?? null;
+}
+
+/** Signed URLs for a list of stored KYC document paths (valid 1 hour). */
+export function useKycDocPreview(paths: (string | null | undefined)[]) {
+  const key = paths.filter(Boolean).join("|");
+  return useQuery({
+    queryKey: ["kyc-doc-preview", key],
+    enabled: key.length > 0,
+    staleTime: 50 * 60 * 1000,
+    queryFn: async () => {
+      const entries = await Promise.all(
+        paths.filter(Boolean).map(async (p) => [p as string, await kycDocUrl(p as string)] as const),
+      );
+      return Object.fromEntries(entries) as Record<string, string | null>;
+    },
+  });
 }
 
 export function useMyKyc() {
@@ -42,7 +58,7 @@ export function useSubmitKyc() {
   const { user } = useAuth();
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (input: { docType: string; front: File; back?: File | null }) => {
+    mutationFn: async (input: { docType: string; front: File; back?: File | null; fullName?: string }) => {
       if (!user) throw new Error("NOT_AUTHENTICATED");
       const frontPath = await uploadDoc(user.id, "front", input.front);
       const backPath = input.back ? await uploadDoc(user.id, "back", input.back) : undefined;
@@ -50,7 +66,8 @@ export function useSubmitKyc() {
         _doc_type: input.docType,
         _front_path: frontPath,
         ...(backPath ? { _back_path: backPath } : {}),
-      });
+        ...(input.fullName?.trim() ? { _full_name: input.fullName.trim() } : {}),
+      } as never);
       if (error) throw error;
       return data as unknown as KycSubmission;
     },

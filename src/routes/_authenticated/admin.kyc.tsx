@@ -5,7 +5,7 @@ import { Eye, Loader2, ShieldCheck } from "lucide-react";
 import { Card, Section } from "@/components/site/Shell";
 import { useLang } from "@/lib/lang";
 import { useUserProfile } from "@/hooks/use-user-profile";
-import { kycDocUrl, useKycSubmissions, useReviewKyc } from "@/lib/kyc";
+import { kycDocUrl, useKycDocPreview, useKycSubmissions, useReviewKyc } from "@/lib/kyc";
 
 export const Route = createFileRoute("/_authenticated/admin/kyc")({
   head: () => ({
@@ -21,6 +21,28 @@ export const Route = createFileRoute("/_authenticated/admin/kyc")({
 
 type StatusFilter = "pending" | "approved" | "rejected" | "all";
 
+function DocPreviews({ front, back }: { front: string | null; back: string | null }) {
+  const urls = useKycDocPreview([front, back]);
+  const items = [front, back].filter(Boolean) as string[];
+  if (items.length === 0) return null;
+  return (
+    <div className="mt-3 flex flex-wrap gap-2">
+      {items.map((p) => {
+        const url = urls.data?.[p];
+        return url ? (
+          <a key={p} href={url} target="_blank" rel="noopener noreferrer" className="block">
+            <img src={url} alt="KYC document" loading="lazy" className="h-28 w-40 rounded-lg border border-border object-cover" />
+          </a>
+        ) : (
+          <div key={p} className="grid h-28 w-40 place-items-center rounded-lg border border-dashed border-border">
+            <Loader2 className="size-4 animate-spin text-primary" />
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 function AdminKyc() {
   const { tr } = useLang();
   const { isAdmin } = useUserProfile();
@@ -35,15 +57,22 @@ function AdminKyc() {
     else toast.error(tr("تعذّر فتح المستند.", "Could not open the document."));
   };
 
-  const act = (id: string, approve: boolean) =>
+  const act = (id: string, approve: boolean) => {
+    let note: string | undefined;
+    if (!approve) {
+      const reason = window.prompt(tr("سبب الرفض:", "Rejection reason:"))?.trim();
+      if (!reason) return;
+      note = reason;
+    }
     review.mutate(
-      { id, approve },
+      { id, approve, ...(note ? { note } : {}) },
       {
         onSuccess: () =>
           toast.success(approve ? tr("تم قبول التوثيق ✅", "Verification approved ✅") : tr("تم رفض الطلب", "Request rejected")),
         onError: (e: Error) => toast.error(e.message),
       },
     );
+  };
 
   const filters: [StatusFilter, string][] = [
     ["pending", tr("قيد المراجعة", "Pending")],
@@ -83,10 +112,14 @@ function AdminKyc() {
             {(rows.data ?? []).map((r) => (
               <div key={r.id} className="grid gap-3 rounded-xl border border-border p-4 text-sm md:grid-cols-[1fr_auto]">
                 <div className="min-w-0">
-                  <p className="truncate font-bold">{r.profile?.display_name ?? r.user_id.slice(0, 8)}</p>
+                  <p className="truncate font-bold">
+                    {(r as { full_name?: string | null }).full_name ?? r.profile?.display_name ?? r.user_id.slice(0, 8)}
+                  </p>
                   <p className="text-xs text-muted-foreground">
                     {r.doc_type} · {new Date(r.created_at).toLocaleString()} · <span className="uppercase">{r.status}</span>
                   </p>
+                  {r.admin_note && <p className="mt-1 text-xs text-destructive">{r.admin_note}</p>}
+                  <DocPreviews front={r.front_path} back={r.back_path} />
                   <div className="mt-2 flex flex-wrap gap-2">
                     <button type="button" onClick={() => void open(r.front_path)} className="inline-flex items-center gap-1 rounded-lg border border-border px-2.5 py-1 text-[11px] hover:border-primary hover:text-primary">
                       <Eye className="size-3.5" /> {tr("الوجه الأمامي", "Front")}
