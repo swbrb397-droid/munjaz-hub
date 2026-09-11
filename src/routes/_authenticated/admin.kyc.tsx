@@ -35,9 +35,15 @@ function AdminKyc() {
     else toast.error(tr("تعذّر فتح المستند.", "Could not open the document."));
   };
 
-  const act = (id: string, approve: boolean) =>
+  const act = (id: string, approve: boolean) => {
+    let note: string | undefined;
+    if (!approve) {
+      const reason = window.prompt(tr("سبب الرفض:", "Rejection reason:"))?.trim();
+      if (!reason) return;
+      note = reason;
+    }
     review.mutate(
-      { id, approve },
+      { id, approve, ...(note ? { note } : {}) },
       {
         onSuccess: () =>
           toast.success(approve ? tr("تم قبول التوثيق ✅", "Verification approved ✅") : tr("تم رفض الطلب", "Request rejected")),
