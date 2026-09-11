@@ -537,25 +537,123 @@ function CreateListing() {
         ) : (
           <div className="grid gap-3">
             {(mine.data ?? []).map((l) => (
-              <Card key={l.id} className="flex flex-wrap items-center gap-3">
+              <Card key={l.id} className="flex select-none flex-wrap items-center gap-3">
                 <div className="min-w-0">
                   <p className="truncate font-bold">{lang === "ar" ? l.title_ar : l.title_en}</p>
                   <p className="text-xs text-muted-foreground">{l.category}</p>
                 </div>
-                <span className="ms-auto text-sm font-bold text-primary">{Number(l.price_usdt).toLocaleString()} USDT</span>
-                <button
-                  type="button"
-                  onClick={() => remove.mutate(l.id)}
-                  className="grid size-9 place-items-center rounded-lg border border-border text-muted-foreground transition-colors hover:text-destructive"
-                  aria-label={tr("حذف", "Delete")}
+                <span
+                  className={`rounded-full border px-2.5 py-1 text-[10px] font-bold ${
+                    l.is_published ? "border-primary/50 text-primary" : "border-border text-muted-foreground"
+                  }`}
                 >
-                  <Trash2 className="size-4" />
-                </button>
+                  {l.is_published ? tr("نشط", "Active") : tr("متوقف", "Inactive")}
+                </span>
+                <span className="ms-auto text-sm font-bold text-primary">{Number(l.price_usdt).toLocaleString()} USDT</span>
+
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setMenuFor((v) => (v === l.id ? null : l.id))}
+                    aria-haspopup="menu"
+                    aria-expanded={menuFor === l.id}
+                    className="inline-flex select-none items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-bold text-muted-foreground hover:border-primary hover:text-primary"
+                  >
+                    <MoreHorizontal className="size-4" /> {tr("إجراءات", "Actions")}
+                  </button>
+                  {menuFor === l.id && (
+                    <div
+                      role="menu"
+                      className="absolute end-0 z-20 mt-2 w-52 overflow-hidden rounded-xl border border-border bg-card shadow-xl"
+                    >
+                      <button
+                        type="button"
+                        role="menuitem"
+                        onClick={() => {
+                          setMenuFor(null);
+                          setEditingId(l.id);
+                          setForm({
+                            title_ar: l.title_ar ?? "",
+                            title_en: l.title_en ?? "",
+                            category: l.category as ListingCategory,
+                            price_usdt: String(l.price_usdt ?? ""),
+                            tag_ar: l.tag_ar ?? "",
+                            tag_en: l.tag_en ?? "",
+                            description_ar: "",
+                          });
+                          setStep(1);
+                          window.scrollTo({ top: 0, behavior: "smooth" });
+                        }}
+                        className="flex w-full items-center gap-2 px-4 py-2.5 text-start text-xs font-bold hover:bg-secondary"
+                      >
+                        <Pencil className="size-3.5" /> {tr("تعديل", "Edit")}
+                      </button>
+                      <button
+                        type="button"
+                        role="menuitem"
+                        disabled={toggleStatus.isPending}
+                        onClick={() => {
+                          setMenuFor(null);
+                          toggleStatus.mutate({ id: l.id, is_published: !!l.is_published });
+                        }}
+                        className="flex w-full items-center gap-2 px-4 py-2.5 text-start text-xs font-bold hover:bg-secondary disabled:opacity-50"
+                      >
+                        <Power className="size-3.5" />
+                        {l.is_published ? tr("إيقاف العرض", "Set inactive") : tr("تفعيل العرض", "Set active")}
+                      </button>
+                      <button
+                        type="button"
+                        role="menuitem"
+                        onClick={() => {
+                          setMenuFor(null);
+                          setDeleteTarget({ id: l.id, title: (lang === "ar" ? l.title_ar : l.title_en) ?? "" });
+                        }}
+                        className="flex w-full items-center gap-2 border-t border-border px-4 py-2.5 text-start text-xs font-bold text-destructive hover:bg-destructive/10"
+                      >
+                        <Trash2 className="size-3.5" /> {tr("حذف العرض", "Delete listing")}
+                      </button>
+                    </div>
+                  )}
+                </div>
               </Card>
             ))}
           </div>
         )}
       </Section>
+
+      {deleteTarget && (
+        <div
+          className="fixed inset-0 z-[70] grid place-items-center bg-background/80 p-4 backdrop-blur"
+          role="dialog"
+          aria-modal="true"
+        >
+          <div className="w-full max-w-sm select-none rounded-2xl border border-border bg-card p-5">
+            <h3 className="text-base font-black">{tr("تأكيد حذف العرض", "Confirm deletion")}</h3>
+            <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+              {tr("سيتم حذف العرض نهائياً ولا يمكن التراجع عن هذا الإجراء.", "This listing will be permanently deleted. This cannot be undone.")}
+            </p>
+            <p className="mt-2 truncate text-sm font-bold">{deleteTarget.title}</p>
+            <div className="mt-5 flex gap-2">
+              <button
+                type="button"
+                disabled={remove.isPending}
+                onClick={() => remove.mutate(deleteTarget.id)}
+                className="flex h-10 flex-1 items-center justify-center gap-2 rounded-xl bg-destructive px-4 text-xs font-bold text-destructive-foreground disabled:opacity-60"
+              >
+                {remove.isPending && <Loader2 className="size-4 animate-spin" />}
+                {tr("حذف نهائي", "Delete")}
+              </button>
+              <button
+                type="button"
+                onClick={() => setDeleteTarget(null)}
+                className="h-10 flex-1 rounded-xl border border-border text-xs font-bold text-muted-foreground hover:bg-secondary"
+              >
+                {tr("إلغاء", "Cancel")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
