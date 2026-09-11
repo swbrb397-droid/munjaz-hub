@@ -170,7 +170,7 @@ function AuthPage() {
   }
 
   useEffect(() => {
-    if (loading || profileLoading || !isAuthenticated) return;
+    if (navigating || authLoading || profileLoading || !isAuthenticated) return;
     const stored = safeRedirect(window.sessionStorage.getItem(REDIRECT_KEY));
     const target = redirectTo ?? stored;
     if (target) {
@@ -181,7 +181,7 @@ function AuthPage() {
       return;
     }
     navigate({ to: isAdmin ? "/admin" : "/", replace: true });
-  }, [loading, profileLoading, isAuthenticated, isAdmin, navigate, redirectTo]);
+  }, [navigating, authLoading, profileLoading, isAuthenticated, isAdmin, navigate, redirectTo]);
 
   // Persist deep-link context (listingId, lang, ref) across failed logins, signup and session timeouts.
   useEffect(() => {
