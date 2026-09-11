@@ -169,6 +169,22 @@ function CreateListing() {
 
   const create = useMutation({
     mutationFn: async () => {
+      // Edit mode: update the existing listing instead of inserting a new one.
+      if (editingId) {
+        const { error: updErr } = await supabase
+          .from("listings")
+          .update({
+            title_ar: sanitizeText(form.title_ar, 120) || sanitizeText(form.title_en, 120),
+            title_en: sanitizeText(form.title_en, 120) || sanitizeText(form.title_ar, 120),
+            category: form.category,
+            price_usdt: price,
+            tag_ar: sanitizeText(form.tag_ar, 40),
+            tag_en: sanitizeText(form.tag_en, 40) || sanitizeText(form.tag_ar, 40),
+          })
+          .eq("id", editingId);
+        if (updErr) throw updErr;
+        return;
+      }
       let coverUrl: string | null = null;
       if (coverFile) {
         // Cover was already screened at pick time (permissive profile, fail-open).
