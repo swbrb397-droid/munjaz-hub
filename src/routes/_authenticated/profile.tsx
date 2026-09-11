@@ -18,6 +18,8 @@ import {
   X,
 } from "lucide-react";
 import { Card, Section } from "@/components/site/Shell";
+import { VerifiedBadge } from "@/components/site/VerifiedBadge";
+import { useUserProfile } from "@/hooks/use-user-profile";
 import { ReferralWidget } from "@/components/site/ReferralWidget";
 import { useLang } from "@/lib/lang";
 import { useNotify } from "@/lib/notify";
@@ -56,6 +58,7 @@ const NATIONALITIES = ["فلسطين", "السعودية", "الإمارات", "
 function ProfilePage() {
   const { tr } = useLang();
   const { user } = useAuth();
+  const { profile: liveProfile } = useUserProfile();
   const [tab, setTab] = useState<"kyc" | "settings">("kyc");
   const [kyc, setKyc] = useState<Kyc>("unverified");
   const [tier] = useState<Tier>("pro");
