@@ -184,7 +184,7 @@ function PricingPage() {
           ))}
         </div>
 
-        <RedeemPassCard className="mt-8" />
+        
 
         <Card className="mt-8 p-0">
           <button
