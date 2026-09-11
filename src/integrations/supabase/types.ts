@@ -835,6 +835,51 @@ export type Database = {
         }
         Relationships: []
       }
+      subscription_codes: {
+        Row: {
+          code: string
+          created_at: string
+          created_by: string | null
+          duration_days: number
+          expires_at: string
+          id: string
+          is_redeemed: boolean
+          note: string | null
+          plan: Database["public"]["Enums"]["account_tier"]
+          redeemed_at: string | null
+          redeemed_by: string | null
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          created_by?: string | null
+          duration_days?: number
+          expires_at?: string
+          id?: string
+          is_redeemed?: boolean
+          note?: string | null
+          plan?: Database["public"]["Enums"]["account_tier"]
+          redeemed_at?: string | null
+          redeemed_by?: string | null
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          created_by?: string | null
+          duration_days?: number
+          expires_at?: string
+          id?: string
+          is_redeemed?: boolean
+          note?: string | null
+          plan?: Database["public"]["Enums"]["account_tier"]
+          redeemed_at?: string | null
+          redeemed_by?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
