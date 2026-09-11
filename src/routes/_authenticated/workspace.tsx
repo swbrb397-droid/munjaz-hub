@@ -56,7 +56,7 @@ function actionLabel(s: OrderStatus, tr: Tr) {
     case "delivered":
       return tr("تسليم العمل للمشتري", "Deliver work to buyer");
     case "completed":
-      return tr("اعتماد التسليم وتحرير المبلغ", "Approve delivery & release funds");
+      return tr("تأكيد الاستلام وتحرير الرصيد", "Confirm receipt & release funds");
     case "cancelled":
       return tr("إلغاء الطلب", "Cancel order");
     default:
@@ -291,6 +291,22 @@ function Workspace() {
   const linkDeliverable = useLinkDeliverable(selected);
   const setApproval = useSetDeliverableApproval(selected);
   const transition = useOrderTransition();
+  const releaseEscrow = useMutation({
+    mutationFn: async (orderId: string) => {
+      const { data, error } = await supabase.rpc("release_escrow_to_seller", { p_order_id: orderId });
+      if (error) throw new Error(error.message);
+      const result = data as { success?: boolean; message?: string } | null;
+      if (!result?.success) throw new Error(result?.message ?? tr("تعذّر تحرير الضمان.", "Escrow release failed."));
+      return result;
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["orders"] });
+      void qc.invalidateQueries({ queryKey: ["wallet"] });
+      void qc.invalidateQueries({ queryKey: ["transactions"] });
+      setReviewOpen(true);
+    },
+    onError: (error: Error) => setActionMsg(error.message),
+  });
 
   // Deadline extension request
   const [extOpen, setExtOpen] = useState(false);
@@ -1180,17 +1196,7 @@ function Workspace() {
                     onClick={() => {
                       setActionMsg(null);
                       if (a.key === "completed") {
-                        void supabase.rpc("release_escrow_to_seller", { p_order_id: order.id }).then(({ data, error }) => {
-                          const result = data as { success?: boolean; message?: string } | null;
-                          if (error || !result?.success) {
-                            setActionMsg(error?.message ?? result?.message ?? tr("تعذّر تحرير الضمان.", "Escrow release failed."));
-                            return;
-                          }
-                          void qc.invalidateQueries({ queryKey: ["orders"] });
-                          void qc.invalidateQueries({ queryKey: ["wallet"] });
-                          void qc.invalidateQueries({ queryKey: ["transactions"] });
-                          setReviewOpen(true);
-                        });
+                        releaseEscrow.mutate(order.id);
                         return;
                       }
                       transition.mutate(
@@ -1204,7 +1210,7 @@ function Workspace() {
                       );
                     }}
 
-                    disabled={transition.isPending || order.status === "completed"}
+                    disabled={transition.isPending || releaseEscrow.isPending || order.status === "completed"}
                     className={`w-full rounded-xl px-4 py-2.5 text-sm font-bold disabled:opacity-50 ${
                       a.tone === "danger"
                         ? "border border-destructive/50 bg-destructive/10 text-destructive"

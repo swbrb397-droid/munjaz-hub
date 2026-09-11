@@ -14,9 +14,9 @@ import { supabase } from "@/integrations/supabase/client";
 export const Route = createFileRoute("/pricing")({
   head: () => ({
     meta: [
-      { title: "باقات الاشتراك والمقاعد | المُنجِز" },
-      { name: "description", content: "باقات المجانية والمحترفين والشركات بعملة USDT — مقاعد محدودة، حجز فوري، وتسريع دورة الضمان." },
-      { property: "og:title", content: "باقات الاشتراك والمقاعد | المُنجِز" },
+      { title: "باقات الاشتراك | المُنجِز" },
+      { name: "description", content: "باقات المجانية والمحترفين والشركات بعملة USDT مع مزايا واضحة وتسريع دورة الضمان." },
+      { property: "og:title", content: "باقات الاشتراك | المُنجِز" },
       { property: "og:description", content: "10 USDT للمحترفين و49 USDT للشركات — الظهور يعتمد على الكفاءة فقط." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -134,7 +134,7 @@ function PricingPage() {
           </p>
           <p className="mx-auto mt-5 inline-flex max-w-2xl items-start gap-2 rounded-full border border-accent/40 bg-accent/10 px-4 py-2 text-xs leading-relaxed text-accent">
             <Sparkles className="mt-0.5 size-3.5 shrink-0" />
-            المقاعد الاحترافية ومقاعد الشركات محدودة ويتم اعتماد الحجز التلقائي بأسبقية اكتمال الدفع عبر شبكة USDT.
+            فعّل باقتك مباشرة من رصيد المحفظة، أو اشحن المبلغ المتبقي بأمان عبر NOWPayments.
           </p>
         </div>
       </section>

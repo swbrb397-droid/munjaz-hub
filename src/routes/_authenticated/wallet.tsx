@@ -15,7 +15,6 @@ import {
   WITHDRAWAL_FEE,
   slaHoursForTier,
   useMyWithdrawals,
-  useRequestWithdrawal,
   withdrawalErrorMessage,
   type WithdrawalNetwork,
 } from "@/lib/withdrawals";
@@ -73,10 +72,11 @@ function WalletPage() {
 
   const savePayout = useMutation({
     mutationFn: async (value: string) => {
+      if (!user) throw new Error(tr("يجب تسجيل الدخول.", "You must be signed in."));
       const { error } = await supabase
         .from("wallets")
         .update({ payout_address: value })
-        .eq("user_id", user!.id);
+        .eq("user_id", user.id);
       if (error) throw error;
     },
     onSuccess: () => {
