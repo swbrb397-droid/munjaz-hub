@@ -116,7 +116,7 @@ export const Route = createFileRoute("/auth")({
 function AuthPage() {
   const { tr, lang } = useLang();
   const navigate = useNavigate();
-  const { isAuthenticated, loading } = useAuth();
+  const { isAuthenticated, loading: authLoading } = useAuth();
   const { isAdmin, loading: profileLoading } = useUserProfile();
   const { redirectTo } = Route.useSearch();
 
@@ -136,6 +136,7 @@ function AuthPage() {
   const [busy, setBusy] = useState(false);
   // Stays true from a successful sign-in until the redirect lands, so the button never flickers back.
   const [navigating, setNavigating] = useState(false);
+  const loading = busy || navigating;
   const [pendingEmail, setPendingEmail] = useState<string | null>(null);
   const [cooldown, setCooldown] = useState(0);
   const [resends, setResends] = useState(0);
