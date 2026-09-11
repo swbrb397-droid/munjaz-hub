@@ -1,5 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/use-auth";
 import { gasEstimates } from "@/lib/gas";
 
 import { ArrowUpFromLine, BadgeCheck, FileText, Lock, ShieldAlert, Sparkles, Timer } from "lucide-react";
@@ -59,6 +62,30 @@ function WalletPage() {
   const [address, setAddress] = useState("");
   const [feedback, setFeedback] = useState<string | null>(null);
   const [receipt, setReceipt] = useState<ReceiptData | null>(null);
+  const [payoutAddress, setPayoutAddress] = useState("");
+  const { user } = useAuth();
+  const qc = useQueryClient();
+
+  // Payout address is the only wallet column the client may write; balances are
+  // mutated exclusively by secure database routines.
+  useEffect(() => {
+    setPayoutAddress(wallet.data?.payout_address ?? "");
+  }, [wallet.data?.payout_address]);
+
+  const savePayout = useMutation({
+    mutationFn: async (value: string) => {
+      const { error } = await supabase
+        .from("wallets")
+        .update({ payout_address: value })
+        .eq("user_id", user!.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["wallet"] });
+      toast.success(tr("تم حفظ عنوان السحب", "Payout address saved"));
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
 
   const balance = Number(wallet.data?.available_usdt ?? 0);
   const locked = Number(wallet.data?.locked_usdt ?? 0);

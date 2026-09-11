@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ImagePlus, Loader2, PlusCircle, ShieldCheck, Trash2, X } from "lucide-react";
+import { ImagePlus, Loader2, MoreHorizontal, Pencil, PlusCircle, Power, ShieldCheck, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import { Card, Section } from "@/components/site/Shell";
 import { useLang } from "@/lib/lang";
@@ -67,6 +67,9 @@ function CreateListing() {
   const fileInput = useRef<HTMLInputElement>(null);
   const [step, setStep] = useState<1 | 2>(1);
   const [codeAudit, setCodeAudit] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [menuFor, setMenuFor] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; title: string } | null>(null);
   const isCodeCategory = form.category === "freelance" || form.category === "product";
 
   useEffect(() => {
@@ -141,7 +144,7 @@ function CreateListing() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("listings")
-        .select("id,title_ar,title_en,category,price_usdt,is_published,created_at")
+        .select("id,title_ar,title_en,category,price_usdt,is_published,created_at,tag_ar,tag_en")
         .eq("owner_id", user!.id)
         .order("created_at", { ascending: false });
       if (error) throw error;
@@ -166,6 +169,22 @@ function CreateListing() {
 
   const create = useMutation({
     mutationFn: async () => {
+      // Edit mode: update the existing listing instead of inserting a new one.
+      if (editingId) {
+        const { error: updErr } = await supabase
+          .from("listings")
+          .update({
+            title_ar: sanitizeText(form.title_ar, 120) || sanitizeText(form.title_en, 120),
+            title_en: sanitizeText(form.title_en, 120) || sanitizeText(form.title_ar, 120),
+            category: form.category,
+            price_usdt: price,
+            tag_ar: sanitizeText(form.tag_ar, 40),
+            tag_en: sanitizeText(form.tag_en, 40) || sanitizeText(form.tag_ar, 40),
+          })
+          .eq("id", editingId);
+        if (updErr) throw updErr;
+        return;
+      }
       let coverUrl: string | null = null;
       if (coverFile) {
         // Cover was already screened at pick time (permissive profile, fail-open).
@@ -208,14 +227,20 @@ function CreateListing() {
       }
     },
     onSuccess: () => {
+      const wasEditing = !!editingId;
       setForm(emptyForm);
       setCoverFile(null);
       setCodeAudit(false);
       setStep(1);
+      setEditingId(null);
 
       qc.invalidateQueries({ queryKey: ["my-listings"] });
       qc.invalidateQueries({ queryKey: ["listings"] });
-      toast.success(tr("تم نشر العرض بنجاح", "Listing published successfully"));
+      toast.success(
+        wasEditing
+          ? tr("تم حفظ تعديلات العرض", "Listing changes saved")
+          : tr("تم نشر العرض بنجاح", "Listing published successfully"),
+      );
     },
     onError: (e: unknown) => {
       console.error("Full Submission Error:", e);
@@ -227,12 +252,40 @@ function CreateListing() {
     mutationFn: async (id: string) => {
       const { error } = await supabase.from("listings").delete().eq("id", id);
       if (error) throw error;
+      return id;
     },
-    onSuccess: () => {
+    onSuccess: (id) => {
+      // Remove from the cached list immediately, then revalidate.
+      qc.setQueryData<Array<{ id: string }>>(["my-listings", user?.id], (prev) =>
+        (prev ?? []).filter((l) => l.id !== id),
+      );
       qc.invalidateQueries({ queryKey: ["my-listings"] });
       qc.invalidateQueries({ queryKey: ["listings"] });
+      setDeleteTarget(null);
+      toast.success(tr("تم حذف العرض بنجاح", "Listing deleted successfully"));
     },
+    onError: (e: unknown) => toast.error(formatError(e)),
   });
+
+  const toggleStatus = useMutation({
+    mutationFn: async (l: { id: string; is_published: boolean }) => {
+      const { error } = await supabase
+        .from("listings")
+        .update({ is_published: !l.is_published })
+        .eq("id", l.id);
+      if (error) throw error;
+      return !l.is_published;
+    },
+    onSuccess: (nowPublished) => {
+      qc.invalidateQueries({ queryKey: ["my-listings"] });
+      qc.invalidateQueries({ queryKey: ["listings"] });
+      toast.success(
+        nowPublished ? tr("تم تفعيل العرض", "Listing activated") : tr("تم إيقاف العرض", "Listing paused"),
+      );
+    },
+    onError: (e: unknown) => toast.error(formatError(e)),
+  });
+
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -450,11 +503,24 @@ function CreateListing() {
                   <button
                     type="submit"
                     disabled={!canSubmit || create.isPending}
-                    className="flex h-11 items-center gap-2 rounded-xl bg-primary px-5 text-sm font-bold text-primary-foreground transition-opacity disabled:cursor-not-allowed disabled:opacity-50"
+                    className="flex h-11 select-none items-center gap-2 rounded-xl bg-primary px-5 text-sm font-bold text-primary-foreground transition-opacity disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {create.isPending ? <Loader2 className="size-4 animate-spin" /> : <PlusCircle className="size-4" />}
-                    {tr("نشر العرض", "Publish listing")}
+                    {editingId ? tr("حفظ التعديلات", "Save changes") : tr("نشر العرض", "Publish listing")}
                   </button>
+                  {editingId && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditingId(null);
+                        setForm(emptyForm);
+                        setStep(1);
+                      }}
+                      className="h-11 select-none rounded-xl border border-border px-5 text-sm font-bold text-muted-foreground hover:bg-secondary"
+                    >
+                      {tr("إلغاء التعديل", "Cancel edit")}
+                    </button>
+                  )}
                 </div>
               </>
             )}
@@ -471,25 +537,123 @@ function CreateListing() {
         ) : (
           <div className="grid gap-3">
             {(mine.data ?? []).map((l) => (
-              <Card key={l.id} className="flex flex-wrap items-center gap-3">
+              <Card key={l.id} className="flex select-none flex-wrap items-center gap-3">
                 <div className="min-w-0">
                   <p className="truncate font-bold">{lang === "ar" ? l.title_ar : l.title_en}</p>
                   <p className="text-xs text-muted-foreground">{l.category}</p>
                 </div>
-                <span className="ms-auto text-sm font-bold text-primary">{Number(l.price_usdt).toLocaleString()} USDT</span>
-                <button
-                  type="button"
-                  onClick={() => remove.mutate(l.id)}
-                  className="grid size-9 place-items-center rounded-lg border border-border text-muted-foreground transition-colors hover:text-destructive"
-                  aria-label={tr("حذف", "Delete")}
+                <span
+                  className={`rounded-full border px-2.5 py-1 text-[10px] font-bold ${
+                    l.is_published ? "border-primary/50 text-primary" : "border-border text-muted-foreground"
+                  }`}
                 >
-                  <Trash2 className="size-4" />
-                </button>
+                  {l.is_published ? tr("نشط", "Active") : tr("متوقف", "Inactive")}
+                </span>
+                <span className="ms-auto text-sm font-bold text-primary">{Number(l.price_usdt).toLocaleString()} USDT</span>
+
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setMenuFor((v) => (v === l.id ? null : l.id))}
+                    aria-haspopup="menu"
+                    aria-expanded={menuFor === l.id}
+                    className="inline-flex select-none items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-bold text-muted-foreground hover:border-primary hover:text-primary"
+                  >
+                    <MoreHorizontal className="size-4" /> {tr("إجراءات", "Actions")}
+                  </button>
+                  {menuFor === l.id && (
+                    <div
+                      role="menu"
+                      className="absolute end-0 z-20 mt-2 w-52 overflow-hidden rounded-xl border border-border bg-card shadow-xl"
+                    >
+                      <button
+                        type="button"
+                        role="menuitem"
+                        onClick={() => {
+                          setMenuFor(null);
+                          setEditingId(l.id);
+                          setForm({
+                            title_ar: l.title_ar ?? "",
+                            title_en: l.title_en ?? "",
+                            category: l.category as ListingCategory,
+                            price_usdt: String(l.price_usdt ?? ""),
+                            tag_ar: l.tag_ar ?? "",
+                            tag_en: l.tag_en ?? "",
+                            description_ar: "",
+                          });
+                          setStep(1);
+                          window.scrollTo({ top: 0, behavior: "smooth" });
+                        }}
+                        className="flex w-full items-center gap-2 px-4 py-2.5 text-start text-xs font-bold hover:bg-secondary"
+                      >
+                        <Pencil className="size-3.5" /> {tr("تعديل", "Edit")}
+                      </button>
+                      <button
+                        type="button"
+                        role="menuitem"
+                        disabled={toggleStatus.isPending}
+                        onClick={() => {
+                          setMenuFor(null);
+                          toggleStatus.mutate({ id: l.id, is_published: !!l.is_published });
+                        }}
+                        className="flex w-full items-center gap-2 px-4 py-2.5 text-start text-xs font-bold hover:bg-secondary disabled:opacity-50"
+                      >
+                        <Power className="size-3.5" />
+                        {l.is_published ? tr("إيقاف العرض", "Set inactive") : tr("تفعيل العرض", "Set active")}
+                      </button>
+                      <button
+                        type="button"
+                        role="menuitem"
+                        onClick={() => {
+                          setMenuFor(null);
+                          setDeleteTarget({ id: l.id, title: (lang === "ar" ? l.title_ar : l.title_en) ?? "" });
+                        }}
+                        className="flex w-full items-center gap-2 border-t border-border px-4 py-2.5 text-start text-xs font-bold text-destructive hover:bg-destructive/10"
+                      >
+                        <Trash2 className="size-3.5" /> {tr("حذف العرض", "Delete listing")}
+                      </button>
+                    </div>
+                  )}
+                </div>
               </Card>
             ))}
           </div>
         )}
       </Section>
+
+      {deleteTarget && (
+        <div
+          className="fixed inset-0 z-[70] grid place-items-center bg-background/80 p-4 backdrop-blur"
+          role="dialog"
+          aria-modal="true"
+        >
+          <div className="w-full max-w-sm select-none rounded-2xl border border-border bg-card p-5">
+            <h3 className="text-base font-black">{tr("تأكيد حذف العرض", "Confirm deletion")}</h3>
+            <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+              {tr("سيتم حذف العرض نهائياً ولا يمكن التراجع عن هذا الإجراء.", "This listing will be permanently deleted. This cannot be undone.")}
+            </p>
+            <p className="mt-2 truncate text-sm font-bold">{deleteTarget.title}</p>
+            <div className="mt-5 flex gap-2">
+              <button
+                type="button"
+                disabled={remove.isPending}
+                onClick={() => remove.mutate(deleteTarget.id)}
+                className="flex h-10 flex-1 items-center justify-center gap-2 rounded-xl bg-destructive px-4 text-xs font-bold text-destructive-foreground disabled:opacity-60"
+              >
+                {remove.isPending && <Loader2 className="size-4 animate-spin" />}
+                {tr("حذف نهائي", "Delete")}
+              </button>
+              <button
+                type="button"
+                onClick={() => setDeleteTarget(null)}
+                className="h-10 flex-1 rounded-xl border border-border text-xs font-bold text-muted-foreground hover:bg-secondary"
+              >
+                {tr("إلغاء", "Cancel")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
