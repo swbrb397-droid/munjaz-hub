@@ -20,8 +20,8 @@ export function RedeemPassCard({ className = "" }: { className?: string }) {
 
   const confirm = () =>
     redeem.mutate(code, {
-      onSuccess: () => {
-        toast.success(tr("🎉 تم تفعيل اشتراكك بنجاح!", "🎉 Your subscription is now active!"));
+      onSuccess: (result) => {
+        toast.success(result.message ?? tr("تم تفعيل اشتراكك بنجاح!", "Your subscription is now active!"));
         setCode("");
       },
       onError: (e: Error) =>
@@ -91,7 +91,7 @@ export function RedeemPassCard({ className = "" }: { className?: string }) {
               disabled={redeem.isPending}
               className="rounded-xl bg-primary px-4 py-2.5 text-sm font-bold text-primary-foreground glow disabled:opacity-60"
             >
-              {redeem.isPending ? tr("جارٍ التفعيل...", "Activating...") : tr("تأكيد التفعيل", "Confirm activation")}
+              {redeem.isPending ? <span className="inline-flex items-center gap-2"><Loader2 className="size-4 animate-spin" />{tr("جارٍ التفعيل...", "Activating...")}</span> : tr("استرداد", "Redeem")}
             </button>
           )}
         </div>

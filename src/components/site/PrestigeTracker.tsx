@@ -12,14 +12,14 @@ export function PrestigeTracker({ metrics }: { metrics: PrestigeMetrics }) {
   const rows = metricBreakdown(metrics, next);
 
   return (
-    <Card>
+    <Card className="select-none">
       <div className="flex flex-wrap items-center gap-3">
         <span className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-black ${tier.badge}`}>
           {tier.aura ? <Crown className="size-4 animate-pulse" /> : <Sparkles className="size-3.5" />}
           {tr(`المستوى ${tier.level} — ${tier.ar}`, `Level ${tier.level} — ${tier.en}`)}
         </span>
         <span className="text-xs text-muted-foreground">
-          {tr("سلم الرتب تجميلي بالكامل — النشر متاح للجميع بلا قيود.", "Ranks are purely cosmetic — everyone can publish freely.")}
+          {tr("مستوى التميز يعكس سجل الإنجاز وجودة الأداء.", "Your prestige level reflects delivery history and service quality.")}
         </span>
       </div>
 

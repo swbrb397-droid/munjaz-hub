@@ -59,7 +59,6 @@ function WalletPage() {
   const gasRows = useMemo(() => gasEstimates(), []);
 
   const [amount, setAmount] = useState("250");
-  const [address, setAddress] = useState("");
   const [feedback, setFeedback] = useState<string | null>(null);
   const [receipt, setReceipt] = useState<ReceiptData | null>(null);
   const [payoutAddress, setPayoutAddress] = useState("");
@@ -94,21 +93,41 @@ function WalletPage() {
   const sla = slaHoursForTier(tier);
   const parsed = parseUsdt(amount) ?? 0;
 
-  const withdraw = useRequestWithdrawal();
+  const withdraw = useMutation({
+    mutationFn: async () => {
+      const requestedAmount = Number(amount);
+      if (!Number.isFinite(requestedAmount) || requestedAmount <= 0) throw new Error("INVALID_AMOUNT");
+      const { data, error } = await supabase.rpc("request_wallet_withdrawal", { p_amount: requestedAmount });
+      if (error) throw new Error(error.message);
+      const result = data as { success?: boolean; message?: string } | null;
+      if (!result?.success) throw new Error(result?.message ?? "WITHDRAWAL_FAILED");
+      return result;
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["wallet"] });
+      void qc.invalidateQueries({ queryKey: ["transactions"] });
+      void qc.invalidateQueries({ queryKey: ["withdrawals"] });
+    },
+  });
 
   const submit = () => {
     setFeedback(null);
     withdraw.mutate(
       { amount, network, address },
       {
-        onSuccess: () =>
-          setFeedback(
-            tr(
-              `تم استلام الطلب — المعالجة خلال ${sla} ساعة.`,
-              `Request received — processing within ${sla} hours.`,
-            ),
-          ),
-        onError: (e: Error) => setFeedback(withdrawalErrorMessage(e.message, lang === "ar")),
+        onSuccess: () => {
+          const message = tr(
+            `تم استلام الطلب — المعالجة خلال ${sla} ساعة.`,
+            `Request received — processing within ${sla} hours.`,
+          );
+          setFeedback(message);
+          toast.success(message);
+        },
+        onError: (e: Error) => {
+          const message = withdrawalErrorMessage(e.message, lang === "ar");
+          setFeedback(message);
+          toast.error(message);
+        },
       },
     );
   };
@@ -140,7 +159,10 @@ function WalletPage() {
           <p className="text-sm text-muted-foreground">{tr("الرصيد المتاح", "Available balance")}</p>
           <p className="mt-1 text-4xl font-black text-primary">{balance.toLocaleString()}</p>
           <p className="text-sm text-muted-foreground">USDT</p>
-          <p className="mt-2 text-xs text-muted-foreground">{tr("محجوز في الضمان", "Held in escrow")}: {locked.toLocaleString()} USDT</p>
+          <div className="mt-3 grid gap-1 text-xs text-muted-foreground">
+            <p>{tr("محجوز في الضمان", "Held in escrow")}: <span className="font-bold text-foreground">{locked.toLocaleString()} USDT</span></p>
+            <p>{tr("إجمالي الأرباح", "Lifetime earned")}: <span className="font-bold text-accent">{Number(wallet.data?.lifetime_earned ?? 0).toLocaleString()} USDT</span></p>
+          </div>
           <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
             {Object.entries(rates).map(([c, r]) => (
               <div key={c} className="rounded-lg border border-border px-3 py-2">
@@ -155,6 +177,27 @@ function WalletPage() {
               ? tr("حساب موثق — سحب فوري مفعّل", "Verified account — instant withdrawal enabled")
               : tr("حساب غير موثق — السحب مجدول", "Unverified account — scheduled withdrawal")}
           </p>
+          <div className="mt-4 border-t border-border pt-4">
+            <label className="grid gap-2 text-xs font-bold text-muted-foreground">
+              {tr("عنوان السحب المحفوظ", "Saved payout address")}
+              <input
+                value={payoutAddress}
+                onChange={(e) => setPayoutAddress(e.target.value.replace(/[^A-Za-z0-9]/g, ""))}
+                dir="ltr"
+                maxLength={64}
+                placeholder="T… / 0x…"
+                className="field-lux w-full px-3 py-2 text-foreground"
+              />
+            </label>
+            <button
+              type="button"
+              onClick={() => savePayout.mutate(payoutAddress.trim())}
+              disabled={savePayout.isPending || !user || !payoutAddress.trim()}
+              className="mt-2 w-full rounded-lg border border-primary/50 bg-primary/10 px-3 py-2 text-xs font-bold text-primary disabled:opacity-50"
+            >
+              {savePayout.isPending ? tr("جارٍ الحفظ...", "Saving...") : tr("حفظ العنوان", "Save address")}
+            </button>
+          </div>
         </Card>
 
         <Card id="withdraw-card" className="lg:col-span-2">
@@ -225,10 +268,9 @@ function WalletPage() {
               <span className="text-muted-foreground">{tr(`المبلغ (USDT) — الحد الأدنى ${MIN_WITHDRAWAL}`, `Amount (USDT) — min ${MIN_WITHDRAWAL}`)}</span>
               <input value={amount} onChange={(e) => setAmount(e.target.value.replace(/[^\d.]/g, ""))} inputMode="decimal" maxLength={16} className="field-lux  px-3 py-2 outline-none focus:border-primary" />
             </label>
-            <label className="grid gap-2 text-sm sm:col-span-2">
-              <span className="text-muted-foreground">{tr("عنوان المحفظة", "Wallet address")}</span>
-              <input value={address} onChange={(e) => setAddress(e.target.value.replace(/[^A-Za-z0-9]/g, ""))} placeholder="T… / 0x…" maxLength={64} className="field-lux  px-3 py-2 outline-none focus:border-primary" />
-            </label>
+            <p className="text-xs text-muted-foreground sm:col-span-2">
+              {tr("سيُرسل السحب إلى عنوان السحب المحفوظ في بطاقة الرصيد.", "The withdrawal will be sent to the payout address saved in the balance card.")}
+            </p>
           </div>
 
           <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-surface-2/60 p-4 text-sm">

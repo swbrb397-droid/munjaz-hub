@@ -1179,6 +1179,20 @@ function Workspace() {
                     key={a.key}
                     onClick={() => {
                       setActionMsg(null);
+                      if (a.key === "completed") {
+                        void supabase.rpc("release_escrow_to_seller", { p_order_id: order.id }).then(({ data, error }) => {
+                          const result = data as { success?: boolean; message?: string } | null;
+                          if (error || !result?.success) {
+                            setActionMsg(error?.message ?? result?.message ?? tr("تعذّر تحرير الضمان.", "Escrow release failed."));
+                            return;
+                          }
+                          void qc.invalidateQueries({ queryKey: ["orders"] });
+                          void qc.invalidateQueries({ queryKey: ["wallet"] });
+                          void qc.invalidateQueries({ queryKey: ["transactions"] });
+                          setReviewOpen(true);
+                        });
+                        return;
+                      }
                       transition.mutate(
                         { id: order.id, status: a.key },
                         {
@@ -1190,7 +1204,7 @@ function Workspace() {
                       );
                     }}
 
-                    disabled={transition.isPending}
+                    disabled={transition.isPending || order.status === "completed"}
                     className={`w-full rounded-xl px-4 py-2.5 text-sm font-bold disabled:opacity-50 ${
                       a.tone === "danger"
                         ? "border border-destructive/50 bg-destructive/10 text-destructive"
