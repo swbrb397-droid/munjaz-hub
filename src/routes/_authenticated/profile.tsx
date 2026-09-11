@@ -105,7 +105,10 @@ function ProfilePage() {
             </div>
 
             <div className="min-w-0 flex-1">
-              <h2 className="truncate text-lg font-black">{handle}</h2>
+              <h2 className="flex items-center gap-1.5 truncate text-lg font-black">
+                {handle}
+                {liveProfile?.is_verified && <VerifiedBadge />}
+              </h2>
               <p className="text-xs text-muted-foreground">عضو منذ مارس 2026</p>
               <div className="mt-3 flex flex-wrap gap-2">
                 <KycBadge state={kyc} />
