@@ -56,6 +56,7 @@ function statusTone(s: OrderStatus) {
 function OrdersPage() {
   const { tr } = useLang();
   const { user } = useAuth();
+  const { profile: myProfile } = useUserProfile();
   const orders = useOrders();
   const wallet = useWallet();
   const transition = useOrderTransition();
