@@ -90,10 +90,14 @@ function AdminKyc() {
             {(rows.data ?? []).map((r) => (
               <div key={r.id} className="grid gap-3 rounded-xl border border-border p-4 text-sm md:grid-cols-[1fr_auto]">
                 <div className="min-w-0">
-                  <p className="truncate font-bold">{r.profile?.display_name ?? r.user_id.slice(0, 8)}</p>
+                  <p className="truncate font-bold">
+                    {(r as { full_name?: string | null }).full_name ?? r.profile?.display_name ?? r.user_id.slice(0, 8)}
+                  </p>
                   <p className="text-xs text-muted-foreground">
                     {r.doc_type} · {new Date(r.created_at).toLocaleString()} · <span className="uppercase">{r.status}</span>
                   </p>
+                  {r.admin_note && <p className="mt-1 text-xs text-destructive">{r.admin_note}</p>}
+                  <DocPreviews front={r.front_path} back={r.back_path} />
                   <div className="mt-2 flex flex-wrap gap-2">
                     <button type="button" onClick={() => void open(r.front_path)} className="inline-flex items-center gap-1 rounded-lg border border-border px-2.5 py-1 text-[11px] hover:border-primary hover:text-primary">
                       <Eye className="size-3.5" /> {tr("الوجه الأمامي", "Front")}
