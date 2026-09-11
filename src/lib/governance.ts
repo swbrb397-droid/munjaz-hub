@@ -4,8 +4,8 @@ import { useAuth } from "@/hooks/use-auth";
 import type { Tables } from "@/integrations/supabase/types";
 
 export type Governance = Tables<"platform_governance_settings">;
-export type SubscriptionPass = Tables<"custom_subscription_passes">;
-export type AccountTier = SubscriptionPass["tier"];
+export type SubscriptionPass = Tables<"subscription_codes">;
+export type AccountTier = SubscriptionPass["plan"];
 
 /* ------------------------------------------------- governance settings */
 
@@ -48,8 +48,9 @@ export function usePasses(enabled = true) {
     enabled,
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("custom_subscription_passes")
+        .from("subscription_codes")
         .select("*")
+        .eq("is_redeemed", false)
         .order("created_at", { ascending: false })
         .limit(50);
       if (error) throw error;
@@ -71,10 +72,11 @@ export function useCreatePass() {
   return useMutation({
     mutationFn: async (input: { tier: AccountTier; durationDays: number; validDays: number; note?: string }) => {
       const code = randomCode();
-      const { error } = await supabase.from("custom_subscription_passes").insert({
+      const { error } = await supabase.from("subscription_codes").insert({
         code,
-        tier: input.tier,
+        plan: input.tier === "free" ? "pro" : input.tier,
         duration_days: input.durationDays,
+        is_redeemed: false,
         expires_at: new Date(Date.now() + input.validDays * 86_400_000).toISOString(),
         note: input.note?.slice(0, 200) ?? null,
         created_by: user?.id ?? null,

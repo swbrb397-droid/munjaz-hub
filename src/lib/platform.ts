@@ -71,12 +71,12 @@ export function usePassPreview(code: string) {
     enabled: normalized.length >= 8,
     retry: false,
     queryFn: async (): Promise<PassPreview | null> => {
-      const { data, error } = await supabase.rpc("preview_subscription_pass", { _code: normalized });
+      const { data, error } = await supabase.rpc("preview_subscription_code", { p_code: normalized });
       if (error) throw error;
-      const row = (data ?? [])[0];
+      const row = ((data ?? []) as Array<{ plan: string; duration_days: number; expires_at: string; is_valid: boolean }>)[0];
       if (!row) return null;
       return {
-        tier: row.tier as PassPreview["tier"],
+        tier: row.plan as PassPreview["tier"],
         duration_days: Number(row.duration_days),
         expires_at: String(row.expires_at),
         is_valid: Boolean(row.is_valid),

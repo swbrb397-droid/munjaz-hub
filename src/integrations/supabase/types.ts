@@ -835,6 +835,51 @@ export type Database = {
         }
         Relationships: []
       }
+      subscription_codes: {
+        Row: {
+          code: string
+          created_at: string
+          created_by: string | null
+          duration_days: number
+          expires_at: string
+          id: string
+          is_redeemed: boolean
+          note: string | null
+          plan: Database["public"]["Enums"]["account_tier"]
+          redeemed_at: string | null
+          redeemed_by: string | null
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          created_by?: string | null
+          duration_days?: number
+          expires_at?: string
+          id?: string
+          is_redeemed?: boolean
+          note?: string | null
+          plan?: Database["public"]["Enums"]["account_tier"]
+          redeemed_at?: string | null
+          redeemed_by?: string | null
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          created_by?: string | null
+          duration_days?: number
+          expires_at?: string
+          id?: string
+          is_redeemed?: boolean
+          note?: string | null
+          plan?: Database["public"]["Enums"]["account_tier"]
+          redeemed_at?: string | null
+          redeemed_by?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -1148,6 +1193,15 @@ export type Database = {
           listings_count: number
           sellers_count: number
           volume_usdt: number
+        }[]
+      }
+      preview_subscription_code: {
+        Args: { p_code: string }
+        Returns: {
+          duration_days: number
+          expires_at: string
+          is_valid: boolean
+          plan: Database["public"]["Enums"]["account_tier"]
         }[]
       }
       preview_subscription_pass: {
