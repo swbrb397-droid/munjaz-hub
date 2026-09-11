@@ -112,9 +112,7 @@ function WalletPage() {
 
   const submit = () => {
     setFeedback(null);
-    withdraw.mutate(
-      { amount, network, address },
-      {
+    withdraw.mutate(undefined, {
         onSuccess: () => {
           const message = tr(
             `تم استلام الطلب — المعالجة خلال ${sla} ساعة.`,
@@ -128,8 +126,7 @@ function WalletPage() {
           setFeedback(message);
           toast.error(message);
         },
-      },
-    );
+    });
   };
 
 
