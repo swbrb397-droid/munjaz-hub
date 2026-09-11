@@ -626,6 +626,7 @@ export type Database = {
           kyc_status: string
           kyc_tier: Database["public"]["Enums"]["kyc_tier"]
           level: number
+          plan_expires_at: string | null
           rating: number
           referral_code: string
           referred_by: string | null
@@ -650,6 +651,7 @@ export type Database = {
           kyc_status?: string
           kyc_tier?: Database["public"]["Enums"]["kyc_tier"]
           level?: number
+          plan_expires_at?: string | null
           rating?: number
           referral_code: string
           referred_by?: string | null
@@ -674,6 +676,7 @@ export type Database = {
           kyc_status?: string
           kyc_tier?: Database["public"]["Enums"]["kyc_tier"]
           level?: number
+          plan_expires_at?: string | null
           rating?: number
           referral_code?: string
           referred_by?: string | null
@@ -1202,6 +1205,11 @@ export type Database = {
           xp_points: number
         }[]
       }
+      purchase_subscription_plan: {
+        Args: { p_tier: Database["public"]["Enums"]["account_tier"] }
+        Returns: Json
+      }
+      redeem_subscription_code: { Args: { p_code: string }; Returns: Json }
       redeem_subscription_pass: {
         Args: { _code: string }
         Returns: {
@@ -1224,6 +1232,8 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      release_escrow_to_seller: { Args: { p_order_id: string }; Returns: Json }
+      request_wallet_withdrawal: { Args: { p_amount: number }; Returns: Json }
       request_withdrawal: {
         Args: {
           _address: string

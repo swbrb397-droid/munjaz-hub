@@ -96,6 +96,12 @@
     -webkit-tap-highlight-color: transparent;
   }
 
+  input,
+  select,
+  textarea {
+    user-select: text;
+  }
+
   img,
   video,
   canvas,

@@ -1,17 +1,22 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Check, ChevronDown, Copy, Crown, Loader2, QrCode, Sparkles, X } from "lucide-react";
+import { Check, ChevronDown, Crown, Loader2, Sparkles } from "lucide-react";
 import { Card, Section } from "@/components/site/Shell";
 import { RedeemPassCard } from "@/components/site/RedeemPassCard";
+import { TopUpDialog } from "@/components/site/TopUpDialog";
 import { useLang } from "@/lib/lang";
+import { useAuth } from "@/hooks/use-auth";
+import { useProfile, useWallet } from "@/lib/queries";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/pricing")({
   head: () => ({
     meta: [
-      { title: "باقات الاشتراك والمقاعد | المُنجِز" },
-      { name: "description", content: "باقات المجانية والمحترفين والشركات بعملة USDT — مقاعد محدودة، حجز فوري، وتسريع دورة الضمان." },
-      { property: "og:title", content: "باقات الاشتراك والمقاعد | المُنجِز" },
+      { title: "باقات الاشتراك | المُنجِز" },
+      { name: "description", content: "باقات المجانية والمحترفين والشركات بعملة USDT مع مزايا واضحة وتسريع دورة الضمان." },
+      { property: "og:title", content: "باقات الاشتراك | المُنجِز" },
       { property: "og:description", content: "10 USDT للمحترفين و49 USDT للشركات — الظهور يعتمد على الكفاءة فقط." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -20,12 +25,7 @@ export const Route = createFileRoute("/pricing")({
   component: PricingPage,
 });
 
-type TierId = "free" | "pro" | "corp";
-
-const WALLETS: Record<"TRC-20" | "BEP-20", string> = {
-  "TRC-20": "TJmunjazPro492xKq7Yb3Zn8Rf5Tc2Wd6La",
-  "BEP-20": "0x9F42Ae1Cd73B8e05aF16D2c48b3E7a90C51D2B84",
-};
+type TierId = "free" | "pro" | "corporate";
 
 const TIERS: Array<{
   id: TierId;
@@ -33,7 +33,6 @@ const TIERS: Array<{
   price: number;
   featured?: boolean;
   premium?: boolean;
-  seats?: { left: number; total: number };
   cta: string;
   features: string[];
 }> = [
@@ -55,7 +54,6 @@ const TIERS: Array<{
     name: "باقة المحترفين",
     price: 10,
     featured: true,
-    seats: { left: 842, total: 1000 },
     cta: "ترقية إلى Pro الآن",
     features: [
       "عمولة المنصة: 5% مخفضة فقط",
@@ -66,11 +64,10 @@ const TIERS: Array<{
     ],
   },
   {
-    id: "corp",
+    id: "corporate",
     name: "باقة الشركات",
     price: 49,
     premium: true,
-    seats: { left: 67, total: 100 },
     cta: "حجز مقعد الشركات",
     features: [
       "عمولة المنصة: 2.5% أدنى عمولة في المنصة",
@@ -84,22 +81,60 @@ const TIERS: Array<{
 
 function PricingPage() {
   const { tr } = useLang();
-  const [checkout, setCheckout] = useState<TierId | null>(null);
   const [openTable, setOpenTable] = useState(false);
+  const [topUp, setTopUp] = useState<number | null>(null);
+  const { user } = useAuth();
+  const profile = useProfile();
+  const wallet = useWallet();
+  const qc = useQueryClient();
+  const currentTier = profile.data?.account_tier ?? "free";
+  const purchase = useMutation({
+    mutationFn: async (tier: "pro" | "corporate") => {
+      const { data, error } = await supabase.rpc("purchase_subscription_plan", { p_tier: tier });
+      if (error) throw new Error(error.message);
+      const result = data as { success?: boolean; message?: string; missing_amount?: number } | null;
+      if (!result?.success) return result;
+      return result;
+    },
+    onSuccess: (result) => {
+      if (!result?.success) {
+        setTopUp(Math.max(1, Number(result?.missing_amount ?? 0)));
+        toast.error(tr("رصيدك غير كافٍ؛ اشحن المبلغ المتبقي لإتمام الترقية.", "Insufficient balance; top up the remainder to upgrade."));
+        return;
+      }
+      void qc.invalidateQueries({ queryKey: ["profile"] });
+      void qc.invalidateQueries({ queryKey: ["wallet"] });
+      void qc.invalidateQueries({ queryKey: ["transactions"] });
+      toast.success(tr("تم تفعيل الباقة لمدة 30 يوماً.", "Your plan is active for 30 days."));
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
 
-  const active = useMemo(() => TIERS.find((t) => t.id === checkout) ?? null, [checkout]);
+  const upgrade = (tier: TierId, price: number) => {
+    if (tier === "free" || tier === currentTier) return;
+    if (!user) {
+      toast.error(tr("سجّل الدخول أولاً لترقية باقتك.", "Sign in first to upgrade your plan."));
+      return;
+    }
+    const available = Number(wallet.data?.available_usdt ?? 0);
+    if (available < price) {
+      setTopUp(Number((price - available).toFixed(2)));
+      return;
+    }
+    purchase.mutate(tier);
+  };
 
   return (
     <div className="overflow-x-hidden">
       <section className="border-b border-border">
         <div className="mx-auto max-w-7xl px-4 py-14 text-center">
-          <h1 className="text-3xl font-black sm:text-5xl">اختر باقتك وانطلق في منظومة «المُنجِز»</h1>
+          <h1 className="select-none text-3xl font-black sm:text-5xl">اختر باقتك وانطلق في منظومة «المُنجِز»</h1>
           <p className="mx-auto mt-4 max-w-2xl text-sm text-muted-foreground sm:text-base">
             محرك البحث والظهور الداخلي يعتمد 100% على الكفاءة والتقييم الحقيقي لجميع المستخدمين بلا تمييز.
           </p>
           <p className="mx-auto mt-5 inline-flex max-w-2xl items-start gap-2 rounded-full border border-accent/40 bg-accent/10 px-4 py-2 text-xs leading-relaxed text-accent">
             <Sparkles className="mt-0.5 size-3.5 shrink-0" />
-            المقاعد الاحترافية ومقاعد الشركات محدودة ويتم اعتماد الحجز التلقائي بأسبقية اكتمال الدفع عبر شبكة USDT.
+            فعّل باقتك مباشرة من رصيد المحفظة، أو اشحن المبلغ المتبقي بأمان عبر NOWPayments.
           </p>
         </div>
       </section>
@@ -113,6 +148,7 @@ function PricingPage() {
             >
               <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
                 <h2 className="min-w-0 truncate text-lg font-black">{t.name}</h2>
+                {currentTier === t.id && <span className="shrink-0 rounded-full border border-primary/50 bg-primary/10 px-2.5 py-1 text-[10px] font-bold text-primary">{tr("الحالية", "Current")}</span>}
                 {t.featured && <span className="shrink-0 rounded-full bg-primary/15 px-2.5 py-1 text-[10px] font-bold text-primary">الأكثر طلباً</span>}
                 {t.premium && <Crown className="size-4 shrink-0 text-accent" />}
               </div>
@@ -120,20 +156,6 @@ function PricingPage() {
               <p className="mt-4 text-4xl font-black text-primary">
                 {t.price} <span className="text-base font-bold text-muted-foreground">USDT{t.price > 0 ? " / شهرياً" : ""}</span>
               </p>
-
-              {t.seats && (
-                <div className="mt-4">
-                  <div className="flex justify-between text-xs text-muted-foreground">
-                    <span>{`المتبقي: ${t.seats.left} / ${t.seats.total} مقعد`}</span>
-                  </div>
-                  <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-secondary">
-                    <div
-                      className={`h-full rounded-full ${t.premium ? "bg-accent" : "bg-primary"}`}
-                      style={{ width: `${(t.seats.left / t.seats.total) * 100}%` }}
-                    />
-                  </div>
-                </div>
-              )}
 
               <ul className="mt-5 grid flex-1 gap-2.5 text-sm">
                 {t.features.map((f) => (
@@ -146,17 +168,17 @@ function PricingPage() {
 
               <button
                 type="button"
-                disabled={t.id === "free"}
-                onClick={() => setCheckout(t.id)}
+                disabled={currentTier === t.id || purchase.isPending}
+                onClick={() => upgrade(t.id, t.price)}
                 className={`mt-6 w-full rounded-xl py-3 text-sm font-bold transition-colors ${
-                  t.id === "free"
+                  currentTier === t.id
                     ? "cursor-not-allowed border border-border text-muted-foreground"
                     : t.premium
                       ? "bg-accent text-background hover:opacity-90"
                       : "bg-primary text-primary-foreground hover:opacity-90"
                 }`}
               >
-                {t.cta}
+                {purchase.isPending && t.id !== "free" ? <span className="inline-flex items-center gap-2"><Loader2 className="size-4 animate-spin" />{tr("جارٍ التفعيل...", "Activating...")}</span> : currentTier === t.id ? tr("الباقة الحالية", "Current plan") : t.cta}
               </button>
             </Card>
           ))}
@@ -212,95 +234,7 @@ function PricingPage() {
         </Card>
       </Section>
 
-      {active && <CheckoutModal name={active.name} price={active.price} onClose={() => setCheckout(null)} />}
-    </div>
-  );
-}
-
-function CheckoutModal({ name, price, onClose }: { name: string; price: number; onClose: () => void }) {
-  const { tr } = useLang();
-  const [network, setNetwork] = useState<"TRC-20" | "BEP-20">("TRC-20");
-  const [left, setLeft] = useState(15 * 60);
-
-  useEffect(() => {
-    if (left <= 0) return;
-    const id = setInterval(() => setLeft((v) => (v > 0 ? v - 1 : 0)), 1000);
-    return () => clearInterval(id);
-  }, [left]);
-
-  const mm = String(Math.floor(left / 60)).padStart(2, "0");
-  const ss = String(left % 60).padStart(2, "0");
-  const expired = left === 0;
-  const address = WALLETS[network];
-
-  const copyAddress = async () => {
-    try {
-      await navigator.clipboard.writeText(address);
-      toast.success(tr("تم نسخ عنوان المحفظة", "Wallet address copied"));
-    } catch {
-      toast.error(tr("تعذّر النسخ", "Copy failed"));
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 z-[60] grid place-items-center overflow-y-auto bg-background/80 p-4 backdrop-blur" role="dialog" aria-modal="true">
-      <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-2xl border border-border bg-card p-5">
-        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
-          <h2 className="min-w-0 truncate text-lg font-black">{name} — {price} USDT</h2>
-          <button type="button" onClick={onClose} aria-label={tr("إغلاق", "Close")} className="grid size-8 shrink-0 place-items-center rounded-lg border border-border">
-            <X className="size-4" />
-          </button>
-        </div>
-
-        {expired ? (
-          <div className="mt-4 rounded-xl border border-destructive/40 bg-destructive/10 p-4 text-center">
-            <p className="text-sm font-bold text-destructive">انتهت مهلة الحجز</p>
-            <button
-              type="button"
-              onClick={() => setLeft(15 * 60)}
-              className="mt-3 rounded-xl bg-primary px-4 py-2 text-xs font-bold text-primary-foreground"
-            >
-              تجديد الحجز
-            </button>
-          </div>
-        ) : (
-          <p className="mt-4 rounded-xl border border-accent/40 bg-accent/10 p-3 text-center text-xs font-semibold text-accent">
-            {`المقعد محجوز لك مؤقتاً لمدة ${mm}:${ss} دقيقة. يرجى إتمام التحويل قبل انتهاء المهلة.`}
-          </p>
-        )}
-
-        <div className="mt-4 grid grid-cols-2 gap-2">
-          {(["TRC-20", "BEP-20"] as const).map((n) => (
-            <button
-              key={n}
-              type="button"
-              onClick={() => setNetwork(n)}
-              className={`rounded-xl border px-3 py-2 text-xs font-bold transition-colors ${
-                network === n ? "border-primary bg-primary/15 text-primary" : "border-border text-muted-foreground hover:bg-secondary"
-              }`}
-            >
-              {n}
-            </button>
-          ))}
-        </div>
-
-        <div className="mt-4 grid place-items-center rounded-xl border border-border bg-secondary/40 p-6">
-          <QrCode className="size-24 text-muted-foreground" />
-          <p className="mt-2 text-[10px] text-muted-foreground">{tr("امسح رمز QR للدفع", "Scan the QR code to pay")}</p>
-        </div>
-
-        <p className="mt-4 text-xs font-semibold">{tr("عنوان محفظة الإيداع", "Deposit wallet address")}</p>
-        <div className="mt-2 grid grid-cols-[minmax(0,1fr)_auto] gap-2">
-          <input readOnly dir="ltr" value={address} className="min-w-0 rounded-xl border border-border bg-background px-3 py-2 text-[11px] text-muted-foreground" />
-          <button type="button" onClick={copyAddress} className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary text-primary-foreground" aria-label={tr("نسخ", "Copy")}>
-            <Copy className="size-4" />
-          </button>
-        </div>
-
-        <p className="mt-4 flex items-center justify-center gap-2 text-xs text-muted-foreground">
-          <Loader2 className="size-4 animate-spin" /> بانتظار تأكيد الشبكة...
-        </p>
-      </div>
+      {topUp !== null && <TopUpDialog defaultAmount={topUp} onClose={() => setTopUp(null)} />}
     </div>
   );
 }
