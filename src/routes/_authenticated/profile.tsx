@@ -313,6 +313,13 @@ function KycWizard({ state, reason }: { state: Kyc; reason?: string | null }) {
         توثيق الهوية (KYC) إلزامي لتفعيل فترة الضمان السريعة (12 ساعة) لباقة Pro وسحب الأرباح دون قيود، امتثالاً لقواعد الأمان ومكافحة الاحتيال.
       </p>
 
+      {state === "rejected" && (
+        <p className="mt-3 flex items-start gap-2 rounded-xl border border-rose-500/40 bg-rose-500/10 p-3 text-xs font-bold leading-relaxed text-rose-400">
+          <AlertTriangle className="mt-0.5 size-4 shrink-0" />
+          تم رفض طلب التوثيق{reason ? ` — السبب: ${reason}` : ""}. يمكنك إعادة الرفع.
+        </p>
+      )}
+
       <ol className="mt-5 grid gap-3 sm:grid-cols-3">
         {["البيانات الشخصية", "رفع الوثائق الرسمية", "الصورة الشخصية للتحقق"].map((s, i) => (
           <li key={s} className="flex items-center gap-2">
