@@ -120,9 +120,14 @@ function ProfilePage() {
                 {handle}
                 {liveProfile?.is_verified && <VerifiedBadge />}
               </h2>
-              <p className="text-xs text-muted-foreground">عضو منذ مارس 2026</p>
+              {liveProfile?.created_at && (
+                <p className="text-xs text-muted-foreground">
+                  عضو منذ {new Date(liveProfile.created_at).toLocaleDateString("ar", { month: "long", year: "numeric" })}
+                </p>
+              )}
               <div className="mt-3 flex flex-wrap gap-2">
                 <KycBadge state={kyc} />
+                <NameChangeControl profile={liveProfile} />
                 <span className="inline-flex items-center gap-1.5 rounded-full border border-accent/40 bg-accent/10 px-3 py-1 text-[11px] font-bold text-accent">
                   <Crown className="size-3.5" /> {meta.name}
                 </span>
