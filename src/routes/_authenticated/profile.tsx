@@ -211,7 +211,7 @@ function KycBadge({ state }: { state: Kyc }) {
   );
 }
 
-type Doc = { name: string; url: string };
+type Doc = { name: string; url: string; file: File };
 
 function Dropzone({ label, hint, doc, onPick }: { label: string; hint: string; doc: Doc | null; onPick: (d: Doc) => void }) {
   const ref = useRef<HTMLInputElement>(null);
@@ -228,7 +228,7 @@ function Dropzone({ label, hint, doc, onPick }: { label: string; hint: string; d
       toast.error("الصيغ المسموحة: JPG, PNG, PDF");
       return;
     }
-    onPick({ name: f.name, url: f.type.startsWith("image/") ? URL.createObjectURL(f) : "" });
+    onPick({ name: f.name, url: f.type.startsWith("image/") ? URL.createObjectURL(f) : "", file: f });
   };
 
   return (
@@ -269,7 +269,8 @@ function Dropzone({ label, hint, doc, onPick }: { label: string; hint: string; d
   );
 }
 
-function KycWizard({ state, onSubmitted }: { state: Kyc; onSubmitted: () => void }) {
+function KycWizard({ state, reason }: { state: Kyc; reason?: string | null }) {
+  const submitKyc = useSubmitKyc();
   const [step, setStep] = useState(1);
   const [fullName, setFullName] = useState("");
   const [dob, setDob] = useState("");
