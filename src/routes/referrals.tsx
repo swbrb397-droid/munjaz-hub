@@ -33,14 +33,8 @@ function ReferralHub() {
   const [terms, setTerms] = useState(false);
 
   const loading = data.isLoading || profile.isLoading;
-  const [slowLoad, setSlowLoad] = useState(false);
-  useEffect(() => {
-    const t = setTimeout(() => setSlowLoad(true), 2000);
-    return () => clearTimeout(t);
-  }, []);
   const storedCode = (profile.data as { referral_code?: string } | null)?.referral_code ?? "";
-  const fallbackCode = user ? `MJ-${user.id.replace(/-/g, "").slice(0, 6).toUpperCase()}` : "";
-  const code = storedCode || (slowLoad || profile.isError ? fallbackCode : "");
+  const code = useEnsureReferralCode(storedCode, profile.isSuccess || profile.isError);
   const origin = typeof window !== "undefined" ? window.location.origin : "";
   const refLink = code ? `${origin}/auth?ref=${code}` : "";
 

@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useEnsureReferralCode } from "@/lib/referral-code";
 import { toast } from "sonner";
 import { Copy, Users, Wallet2 } from "lucide-react";
 import { Card } from "@/components/site/Shell";
