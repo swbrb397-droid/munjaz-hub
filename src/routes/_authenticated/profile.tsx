@@ -194,8 +194,14 @@ function KycBadge({ state }: { state: Kyc }) {
     );
   if (state === "review")
     return (
-      <span className="inline-flex animate-pulse items-center gap-1.5 rounded-full border border-accent/40 bg-accent/10 px-3 py-1 text-[11px] font-bold text-accent">
+      <span className="inline-flex animate-pulse items-center gap-1.5 rounded-full border border-amber-500/40 bg-amber-500/10 px-3 py-1 text-[11px] font-bold text-amber-500">
         <Loader2 className="size-3.5 animate-spin" /> قيد المراجعة
+      </span>
+    );
+  if (state === "rejected")
+    return (
+      <span className="inline-flex items-center gap-1.5 rounded-full border border-rose-500/40 bg-rose-500/10 px-3 py-1 text-[11px] font-bold text-rose-400">
+        <AlertTriangle className="size-3.5" /> مرفوض
       </span>
     );
   return (
