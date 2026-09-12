@@ -26,6 +26,8 @@ import { useNotify } from "@/lib/notify";
 import { useAuth } from "@/hooks/use-auth";
 import { PayoutSecurityCard, Toggle } from "@/components/site/PayoutSecurityCard";
 import { ghostTag, useGhostMode } from "@/lib/ghost";
+import { NameChangeControl } from "@/components/site/NameChangeCard";
+import { useMyKyc, useSubmitKyc } from "@/lib/kyc";
 
 export const Route = createFileRoute("/_authenticated/profile")({
   head: () => ({
