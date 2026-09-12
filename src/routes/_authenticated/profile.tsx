@@ -62,14 +62,20 @@ function ProfilePage() {
   const { user } = useAuth();
   const { profile: liveProfile } = useUserProfile();
   const [tab, setTab] = useState<"kyc" | "settings">("kyc");
-  const [kyc, setKyc] = useState<Kyc>("unverified");
   const [tier] = useState<Tier>("pro");
   const [twoFa, setTwoFa] = useState(false);
   const [avatar, setAvatar] = useState<string | null>(null);
   const avatarRef = useRef<HTMLInputElement>(null);
 
+  // Live KYC state straight from the database (submissions + profile flags).
+  const mine = useMyKyc();
+  const latest = (mine.data ?? [])[0];
+  const dbStatus = (liveProfile?.is_verified ? "approved" : latest?.status) ?? liveProfile?.kyc_status ?? "unverified";
+  const kyc: Kyc = dbStatus === "approved" ? "verified" : dbStatus === "pending" ? "review" : dbStatus === "rejected" ? "rejected" : "unverified";
+  const rejectionReason = kyc === "rejected" ? (latest?.admin_note ?? null) : null;
+
   const meta = TIER_META[tier];
-  const handle = user?.email ? `@${user.email.split("@")[0]}` : "@seller_pro_99";
+  const handle = liveProfile?.display_name ? `@${liveProfile.display_name}` : user?.email ? `@${user.email.split("@")[0]}` : "@user";
 
   return (
     <div className="overflow-x-hidden">
