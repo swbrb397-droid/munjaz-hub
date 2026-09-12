@@ -290,9 +290,18 @@ function KycWizard({ state, reason }: { state: Kyc; reason?: string | null }) {
   if (state === "review")
     return (
       <Card>
-        <p className="flex items-start gap-2 text-sm font-bold text-accent">
+        <p className="flex items-start gap-2 text-sm font-bold text-amber-500">
           <Loader2 className="mt-0.5 size-4 shrink-0 animate-spin" />
-          تم استلام طلب التوثيق وهو قيد المراجعة — عادةً خلال 24 ساعة عمل.
+          قيد المراجعة — تم استلام طلب التوثيق، عادةً خلال 24 ساعة عمل.
+        </p>
+      </Card>
+    );
+
+  if (state === "verified")
+    return (
+      <Card>
+        <p className="flex items-start gap-2 text-sm font-bold text-emerald-400">
+          <BadgeCheck className="mt-0.5 size-4 shrink-0" /> موثق بنجاح
         </p>
       </Card>
     );
@@ -390,14 +399,23 @@ function KycWizard({ state, reason }: { state: Kyc; reason?: string | null }) {
         ) : (
           <button
             type="button"
-            disabled={!step3Valid || sending}
+            disabled={!step3Valid || sending || submitKyc.isPending}
             onClick={() => {
+              if (!front) return;
               setSending(true);
-              setTimeout(() => {
-                setSending(false);
-                onSubmitted();
-                toast.success("تم إرسال طلب التوثيق للمراجعة");
-              }, 700);
+              submitKyc.mutate(
+                { docType, front: front.file, back: back?.file ?? null, fullName },
+                {
+                  onSuccess: () => {
+                    setSending(false);
+                    toast.success("تم إرسال طلب التوثيق للمراجعة");
+                  },
+                  onError: (e: Error) => {
+                    setSending(false);
+                    toast.error(e.message);
+                  },
+                },
+              );
             }}
             className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-primary py-2.5 text-sm font-bold text-primary-foreground disabled:opacity-40"
           >
