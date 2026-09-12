@@ -26,6 +26,8 @@ import { useNotify } from "@/lib/notify";
 import { useAuth } from "@/hooks/use-auth";
 import { PayoutSecurityCard, Toggle } from "@/components/site/PayoutSecurityCard";
 import { ghostTag, useGhostMode } from "@/lib/ghost";
+import { NameChangeControl } from "@/components/site/NameChangeCard";
+import { useMyKyc, useSubmitKyc } from "@/lib/kyc";
 
 export const Route = createFileRoute("/_authenticated/profile")({
   head: () => ({
@@ -44,7 +46,7 @@ export const Route = createFileRoute("/_authenticated/profile")({
   component: ProfilePage,
 });
 
-type Kyc = "unverified" | "review" | "verified";
+type Kyc = "unverified" | "review" | "verified" | "rejected";
 type Tier = "free" | "pro" | "corp";
 
 const TIER_META: Record<Tier, { name: string; escrow: string; fee: string }> = {
@@ -60,14 +62,20 @@ function ProfilePage() {
   const { user } = useAuth();
   const { profile: liveProfile } = useUserProfile();
   const [tab, setTab] = useState<"kyc" | "settings">("kyc");
-  const [kyc, setKyc] = useState<Kyc>("unverified");
   const [tier] = useState<Tier>("pro");
   const [twoFa, setTwoFa] = useState(false);
   const [avatar, setAvatar] = useState<string | null>(null);
   const avatarRef = useRef<HTMLInputElement>(null);
 
+  // Live KYC state straight from the database (submissions + profile flags).
+  const mine = useMyKyc();
+  const latest = (mine.data ?? [])[0];
+  const dbStatus = (liveProfile?.is_verified ? "approved" : latest?.status) ?? liveProfile?.kyc_status ?? "unverified";
+  const kyc: Kyc = dbStatus === "approved" ? "verified" : dbStatus === "pending" ? "review" : dbStatus === "rejected" ? "rejected" : "unverified";
+  const rejectionReason = kyc === "rejected" ? (latest?.admin_note ?? null) : null;
+
   const meta = TIER_META[tier];
-  const handle = user?.email ? `@${user.email.split("@")[0]}` : "@seller_pro_99";
+  const handle = liveProfile?.display_name ? `@${liveProfile.display_name}` : user?.email ? `@${user.email.split("@")[0]}` : "@user";
 
   return (
     <div className="overflow-x-hidden">
@@ -112,9 +120,14 @@ function ProfilePage() {
                 {handle}
                 {liveProfile?.is_verified && <VerifiedBadge />}
               </h2>
-              <p className="text-xs text-muted-foreground">عضو منذ مارس 2026</p>
+              {liveProfile?.created_at && (
+                <p className="text-xs text-muted-foreground">
+                  عضو منذ {new Date(liveProfile.created_at).toLocaleDateString("ar", { month: "long", year: "numeric" })}
+                </p>
+              )}
               <div className="mt-3 flex flex-wrap gap-2">
                 <KycBadge state={kyc} />
+                <NameChangeControl profile={liveProfile} />
                 <span className="inline-flex items-center gap-1.5 rounded-full border border-accent/40 bg-accent/10 px-3 py-1 text-[11px] font-bold text-accent">
                   <Crown className="size-3.5" /> {meta.name}
                 </span>
@@ -154,7 +167,7 @@ function ProfilePage() {
         <ReferralWidget className="mt-4" />
 
         <div className="mt-4">
-          {tab === "kyc" ? <KycWizard state={kyc} onSubmitted={() => setKyc("review")} /> : <SettingsPanel twoFa={twoFa} setTwoFa={setTwoFa} />}
+          {tab === "kyc" ? <KycWizard state={kyc} reason={rejectionReason} /> : <SettingsPanel twoFa={twoFa} setTwoFa={setTwoFa} />}
         </div>
       </Section>
     </div>
@@ -181,8 +194,14 @@ function KycBadge({ state }: { state: Kyc }) {
     );
   if (state === "review")
     return (
-      <span className="inline-flex animate-pulse items-center gap-1.5 rounded-full border border-accent/40 bg-accent/10 px-3 py-1 text-[11px] font-bold text-accent">
+      <span className="inline-flex animate-pulse items-center gap-1.5 rounded-full border border-amber-500/40 bg-amber-500/10 px-3 py-1 text-[11px] font-bold text-amber-500">
         <Loader2 className="size-3.5 animate-spin" /> قيد المراجعة
+      </span>
+    );
+  if (state === "rejected")
+    return (
+      <span className="inline-flex items-center gap-1.5 rounded-full border border-rose-500/40 bg-rose-500/10 px-3 py-1 text-[11px] font-bold text-rose-400">
+        <AlertTriangle className="size-3.5" /> مرفوض
       </span>
     );
   return (
@@ -192,7 +211,7 @@ function KycBadge({ state }: { state: Kyc }) {
   );
 }
 
-type Doc = { name: string; url: string };
+type Doc = { name: string; url: string; file: File };
 
 function Dropzone({ label, hint, doc, onPick }: { label: string; hint: string; doc: Doc | null; onPick: (d: Doc) => void }) {
   const ref = useRef<HTMLInputElement>(null);
@@ -209,7 +228,7 @@ function Dropzone({ label, hint, doc, onPick }: { label: string; hint: string; d
       toast.error("الصيغ المسموحة: JPG, PNG, PDF");
       return;
     }
-    onPick({ name: f.name, url: f.type.startsWith("image/") ? URL.createObjectURL(f) : "" });
+    onPick({ name: f.name, url: f.type.startsWith("image/") ? URL.createObjectURL(f) : "", file: f });
   };
 
   return (
@@ -250,7 +269,8 @@ function Dropzone({ label, hint, doc, onPick }: { label: string; hint: string; d
   );
 }
 
-function KycWizard({ state, onSubmitted }: { state: Kyc; onSubmitted: () => void }) {
+function KycWizard({ state, reason }: { state: Kyc; reason?: string | null }) {
+  const submitKyc = useSubmitKyc();
   const [step, setStep] = useState(1);
   const [fullName, setFullName] = useState("");
   const [dob, setDob] = useState("");
@@ -270,9 +290,18 @@ function KycWizard({ state, onSubmitted }: { state: Kyc; onSubmitted: () => void
   if (state === "review")
     return (
       <Card>
-        <p className="flex items-start gap-2 text-sm font-bold text-accent">
+        <p className="flex items-start gap-2 text-sm font-bold text-amber-500">
           <Loader2 className="mt-0.5 size-4 shrink-0 animate-spin" />
-          تم استلام طلب التوثيق وهو قيد المراجعة — عادةً خلال 24 ساعة عمل.
+          قيد المراجعة — تم استلام طلب التوثيق، عادةً خلال 24 ساعة عمل.
+        </p>
+      </Card>
+    );
+
+  if (state === "verified")
+    return (
+      <Card>
+        <p className="flex items-start gap-2 text-sm font-bold text-emerald-400">
+          <BadgeCheck className="mt-0.5 size-4 shrink-0" /> موثق بنجاح
         </p>
       </Card>
     );
@@ -283,6 +312,13 @@ function KycWizard({ state, onSubmitted }: { state: Kyc; onSubmitted: () => void
         <BadgeCheck className="mt-0.5 size-4 shrink-0" />
         توثيق الهوية (KYC) إلزامي لتفعيل فترة الضمان السريعة (12 ساعة) لباقة Pro وسحب الأرباح دون قيود، امتثالاً لقواعد الأمان ومكافحة الاحتيال.
       </p>
+
+      {state === "rejected" && (
+        <p className="mt-3 flex items-start gap-2 rounded-xl border border-rose-500/40 bg-rose-500/10 p-3 text-xs font-bold leading-relaxed text-rose-400">
+          <AlertTriangle className="mt-0.5 size-4 shrink-0" />
+          تم رفض طلب التوثيق{reason ? ` — السبب: ${reason}` : ""}. يمكنك إعادة الرفع.
+        </p>
+      )}
 
       <ol className="mt-5 grid gap-3 sm:grid-cols-3">
         {["البيانات الشخصية", "رفع الوثائق الرسمية", "الصورة الشخصية للتحقق"].map((s, i) => (
@@ -370,14 +406,23 @@ function KycWizard({ state, onSubmitted }: { state: Kyc; onSubmitted: () => void
         ) : (
           <button
             type="button"
-            disabled={!step3Valid || sending}
+            disabled={!step3Valid || sending || submitKyc.isPending}
             onClick={() => {
+              if (!front) return;
               setSending(true);
-              setTimeout(() => {
-                setSending(false);
-                onSubmitted();
-                toast.success("تم إرسال طلب التوثيق للمراجعة");
-              }, 700);
+              submitKyc.mutate(
+                { docType, front: front.file, back: back?.file ?? null, fullName },
+                {
+                  onSuccess: () => {
+                    setSending(false);
+                    toast.success("تم إرسال طلب التوثيق للمراجعة");
+                  },
+                  onError: (e: Error) => {
+                    setSending(false);
+                    toast.error(e.message);
+                  },
+                },
+              );
             }}
             className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-primary py-2.5 text-sm font-bold text-primary-foreground disabled:opacity-40"
           >

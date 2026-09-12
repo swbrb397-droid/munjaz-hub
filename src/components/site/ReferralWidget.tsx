@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useEnsureReferralCode } from "@/lib/referral-code";
 import { toast } from "sonner";
 import { Copy, Users, Wallet2 } from "lucide-react";
 import { Card } from "@/components/site/Shell";
@@ -13,17 +14,10 @@ export function ReferralWidget({ className = "" }: { className?: string }) {
   const profile = useProfile();
   const referrals = useReferrals();
   const [copied, setCopied] = useState(false);
-  const [slowLoad, setSlowLoad] = useState(false);
-
-  // Resolve the infinite "loading" state: after 2s, fall back to a derived code.
-  useEffect(() => {
-    const t = setTimeout(() => setSlowLoad(true), 2000);
-    return () => clearTimeout(t);
-  }, []);
 
   const storedCode = (profile.data as { referral_code?: string } | null)?.referral_code ?? "";
-  const fallbackCode = user ? `MJ-${user.id.replace(/-/g, "").slice(0, 6).toUpperCase()}` : "";
-  const code = storedCode || (slowLoad || profile.isError ? fallbackCode : "");
+  // Persists a code on the profile when it is still empty, then uses the live value.
+  const code = useEnsureReferralCode(storedCode, profile.isSuccess || profile.isError);
   const origin = typeof window !== "undefined" ? window.location.origin : "";
   const link = code ? `${origin}/auth?ref=${code}` : "";
 
