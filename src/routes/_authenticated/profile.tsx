@@ -46,7 +46,7 @@ export const Route = createFileRoute("/_authenticated/profile")({
   component: ProfilePage,
 });
 
-type Kyc = "unverified" | "review" | "verified";
+type Kyc = "unverified" | "review" | "verified" | "rejected";
 type Tier = "free" | "pro" | "corp";
 
 const TIER_META: Record<Tier, { name: string; escrow: string; fee: string }> = {
