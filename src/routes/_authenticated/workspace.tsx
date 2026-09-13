@@ -703,6 +703,20 @@ function Workspace() {
                               </button>
                             </div>
                           </div>
+                        ) : m.attachmentPath ? (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              void vaultUrl(m.attachmentPath!)
+                                .then((url) => window.open(url, "_blank", "noopener"))
+                                .catch(() => toast.error(tr("تعذّر فتح المرفق", "Could not open the attachment")));
+                            }}
+                            className="flex w-full items-center gap-2 rounded-xl border border-current/30 bg-background/20 px-3 py-2 text-start text-xs font-bold"
+                          >
+                            <Paperclip className="size-3.5 shrink-0" />
+                            <span className="min-w-0 flex-1 truncate">{m.text}</span>
+                            <FileDown className="size-4 shrink-0" />
+                          </button>
                         ) : (
                           <p className="break-words" dir={translate && foreign && !original ? (lang === "ar" ? "rtl" : "ltr") : "auto"}>
                             {shown}
