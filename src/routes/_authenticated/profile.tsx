@@ -62,6 +62,7 @@ function ProfilePage() {
   const { user } = useAuth();
   const { profile: liveProfile } = useUserProfile();
   const [tab, setTab] = useState<"kyc" | "settings">("kyc");
+  const isVerified = liveProfile?.is_verified === true;
   const [tier] = useState<Tier>("pro");
   const [twoFa, setTwoFa] = useState(false);
   const [avatar, setAvatar] = useState<string | null>(null);
@@ -149,7 +150,7 @@ function ProfilePage() {
 
         <div className="mt-4 flex flex-wrap gap-1.5">
           {[
-            { id: "kyc" as const, label: "توثيق الهوية (KYC)" },
+            ...(isVerified ? [] : [{ id: "kyc" as const, label: "توثيق الهوية (KYC)" }]),
             { id: "settings" as const, label: "إعدادات الحساب والأمان" },
           ].map((t) => (
             <button
@@ -167,7 +168,7 @@ function ProfilePage() {
         <ReferralWidget className="mt-4" />
 
         <div className="mt-4">
-          {tab === "kyc" ? <KycWizard state={kyc} reason={rejectionReason} /> : <SettingsPanel twoFa={twoFa} setTwoFa={setTwoFa} />}
+          {tab === "kyc" && !isVerified ? <KycWizard state={kyc} reason={rejectionReason} /> : <SettingsPanel twoFa={twoFa} setTwoFa={setTwoFa} />}
         </div>
       </Section>
     </div>
