@@ -62,6 +62,7 @@ function ProfilePage() {
   const { user } = useAuth();
   const { profile: liveProfile } = useUserProfile();
   const [tab, setTab] = useState<"kyc" | "settings">("kyc");
+  const isVerified = liveProfile?.is_verified === true;
   const [tier] = useState<Tier>("pro");
   const [twoFa, setTwoFa] = useState(false);
   const [avatar, setAvatar] = useState<string | null>(null);
@@ -70,8 +71,9 @@ function ProfilePage() {
   // Live KYC state straight from the database (submissions + profile flags).
   const mine = useMyKyc();
   const latest = (mine.data ?? [])[0];
-  const dbStatus = (liveProfile?.is_verified ? "approved" : latest?.status) ?? liveProfile?.kyc_status ?? "unverified";
-  const kyc: Kyc = dbStatus === "approved" ? "verified" : dbStatus === "pending" ? "review" : dbStatus === "rejected" ? "rejected" : "unverified";
+  const dbStatus = liveProfile?.is_verified ? "approved" : (latest?.status ?? liveProfile?.kyc_status ?? "unverified");
+  const kyc: Kyc =
+    liveProfile?.is_verified === true ? "verified" : dbStatus === "pending" ? "review" : dbStatus === "rejected" ? "rejected" : "unverified";
   const rejectionReason = kyc === "rejected" ? (latest?.admin_note ?? null) : null;
 
   const meta = TIER_META[tier];
@@ -149,7 +151,7 @@ function ProfilePage() {
 
         <div className="mt-4 flex flex-wrap gap-1.5">
           {[
-            { id: "kyc" as const, label: "توثيق الهوية (KYC)" },
+            ...(isVerified ? [] : [{ id: "kyc" as const, label: "توثيق الهوية (KYC)" }]),
             { id: "settings" as const, label: "إعدادات الحساب والأمان" },
           ].map((t) => (
             <button
@@ -167,7 +169,7 @@ function ProfilePage() {
         <ReferralWidget className="mt-4" />
 
         <div className="mt-4">
-          {tab === "kyc" ? <KycWizard state={kyc} reason={rejectionReason} /> : <SettingsPanel twoFa={twoFa} setTwoFa={setTwoFa} />}
+          {tab === "kyc" && !isVerified ? <KycWizard state={kyc} reason={rejectionReason} /> : <SettingsPanel twoFa={twoFa} setTwoFa={setTwoFa} />}
         </div>
       </Section>
     </div>
@@ -206,7 +208,7 @@ function KycBadge({ state }: { state: Kyc }) {
     );
   return (
     <span className="inline-flex items-center gap-1.5 rounded-full border border-destructive/40 bg-destructive/10 px-3 py-1 text-[11px] font-bold text-destructive">
-      <AlertTriangle className="size-3.5" /> غير موثق
+      <AlertTriangle className="size-3.5" /> حساب غير موثق
     </span>
   );
 }

@@ -144,6 +144,32 @@ function TermsPage() {
             `For legal inquiries, DMCA takedown notices, or regulatory complaints, please contact the Al-Munjaz team through the official channels listed on the Contact page or internal support tickets. Communications through unofficial channels are not considered valid legal notices.`,
           )}
         />
+        <Clause
+          icon={<Shield className="size-5 text-amber" />}
+          title={tr("11. سلطة الرقابة الإدارية", "11. Administrative Oversight Authority")}
+          body={tr(
+            `سلطة الرقابة الإدارية: يوافق المستخدم صراحة على منح إدارة المنصة حقاً مطلقاً وغير مشروط في فحص ومراقبة وتوثيق كافة المراسلات والملفات المتبادلة دون إشعار مسبق لضمان سلامة التعاملات.`,
+            `Administrative Oversight: The user expressly grants platform administration an absolute and unconditional right to inspect, monitor, and archive all messages and exchanged files without prior notice, in order to safeguard the integrity of transactions.`,
+          )}
+        />
+
+        <Clause
+          icon={<UserCheck className="size-5 text-cyan" />}
+          title={tr("12. تثبيت الهوية", "12. Identity Lock")}
+          body={tr(
+            `تثبيت الهوية: يُسمح بتعديل اسم المستخدم مرة واحدة فقط قبل التوثيق، ويُقفل الاسم نهائياً بعد ذلك لمنع انتحال الشخصية والتهرب من المسؤولية.`,
+            `Identity Lock: The account name may be changed only once before verification; thereafter it is permanently locked to prevent impersonation and evasion of responsibility.`,
+          )}
+        />
+
+        <Clause
+          icon={<Gavel className="size-5 text-destructive" />}
+          title={tr("13. السلطة التقديرية للنزاعات", "13. Discretionary Dispute Authority")}
+          body={tr(
+            `السلطة التقديرية للنزاعات: تحتفظ المنصة بحق تقديري مطلق وغير قابل للطعن القضائي في تجميد الحسابات وفض النزاعات وإعادة توجيه أموال الضمان، وتُعتبر رسوم المعالجة التشغيلية غير قابلة للاسترداد.`,
+            `Discretionary Dispute Authority: The platform retains an absolute, judicially non-appealable discretionary right to freeze accounts, settle disputes, and redirect escrow funds; operational processing fees are non-refundable.`,
+          )}
+        />
       </div>
 
       <Card className="mt-8 border-primary/20 bg-primary/5">

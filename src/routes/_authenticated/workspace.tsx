@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { AlertTriangle, CalendarClock, CheckCircle2, Circle, FileCheck2, FileUp, History, Languages, Lock, Paperclip, Send, FileDown, ShieldAlert, ShieldCheck, Sparkles, Star, Unlock, Video, X } from "lucide-react";
+import { AlertTriangle, CalendarClock, CheckCircle2, Circle, FileCheck2, FileUp, History, Languages, Loader2, Lock, Paperclip, Send, FileDown, ShieldAlert, ShieldCheck, Sparkles, Star, Unlock, Video, X } from "lucide-react";
+import { toast } from "sonner";
 import { Card, Section } from "@/components/site/Shell";
 import { SecureDownload } from "@/components/site/SecureDownload";
 import { ChatSecurityNotice } from "@/components/site/ChatSecurityNotice";
@@ -22,6 +23,7 @@ import {
   useOrderMessages,
   useOrderMilestones,
   useReleaseMilestone,
+  useSendAttachment,
   useSendMessage,
   useSetDeliverableApproval,
   useUploadDeliverable,
@@ -112,7 +114,22 @@ type Msg = {
   translation?: string;
   /** Bumped when the message is edited so cached translations are invalidated. */
   rev: number;
+  /** Attachment stored in the private vault, when the message carries a file. */
+  attachmentName?: string;
+  attachmentPath?: string;
 };
+
+/** Blocks phone numbers, emails and external messaging links inside order chat. */
+const CONTACT_PATTERNS: RegExp[] = [
+  /[\w.+-]+\s*(@|\[at\]|\(at\))\s*[\w-]+\s*\.\s*[a-z]{2,}/i,
+  /(\+|00)\s*\d[\d\s\-().]{6,}/,
+  /\b\d[\d\s\-().]{8,}\d\b/,
+  /(wa\.me|whats\s*app|واتس|t\.me|telegram|تلجرام|تليجرام|discord|instagram|snapchat|سناب|انستغرام|فيسبوك|facebook|skype|imo)/i,
+];
+
+function hasExternalContact(text: string) {
+  return CONTACT_PATTERNS.some((re) => re.test(text));
+}
 
 const TRANSLATE_PREF_KEY = "munjaz-auto-translate";
 const TX_CACHE_KEY = "munjaz-translation-cache";
@@ -224,6 +241,25 @@ function Workspace() {
   const messagesQuery = useOrderMessages(selected);
   const sendMessage = useSendMessage(selected);
   const editMessage = useEditMessage(selected);
+  const sendAttachment = useSendAttachment(selected);
+  const chatFileRef = useRef<HTMLInputElement>(null);
+
+  function handleFileSelected(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    if (file.size > 50 * 1024 * 1024) {
+      toast.error(tr("الحد الأقصى للمرفق 50MB", "Attachments are limited to 50MB"));
+      return;
+    }
+    sendAttachment.mutate(
+      { file, lang },
+      {
+        onSuccess: () => toast.success(tr("تم إرسال المرفق", "Attachment sent")),
+        onError: (err: Error) => toast.error(err.message),
+      },
+    );
+  }
   const messages: Msg[] = useMemo(() => {
     const rowsMsg = messagesQuery.data ?? [];
     return rowsMsg.map((m): Msg => {
@@ -239,6 +275,10 @@ function Workspace() {
         rev: m.version,
       };
       if (srcLang !== lang) base.translation = stored[lang] ?? m.body;
+      if (m.attachment_path) {
+        base.attachmentPath = m.attachment_path;
+        base.attachmentName = m.attachment_name ?? m.body;
+      }
       return base;
     });
   }, [messagesQuery.data, user?.id, lang, tr]);
@@ -470,8 +510,9 @@ function Workspace() {
   function send() {
     const text = draft.trim();
     if (!text) return;
-    if (/@|\+\d{6,}|whatsapp|telegram|واتس|تلجرام/i.test(text)) {
+    if (hasExternalContact(text)) {
       setWarning(true);
+      toast.error("⚠️ يُمنع مشاركة وسائل التواصل الخارجية وفقاً للمادة 5 من ميثاق المنصة");
       return;
     }
     setWarning(false);
@@ -662,6 +703,20 @@ function Workspace() {
                               </button>
                             </div>
                           </div>
+                        ) : m.attachmentPath ? (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              void vaultUrl(m.attachmentPath!)
+                                .then((url) => window.open(url, "_blank", "noopener"))
+                                .catch(() => toast.error(tr("تعذّر فتح المرفق", "Could not open the attachment")));
+                            }}
+                            className="flex w-full items-center gap-2 rounded-xl border border-current/30 bg-background/20 px-3 py-2 text-start text-xs font-bold"
+                          >
+                            <Paperclip className="size-3.5 shrink-0" />
+                            <span className="min-w-0 flex-1 truncate">{m.text}</span>
+                            <FileDown className="size-4 shrink-0" />
+                          </button>
                         ) : (
                           <p className="break-words" dir={translate && foreign && !original ? (lang === "ar" ? "rtl" : "ltr") : "auto"}>
                             {shown}
@@ -746,8 +801,20 @@ function Workspace() {
               )}
 
               <div className="flex items-center gap-2 border-t border-border pt-3">
-                <button className="grid size-9 place-items-center rounded-lg border border-border text-muted-foreground" aria-label={tr("إرفاق ملف", "Attach file")}>
-                  <Paperclip className="size-4" />
+                <input
+                  ref={chatFileRef}
+                  type="file"
+                  className="hidden"
+                  onChange={handleFileSelected}
+                />
+                <button
+                  type="button"
+                  disabled={sendAttachment.isPending || !selected}
+                  onClick={() => chatFileRef.current?.click()}
+                  className="grid size-9 shrink-0 place-items-center rounded-lg border border-border text-muted-foreground disabled:opacity-50"
+                  aria-label={tr("إرفاق ملف", "Attach file")}
+                >
+                  {sendAttachment.isPending ? <Loader2 className="size-4 animate-spin" /> : <Paperclip className="size-4" />}
                 </button>
                 <input
                   value={draft}
@@ -1211,7 +1278,7 @@ function Workspace() {
                     }}
 
                     disabled={transition.isPending || releaseEscrow.isPending || order.status === "completed"}
-                    className={`w-full rounded-xl px-4 py-2.5 text-sm font-bold disabled:opacity-50 ${
+                    className={`inline-flex w-full items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold disabled:opacity-50 ${
                       a.tone === "danger"
                         ? "border border-destructive/50 bg-destructive/10 text-destructive"
                         : a.tone === "accent"
@@ -1219,6 +1286,7 @@ function Workspace() {
                           : "bg-primary text-primary-foreground"
                     }`}
                   >
+                    {(transition.isPending || releaseEscrow.isPending) && <Loader2 className="size-4 animate-spin" />}
                     {actionLabel(a.key, tr)}
                   </button>
                 ))}

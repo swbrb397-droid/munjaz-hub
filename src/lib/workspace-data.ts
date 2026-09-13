@@ -84,6 +84,37 @@ export function useEditMessage(orderId: string | null) {
   });
 }
 
+/** Uploads a chat attachment to the private vault and posts it as a message. */
+export function useSendAttachment(orderId: string | null) {
+  const { user } = useAuth();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ file, lang }: { file: File; lang: string }) => {
+      if (!orderId) throw new Error("NO_ORDER");
+      const safeName = file.name.replace(/[^\w.\-]+/g, "_").slice(-80);
+      const path = `${orderId}/${Date.now()}_${safeName}`;
+      const up = await supabase.storage.from(VAULT_BUCKET).upload(path, file, {
+        contentType: file.type || "application/octet-stream",
+        upsert: false,
+      });
+      if (up.error) throw up.error;
+
+      const sizeLabel =
+        file.size > 1024 * 1024 ? `${(file.size / 1024 / 1024).toFixed(2)} MB` : `${Math.max(1, Math.round(file.size / 1024))} KB`;
+      const { error } = await supabase.from("order_messages").insert({
+        order_id: orderId,
+        sender_id: user!.id,
+        body: `${file.name.slice(0, 120)} · ${sizeLabel}`,
+        attachment_name: file.name.slice(0, 160),
+        attachment_path: path,
+        lang,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["order_messages", orderId] }),
+  });
+}
+
 /** Persists a machine translation so the pair is billed once per message version. */
 export function useCacheTranslation(orderId: string | null) {
   const qc = useQueryClient();
