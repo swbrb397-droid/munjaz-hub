@@ -241,6 +241,25 @@ function Workspace() {
   const messagesQuery = useOrderMessages(selected);
   const sendMessage = useSendMessage(selected);
   const editMessage = useEditMessage(selected);
+  const sendAttachment = useSendAttachment(selected);
+  const chatFileRef = useRef<HTMLInputElement>(null);
+
+  function handleFileSelected(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    if (file.size > 50 * 1024 * 1024) {
+      toast.error(tr("الحد الأقصى للمرفق 50MB", "Attachments are limited to 50MB"));
+      return;
+    }
+    sendAttachment.mutate(
+      { file, lang },
+      {
+        onSuccess: () => toast.success(tr("تم إرسال المرفق", "Attachment sent")),
+        onError: (err: Error) => toast.error(err.message),
+      },
+    );
+  }
   const messages: Msg[] = useMemo(() => {
     const rowsMsg = messagesQuery.data ?? [];
     return rowsMsg.map((m): Msg => {
