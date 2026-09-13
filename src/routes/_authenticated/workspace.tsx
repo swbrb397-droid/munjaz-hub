@@ -768,8 +768,20 @@ function Workspace() {
               )}
 
               <div className="flex items-center gap-2 border-t border-border pt-3">
-                <button className="grid size-9 place-items-center rounded-lg border border-border text-muted-foreground" aria-label={tr("إرفاق ملف", "Attach file")}>
-                  <Paperclip className="size-4" />
+                <input
+                  ref={chatFileRef}
+                  type="file"
+                  className="hidden"
+                  onChange={handleFileSelected}
+                />
+                <button
+                  type="button"
+                  disabled={sendAttachment.isPending || !selected}
+                  onClick={() => chatFileRef.current?.click()}
+                  className="grid size-9 shrink-0 place-items-center rounded-lg border border-border text-muted-foreground disabled:opacity-50"
+                  aria-label={tr("إرفاق ملف", "Attach file")}
+                >
+                  {sendAttachment.isPending ? <Loader2 className="size-4 animate-spin" /> : <Paperclip className="size-4" />}
                 </button>
                 <input
                   value={draft}
