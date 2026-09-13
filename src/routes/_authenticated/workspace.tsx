@@ -1278,7 +1278,7 @@ function Workspace() {
                     }}
 
                     disabled={transition.isPending || releaseEscrow.isPending || order.status === "completed"}
-                    className={`w-full rounded-xl px-4 py-2.5 text-sm font-bold disabled:opacity-50 ${
+                    className={`inline-flex w-full items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold disabled:opacity-50 ${
                       a.tone === "danger"
                         ? "border border-destructive/50 bg-destructive/10 text-destructive"
                         : a.tone === "accent"
@@ -1286,6 +1286,7 @@ function Workspace() {
                           : "bg-primary text-primary-foreground"
                     }`}
                   >
+                    {(transition.isPending || releaseEscrow.isPending) && <Loader2 className="size-4 animate-spin" />}
                     {actionLabel(a.key, tr)}
                   </button>
                 ))}
