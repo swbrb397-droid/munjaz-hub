@@ -256,6 +256,10 @@ function Workspace() {
         rev: m.version,
       };
       if (srcLang !== lang) base.translation = stored[lang] ?? m.body;
+      if (m.attachment_path) {
+        base.attachmentPath = m.attachment_path;
+        base.attachmentName = m.attachment_name ?? m.body;
+      }
       return base;
     });
   }, [messagesQuery.data, user?.id, lang, tr]);
