@@ -491,8 +491,9 @@ function Workspace() {
   function send() {
     const text = draft.trim();
     if (!text) return;
-    if (/@|\+\d{6,}|whatsapp|telegram|واتس|تلجرام/i.test(text)) {
+    if (hasExternalContact(text)) {
       setWarning(true);
+      toast.error("⚠️ يُمنع مشاركة وسائل التواصل الخارجية وفقاً للمادة 5 من ميثاق المنصة");
       return;
     }
     setWarning(false);
