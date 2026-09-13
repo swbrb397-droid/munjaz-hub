@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { AlertTriangle, CalendarClock, CheckCircle2, Circle, FileCheck2, FileUp, History, Languages, Lock, Paperclip, Send, FileDown, ShieldAlert, ShieldCheck, Sparkles, Star, Unlock, Video, X } from "lucide-react";
+import { AlertTriangle, CalendarClock, CheckCircle2, Circle, FileCheck2, FileUp, History, Languages, Loader2, Lock, Paperclip, Send, FileDown, ShieldAlert, ShieldCheck, Sparkles, Star, Unlock, Video, X } from "lucide-react";
+import { toast } from "sonner";
 import { Card, Section } from "@/components/site/Shell";
 import { SecureDownload } from "@/components/site/SecureDownload";
 import { ChatSecurityNotice } from "@/components/site/ChatSecurityNotice";
@@ -22,6 +23,7 @@ import {
   useOrderMessages,
   useOrderMilestones,
   useReleaseMilestone,
+  useSendAttachment,
   useSendMessage,
   useSetDeliverableApproval,
   useUploadDeliverable,
@@ -112,7 +114,22 @@ type Msg = {
   translation?: string;
   /** Bumped when the message is edited so cached translations are invalidated. */
   rev: number;
+  /** Attachment stored in the private vault, when the message carries a file. */
+  attachmentName?: string;
+  attachmentPath?: string;
 };
+
+/** Blocks phone numbers, emails and external messaging links inside order chat. */
+const CONTACT_PATTERNS: RegExp[] = [
+  /[\w.+-]+\s*(@|\[at\]|\(at\))\s*[\w-]+\s*\.\s*[a-z]{2,}/i,
+  /(\+|00)\s*\d[\d\s\-().]{6,}/,
+  /\b\d[\d\s\-().]{8,}\d\b/,
+  /(wa\.me|whats\s*app|واتس|t\.me|telegram|تلجرام|تليجرام|discord|instagram|snapchat|سناب|انستغرام|فيسبوك|facebook|skype|imo)/i,
+];
+
+function hasExternalContact(text: string) {
+  return CONTACT_PATTERNS.some((re) => re.test(text));
+}
 
 const TRANSLATE_PREF_KEY = "munjaz-auto-translate";
 const TX_CACHE_KEY = "munjaz-translation-cache";
