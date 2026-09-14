@@ -42,6 +42,7 @@ type FormState = {
   tag_ar: string;
   tag_en: string;
   description_ar: string;
+  inspection_window_hours: number;
 };
 
 const emptyForm: FormState = {
@@ -52,6 +53,14 @@ const emptyForm: FormState = {
   tag_ar: "",
   tag_en: "",
   description_ar: "",
+  inspection_window_hours: 24,
+};
+
+/** Escrow inspection window allowed per account tier. */
+const INSPECTION_OPTIONS: Record<"free" | "pro" | "corporate", number[]> = {
+  free: [48, 72],
+  pro: [24, 48, 72],
+  corporate: [16, 24, 48, 72],
 };
 
 function CreateListing() {
