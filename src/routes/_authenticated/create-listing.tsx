@@ -80,6 +80,8 @@ function CreateListing() {
   const tier = (profile.data?.account_tier ?? "free") as "free" | "pro" | "corporate";
   const inspectionChoices = INSPECTION_OPTIONS[tier];
   const inspectionLocked = tier === "free";
+  // Free tier is contractually pinned to the 48h hold.
+  const inspectionHours = inspectionLocked ? 48 : form.inspection_window_hours;
   const [menuFor, setMenuFor] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; title: string } | null>(null);
   const isCodeCategory = form.category === "freelance" || form.category === "product";
@@ -192,7 +194,7 @@ function CreateListing() {
             price_usdt: price,
             tag_ar: sanitizeText(form.tag_ar, 40),
             tag_en: sanitizeText(form.tag_en, 40) || sanitizeText(form.tag_ar, 40),
-            inspection_window_hours: form.inspection_window_hours,
+            inspection_window_hours: inspectionHours,
           })
           .eq("id", editingId);
         if (updErr) throw updErr;
@@ -226,7 +228,7 @@ function CreateListing() {
         price_usdt: price,
         tag_ar: sanitizeText(form.tag_ar, 40),
         tag_en: sanitizeText(form.tag_en, 40) || sanitizeText(form.tag_ar, 40),
-        inspection_window_hours: form.inspection_window_hours,
+        inspection_window_hours: inspectionHours,
         cover_key: "product",
         cover_url: coverUrl,
         verified: !!profile.data?.is_verified,
@@ -412,7 +414,7 @@ function CreateListing() {
                   <select
                     className={field}
                     disabled={inspectionLocked}
-                    value={form.inspection_window_hours}
+                    value={inspectionHours}
                     onChange={(e) => setForm({ ...form, inspection_window_hours: Number(e.target.value) })}
                   >
                     {inspectionChoices.map((h) => (
