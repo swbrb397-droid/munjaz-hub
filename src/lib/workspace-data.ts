@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
+import { checkUpload } from "@/lib/file-guard";
 import { sanitizeText } from "@/lib/security";
 import type { Tables } from "@/integrations/supabase/types";
 
@@ -89,8 +90,10 @@ export function useSendAttachment(orderId: string | null) {
   const { user } = useAuth();
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ file, lang }: { file: File; lang: string }) => {
+    mutationFn: async ({ file, lang, tier }: { file: File; lang: string; tier?: string | null }) => {
       if (!orderId) throw new Error("NO_ORDER");
+      const rejection = checkUpload(file, tier);
+      if (rejection) throw new Error(rejection);
       const safeName = file.name.replace(/[^\w.\-]+/g, "_").slice(-80);
       const path = `${orderId}/${Date.now()}_${safeName}`;
       const up = await supabase.storage.from(VAULT_BUCKET).upload(path, file, {
