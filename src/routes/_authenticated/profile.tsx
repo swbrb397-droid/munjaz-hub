@@ -25,6 +25,7 @@ import { useNotify } from "@/lib/notify";
 import { useAuth } from "@/hooks/use-auth";
 import { PayoutSecurityCard } from "@/components/site/PayoutSecurityCard";
 import { SecurityPanel } from "@/components/site/SecurityPanel";
+import { EXECUTABLE_REJECTION, isDangerousFile } from "@/lib/file-guard";
 import { NameChangeControl } from "@/components/site/NameChangeCard";
 import { useMyKyc, useSubmitKyc } from "@/lib/kyc";
 
@@ -139,6 +140,10 @@ function ProfilePage() {
                 onChange={(e) => {
                   const f = e.target.files?.[0];
                   if (!f) return;
+                  if (isDangerousFile(f.name)) {
+                    toast.error(EXECUTABLE_REJECTION);
+                    return;
+                  }
                   if (f.size > 10 * 1024 * 1024) {
                     toast.error("الحد الأقصى 10MB");
                     return;
@@ -294,6 +299,10 @@ function Dropzone({
   const handle = (list: FileList | null) => {
     const f = list?.[0];
     if (!f) return;
+    if (isDangerousFile(f.name)) {
+      toast.error(EXECUTABLE_REJECTION);
+      return;
+    }
     if (f.size > 10 * 1024 * 1024) {
       toast.error("حجم الملف يتجاوز 10MB");
       return;

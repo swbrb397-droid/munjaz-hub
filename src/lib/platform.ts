@@ -39,7 +39,10 @@ export function useLeaderboard(metric: LeaderboardMetric) {
     queryKey: ["leaderboard", metric],
     staleTime: 30_000,
     queryFn: async () => {
-      const { data, error } = await supabase.rpc("get_leaderboard", { p_filter: metric, p_limit: 50 });
+      const { data, error } = await supabase.rpc("get_leaderboard", {
+        p_filter: metric,
+        p_limit: 50,
+      });
       if (error) throw error;
       return (data ?? []).map((r) => ({
         id: String(r.id),
@@ -71,9 +74,18 @@ export function usePassPreview(code: string) {
     enabled: normalized.length >= 8,
     retry: false,
     queryFn: async (): Promise<PassPreview | null> => {
-      const { data, error } = await supabase.rpc("preview_subscription_code", { p_code: normalized });
+      const { data, error } = await supabase.rpc("preview_subscription_code", {
+        p_code: normalized,
+      });
       if (error) throw error;
-      const row = ((data ?? []) as Array<{ plan: string; duration_days: number; expires_at: string; is_valid: boolean }>)[0];
+      const row = (
+        (data ?? []) as Array<{
+          plan: string;
+          duration_days: number;
+          expires_at: string;
+          is_valid: boolean;
+        }>
+      )[0];
       if (!row) return null;
       return {
         tier: row.plan as PassPreview["tier"],

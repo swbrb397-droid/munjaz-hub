@@ -90,7 +90,15 @@ export function useSendAttachment(orderId: string | null) {
   const { user } = useAuth();
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ file, lang, tier }: { file: File; lang: string; tier?: string | null }) => {
+    mutationFn: async ({
+      file,
+      lang,
+      tier,
+    }: {
+      file: File;
+      lang: string;
+      tier?: string | null;
+    }) => {
       if (!orderId) throw new Error("NO_ORDER");
       const rejection = checkUpload(file, tier);
       if (rejection) throw new Error(rejection);
@@ -103,7 +111,9 @@ export function useSendAttachment(orderId: string | null) {
       if (up.error) throw up.error;
 
       const sizeLabel =
-        file.size > 1024 * 1024 ? `${(file.size / 1024 / 1024).toFixed(2)} MB` : `${Math.max(1, Math.round(file.size / 1024))} KB`;
+        file.size > 1024 * 1024
+          ? `${(file.size / 1024 / 1024).toFixed(2)} MB`
+          : `${Math.max(1, Math.round(file.size / 1024))} KB`;
       const { error } = await supabase.from("order_messages").insert({
         order_id: orderId,
         sender_id: user!.id,
@@ -122,7 +132,13 @@ export function useSendAttachment(orderId: string | null) {
 export function useCacheTranslation(orderId: string | null) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, translations }: { id: string; translations: Record<string, string> }) => {
+    mutationFn: async ({
+      id,
+      translations,
+    }: {
+      id: string;
+      translations: Record<string, string>;
+    }) => {
       const { error } = await supabase.from("order_messages").update({ translations }).eq("id", id);
       if (error) throw error;
     },
@@ -151,7 +167,9 @@ export function useOrderMilestones(orderId: string | null) {
 export function useCreateMilestones(orderId: string | null) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (rows: { title: string; pct: number; amount_usdt: number; position: number }[]) => {
+    mutationFn: async (
+      rows: { title: string; pct: number; amount_usdt: number; position: number }[],
+    ) => {
       if (!orderId) throw new Error("NO_ORDER");
       const { error } = await supabase
         .from("order_milestones")
@@ -262,8 +280,17 @@ export function useLinkDeliverable(orderId: string | null) {
 export function useSetDeliverableApproval(orderId: string | null) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, state }: { id: string; state: "pending" | "revision" | "approved" }) => {
-      const { error } = await supabase.from("order_deliverables").update({ approval_state: state }).eq("id", id);
+    mutationFn: async ({
+      id,
+      state,
+    }: {
+      id: string;
+      state: "pending" | "revision" | "approved";
+    }) => {
+      const { error } = await supabase
+        .from("order_deliverables")
+        .update({ approval_state: state })
+        .eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["order_deliverables", orderId] }),
@@ -273,7 +300,9 @@ export function useSetDeliverableApproval(orderId: string | null) {
 /** Time-limited signed URL for a private vault object (links pass through unchanged). */
 export async function vaultUrl(storagePath: string, seconds = 900) {
   if (/^https?:\/\//.test(storagePath)) return storagePath;
-  const { data, error } = await supabase.storage.from(VAULT_BUCKET).createSignedUrl(storagePath, seconds);
+  const { data, error } = await supabase.storage
+    .from(VAULT_BUCKET)
+    .createSignedUrl(storagePath, seconds);
   if (error) throw error;
   return data.signedUrl;
 }
