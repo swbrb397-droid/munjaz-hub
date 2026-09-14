@@ -24,6 +24,7 @@ import { useLang } from "@/lib/lang";
 import { useNotify } from "@/lib/notify";
 import { useAuth } from "@/hooks/use-auth";
 import { PayoutSecurityCard } from "@/components/site/PayoutSecurityCard";
+import { SecurityPanel } from "@/components/site/SecurityPanel";
 import { NameChangeControl } from "@/components/site/NameChangeCard";
 import { useMyKyc, useSubmitKyc } from "@/lib/kyc";
 
@@ -506,55 +507,7 @@ function SettingsPanel({ twoFa, setTwoFa }: { twoFa: boolean; setTwoFa: (v: bool
       <PayoutSecurityCard className="lg:col-span-2" />
 
 
-      <Card className="lg:col-span-2">
-        <h3 className="text-sm font-black">كلمة المرور والمصادقة الثنائية</h3>
-        <div className="mt-3 flex flex-wrap gap-2">
-          <button
-            type="button"
-            onClick={() => setPwOpen(true)}
-            className="inline-flex items-center gap-2 rounded-xl border border-border px-4 py-2.5 text-sm font-bold"
-          >
-            <KeyRound className="size-4" /> تغيير كلمة المرور
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setTwoFa(!twoFa);
-              toast.success(twoFa ? "تم تعطيل المصادقة الثنائية" : "تم تفعيل المصادقة الثنائية");
-            }}
-            className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold ${twoFa ? "border border-destructive/50 text-destructive" : "bg-primary text-primary-foreground"}`}
-          >
-            <Lock className="size-4" /> {twoFa ? "تعطيل 2FA" : "تفعيل 2FA"}
-          </button>
-        </div>
-      </Card>
-
-      {pwOpen && (
-        <div className="fixed inset-0 z-[60] grid place-items-center overflow-y-auto bg-background/80 p-4 backdrop-blur" role="dialog" aria-modal="true">
-          <div className="w-full max-w-md rounded-2xl border border-border bg-card p-5">
-            <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
-              <h2 className="min-w-0 truncate text-lg font-black">تغيير كلمة المرور</h2>
-              <button type="button" onClick={() => setPwOpen(false)} aria-label={tr("إغلاق", "Close")} className="grid size-8 shrink-0 place-items-center rounded-lg border border-border">
-                <X className="size-4" />
-              </button>
-            </div>
-            <div className="mt-4 grid gap-3">
-              <input type="password" placeholder="كلمة المرور الحالية" className="w-full rounded-xl border border-input bg-surface px-3 py-2.5 text-sm outline-none focus:border-primary" />
-              <input type="password" placeholder="كلمة المرور الجديدة" className="w-full rounded-xl border border-input bg-surface px-3 py-2.5 text-sm outline-none focus:border-primary" />
-              <button
-                type="button"
-                onClick={() => {
-                  setPwOpen(false);
-                  toast.success("تم تحديث كلمة المرور");
-                }}
-                className="w-full rounded-xl bg-primary py-2.5 text-sm font-bold text-primary-foreground"
-              >
-                حفظ
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <SecurityPanel className="lg:col-span-2" />
     </div>
   );
 }
