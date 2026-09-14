@@ -46,12 +46,6 @@ function Leaderboard() {
         "Purely meritocratic ranking from real platform data — no paid boosting or pinning.",
       )}
     >
-      {ghost.enabled && (
-        <Card className="mb-4 border-violet/40 bg-violet/10 text-xs leading-relaxed text-violet">
-          وضع التخفي مُفعّل — يتم إخفاء هويتك في لوحة المتصدرين وسجلات الصفقات العامة واستبدالها بالمعرف المشفر{" "}
-          <span className="font-mono font-bold">{tag}</span>
-        </Card>
-      )}
 
       <Card className="mb-6 flex flex-wrap items-center gap-2">
         <span className="me-2 text-sm text-muted-foreground">{tr("الفرز حسب", "Sort by")}</span>
