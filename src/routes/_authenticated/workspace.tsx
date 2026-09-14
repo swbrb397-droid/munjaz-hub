@@ -1860,16 +1860,25 @@ function Workspace() {
                         <span className="text-muted-foreground">
                           {Number(m.amount_usdt).toFixed(2)} USDT
                         </span>
-                        <button
-                          type="button"
-                          disabled={isReleased || releaseMilestone.isPending}
-                          onClick={() => releaseMilestone.mutate(m.id)}
-                          className="shrink-0 rounded-lg border border-primary/50 bg-primary/10 px-3 py-1.5 text-[11px] font-bold text-primary disabled:opacity-40"
-                        >
-                          {isReleased
-                            ? tr("تم التحرير", "Released")
-                            : tr("تحرير هذه المرحلة", "Release this milestone")}
-                        </button>
+                        {/* Milestone release is buyer-exclusive and irrevocable. */}
+                        {isBuyer ? (
+                          <button
+                            type="button"
+                            disabled={isReleased || releaseMilestone.isPending}
+                            onClick={() => releaseMilestone.mutate(m.id)}
+                            className="min-h-[36px] shrink-0 rounded-lg border border-primary/50 bg-primary/10 px-3 py-1.5 text-[11px] font-bold text-primary disabled:opacity-40"
+                          >
+                            {isReleased
+                              ? tr("تم التحرير", "Released")
+                              : tr("تحرير هذه المرحلة", "Release this milestone")}
+                          </button>
+                        ) : (
+                          <span className="shrink-0 text-[11px] font-bold text-muted-foreground">
+                            {isReleased
+                              ? tr("تم التحرير نهائياً", "Released — final")
+                              : tr("بانتظار تحرير المشتري", "Awaiting buyer release")}
+                          </span>
+                        )}
                       </div>
                     </div>
                   );
