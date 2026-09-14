@@ -39,7 +39,12 @@ export function usePendingExtensions(orderIds: string[]) {
 export function useRequestExtension() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (input: { orderId: string; hours: 24 | 48; reason: string; sellerId: string }) => {
+    mutationFn: async (input: {
+      orderId: string;
+      hours: 24 | 48;
+      reason: string;
+      sellerId: string;
+    }) => {
       const { error } = await supabase.from("extension_requests").insert({
         order_id: input.orderId,
         requested_by: input.sellerId,
