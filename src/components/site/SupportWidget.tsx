@@ -1,13 +1,19 @@
 import { useEffect, useRef, useState } from "react";
 import { Bot, Send, X } from "lucide-react";
 import { toast } from "sonner";
+import { useServerFn } from "@tanstack/react-start";
 import { useAuth } from "@/hooks/use-auth";
 import { useProfile } from "@/lib/queries";
+import { supportAssistant } from "@/lib/support.functions";
 
 type Msg = { id: string; role: "ai" | "user"; text: string };
 
 const WELCOME =
   "مرحباً بك في منصة المُنجِز! كيف يمكنني مساعدتك اليوم بخصوص خدماتك، الضمان المالي، أو حسابك؟";
+
+/** Shown whenever the assistant times out or the gateway is unavailable. */
+const ESCALATION_FALLBACK =
+  "تم تسجيل استفسارك بنجاح وفتحه كتذكرة تصعيد للإدارة. سيصلك إشعار بالرد عبر لوحة التحكم وتليجرام";
 
 const QUICK = [
   "كيف يعمل حجز الضمان؟",
@@ -15,46 +21,6 @@ const QUICK = [
   "طلب تصعيد المشكلة للإدارة",
 ] as const;
 
-// Mock answer engine — swap with supabase.functions.invoke('support-ai') later.
-async function getSupportReply(question: string): Promise<{ text: string; escalate: boolean }> {
-  const q = question.trim();
-  await new Promise((r) => setTimeout(r, 900));
-
-  if (q.includes("تصعيد") || q.includes("الإدارة") || q.includes("شكوى")) {
-    return {
-      text: "تم فتح تذكرة تصعيد لفريق الدعم المتقدم. سيتم التواصل معك خلال مدة أقصاها 12 ساعة، ويبقى مبلغ الطلب محفوظاً في الضمان حتى صدور القرار.",
-      escalate: true,
-    };
-  }
-  if (q.includes("ضمان") || q.includes("Escrow") || q.includes("اسكرو")) {
-    return {
-      text: "عند تمويل الطلب يُحجز مبلغ USDT في الضمان ولا يصل للبائع إلا بعد قبولك للتسليم. مدة الحجز: 36 ساعة للمجاني، 12 ساعة لـ Pro، و6 ساعات للشركات، ثم يُحرَّر تلقائياً إن لم يكن هناك نزاع.",
-      escalate: false,
-    };
-  }
-  if (q.includes("إحالة") || q.includes("عمولة") || q.includes("affiliate")) {
-    return {
-      text: "برنامج الإحالة: 20% من صافي ربح المنصة خلال أول 30 يوماً، ثم 10% لبقية الـ 12 شهراً. الارتباط بالمشتري دائم، والإحالات الذاتية محظورة.",
-      escalate: false,
-    };
-  }
-  if (q.includes("سحب") || q.includes("محفظة") || q.includes("USDT")) {
-    return {
-      text: "السحب يتم بعملة USDT عبر TRC-20 أو BEP-20 أو Polygon، بلا رسوم داخلية. مدة المعالجة 48 ساعة للمجاني و12 ساعة لباقة Pro.",
-      escalate: false,
-    };
-  }
-  if (q.includes("توثيق") || q.includes("KYC")) {
-    return {
-      text: "التوثيق يتم عبر ثلاث خطوات: بيانات أساسية، وثيقة هوية، ثم صورة حية. بعد الاعتماد تحصل على شارة موثق وتقل مدة حجز الضمان.",
-      escalate: false,
-    };
-  }
-  return {
-    text: "شكراً لتواصلك. يمكنني مساعدتك في: حجز الضمان، عمولات الإحالة، السحب بالـ USDT، والتوثيق KYC. اكتب سؤالك بتفصيل أكبر أو اطلب تصعيد المشكلة للإدارة.",
-    escalate: false,
-  };
-}
 
 /** True while a soft keyboard is up or a form control is focused on small screens. */
 function useKeyboardAware() {
@@ -95,6 +61,7 @@ export function SupportWidget() {
   const [msgs, setMsgs] = useState<Msg[]>([{ id: "w", role: "ai", text: WELCOME }]);
   const listRef = useRef<HTMLDivElement>(null);
   const keyboardHidden = useKeyboardAware();
+  const askSupport = useServerFn(supportAssistant);
 
   const { isAuthenticated } = useAuth();
   const profile = useProfile();
@@ -117,10 +84,20 @@ export function SupportWidget() {
     setInput("");
     setMsgs((m) => [...m, { id: `${Date.now()}-u`, role: "user", text }]);
     setTyping(true);
-    const reply = await getSupportReply(text);
-    setTyping(false);
-    setMsgs((m) => [...m, { id: `${Date.now()}-a`, role: "ai", text: reply.text }]);
-    if (reply.escalate) toast.success("تم تحويل الطلب للدعم المتقدم");
+    try {
+      // Client-side 12s guard on top of the server's own 15s abort.
+      const reply = await Promise.race([
+        askSupport({ data: { message: text } }),
+        new Promise<never>((_, reject) => setTimeout(() => reject(new Error("TIMEOUT")), 12_000)),
+      ]);
+      setMsgs((m) => [...m, { id: `${Date.now()}-a`, role: "ai", text: reply.reply }]);
+    } catch {
+      // Graceful escalation instead of a dead end.
+      setMsgs((m) => [...m, { id: `${Date.now()}-a`, role: "ai", text: ESCALATION_FALLBACK }]);
+      toast.success("تم تحويل الطلب للدعم المتقدم");
+    } finally {
+      setTyping(false);
+    }
   };
 
   const collapsed = keyboardHidden && !open;

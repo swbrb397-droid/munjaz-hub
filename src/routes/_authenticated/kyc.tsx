@@ -70,6 +70,8 @@ function KycPage() {
     "unverified";
   const badge = statusBadge(status, tr);
   const rejectionReason = status === "rejected" ? latest?.admin_note : null;
+  /** Approved identity is immutable — every input and dropzone is removed. */
+  const locked = profile?.is_verified === true || status === "approved";
 
   const pick = (file: File | null, set: (f: File | null) => void) => {
     if (file && isDangerousFile(file.name)) {
@@ -109,6 +111,29 @@ function KycPage() {
       subtitle={tr("رفع مشفّر لمستنداتك داخل خزنة آمنة", "Encrypted upload into a secure vault")}
     >
       <div className="grid gap-4 lg:grid-cols-3">
+        {locked ? (
+          <Card className="border-emerald-500/40 bg-emerald-500/5 lg:col-span-2">
+            <span className="inline-flex items-center gap-2 rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-3 py-1.5 text-xs font-bold text-emerald-400">
+              <BadgeCheck className="size-4" /> {tr("موثّق ومعتمد ✅", "Verified & approved ✅")}
+            </span>
+            <h3 className="mt-4 text-base font-black text-emerald-400">
+              {tr("تم توثيق هويتك بنجاح", "Your identity is fully verified")}
+            </h3>
+            <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+              {tr(
+                "بيانات التوثيق مقفلة نهائياً ولا يمكن تعديلها أو إعادة رفعها حفاظاً على سلامة السجل الرقابي. لأي تعديل رسمي، تواصل مع فريق الامتثال عبر تذكرة دعم.",
+                "Your verification record is permanently locked and cannot be edited or resubmitted, preserving the compliance audit trail. For any official change, contact the compliance team through a support ticket.",
+              )}
+            </p>
+            <p className="mt-3 text-xs text-emerald-400">
+              {tr("المزايا المفعّلة:", "Unlocked benefits:")}{" "}
+              {tr(
+                "سحب فوري · حجز ضمان مخفّض · شارة موثق",
+                "Instant withdrawals · reduced escrow hold · verified badge",
+              )}
+            </p>
+          </Card>
+        ) : (
         <Card className="lg:col-span-2">
           <span
             className={`inline-flex items-center gap-2 rounded-lg border px-3 py-1.5 text-xs font-bold ${badge.cls}`}
@@ -191,6 +216,7 @@ function KycPage() {
             )}
           </p>
         </Card>
+        )}
 
         <Card>
           <h3 className="font-bold">{tr("سجل الطلبات", "Submission history")}</h3>

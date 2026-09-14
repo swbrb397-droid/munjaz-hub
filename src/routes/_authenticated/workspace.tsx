@@ -386,6 +386,16 @@ function Workspace() {
   const [extDone, setExtDone] = useState<string | null>(null);
   const [extStatus, setExtStatus] = useState<"none" | "pending" | "approved">("none");
 
+  /** Role isolation — each party only ever sees its own controls. */
+  const isBuyer = !!order && !!user && order.buyer_id === user.id;
+  const isSeller = !!order && !!user && order.seller_id === user.id;
+  /** Rating is only possible on a completed order, and never after arbitration. */
+  const arbitrated = !!order && (order.status === "disputed" || order.status === "refunded");
+  const canReview = !!order && order.status === "completed" && !arbitrated;
+
+  // In-app video room (no popup windows)
+  const [callOpen, setCallOpen] = useState(false);
+
   // Post-completion 2-way review
   const [reviewOpen, setReviewOpen] = useState(false);
   const [stars, setStars] = useState({ quality: 5, communication: 5, speed: 5 });
@@ -678,9 +688,15 @@ function Workspace() {
       }
       action={
         <div className="flex flex-wrap gap-2">
-          <button className="inline-flex items-center gap-2 rounded-xl border border-accent/50 bg-accent/10 px-4 py-2 text-sm font-semibold text-accent">
+          <button
+            type="button"
+            disabled={!order}
+            onClick={() => setCallOpen(true)}
+            className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-accent/50 bg-accent/10 px-4 py-2 text-sm font-semibold text-accent disabled:opacity-40"
+          >
             <Video className="size-4" /> {tr("بدء مكالمة فيديو", "Start video call")}
           </button>
+          {isSeller && (
           <button
             type="button"
             onClick={() => setExtOpen(true)}
@@ -698,15 +714,18 @@ function Workspace() {
               </span>
             )}
           </button>
+          )}
 
-          <button
-            type="button"
-            onClick={() => setReviewOpen(true)}
-            className="inline-flex items-center gap-2 rounded-xl border border-border px-4 py-2 text-sm font-semibold"
-          >
-            <Star className="size-4 text-accent" />{" "}
-            {tr("تقييم الطرف الآخر", "Review the other party")}
-          </button>
+          {canReview && (
+            <button
+              type="button"
+              onClick={() => setReviewOpen(true)}
+              className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-border px-4 py-2 text-sm font-semibold"
+            >
+              <Star className="size-4 text-accent" />{" "}
+              {tr("تقييم الطرف الآخر", "Review the other party")}
+            </button>
+          )}
 
           <button
             type="button"
@@ -1841,16 +1860,25 @@ function Workspace() {
                         <span className="text-muted-foreground">
                           {Number(m.amount_usdt).toFixed(2)} USDT
                         </span>
-                        <button
-                          type="button"
-                          disabled={isReleased || releaseMilestone.isPending}
-                          onClick={() => releaseMilestone.mutate(m.id)}
-                          className="shrink-0 rounded-lg border border-primary/50 bg-primary/10 px-3 py-1.5 text-[11px] font-bold text-primary disabled:opacity-40"
-                        >
-                          {isReleased
-                            ? tr("تم التحرير", "Released")
-                            : tr("تحرير هذه المرحلة", "Release this milestone")}
-                        </button>
+                        {/* Milestone release is buyer-exclusive and irrevocable. */}
+                        {isBuyer ? (
+                          <button
+                            type="button"
+                            disabled={isReleased || releaseMilestone.isPending}
+                            onClick={() => releaseMilestone.mutate(m.id)}
+                            className="min-h-[36px] shrink-0 rounded-lg border border-primary/50 bg-primary/10 px-3 py-1.5 text-[11px] font-bold text-primary disabled:opacity-40"
+                          >
+                            {isReleased
+                              ? tr("تم التحرير", "Released")
+                              : tr("تحرير هذه المرحلة", "Release this milestone")}
+                          </button>
+                        ) : (
+                          <span className="shrink-0 text-[11px] font-bold text-muted-foreground">
+                            {isReleased
+                              ? tr("تم التحرير نهائياً", "Released — final")
+                              : tr("بانتظار تحرير المشتري", "Awaiting buyer release")}
+                          </span>
+                        )}
                       </div>
                     </div>
                   );
@@ -1988,6 +2016,30 @@ function Workspace() {
               )}
             </p>
           </Card>
+        </div>
+      )}
+
+      {callOpen && order && (
+        <div className="fixed inset-0 z-[90] flex flex-col bg-[#0B0F17]" role="dialog" aria-modal="true">
+          <div className="flex items-center justify-between gap-3 border-b border-slate-800 px-4 py-3">
+            <p className="min-w-0 truncate text-sm font-black">
+              {tr("مكالمة فيديو مشفّرة داخل المنصة", "Encrypted in-app video call")} · MJ-{order.order_number}
+            </p>
+            <button
+              type="button"
+              onClick={() => setCallOpen(false)}
+              aria-label={tr("إنهاء المكالمة", "End call")}
+              className="grid size-11 shrink-0 place-items-center rounded-xl border border-slate-700 text-muted-foreground hover:text-foreground"
+            >
+              <X className="size-5" />
+            </button>
+          </div>
+          <iframe
+            title={tr("غرفة الاجتماع", "Meeting room")}
+            src={`https://meet.jit.si/almunjaz-${order.id}`}
+            allow="camera; microphone; fullscreen; display-capture; autoplay"
+            className="min-h-0 w-full flex-1 border-0"
+          />
         </div>
       )}
 

@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-export type TopUpNetwork = "trc20" | "bep20";
+export type TopUpNetwork = "trc20" | "bep20" | "polygon";
 export type TopUpMethod = "crypto" | "card";
 
 export type TopUpInvoice = {
@@ -16,7 +16,12 @@ export type TopUpInvoice = {
   expires_at: string;
 };
 
-const NP_CURRENCY: Record<TopUpNetwork, string> = { trc20: "usdttrc20", bep20: "usdtbsc" };
+/** Exact NOWPayments pay_currency identifiers per settlement network. */
+const NP_CURRENCY: Record<TopUpNetwork, string> = {
+  trc20: "usdttrc20",
+  bep20: "usdtbsc",
+  polygon: "usdtmatic",
+};
 
 /**
  * Creates a NOWPayments invoice for a wallet top-up.
@@ -33,7 +38,8 @@ export const createTopUpInvoice = createServerFn({ method: "POST" })
     const amount = Math.round(Number(input.amount) * 1e6) / 1e6;
     if (!Number.isFinite(amount) || amount < 10) throw new Error("MIN_TOPUP_10");
     if (amount > 100000) throw new Error("MAX_TOPUP_100000");
-    if (input.network !== "trc20" && input.network !== "bep20") throw new Error("INVALID_NETWORK");
+    if (input.network !== "trc20" && input.network !== "bep20" && input.network !== "polygon")
+      throw new Error("INVALID_NETWORK");
     const method: TopUpMethod = input.method === "card" ? "card" : "crypto";
     return { amount, network: input.network, method };
   })
@@ -41,7 +47,11 @@ export const createTopUpInvoice = createServerFn({ method: "POST" })
     const { userId } = context;
     const apiKey = process.env["NOWPAYMENTS_API_KEY"];
     const fallbackAddress =
-      data.network === "trc20" ? process.env["DEPOSIT_ADDRESS_TRC20"] : process.env["DEPOSIT_ADDRESS_BEP20"];
+      data.network === "trc20"
+        ? process.env["DEPOSIT_ADDRESS_TRC20"]
+        : data.network === "polygon"
+          ? process.env["DEPOSIT_ADDRESS_POLYGON"]
+          : process.env["DEPOSIT_ADDRESS_BEP20"];
 
     // Live/production mode: no simulated invoices — the NOWPayments API key
     // must be configured so every top-up creates a real payment.

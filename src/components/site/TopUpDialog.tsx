@@ -1,8 +1,9 @@
 import { useCallback, useState } from "react";
-import { Copy, CreditCard, ExternalLink, Loader2, Lock, ShieldCheck, Sparkles, X, Zap } from "lucide-react";
+import { Copy, CreditCard, ExternalLink, FileText, Loader2, Lock, ShieldAlert, ShieldCheck, Sparkles, X, Zap } from "lucide-react";
 import { toast } from "sonner";
 import { Card } from "@/components/site/Shell";
 import { QrCode } from "@/components/site/QrCode";
+import { ReceiptModal, type ReceiptData } from "@/components/site/ReceiptModal";
 import { useLang } from "@/lib/lang";
 import { parseUsdt } from "@/lib/security";
 import { useConfirmDeposit, useCreateDeposit } from "@/lib/deposits";
@@ -15,7 +16,8 @@ import {
   type TopUpNetwork,
 } from "@/lib/topup";
 
-const nets: ReadonlyArray<{ value: TopUpNetwork; label: string }> = [
+const nets: ReadonlyArray<{ value: TopUpNetwork; label: string; best?: boolean }> = [
+  { value: "polygon", label: "Polygon", best: true },
   { value: "trc20", label: "TRC-20" },
   { value: "bep20", label: "BEP-20" },
 ];
@@ -29,6 +31,7 @@ export function TopUpDialog({ onClose, defaultAmount }: { onClose: () => void; d
   const [network, setNetwork] = useState<TopUpNetwork>("trc20");
   const [invoice, setInvoice] = useState<TopUpInvoice | null>(null);
   const [paid, setPaid] = useState(false);
+  const [receipt, setReceipt] = useState<ReceiptData | null>(null);
   const createInvoice = useCreateTopUp();
   const createDeposit = useCreateDeposit();
   const confirmDeposit = useConfirmDeposit();
@@ -46,7 +49,17 @@ export function TopUpDialog({ onClose, defaultAmount }: { onClose: () => void; d
       { amount: value, network, method },
       {
         onSuccess: (data) => setInvoice(data),
-        onError: (e: Error) => toast.error(topUpErrorMessage(e.message, lang === "ar")),
+        onError: (e: unknown) => {
+          // Unmask the real gateway failure instead of a generic toast.
+          console.error("Deposit Invoice Error Details:", e);
+          const err = e as { message?: string; error?: string; data?: { error?: string; message?: string } };
+          const raw =
+            err?.message ?? err?.data?.error ?? err?.data?.message ?? err?.error ?? "";
+          toast.error(
+            topUpErrorMessage(raw, lang === "ar") ||
+              tr("فشل إنشاء الفاتورة", "Failed to create the invoice"),
+          );
+        },
       },
     );
   };
@@ -132,15 +145,28 @@ export function TopUpDialog({ onClose, defaultAmount }: { onClose: () => void; d
                     type="button"
                     onClick={() => setNetwork(n.value)}
                     aria-pressed={network === n.value}
-                    className={`flex-1 rounded-lg px-2 py-2 text-xs font-bold ${
+                    className={`grid min-h-[44px] flex-1 place-items-center rounded-lg px-2 py-2 text-xs font-bold ${
                       network === n.value ? "bg-primary text-primary-foreground" : "border border-border text-muted-foreground"
                     }`}
                   >
-                    {n.label}
+                    <span>{n.label}</span>
+                    {n.best && (
+                      <span className="mt-0.5 block text-[9px] font-black opacity-80">
+                        {tr("موصى بها · رسوم فائقة الانخفاض ⚡", "Recommended · ultra-low ⚡")}
+                      </span>
+                    )}
                   </button>
                 ))}
               </div>
             </div>
+
+            {method === "card" && (
+              <p className="mt-3 flex gap-2 rounded-xl border border-amber-500/40 bg-amber-500/10 p-3 text-[11px] font-bold leading-relaxed text-amber-500">
+                <ShieldAlert className="mt-0.5 size-3.5 shrink-0" />
+                الحد الأدنى للشحن بالبطاقة: 15 USD — البوابة تخضع للصيانة المؤقتة، يرجى استخدام
+                التحويل المباشر عبر USDT كريبتو
+              </p>
+            )}
 
             {method === "card" && (
               <p className="mt-3 flex gap-2 rounded-xl border border-accent/40 bg-accent/10 p-3 text-[11px] leading-relaxed text-muted-foreground">
@@ -218,21 +244,41 @@ export function TopUpDialog({ onClose, defaultAmount }: { onClose: () => void; d
             )}
 
             <p
-              className={`rounded-xl border px-3 py-2 text-center text-xs font-bold ${
+              className={`inline-flex items-center justify-center gap-2 rounded-xl border px-3 py-2 text-center text-xs font-bold ${
                 paid ? "border-primary/50 bg-primary/10 text-primary" : "border-border text-muted-foreground"
               }`}
             >
+              {!paid && <Loader2 className="size-3.5 shrink-0 animate-spin" />}
               {paid
                 ? tr("تم استلام الدفعة وتحديث رصيدك ✅", "Payment received — balance updated ✅")
                 : tr("بانتظار تأكيد الدفع… سيتم تحديث الرصيد تلقائياً ⏳", "Waiting for payment confirmation… balance updates automatically ⏳")}
             </p>
 
-            <button type="button" onClick={onClose} className="rounded-xl border border-border px-4 py-2 text-sm font-bold">
+            <button
+              type="button"
+              onClick={() =>
+                setReceipt({
+                  txId: invoice.id,
+                  type: tr("إيداع USDT", "USDT deposit"),
+                  network: invoice.network.toUpperCase(),
+                  gateway: invoice.provider,
+                  amount: `${invoice.amount_usdt.toFixed(2)} USDT`,
+                  status: paid ? tr("مؤكد", "Confirmed") : tr("بانتظار التأكيد", "Pending"),
+                  date: new Date().toLocaleString(),
+                })
+              }
+              className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-border px-4 py-2 text-sm font-bold hover:border-primary hover:text-primary"
+            >
+              <FileText className="size-4" /> {tr("تحميل فاتورة PDF 📄", "Download PDF invoice 📄")}
+            </button>
+
+            <button type="button" onClick={onClose} className="min-h-[44px] rounded-xl border border-border px-4 py-2 text-sm font-bold">
               {tr("إغلاق", "Close")}
             </button>
           </div>
         )}
       </Card>
+      {receipt && <ReceiptModal receipt={receipt} onClose={() => setReceipt(null)} />}
     </div>
   );
 }

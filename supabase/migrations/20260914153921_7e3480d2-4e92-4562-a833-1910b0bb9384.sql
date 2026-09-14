@@ -1,0 +1,1 @@
+ALTER TABLE public.listings ADD COLUMN IF NOT EXISTS inspection_window_hours integer NOT NULL DEFAULT 24;

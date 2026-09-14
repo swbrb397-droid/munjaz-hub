@@ -32,7 +32,7 @@ import { parseUsdt } from "@/lib/security";
 import { isEmailLike, validatePayoutAddress } from "@/lib/address";
 import { useWalletRealtime } from "@/lib/deposits";
 import { toast } from "sonner";
-import { PayoutSecurityCard } from "@/components/site/PayoutSecurityCard";
+import { useLockedEscrow } from "@/lib/escrow";
 import { TopUpDialog } from "@/components/site/TopUpDialog";
 import { ReferralWidget } from "@/components/site/ReferralWidget";
 import { RedeemPassCard } from "@/components/site/RedeemPassCard";
@@ -98,6 +98,7 @@ function WalletPage() {
   const profile = useProfile();
   const txs = useTransactions();
   const requests = useMyWithdrawals();
+  const lockedEscrow = useLockedEscrow();
   useWalletRealtime();
   const [topUp, setTopUp] = useState(false);
   const [network, setNetwork] = useState<WithdrawalNetwork>("polygon");
@@ -163,7 +164,10 @@ function WalletPage() {
   });
 
   const balance = Number(wallet.data?.available_usdt ?? 0);
-  const locked = Number(wallet.data?.locked_usdt ?? 0);
+  // Escrow held = live sum of orders still in flight (in_progress / delivered /
+  // disputed). Completed, cancelled and refunded orders never count, so a fully
+  // settled account always reads 0.00 USDT.
+  const locked = lockedEscrow.data ?? 0;
   const tier = (profile.data as { account_tier?: string } | null)?.account_tier ?? "free";
   const frozen = Boolean((profile.data as { is_frozen?: boolean } | null)?.is_frozen);
   const sla = slaHoursForTier(tier);
@@ -505,8 +509,6 @@ function WalletPage() {
         <RedeemPassCard />
         <ReferralWidget />
       </div>
-
-      <PayoutSecurityCard className="mt-6" />
 
       <Card className="mt-6">
         <h3 className="flex items-center gap-2 font-bold">

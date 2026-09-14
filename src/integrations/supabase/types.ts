@@ -320,6 +320,7 @@ export type Database = {
           created_at: string
           delivery_days: number
           id: string
+          inspection_window_hours: number
           is_published: boolean
           language: string
           orders_count: number
@@ -342,6 +343,7 @@ export type Database = {
           created_at?: string
           delivery_days?: number
           id?: string
+          inspection_window_hours?: number
           is_published?: boolean
           language?: string
           orders_count?: number
@@ -364,6 +366,7 @@ export type Database = {
           created_at?: string
           delivery_days?: number
           id?: string
+          inspection_window_hours?: number
           is_published?: boolean
           language?: string
           orders_count?: number
