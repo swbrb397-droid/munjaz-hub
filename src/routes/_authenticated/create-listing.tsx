@@ -189,6 +189,7 @@ function CreateListing() {
             price_usdt: price,
             tag_ar: sanitizeText(form.tag_ar, 40),
             tag_en: sanitizeText(form.tag_en, 40) || sanitizeText(form.tag_ar, 40),
+            inspection_window_hours: form.inspection_window_hours,
           })
           .eq("id", editingId);
         if (updErr) throw updErr;
@@ -222,6 +223,7 @@ function CreateListing() {
         price_usdt: price,
         tag_ar: sanitizeText(form.tag_ar, 40),
         tag_en: sanitizeText(form.tag_en, 40) || sanitizeText(form.tag_ar, 40),
+        inspection_window_hours: form.inspection_window_hours,
         cover_key: "product",
         cover_url: coverUrl,
         verified: !!profile.data?.is_verified,
@@ -399,6 +401,36 @@ function CreateListing() {
                   <span className="text-muted-foreground">{tr("وسم قصير (إنجليزي)", "Short tag (English)")}</span>
                   <input className={field} maxLength={40} value={form.tag_en} onChange={(e) => setForm({ ...form, tag_en: e.target.value })} />
                 </label>
+
+                <label className="grid gap-1.5 text-sm sm:col-span-2">
+                  <span className="text-muted-foreground">
+                    {tr("مهلة فحص واعتماد الضمان بعد التسليم", "Post-delivery escrow inspection window")}
+                  </span>
+                  <select
+                    className={field}
+                    disabled={inspectionLocked}
+                    value={form.inspection_window_hours}
+                    onChange={(e) => setForm({ ...form, inspection_window_hours: Number(e.target.value) })}
+                  >
+                    {inspectionChoices.map((h) => (
+                      <option key={h} value={h}>
+                        {h} {tr("ساعة", "hours")}
+                      </option>
+                    ))}
+                  </select>
+                  <span className="text-[11px] text-muted-foreground">
+                    {inspectionLocked
+                      ? tr(
+                          "الباقة المجانية مقفولة على 48 ساعة — رقِّ حسابك إلى Pro أو الشركات لتقليص المهلة.",
+                          "Free tier is locked to 48 hours — upgrade to Pro or Corporate to shorten it.",
+                        )
+                      : tr(
+                          "تُحرَّر الأموال تلقائياً للبائع بعد انقضاء هذه المهلة دون اعتراض.",
+                          "Funds auto-release to the seller once this window lapses without objection.",
+                        )}
+                  </span>
+                </label>
+
 
                 {isCodeCategory && (
                   <label className="flex items-start gap-2 rounded-xl border border-primary/40 bg-primary/5 p-3 text-xs leading-relaxed sm:col-span-2">
