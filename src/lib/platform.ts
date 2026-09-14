@@ -36,10 +36,10 @@ export type LeaderRow = {
 /** Real seller ranking straight from the database — no boosting, no seeded rows. */
 export function useLeaderboard(metric: LeaderboardMetric) {
   return useQuery({
-    queryKey: ["leaderboard"],
+    queryKey: ["leaderboard", metric],
     staleTime: 30_000,
     queryFn: async () => {
-      const { data, error } = await supabase.rpc("public_leaderboard", { _limit: 50 });
+      const { data, error } = await supabase.rpc("get_leaderboard", { p_filter: metric, p_limit: 50 });
       if (error) throw error;
       return (data ?? []).map((r) => ({
         id: String(r.id),
