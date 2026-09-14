@@ -34,10 +34,14 @@ export const Route = createFileRoute("/_authenticated/profile")({
       { title: "الملف الشخصي وتوثيق الهوية | المُنجِز" },
       {
         name: "description",
-        content: "أدر ملفك الشخصي، وثّق هويتك (KYC) عبر ثلاث خطوات، واضبط محفظة السحب والتنبيهات والمصادقة الثنائية.",
+        content:
+          "أدر ملفك الشخصي، وثّق هويتك (KYC) عبر ثلاث خطوات، واضبط محفظة السحب والتنبيهات والمصادقة الثنائية.",
       },
       { property: "og:title", content: "الملف الشخصي وتوثيق الهوية | المُنجِز" },
-      { property: "og:description", content: "توثيق KYC، دورة الضمان، عمولة الباقة، وإعدادات الأمان في مكان واحد." },
+      {
+        property: "og:description",
+        content: "توثيق KYC، دورة الضمان، عمولة الباقة، وإعدادات الأمان في مكان واحد.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -54,7 +58,17 @@ const TIER_META: Record<Tier, { name: string; escrow: string; fee: string }> = {
   corp: { name: "باقة الشركات · 49 USDT", escrow: "6 ساعات", fee: "2.5%" },
 };
 
-const NATIONALITIES = ["فلسطين", "السعودية", "الإمارات", "مصر", "الأردن", "المغرب", "الكويت", "قطر", "أخرى"];
+const NATIONALITIES = [
+  "فلسطين",
+  "السعودية",
+  "الإمارات",
+  "مصر",
+  "الأردن",
+  "المغرب",
+  "الكويت",
+  "قطر",
+  "أخرى",
+];
 
 function ProfilePage() {
   const { tr } = useLang();
@@ -70,25 +84,44 @@ function ProfilePage() {
   // Live KYC state straight from the database (submissions + profile flags).
   const mine = useMyKyc();
   const latest = (mine.data ?? [])[0];
-  const dbStatus = liveProfile?.is_verified ? "approved" : (latest?.status ?? liveProfile?.kyc_status ?? "unverified");
+  const dbStatus = liveProfile?.is_verified
+    ? "approved"
+    : (latest?.status ?? liveProfile?.kyc_status ?? "unverified");
   const kyc: Kyc =
-    liveProfile?.is_verified === true ? "verified" : dbStatus === "pending" ? "review" : dbStatus === "rejected" ? "rejected" : "unverified";
+    liveProfile?.is_verified === true
+      ? "verified"
+      : dbStatus === "pending"
+        ? "review"
+        : dbStatus === "rejected"
+          ? "rejected"
+          : "unverified";
   const rejectionReason = kyc === "rejected" ? (latest?.admin_note ?? null) : null;
 
   const meta = TIER_META[tier];
-  const handle = liveProfile?.display_name ? `@${liveProfile.display_name}` : user?.email ? `@${user.email.split("@")[0]}` : "@user";
+  const handle = liveProfile?.display_name
+    ? `@${liveProfile.display_name}`
+    : user?.email
+      ? `@${user.email.split("@")[0]}`
+      : "@user";
 
   return (
     <div className="overflow-x-hidden">
       <Section
         title={tr("الملف الشخصي والتوثيق", "Profile & verification")}
-        subtitle={tr("هويتك، توثيقك، وإعدادات الأمان والسحب.", "Identity, KYC and security settings.")}
+        subtitle={tr(
+          "هويتك، توثيقك، وإعدادات الأمان والسحب.",
+          "Identity, KYC and security settings.",
+        )}
       >
         <Card>
           <div className="flex flex-wrap items-center gap-4">
             <div className="relative shrink-0">
               <div className="grid size-20 place-items-center overflow-hidden rounded-2xl border border-border bg-secondary text-xl font-black">
-                {avatar ? <img src={avatar} alt="صورة الملف الشخصي" className="size-full object-cover" /> : handle.slice(1, 3).toUpperCase()}
+                {avatar ? (
+                  <img src={avatar} alt="صورة الملف الشخصي" className="size-full object-cover" />
+                ) : (
+                  handle.slice(1, 3).toUpperCase()
+                )}
               </div>
               <button
                 type="button"
@@ -123,7 +156,11 @@ function ProfilePage() {
               </h2>
               {liveProfile?.created_at && (
                 <p className="text-xs text-muted-foreground">
-                  عضو منذ {new Date(liveProfile.created_at).toLocaleDateString("ar", { month: "long", year: "numeric" })}
+                  عضو منذ{" "}
+                  {new Date(liveProfile.created_at).toLocaleDateString("ar", {
+                    month: "long",
+                    year: "numeric",
+                  })}
                 </p>
               )}
               <div className="mt-3 flex flex-wrap gap-2">
@@ -137,8 +174,16 @@ function ProfilePage() {
           </div>
 
           <div className="mt-5 grid gap-3 sm:grid-cols-3">
-            <Metric icon={<Timer className="size-4" />} label="حالة الضمان المعتمدة" value={meta.escrow} />
-            <Metric icon={<Percent className="size-4" />} label="عمولة المبيعات المطبقة" value={meta.fee} />
+            <Metric
+              icon={<Timer className="size-4" />}
+              label="حالة الضمان المعتمدة"
+              value={meta.escrow}
+            />
+            <Metric
+              icon={<Percent className="size-4" />}
+              label="عمولة المبيعات المطبقة"
+              value={meta.fee}
+            />
             <Metric
               icon={<Lock className="size-4" />}
               label="حالة مصادقة الأمان"
@@ -168,20 +213,38 @@ function ProfilePage() {
         <ReferralWidget className="mt-4" />
 
         <div className="mt-4">
-          {tab === "kyc" && !isVerified ? <KycWizard state={kyc} reason={rejectionReason} /> : <SettingsPanel twoFa={twoFa} setTwoFa={setTwoFa} />}
+          {tab === "kyc" && !isVerified ? (
+            <KycWizard state={kyc} reason={rejectionReason} />
+          ) : (
+            <SettingsPanel twoFa={twoFa} setTwoFa={setTwoFa} />
+          )}
         </div>
       </Section>
     </div>
   );
 }
 
-function Metric({ icon, label, value, tone = "ok" }: { icon: React.ReactNode; label: string; value: string; tone?: "ok" | "warn" }) {
+function Metric({
+  icon,
+  label,
+  value,
+  tone = "ok",
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  tone?: "ok" | "warn";
+}) {
   return (
     <div className="min-w-0 rounded-xl border border-border bg-secondary/40 px-4 py-3">
       <p className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
         {icon} {label}
       </p>
-      <p className={`mt-1 truncate text-sm font-black ${tone === "warn" ? "text-destructive" : "text-primary"}`}>{value}</p>
+      <p
+        className={`mt-1 truncate text-sm font-black ${tone === "warn" ? "text-destructive" : "text-primary"}`}
+      >
+        {value}
+      </p>
     </div>
   );
 }
@@ -214,7 +277,17 @@ function KycBadge({ state }: { state: Kyc }) {
 
 type Doc = { name: string; url: string; file: File };
 
-function Dropzone({ label, hint, doc, onPick }: { label: string; hint: string; doc: Doc | null; onPick: (d: Doc) => void }) {
+function Dropzone({
+  label,
+  hint,
+  doc,
+  onPick,
+}: {
+  label: string;
+  hint: string;
+  doc: Doc | null;
+  onPick: (d: Doc) => void;
+}) {
   const ref = useRef<HTMLInputElement>(null);
   const [drag, setDrag] = useState(false);
 
@@ -229,7 +302,11 @@ function Dropzone({ label, hint, doc, onPick }: { label: string; hint: string; d
       toast.error("الصيغ المسموحة: JPG, PNG, PDF");
       return;
     }
-    onPick({ name: f.name, url: f.type.startsWith("image/") ? URL.createObjectURL(f) : "", file: f });
+    onPick({
+      name: f.name,
+      url: f.type.startsWith("image/") ? URL.createObjectURL(f) : "",
+      file: f,
+    });
   };
 
   return (
@@ -246,7 +323,11 @@ function Dropzone({ label, hint, doc, onPick }: { label: string; hint: string; d
         handle(e.dataTransfer.files);
       }}
       className={`grid cursor-pointer place-items-center rounded-xl border border-dashed p-5 text-center transition-colors ${
-        drag ? "border-primary bg-primary/10" : doc ? "border-primary/60 bg-primary/5" : "border-border"
+        drag
+          ? "border-primary bg-primary/10"
+          : doc
+            ? "border-primary/60 bg-primary/5"
+            : "border-border"
       }`}
     >
       {doc?.url ? (
@@ -284,7 +365,8 @@ function KycWizard({ state, reason }: { state: Kyc; reason?: string | null }) {
   const [agree, setAgree] = useState(false);
   const [sending, setSending] = useState(false);
 
-  const step1Valid = fullName.trim().split(/\s+/).length >= 4 && !!dob && idNumber.trim().length >= 6;
+  const step1Valid =
+    fullName.trim().split(/\s+/).length >= 4 && !!dob && idNumber.trim().length >= 6;
   const step2Valid = !!front && (docType === "passport" || !!back);
   const step3Valid = !!selfie && agree;
 
@@ -311,7 +393,8 @@ function KycWizard({ state, reason }: { state: Kyc; reason?: string | null }) {
     <Card>
       <p className="flex items-start gap-2 rounded-xl border border-accent/40 bg-accent/10 p-4 text-xs font-bold leading-relaxed text-accent">
         <BadgeCheck className="mt-0.5 size-4 shrink-0" />
-        توثيق الهوية (KYC) إلزامي لتفعيل فترة الضمان السريعة (12 ساعة) لباقة Pro وسحب الأرباح دون قيود، امتثالاً لقواعد الأمان ومكافحة الاحتيال.
+        توثيق الهوية (KYC) إلزامي لتفعيل فترة الضمان السريعة (12 ساعة) لباقة Pro وسحب الأرباح دون
+        قيود، امتثالاً لقواعد الأمان ومكافحة الاحتيال.
       </p>
 
       {state === "rejected" && (
@@ -326,32 +409,63 @@ function KycWizard({ state, reason }: { state: Kyc; reason?: string | null }) {
           <li key={s} className="flex items-center gap-2">
             <span
               className={`grid size-7 shrink-0 place-items-center rounded-full text-[11px] font-black ${
-                step > i + 1 ? "bg-primary text-primary-foreground" : step === i + 1 ? "bg-accent/20 text-accent ring-2 ring-accent/50" : "border border-border text-muted-foreground"
+                step > i + 1
+                  ? "bg-primary text-primary-foreground"
+                  : step === i + 1
+                    ? "bg-accent/20 text-accent ring-2 ring-accent/50"
+                    : "border border-border text-muted-foreground"
               }`}
             >
               {step > i + 1 ? <CheckCircle2 className="size-4" /> : i + 1}
             </span>
-            <span className={`min-w-0 truncate text-xs font-bold ${step === i + 1 ? "text-accent" : "text-muted-foreground"}`}>{s}</span>
+            <span
+              className={`min-w-0 truncate text-xs font-bold ${step === i + 1 ? "text-accent" : "text-muted-foreground"}`}
+            >
+              {s}
+            </span>
           </li>
         ))}
       </ol>
 
       {step === 1 && (
         <div className="mt-5 grid gap-3 sm:grid-cols-2">
-          <Field label="الاسم الرباعي الرسمي المطابق للوثيقة" value={fullName} onChange={setFullName} placeholder="الاسم الأول واسم الأب والجد والعائلة" className="sm:col-span-2" />
+          <Field
+            label="الاسم الرباعي الرسمي المطابق للوثيقة"
+            value={fullName}
+            onChange={setFullName}
+            placeholder="الاسم الأول واسم الأب والجد والعائلة"
+            className="sm:col-span-2"
+          />
           <div>
             <label className="block text-xs font-bold">تاريخ الميلاد</label>
-            <input type="date" value={dob} onChange={(e) => setDob(e.target.value)} className="mt-1.5 w-full rounded-xl border border-input bg-surface px-3 py-2.5 text-sm outline-none focus:border-primary" />
+            <input
+              type="date"
+              value={dob}
+              onChange={(e) => setDob(e.target.value)}
+              className="mt-1.5 w-full rounded-xl border border-input bg-surface px-3 py-2.5 text-sm outline-none focus:border-primary"
+            />
           </div>
           <div>
             <label className="block text-xs font-bold">الجنسية</label>
-            <select value={nat} onChange={(e) => setNat(e.target.value)} className="mt-1.5 w-full rounded-xl border border-input bg-surface px-3 py-2.5 text-sm outline-none focus:border-primary">
+            <select
+              value={nat}
+              onChange={(e) => setNat(e.target.value)}
+              className="mt-1.5 w-full rounded-xl border border-input bg-surface px-3 py-2.5 text-sm outline-none focus:border-primary"
+            >
               {NATIONALITIES.map((n) => (
-                <option key={n} value={n}>{n}</option>
+                <option key={n} value={n}>
+                  {n}
+                </option>
               ))}
             </select>
           </div>
-          <Field label="رقم الهوية الوطنية أو جواز السفر" value={idNumber} onChange={setIdNumber} placeholder="مثال: 401234567" className="sm:col-span-2" />
+          <Field
+            label="رقم الهوية الوطنية أو جواز السفر"
+            value={idNumber}
+            onChange={setIdNumber}
+            placeholder="مثال: 401234567"
+            className="sm:col-span-2"
+          />
         </div>
       )}
 
@@ -373,25 +487,52 @@ function KycWizard({ state, reason }: { state: Kyc; reason?: string | null }) {
             ))}
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
-            <Dropzone label="الوجه الأمامي للوثيقة" hint="JPG / PNG / PDF — حتى 10MB" doc={front} onPick={setFront} />
-            {docType === "id" && <Dropzone label="الوجه الخلفي للوثيقة" hint="JPG / PNG / PDF — حتى 10MB" doc={back} onPick={setBack} />}
+            <Dropzone
+              label="الوجه الأمامي للوثيقة"
+              hint="JPG / PNG / PDF — حتى 10MB"
+              doc={front}
+              onPick={setFront}
+            />
+            {docType === "id" && (
+              <Dropzone
+                label="الوجه الخلفي للوثيقة"
+                hint="JPG / PNG / PDF — حتى 10MB"
+                doc={back}
+                onPick={setBack}
+              />
+            )}
           </div>
         </div>
       )}
 
       {step === 3 && (
         <div className="mt-5 grid gap-3">
-          <Dropzone label="صورة شخصية أثناء حمل الوثيقة" hint="صورة واضحة للوجه مع الوثيقة — حتى 10MB" doc={selfie} onPick={setSelfie} />
+          <Dropzone
+            label="صورة شخصية أثناء حمل الوثيقة"
+            hint="صورة واضحة للوجه مع الوثيقة — حتى 10MB"
+            doc={selfie}
+            onPick={setSelfie}
+          />
           <label className="flex items-start gap-2 text-xs leading-relaxed text-muted-foreground">
-            <input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} className="mt-0.5 size-4 shrink-0 accent-primary" />
-            أقر بأن جميع البيانات والوثائق المرفوعة صحيحة وتعود لي شخصياً وتحت طائلة المسؤولية وإلغاء الحساب.
+            <input
+              type="checkbox"
+              checked={agree}
+              onChange={(e) => setAgree(e.target.checked)}
+              className="mt-0.5 size-4 shrink-0 accent-primary"
+            />
+            أقر بأن جميع البيانات والوثائق المرفوعة صحيحة وتعود لي شخصياً وتحت طائلة المسؤولية
+            وإلغاء الحساب.
           </label>
         </div>
       )}
 
       <div className="mt-5 flex flex-wrap gap-2">
         {step > 1 && (
-          <button type="button" onClick={() => setStep(step - 1)} className="rounded-xl border border-border px-4 py-2.5 text-sm font-bold">
+          <button
+            type="button"
+            onClick={() => setStep(step - 1)}
+            className="rounded-xl border border-border px-4 py-2.5 text-sm font-bold"
+          >
             السابق
           </button>
         )}
@@ -427,7 +568,11 @@ function KycWizard({ state, reason }: { state: Kyc; reason?: string | null }) {
             }}
             className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-primary py-2.5 text-sm font-bold text-primary-foreground disabled:opacity-40"
           >
-            {sending ? <Loader2 className="size-4 animate-spin" /> : <ShieldCheck className="size-4" />}
+            {sending ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              <ShieldCheck className="size-4" />
+            )}
             إرسال طلب التوثيق للمراجعة
           </button>
         )}
@@ -472,17 +617,36 @@ function SettingsPanel({ twoFa, setTwoFa }: { twoFa: boolean; setTwoFa: (v: bool
       <Card>
         <h3 className="text-sm font-black">تفضيلات التنبيهات</h3>
         <div className="mt-3 grid gap-2">
-          {([
-            ["sales", "إشعارات المبيعات والطلبات الفورية", "تنبيه لحظي عند شراء خدمة أو أصل رقمي"],
-            ["escrow", "تنبيهات عداد الضمان (Escrow Countdown)", "تنبيهات انتهاء مهل التسليم وتحرير المبالغ"],
-            ["disputes", "تنبيهات النزاعات والدعم الفني", "إشعارات فورية عند فتح تذكرة أو طلب وساطة"],
-            ["delivery", "تسليم الطلبات", "إشعار عند تسليم أو اعتماد التسليم"],
-            ["referral", "أرباح الإحالات", "إشعار عند احتساب عمولة إحالة جديدة"],
-          ] as const).map(([k, label, hint]) => (
-            <label key={k} className="flex cursor-pointer items-start justify-between gap-3 rounded-xl border border-border bg-surface-2/40 px-4 py-3 text-sm hover:border-primary/50">
+          {(
+            [
+              [
+                "sales",
+                "إشعارات المبيعات والطلبات الفورية",
+                "تنبيه لحظي عند شراء خدمة أو أصل رقمي",
+              ],
+              [
+                "escrow",
+                "تنبيهات عداد الضمان (Escrow Countdown)",
+                "تنبيهات انتهاء مهل التسليم وتحرير المبالغ",
+              ],
+              [
+                "disputes",
+                "تنبيهات النزاعات والدعم الفني",
+                "إشعارات فورية عند فتح تذكرة أو طلب وساطة",
+              ],
+              ["delivery", "تسليم الطلبات", "إشعار عند تسليم أو اعتماد التسليم"],
+              ["referral", "أرباح الإحالات", "إشعار عند احتساب عمولة إحالة جديدة"],
+            ] as const
+          ).map(([k, label, hint]) => (
+            <label
+              key={k}
+              className="flex cursor-pointer items-start justify-between gap-3 rounded-xl border border-border bg-surface-2/40 px-4 py-3 text-sm hover:border-primary/50"
+            >
               <span className="min-w-0">
                 <span className="block font-bold text-foreground">{label}</span>
-                <span className="mt-0.5 block text-[11px] leading-relaxed text-muted-foreground">{hint}</span>
+                <span className="mt-0.5 block text-[11px] leading-relaxed text-muted-foreground">
+                  {hint}
+                </span>
               </span>
               <span className="relative mt-0.5 shrink-0">
                 <input
@@ -500,12 +664,10 @@ function SettingsPanel({ twoFa, setTwoFa }: { twoFa: boolean; setTwoFa: (v: bool
               </span>
             </label>
           ))}
-
         </div>
       </Card>
 
       <PayoutSecurityCard className="lg:col-span-2" />
-
 
       <SecurityPanel className="lg:col-span-2" />
     </div>

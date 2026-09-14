@@ -199,13 +199,18 @@ export function SecurityPanel({ className = "" }: { className?: string }) {
             onClick={() => void startEnroll()}
             className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-bold text-primary-foreground disabled:opacity-50"
           >
-            {enrolling ? <Loader2 className="size-4 animate-spin" /> : <Lock className="size-4" />} تفعيل 2FA
+            {enrolling ? <Loader2 className="size-4 animate-spin" /> : <Lock className="size-4" />}{" "}
+            تفعيل 2FA
           </button>
         )}
       </div>
 
       {enrollOpen && enrollment && (
-        <div className="fixed inset-0 z-[70] grid place-items-center overflow-y-auto bg-background/85 p-4 backdrop-blur" role="dialog" aria-modal="true">
+        <div
+          className="fixed inset-0 z-[70] grid place-items-center overflow-y-auto bg-background/85 p-4 backdrop-blur"
+          role="dialog"
+          aria-modal="true"
+        >
           <div className="max-h-[85vh] w-full max-w-md overflow-y-auto rounded-2xl border border-border bg-card p-5">
             <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
               <h2 className="min-w-0 truncate text-lg font-black">تفعيل المصادقة الثنائية</h2>
@@ -220,8 +225,8 @@ export function SecurityPanel({ className = "" }: { className?: string }) {
             </div>
 
             <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
-              امسح رمز QR بتطبيق المصادقة (Google Authenticator / Authy) أو أدخل المفتاح السري يدوياً، ثم أدخل الرمز
-              المكوّن من 6 أرقام لتأكيد التفعيل.
+              امسح رمز QR بتطبيق المصادقة (Google Authenticator / Authy) أو أدخل المفتاح السري
+              يدوياً، ثم أدخل الرمز المكوّن من 6 أرقام لتأكيد التفعيل.
             </p>
 
             <div className="mt-4 grid place-items-center">
@@ -270,14 +275,23 @@ export function SecurityPanel({ className = "" }: { className?: string }) {
               onClick={() => void confirmEnroll()}
               className="mt-3 inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-xl bg-primary py-2.5 text-sm font-bold text-primary-foreground disabled:opacity-40"
             >
-              {verifying ? <Loader2 className="size-4 animate-spin" /> : <ShieldCheck className="size-4" />} تأكيد التفعيل
+              {verifying ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <ShieldCheck className="size-4" />
+              )}{" "}
+              تأكيد التفعيل
             </button>
           </div>
         </div>
       )}
 
       {pwOpen && (
-        <div className="fixed inset-0 z-[70] grid place-items-center overflow-y-auto bg-background/85 p-4 backdrop-blur" role="dialog" aria-modal="true">
+        <div
+          className="fixed inset-0 z-[70] grid place-items-center overflow-y-auto bg-background/85 p-4 backdrop-blur"
+          role="dialog"
+          aria-modal="true"
+        >
           <div className="max-h-[85vh] w-full max-w-md overflow-y-auto rounded-2xl border border-border bg-card p-5">
             <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
               <h2 className="min-w-0 truncate text-lg font-black">تغيير كلمة المرور</h2>

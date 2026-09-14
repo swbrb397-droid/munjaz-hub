@@ -5,7 +5,17 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { gasEstimates } from "@/lib/gas";
 
-import { ArrowUpFromLine, BadgeCheck, FileText, Info, Loader2, Lock, ShieldAlert, Sparkles, Timer } from "lucide-react";
+import {
+  ArrowUpFromLine,
+  BadgeCheck,
+  FileText,
+  Info,
+  Loader2,
+  Lock,
+  ShieldAlert,
+  Sparkles,
+  Timer,
+} from "lucide-react";
 import { Card, Section } from "@/components/site/Shell";
 import { ReceiptModal, type ReceiptData } from "@/components/site/ReceiptModal";
 import { useLang } from "@/lib/lang";
@@ -18,7 +28,7 @@ import {
   withdrawalErrorMessage,
   type WithdrawalNetwork,
 } from "@/lib/withdrawals";
-import { formatUsdt, parseUsdt } from "@/lib/security";
+import { parseUsdt } from "@/lib/security";
 import { isEmailLike, validatePayoutAddress } from "@/lib/address";
 import { useWalletRealtime } from "@/lib/deposits";
 import { toast } from "sonner";
@@ -31,9 +41,16 @@ export const Route = createFileRoute("/_authenticated/wallet")({
   head: () => ({
     meta: [
       { title: "المحفظة الداخلية USDT | المُنجِز" },
-      { name: "description", content: "أودع واسحب USDT عبر TRC-20 و BEP-20 و Polygon، وتابع سجل المعاملات والمبالغ المحجوزة في الضمان." },
+      {
+        name: "description",
+        content:
+          "أودع واسحب USDT عبر TRC-20 و BEP-20 و Polygon، وتابع سجل المعاملات والمبالغ المحجوزة في الضمان.",
+      },
       { property: "og:title", content: "المحفظة الداخلية USDT | المُنجِز" },
-      { property: "og:description", content: "إيداع وسحب USDT بدون رسوم داخلية مع سحب فوري للحسابات الموثقة." },
+      {
+        property: "og:description",
+        content: "إيداع وسحب USDT بدون رسوم داخلية مع سحب فوري للحسابات الموثقة.",
+      },
     ],
   }),
   component: WalletPage,
@@ -154,7 +171,8 @@ function WalletPage() {
 
   const lockHours = coolingHoursLeft([
     (profile.data as { password_last_changed_at?: string | null } | null)?.password_last_changed_at,
-    (wallet.data as { payout_address_updated_at?: string | null } | null)?.payout_address_updated_at,
+    (wallet.data as { payout_address_updated_at?: string | null } | null)
+      ?.payout_address_updated_at,
   ]);
 
   const withdraw = useMutation({
@@ -186,33 +204,35 @@ function WalletPage() {
   const submit = () => {
     setFeedback(null);
     withdraw.mutate(undefined, {
-        onSuccess: () => {
-          const message = tr(
-            `تم استلام الطلب — المعالجة خلال ${sla} ساعة.`,
-            `Request received — processing within ${sla} hours.`,
-          );
-          setFeedback(message);
-          toast.success(message);
-        },
-        onError: (e: Error) => {
-          const message =
-            e.message === "COOLING_LOCK"
-              ? tr(
-                  `السحب مجمد مؤقتاً لمدة ${lockHours} ساعة بعد إجراء تعديل أمني على حسابك.`,
-                  `Withdrawals are locked for ${lockHours} more hour(s) after a recent security change.`,
-                )
-              : withdrawalErrorMessage(e.message, lang === "ar");
-          setFeedback(message);
-          toast.error(message);
-        },
+      onSuccess: () => {
+        const message = tr(
+          `تم استلام الطلب — المعالجة خلال ${sla} ساعة.`,
+          `Request received — processing within ${sla} hours.`,
+        );
+        setFeedback(message);
+        toast.success(message);
+      },
+      onError: (e: Error) => {
+        const message =
+          e.message === "COOLING_LOCK"
+            ? tr(
+                `السحب مجمد مؤقتاً لمدة ${lockHours} ساعة بعد إجراء تعديل أمني على حسابك.`,
+                `Withdrawals are locked for ${lockHours} more hour(s) after a recent security change.`,
+              )
+            : withdrawalErrorMessage(e.message, lang === "ar");
+        setFeedback(message);
+        toast.error(message);
+      },
     });
   };
-
 
   return (
     <Section
       title={tr("المحفظة الداخلية", "Internal wallet")}
-      subtitle={tr("جميع الأرصدة بعملة USDT — تحويلات داخلية بدون رسوم غاز", "All balances in USDT — internal transfers with no gas fees")}
+      subtitle={tr(
+        "جميع الأرصدة بعملة USDT — تحويلات داخلية بدون رسوم غاز",
+        "All balances in USDT — internal transfers with no gas fees",
+      )}
       action={
         <div className="flex flex-wrap gap-2">
           <button
@@ -222,7 +242,11 @@ function WalletPage() {
             <Sparkles className="size-4" /> {tr("شحن المحفظة", "Top up wallet")}
           </button>
           <button
-            onClick={() => document.getElementById("withdraw-card")?.scrollIntoView({ behavior: "smooth", block: "center" })}
+            onClick={() =>
+              document
+                .getElementById("withdraw-card")
+                ?.scrollIntoView({ behavior: "smooth", block: "center" })
+            }
             className="inline-flex items-center gap-2 rounded-xl border border-primary/50 px-4 py-2 font-bold text-primary"
           >
             <ArrowUpFromLine className="size-4" /> {tr("طلب سحب", "Request withdrawal")}
@@ -232,17 +256,32 @@ function WalletPage() {
     >
       <p className="mb-4 flex items-start gap-2 rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-xs leading-relaxed text-amber-500">
         <ShieldAlert className="mt-0.5 size-4 shrink-0" />
-        الحد الأدنى للشحن بالبطاقة: 15 USD — البوابة تخضع للصيانة المؤقتة، يرجى استخدام التحويل المباشر عبر USDT كريبتو
+        الحد الأدنى للشحن بالبطاقة: 15 USD — البوابة تخضع للصيانة المؤقتة، يرجى استخدام التحويل
+        المباشر عبر USDT كريبتو
       </p>
 
       <div className="grid gap-4 lg:grid-cols-3">
         <Card className="glow lg:col-span-1">
-          <p className="text-sm text-muted-foreground">{tr("الرصيد المتاح", "Available balance")}</p>
-          <p className="mt-1 text-4xl font-black text-primary" dir="ltr">{usdt2(balance)}</p>
+          <p className="text-sm text-muted-foreground">
+            {tr("الرصيد المتاح", "Available balance")}
+          </p>
+          <p className="mt-1 text-4xl font-black text-primary" dir="ltr">
+            {usdt2(balance)}
+          </p>
           <p className="text-sm text-muted-foreground">USDT</p>
           <div className="mt-3 grid gap-1 text-xs text-muted-foreground">
-            <p>{tr("محجوز في الضمان", "Held in escrow")}: <span className="font-bold text-foreground" dir="ltr">{usdt2(locked)} USDT</span></p>
-            <p>{tr("إجمالي الأرباح", "Lifetime earned")}: <span className="font-bold text-accent" dir="ltr">{usdt2(wallet.data?.lifetime_earned)} USDT</span></p>
+            <p>
+              {tr("محجوز في الضمان", "Held in escrow")}:{" "}
+              <span className="font-bold text-foreground" dir="ltr">
+                {usdt2(locked)} USDT
+              </span>
+            </p>
+            <p>
+              {tr("إجمالي الأرباح", "Lifetime earned")}:{" "}
+              <span className="font-bold text-accent" dir="ltr">
+                {usdt2(wallet.data?.lifetime_earned)} USDT
+              </span>
+            </p>
           </div>
           <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
             {Object.entries(rates).map(([c, r]) => (
@@ -254,7 +293,9 @@ function WalletPage() {
                 <span className="inline-flex items-center gap-1 text-muted-foreground">
                   {c} <Info className="size-3 opacity-60" />
                 </span>
-                <p className="font-semibold" dir="ltr">≈ {(balance * r).toFixed(2)}</p>
+                <p className="font-semibold" dir="ltr">
+                  ≈ {(balance * r).toFixed(2)}
+                </p>
               </div>
             ))}
           </div>
@@ -268,7 +309,10 @@ function WalletPage() {
             <BadgeCheck className="size-3.5" />
             {profile.data?.is_verified
               ? tr("حساب موثق — سحب فوري مفعّل", "Verified account — instant withdrawal enabled")
-              : tr("حساب غير موثق — السحب يخضع للمراجعة والجدولة", "Unverified account — withdrawals are reviewed and scheduled")}
+              : tr(
+                  "حساب غير موثق — السحب يخضع للمراجعة والجدولة",
+                  "Unverified account — withdrawals are reviewed and scheduled",
+                )}
           </p>
 
           {lockHours > 0 && (
@@ -298,15 +342,21 @@ function WalletPage() {
               disabled={savePayout.isPending || !user || !payoutAddress.trim()}
               className="mt-2 w-full rounded-lg border border-primary/50 bg-primary/10 px-3 py-2 text-xs font-bold text-primary disabled:opacity-50"
             >
-              {savePayout.isPending ? tr("جارٍ الحفظ...", "Saving...") : tr("حفظ العنوان", "Save address")}
+              {savePayout.isPending
+                ? tr("جارٍ الحفظ...", "Saving...")
+                : tr("حفظ العنوان", "Save address")}
             </button>
           </div>
         </Card>
 
         <Card id="withdraw-card" className="lg:col-span-2">
-          <h3 className="flex items-center gap-2 font-bold"><ArrowUpFromLine className="size-4 text-accent" /> {tr("طلب سحب", "Withdrawal request")}</h3>
+          <h3 className="flex items-center gap-2 font-bold">
+            <ArrowUpFromLine className="size-4 text-accent" /> {tr("طلب سحب", "Withdrawal request")}
+          </h3>
           <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
-            <span className="rounded-lg border border-accent/40 bg-accent/10 px-2.5 py-1 font-bold uppercase text-accent">{tier}</span>
+            <span className="rounded-lg border border-accent/40 bg-accent/10 px-2.5 py-1 font-bold uppercase text-accent">
+              {tier}
+            </span>
             <span className="inline-flex items-center gap-1 text-muted-foreground">
               <Timer className="size-3.5" />
               {tr(`المعالجة الآلية خلال ${sla} ساعة`, `AI processing within ${sla} hours`)}
@@ -316,13 +366,19 @@ function WalletPage() {
           {frozen && (
             <p className="mt-3 inline-flex items-center gap-2 rounded-xl border border-destructive/50 bg-destructive/10 px-3 py-2 text-xs text-destructive">
               <ShieldAlert className="size-4" />
-              {tr("الحساب مجمّد أمنياً — السحب معطّل حتى مراجعة الإدارة.", "Account frozen for security — withdrawals are disabled pending admin review.")}
+              {tr(
+                "الحساب مجمّد أمنياً — السحب معطّل حتى مراجعة الإدارة.",
+                "Account frozen for security — withdrawals are disabled pending admin review.",
+              )}
             </p>
           )}
 
           <div className="mt-4 grid gap-2">
             <p className="text-xs font-bold text-muted-foreground">
-              {tr("مُحسِّن رسوم الشبكة (Gas Optimizer) — اختر الشبكة الأوفر", "Network gas optimizer — pick the cheapest route")}
+              {tr(
+                "مُحسِّن رسوم الشبكة (Gas Optimizer) — اختر الشبكة الأوفر",
+                "Network gas optimizer — pick the cheapest route",
+              )}
             </p>
             <div className="grid gap-2 sm:grid-cols-3">
               {gasRows.map((g) => {
@@ -334,7 +390,9 @@ function WalletPage() {
                     onClick={() => setNetwork(g.value as WithdrawalNetwork)}
                     aria-pressed={selected}
                     className={`grid min-w-0 gap-1 rounded-xl border px-3 py-2.5 text-start transition-colors ${
-                      selected ? "border-primary bg-primary/15" : "border-border hover:border-primary/50"
+                      selected
+                        ? "border-primary bg-primary/15"
+                        : "border-border hover:border-primary/50"
                     }`}
                   >
                     <span className="flex flex-wrap items-center gap-1.5">
@@ -350,10 +408,15 @@ function WalletPage() {
                         </span>
                       )}
                     </span>
-                    <span className={`font-mono text-[11px] font-bold ${g.tone === "best" ? "text-primary" : "text-muted-foreground"}`} dir="ltr">
+                    <span
+                      className={`font-mono text-[11px] font-bold ${g.tone === "best" ? "text-primary" : "text-muted-foreground"}`}
+                      dir="ltr"
+                    >
                       ≈ {g.fee.toFixed(3)} USDT
                     </span>
-                    <span className="text-[10px] text-muted-foreground">{tr(g.etaAr, g.etaEn)}</span>
+                    <span className="text-[10px] text-muted-foreground">
+                      {tr(g.etaAr, g.etaEn)}
+                    </span>
                   </button>
                 );
               })}
@@ -363,24 +426,52 @@ function WalletPage() {
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
             <label className="grid gap-2 text-sm">
               <span className="text-muted-foreground">{tr("الشبكة", "Network")}</span>
-              <select value={network} onChange={(e) => setNetwork(e.target.value as WithdrawalNetwork)} className="field-lux  px-3 py-2 outline-none focus:border-primary">
-                {networks.map((n) => <option key={n.value} value={n.value}>{n.label}</option>)}
+              <select
+                value={network}
+                onChange={(e) => setNetwork(e.target.value as WithdrawalNetwork)}
+                className="field-lux  px-3 py-2 outline-none focus:border-primary"
+              >
+                {networks.map((n) => (
+                  <option key={n.value} value={n.value}>
+                    {n.label}
+                  </option>
+                ))}
               </select>
             </label>
             <label className="grid gap-2 text-sm">
-              <span className="text-muted-foreground">{tr(`المبلغ (USDT) — الحد الأدنى ${MIN_WITHDRAWAL}`, `Amount (USDT) — min ${MIN_WITHDRAWAL}`)}</span>
-              <input value={amount} onChange={(e) => setAmount(e.target.value.replace(/[^\d.]/g, ""))} inputMode="decimal" maxLength={16} className="field-lux  px-3 py-2 outline-none focus:border-primary" />
+              <span className="text-muted-foreground">
+                {tr(
+                  `المبلغ (USDT) — الحد الأدنى ${MIN_WITHDRAWAL}`,
+                  `Amount (USDT) — min ${MIN_WITHDRAWAL}`,
+                )}
+              </span>
+              <input
+                value={amount}
+                onChange={(e) => setAmount(e.target.value.replace(/[^\d.]/g, ""))}
+                inputMode="decimal"
+                maxLength={16}
+                className="field-lux  px-3 py-2 outline-none focus:border-primary"
+              />
             </label>
             <p className="text-xs text-muted-foreground sm:col-span-2">
-              {tr("سيُرسل السحب إلى عنوان السحب المحفوظ في بطاقة الرصيد.", "The withdrawal will be sent to the payout address saved in the balance card.")}
+              {tr(
+                "سيُرسل السحب إلى عنوان السحب المحفوظ في بطاقة الرصيد.",
+                "The withdrawal will be sent to the payout address saved in the balance card.",
+              )}
             </p>
           </div>
 
           <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-surface-2/60 p-4 text-sm">
             <span className="text-muted-foreground">
-              {tr("الرسوم:", "Fee:")} <span className="text-foreground" dir="ltr">{usdt2(WITHDRAWAL_FEE)} USDT</span>
+              {tr("الرسوم:", "Fee:")}{" "}
+              <span className="text-foreground" dir="ltr">
+                {usdt2(WITHDRAWAL_FEE)} USDT
+              </span>
               {" · "}
-              {tr("الصافي:", "Net:")} <span className="text-foreground" dir="ltr">{usdt2(Math.max(0, parsed - WITHDRAWAL_FEE))} USDT</span>
+              {tr("الصافي:", "Net:")}{" "}
+              <span className="text-foreground" dir="ltr">
+                {usdt2(Math.max(0, parsed - WITHDRAWAL_FEE))} USDT
+              </span>
             </span>
             <button
               onClick={submit}
@@ -418,7 +509,9 @@ function WalletPage() {
       <PayoutSecurityCard className="mt-6" />
 
       <Card className="mt-6">
-        <h3 className="flex items-center gap-2 font-bold"><Lock className="size-4 text-accent" /> {tr("قائمة طلبات السحب", "Withdrawal queue")}</h3>
+        <h3 className="flex items-center gap-2 font-bold">
+          <Lock className="size-4 text-accent" /> {tr("قائمة طلبات السحب", "Withdrawal queue")}
+        </h3>
         <div className="mt-4 grid gap-3">
           {(requests.data ?? []).length === 0 && (
             <p className="rounded-xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
@@ -426,12 +519,21 @@ function WalletPage() {
             </p>
           )}
           {(requests.data ?? []).map((r) => (
-            <div key={r.id} className="flex flex-wrap items-center gap-3 rounded-xl border border-border p-4 text-sm">
+            <div
+              key={r.id}
+              className="flex flex-wrap items-center gap-3 rounded-xl border border-border p-4 text-sm"
+            >
               <div className="min-w-40">
-                <p className="font-semibold" dir="ltr">{usdt2(r.amount_usdt)} USDT · {r.network}</p>
-                <p className="text-xs text-muted-foreground">{new Date(r.created_at).toLocaleString()}</p>
+                <p className="font-semibold" dir="ltr">
+                  {usdt2(r.amount_usdt)} USDT · {r.network}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {new Date(r.created_at).toLocaleString()}
+                </p>
               </div>
-              <span className="rounded-lg border border-border px-2.5 py-1 text-xs">{r.status}</span>
+              <span className="rounded-lg border border-border px-2.5 py-1 text-xs">
+                {r.status}
+              </span>
               <span className="text-xs text-muted-foreground">
                 {tr("درجة الخطورة", "Risk score")}: {Number(r.risk_score)}
               </span>
@@ -445,15 +547,23 @@ function WalletPage() {
         </div>
       </Card>
 
-
       <Card className="mt-6">
         <h3 className="font-bold">{tr("سجل المعاملات", "Transaction history")}</h3>
         <div className="mt-4 overflow-x-auto">
           <table className="w-full min-w-[640px] text-start text-sm">
             <thead className="text-muted-foreground">
               <tr className="border-b border-border">
-                {[tr("النوع", "Type"), tr("الشبكة", "Network"), tr("المبلغ", "Amount"), tr("الحالة", "Status"), tr("التاريخ", "Date"), tr("الإيصال", "Receipt")].map((h) => (
-                  <th key={h} className="py-2 text-start font-medium">{h}</th>
+                {[
+                  tr("النوع", "Type"),
+                  tr("الشبكة", "Network"),
+                  tr("المبلغ", "Amount"),
+                  tr("الحالة", "Status"),
+                  tr("التاريخ", "Date"),
+                  tr("الإيصال", "Receipt"),
+                ].map((h) => (
+                  <th key={h} className="py-2 text-start font-medium">
+                    {h}
+                  </th>
                 ))}
               </tr>
             </thead>
@@ -462,11 +572,20 @@ function WalletPage() {
                 <tr key={t.id} className="border-b border-border/60 last:border-0">
                   <td className="py-3">{t.type}</td>
                   <td className="text-muted-foreground">{t.network ?? tr("داخلي", "Internal")}</td>
-                  <td className={Number(t.amount) >= 0 ? "font-semibold text-primary" : "font-semibold text-destructive"}>
-                    {Number(t.amount) > 0 ? "+" : ""}{usdt2(t.amount)} USDT
+                  <td
+                    className={
+                      Number(t.amount) >= 0
+                        ? "font-semibold text-primary"
+                        : "font-semibold text-destructive"
+                    }
+                  >
+                    {Number(t.amount) > 0 ? "+" : ""}
+                    {usdt2(t.amount)} USDT
                   </td>
                   <td className="text-muted-foreground">{t.status}</td>
-                  <td className="text-muted-foreground">{new Date(t.created_at).toLocaleDateString()}</td>
+                  <td className="text-muted-foreground">
+                    {new Date(t.created_at).toLocaleDateString()}
+                  </td>
                   <td>
                     <button
                       type="button"
@@ -492,7 +611,9 @@ function WalletPage() {
             </tbody>
           </table>
           {!txs.isLoading && (txs.data ?? []).length === 0 && (
-            <p className="py-8 text-center text-sm text-muted-foreground">{tr("لا توجد معاملات بعد.", "No transactions yet.")}</p>
+            <p className="py-8 text-center text-sm text-muted-foreground">
+              {tr("لا توجد معاملات بعد.", "No transactions yet.")}
+            </p>
           )}
         </div>
       </Card>
@@ -500,7 +621,6 @@ function WalletPage() {
       {topUp && <TopUpDialog onClose={() => setTopUp(false)} />}
 
       {receipt && <ReceiptModal receipt={receipt} onClose={() => setReceipt(null)} />}
-
     </Section>
   );
 }
