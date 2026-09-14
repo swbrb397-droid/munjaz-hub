@@ -91,7 +91,7 @@ function Leaderboard() {
             </thead>
             <tbody>
               {rows.map((s, i) => {
-                const masked = ghost.enabled && user?.id === s.id;
+                const masked = maskUser(s.display_name || s.id);
                 return (
                   <tr key={s.id} className="border-b border-border/60 last:border-0 hover:bg-surface-2/60">
                     <td className="p-4">
