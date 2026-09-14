@@ -13,7 +13,8 @@ import { logAuditEvent } from "@/lib/audit";
 
 import { useLang } from "@/lib/lang";
 import { useAuth } from "@/hooks/use-auth";
-import { useOrders } from "@/lib/queries";
+import { useOrders, useProfile } from "@/lib/queries";
+import { checkUpload } from "@/lib/file-guard";
 import { nextActions, useOrderTransition, type OrderStatus } from "@/lib/orders";
 import {
   useCreateMilestones,
@@ -242,7 +243,9 @@ function Workspace() {
   const sendMessage = useSendMessage(selected);
   const editMessage = useEditMessage(selected);
   const sendAttachment = useSendAttachment(selected);
-  const uploadTier = (myProfile as { account_tier?: string } | null | undefined)?.account_tier ?? "free";
+  const myProfileQuery = useProfile();
+  const uploadTier =
+    (myProfileQuery.data as { account_tier?: string } | null | undefined)?.account_tier ?? "free";
   const chatFileRef = useRef<HTMLInputElement>(null);
 
   function handleFileSelected(e: React.ChangeEvent<HTMLInputElement>) {
