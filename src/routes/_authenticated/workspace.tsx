@@ -714,15 +714,18 @@ function Workspace() {
               </span>
             )}
           </button>
+          )}
 
-          <button
-            type="button"
-            onClick={() => setReviewOpen(true)}
-            className="inline-flex items-center gap-2 rounded-xl border border-border px-4 py-2 text-sm font-semibold"
-          >
-            <Star className="size-4 text-accent" />{" "}
-            {tr("تقييم الطرف الآخر", "Review the other party")}
-          </button>
+          {canReview && (
+            <button
+              type="button"
+              onClick={() => setReviewOpen(true)}
+              className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-border px-4 py-2 text-sm font-semibold"
+            >
+              <Star className="size-4 text-accent" />{" "}
+              {tr("تقييم الطرف الآخر", "Review the other party")}
+            </button>
+          )}
 
           <button
             type="button"
