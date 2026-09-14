@@ -114,8 +114,8 @@ function Leaderboard() {
                         )}
                         <span>
                           <span className="flex items-center gap-1 font-bold">
-                            {masked ? <span className="font-mono text-violet">{tag}</span> : s.display_name}
-                            {!masked && s.is_verified && <BadgeCheck className="size-4 text-accent" />}
+                            <span className="font-mono" dir="ltr">{masked}</span>
+                            {s.is_verified && <BadgeCheck className="size-4 text-accent" />}
                           </span>
                           <span className="block text-xs text-muted-foreground">
                             {tr("المستوى", "Level")} {s.level}
