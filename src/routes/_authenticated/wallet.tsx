@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { gasEstimates } from "@/lib/gas";
 
-import { ArrowUpFromLine, BadgeCheck, FileText, Lock, ShieldAlert, Sparkles, Timer } from "lucide-react";
+import { ArrowUpFromLine, BadgeCheck, FileText, Info, Loader2, Lock, ShieldAlert, Sparkles, Timer } from "lucide-react";
 import { Card, Section } from "@/components/site/Shell";
 import { ReceiptModal, type ReceiptData } from "@/components/site/ReceiptModal";
 import { useLang } from "@/lib/lang";
@@ -19,6 +19,7 @@ import {
   type WithdrawalNetwork,
 } from "@/lib/withdrawals";
 import { formatUsdt, parseUsdt } from "@/lib/security";
+import { isEmailLike, validatePayoutAddress } from "@/lib/address";
 import { useWalletRealtime } from "@/lib/deposits";
 import { toast } from "sonner";
 import { PayoutSecurityCard } from "@/components/site/PayoutSecurityCard";
@@ -46,6 +47,34 @@ const networks = [
 
 const rates: Record<string, number> = { USD: 1.0002, SAR: 3.7506, AED: 3.6731, EUR: 0.9184 };
 
+const RATE_HINT: Record<string, [string, string]> = {
+  USD: ["الدولار الأمريكي — سعر تحويل تقريبي لحظي", "US Dollar — indicative live conversion rate"],
+  SAR: ["الريال السعودي — سعر تحويل تقريبي لحظي", "Saudi Riyal — indicative live conversion rate"],
+  AED: ["الدرهم الإماراتي — سعر تحويل تقريبي لحظي", "UAE Dirham — indicative live conversion rate"],
+  EUR: ["اليورو — سعر تحويل تقريبي لحظي", "Euro — indicative live conversion rate"],
+};
+
+const COOLING_LOCK_HOURS = 24;
+
+/** Always render money with exactly two decimals. */
+function usdt2(value: number | string | null | undefined): string {
+  const n = Number(value ?? 0);
+  return (Number.isFinite(n) ? n : 0).toFixed(2);
+}
+
+/** Hours remaining on a 24h security cooling lock, 0 when clear. */
+function coolingHoursLeft(stamps: Array<string | null | undefined>): number {
+  const now = Date.now();
+  let left = 0;
+  for (const s of stamps) {
+    if (!s) continue;
+    const elapsed = now - new Date(s).getTime();
+    const remaining = COOLING_LOCK_HOURS * 3600_000 - elapsed;
+    if (remaining > left) left = remaining;
+  }
+  return left > 0 ? Math.ceil(left / 3600_000) : 0;
+}
+
 function WalletPage() {
   const { tr, lang } = useLang();
   const wallet = useWallet();
@@ -67,21 +96,51 @@ function WalletPage() {
   // Payout address is the only wallet column the client may write; balances are
   // mutated exclusively by secure database routines.
   useEffect(() => {
-    setPayoutAddress(wallet.data?.payout_address ?? "");
-  }, [wallet.data?.payout_address]);
+    const saved = wallet.data?.payout_address ?? "";
+    if (isEmailLike(saved)) {
+      // Legacy rows stored an email here — purge it so no payout can target it.
+      setPayoutAddress("");
+      if (user) {
+        void supabase
+          .from("wallets")
+          .update({ payout_address: null })
+          .eq("user_id", user.id)
+          .then(() => {
+            void qc.invalidateQueries({ queryKey: ["wallet"] });
+            toast.error(
+              tr(
+                "تم حذف عنوان سحب غير صالح (بريد إلكتروني) من محفظتك — يرجى إدخال عنوان USDT صحيح.",
+                "An invalid payout address (email) was removed from your wallet — please enter a valid USDT address.",
+              ),
+            );
+          });
+      }
+      return;
+    }
+    setPayoutAddress(saved);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [wallet.data?.payout_address, user?.id]);
 
   const savePayout = useMutation({
     mutationFn: async (value: string) => {
       if (!user) throw new Error(tr("يجب تسجيل الدخول.", "You must be signed in."));
+      const invalid = validatePayoutAddress(value, network);
+      if (invalid) throw new Error(invalid);
       const { error } = await supabase
         .from("wallets")
-        .update({ payout_address: value })
+        .update({ payout_address: value, payout_address_updated_at: new Date().toISOString() })
         .eq("user_id", user.id);
       if (error) throw error;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["wallet"] });
       toast.success(tr("تم حفظ عنوان السحب", "Payout address saved"));
+      toast.warning(
+        tr(
+          "تم تفعيل قفل أمني لمدة 24 ساعة على السحب بعد تعديل عنوان المحفظة.",
+          "A 24-hour security lock is now active on withdrawals after changing your payout address.",
+        ),
+      );
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -93,15 +152,29 @@ function WalletPage() {
   const sla = slaHoursForTier(tier);
   const parsed = parseUsdt(amount) ?? 0;
 
+  const lockHours = coolingHoursLeft([
+    (profile.data as { password_last_changed_at?: string | null } | null)?.password_last_changed_at,
+    (wallet.data as { payout_address_updated_at?: string | null } | null)?.payout_address_updated_at,
+  ]);
+
   const withdraw = useMutation({
     mutationFn: async () => {
-      const requestedAmount = Number(amount);
-      if (!Number.isFinite(requestedAmount) || requestedAmount <= 0) throw new Error("INVALID_AMOUNT");
-      const { data, error } = await supabase.rpc("request_wallet_withdrawal", { p_amount: requestedAmount });
+      if (lockHours > 0) throw new Error("COOLING_LOCK");
+      const requestedAmount = parseUsdt(amount);
+      if (requestedAmount === null) throw new Error("INVALID_AMOUNT");
+      if (requestedAmount < MIN_WITHDRAWAL) throw new Error("MIN_WITHDRAWAL_10");
+      if (requestedAmount > balance) throw new Error("INSUFFICIENT_FUNDS");
+      const target = payoutAddress.trim() || (wallet.data?.payout_address ?? "");
+      const invalidAddress = validatePayoutAddress(target, network);
+      if (invalidAddress) throw new Error(invalidAddress);
+
+      const { data, error } = await supabase.rpc("request_withdrawal", {
+        _amount: requestedAmount,
+        _network: network,
+        _address: target,
+      });
       if (error) throw new Error(error.message);
-      const result = data as { success?: boolean; message?: string } | null;
-      if (!result?.success) throw new Error(result?.message ?? "WITHDRAWAL_FAILED");
-      return result;
+      return data;
     },
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ["wallet"] });
@@ -122,7 +195,13 @@ function WalletPage() {
           toast.success(message);
         },
         onError: (e: Error) => {
-          const message = withdrawalErrorMessage(e.message, lang === "ar");
+          const message =
+            e.message === "COOLING_LOCK"
+              ? tr(
+                  `السحب مجمد مؤقتاً لمدة ${lockHours} ساعة بعد إجراء تعديل أمني على حسابك.`,
+                  `Withdrawals are locked for ${lockHours} more hour(s) after a recent security change.`,
+                )
+              : withdrawalErrorMessage(e.message, lang === "ar");
           setFeedback(message);
           toast.error(message);
         },
@@ -151,29 +230,56 @@ function WalletPage() {
         </div>
       }
     >
+      <p className="mb-4 flex items-start gap-2 rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-xs leading-relaxed text-amber-500">
+        <ShieldAlert className="mt-0.5 size-4 shrink-0" />
+        الحد الأدنى للشحن بالبطاقة: 15 USD — البوابة تخضع للصيانة المؤقتة، يرجى استخدام التحويل المباشر عبر USDT كريبتو
+      </p>
+
       <div className="grid gap-4 lg:grid-cols-3">
         <Card className="glow lg:col-span-1">
           <p className="text-sm text-muted-foreground">{tr("الرصيد المتاح", "Available balance")}</p>
-          <p className="mt-1 text-4xl font-black text-primary">{balance.toLocaleString()}</p>
+          <p className="mt-1 text-4xl font-black text-primary" dir="ltr">{usdt2(balance)}</p>
           <p className="text-sm text-muted-foreground">USDT</p>
           <div className="mt-3 grid gap-1 text-xs text-muted-foreground">
-            <p>{tr("محجوز في الضمان", "Held in escrow")}: <span className="font-bold text-foreground">{locked.toLocaleString()} USDT</span></p>
-            <p>{tr("إجمالي الأرباح", "Lifetime earned")}: <span className="font-bold text-accent">{Number(wallet.data?.lifetime_earned ?? 0).toLocaleString()} USDT</span></p>
+            <p>{tr("محجوز في الضمان", "Held in escrow")}: <span className="font-bold text-foreground" dir="ltr">{usdt2(locked)} USDT</span></p>
+            <p>{tr("إجمالي الأرباح", "Lifetime earned")}: <span className="font-bold text-accent" dir="ltr">{usdt2(wallet.data?.lifetime_earned)} USDT</span></p>
           </div>
           <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
             {Object.entries(rates).map(([c, r]) => (
-              <div key={c} className="rounded-lg border border-border px-3 py-2">
-                <span className="text-muted-foreground">{c}</span>
-                <p className="font-semibold">≈ {(balance * r).toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
+              <div
+                key={c}
+                title={tr(RATE_HINT[c]?.[0] ?? c, RATE_HINT[c]?.[1] ?? c)}
+                className="cursor-help rounded-lg border border-border px-3 py-2"
+              >
+                <span className="inline-flex items-center gap-1 text-muted-foreground">
+                  {c} <Info className="size-3 opacity-60" />
+                </span>
+                <p className="font-semibold" dir="ltr">≈ {(balance * r).toFixed(2)}</p>
               </div>
             ))}
           </div>
-          <p className="mt-4 inline-flex items-center gap-1 text-xs text-primary">
-            <BadgeCheck className="size-4" />
+          <p
+            className={`mt-4 inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[11px] font-bold ${
+              profile.data?.is_verified
+                ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-400"
+                : "border-amber-500/40 bg-amber-500/10 text-amber-500"
+            }`}
+          >
+            <BadgeCheck className="size-3.5" />
             {profile.data?.is_verified
               ? tr("حساب موثق — سحب فوري مفعّل", "Verified account — instant withdrawal enabled")
-              : tr("حساب غير موثق — السحب مجدول", "Unverified account — scheduled withdrawal")}
+              : tr("حساب غير موثق — السحب يخضع للمراجعة والجدولة", "Unverified account — withdrawals are reviewed and scheduled")}
           </p>
+
+          {lockHours > 0 && (
+            <p className="mt-3 inline-flex items-start gap-2 rounded-xl border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-[11px] leading-relaxed text-amber-500">
+              <Lock className="mt-0.5 size-3.5 shrink-0" />
+              {tr(
+                `السحب مجمد مؤقتاً لمدة ${lockHours} ساعة بعد إجراء تعديل أمني على حسابك.`,
+                `Withdrawals are temporarily locked for ${lockHours} more hour(s) after a recent security change.`,
+              )}
+            </p>
+          )}
           <div className="mt-4 border-t border-border pt-4">
             <label className="grid gap-2 text-xs font-bold text-muted-foreground">
               {tr("عنوان السحب المحفوظ", "Saved payout address")}
@@ -272,16 +378,19 @@ function WalletPage() {
 
           <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-surface-2/60 p-4 text-sm">
             <span className="text-muted-foreground">
-              {tr("الرسوم:", "Fee:")} <span className="text-foreground">{WITHDRAWAL_FEE} USDT</span>
+              {tr("الرسوم:", "Fee:")} <span className="text-foreground" dir="ltr">{usdt2(WITHDRAWAL_FEE)} USDT</span>
               {" · "}
-              {tr("الصافي:", "Net:")} <span className="text-foreground">{formatUsdt(Math.max(0, parsed - WITHDRAWAL_FEE))} USDT</span>
+              {tr("الصافي:", "Net:")} <span className="text-foreground" dir="ltr">{usdt2(Math.max(0, parsed - WITHDRAWAL_FEE))} USDT</span>
             </span>
             <button
               onClick={submit}
-              disabled={withdraw.isPending || frozen}
-              className="rounded-lg bg-primary px-4 py-2 font-bold text-primary-foreground disabled:opacity-60"
+              disabled={withdraw.isPending || frozen || lockHours > 0}
+              className="inline-flex min-h-[44px] items-center gap-2 rounded-lg bg-primary px-4 py-2 font-bold text-primary-foreground disabled:opacity-60"
             >
-              {tr("تأكيد السحب", "Confirm withdrawal")}
+              {withdraw.isPending && <Loader2 className="size-4 animate-spin" />}
+              {withdraw.isPending
+                ? tr("بانتظار التأكيد…", "Pending confirmation…")
+                : tr("تأكيد السحب", "Confirm withdrawal")}
             </button>
           </div>
           {feedback && <p className="mt-3 text-xs text-primary">{feedback}</p>}
@@ -289,6 +398,13 @@ function WalletPage() {
             {tr(
               "الطلبات ذات درجة خطورة مرتفعة تُحال تلقائياً لمراجعة بشرية، وتُحجز الأموال حتى إتمام التحويل.",
               "High risk-score requests are routed automatically to human review; funds stay locked until payout completes.",
+            )}
+          </p>
+          <p className="mt-2 flex items-start gap-2 text-[11px] leading-relaxed text-muted-foreground">
+            <Info className="mt-0.5 size-3.5 shrink-0" />
+            {tr(
+              "إشعار ضريبي: المنصة لا تقتطع أي ضرائب، ويتحمل المستخدم وحده مسؤولية الإفصاح عن أرباحه وسداد أي التزامات ضريبية وفق قوانين بلد إقامته.",
+              "Tax notice: the platform withholds no taxes. You are solely responsible for declaring your earnings and settling any tax obligations under the laws of your country of residence.",
             )}
           </p>
         </Card>
@@ -312,7 +428,7 @@ function WalletPage() {
           {(requests.data ?? []).map((r) => (
             <div key={r.id} className="flex flex-wrap items-center gap-3 rounded-xl border border-border p-4 text-sm">
               <div className="min-w-40">
-                <p className="font-semibold">{formatUsdt(r.amount_usdt)} USDT · {r.network}</p>
+                <p className="font-semibold" dir="ltr">{usdt2(r.amount_usdt)} USDT · {r.network}</p>
                 <p className="text-xs text-muted-foreground">{new Date(r.created_at).toLocaleString()}</p>
               </div>
               <span className="rounded-lg border border-border px-2.5 py-1 text-xs">{r.status}</span>
@@ -347,7 +463,7 @@ function WalletPage() {
                   <td className="py-3">{t.type}</td>
                   <td className="text-muted-foreground">{t.network ?? tr("داخلي", "Internal")}</td>
                   <td className={Number(t.amount) >= 0 ? "font-semibold text-primary" : "font-semibold text-destructive"}>
-                    {Number(t.amount) > 0 ? "+" : ""}{Number(t.amount)} USDT
+                    {Number(t.amount) > 0 ? "+" : ""}{usdt2(t.amount)} USDT
                   </td>
                   <td className="text-muted-foreground">{t.status}</td>
                   <td className="text-muted-foreground">{new Date(t.created_at).toLocaleDateString()}</td>
@@ -360,7 +476,7 @@ function WalletPage() {
                           type: String(t.type),
                           network: t.network ?? tr("داخلي", "Internal"),
                           gateway: t.network ? `USDT · ${t.network}` : "USDT",
-                          amount: `${Number(t.amount)} USDT`,
+                          amount: `${usdt2(t.amount)} USDT`,
                           status: String(t.status),
                           date: new Date(t.created_at).toLocaleString(),
                         })
