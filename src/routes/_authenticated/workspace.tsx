@@ -242,18 +242,20 @@ function Workspace() {
   const sendMessage = useSendMessage(selected);
   const editMessage = useEditMessage(selected);
   const sendAttachment = useSendAttachment(selected);
+  const uploadTier = (myProfile as { account_tier?: string } | null | undefined)?.account_tier ?? "free";
   const chatFileRef = useRef<HTMLInputElement>(null);
 
   function handleFileSelected(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     e.target.value = "";
     if (!file) return;
-    if (file.size > 50 * 1024 * 1024) {
-      toast.error(tr("الحد الأقصى للمرفق 50MB", "Attachments are limited to 50MB"));
+    const rejection = checkUpload(file, uploadTier);
+    if (rejection) {
+      toast.error(rejection);
       return;
     }
     sendAttachment.mutate(
-      { file, lang },
+      { file, lang, tier: uploadTier },
       {
         onSuccess: () => toast.success(tr("تم إرسال المرفق", "Attachment sent")),
         onError: (err: Error) => toast.error(err.message),
