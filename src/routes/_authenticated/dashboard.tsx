@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { ArrowLeft, Award, Coins, Copy, ShoppingBag, TrendingUp, Users } from "lucide-react";
+import { ArrowLeft, Award, Coins, ShoppingBag, TrendingUp, Users } from "lucide-react";
 
 import { Card, Section } from "@/components/site/Shell";
 import { PrestigeTracker } from "@/components/site/PrestigeTracker";
@@ -31,7 +31,6 @@ function Dashboard() {
   const wallet = useWallet();
   const orders = useOrders();
   const referrals = useReferrals();
-  const [copied, setCopied] = useState(false);
 
   const rows = orders.data ?? [];
   const asSeller = useMemo(() => rows.filter((o) => o.seller_id === user?.id), [rows, user]);
@@ -79,9 +78,6 @@ function Dashboard() {
 
   const loadingCore = profile.isLoading || wallet.isLoading || orders.isLoading;
 
-  const refLink = typeof window !== "undefined" && profile.data?.referral_code
-    ? `${window.location.origin}/auth?ref=${profile.data.referral_code}`
-    : "";
 
   return (
     <Section
@@ -125,9 +121,11 @@ function Dashboard() {
         ))}
       </div>
 
-      <div className="mt-6">
-        <PrestigeTracker metrics={prestige} />
-      </div>
+      {view === "seller" && (
+        <div className="mt-6">
+          <PrestigeTracker metrics={prestige} />
+        </div>
+      )}
 
       <div className="mt-6 grid gap-4 lg:grid-cols-[1.4fr_1fr]">
         <Card>
@@ -163,6 +161,7 @@ function Dashboard() {
         </Card>
 
         <div className="grid gap-4">
+          {view === "seller" && (
           <Card>
             <div className="flex items-center gap-2">
               <Award className="size-5 text-violet" />
@@ -171,7 +170,7 @@ function Dashboard() {
                 {profile.data?.is_verified ? ` · ${tr("موثّق", "Verified")}` : ""}
               </h3>
             </div>
-            <p className="mt-2 text-sm text-muted-foreground">{xp} / {nextLevelXp} XP</p>
+            <p className="mt-2 text-sm text-muted-foreground" dir="ltr">XP {xp} / {nextLevelXp}</p>
             <div className="mt-2 h-3 rounded-full bg-secondary">
               <div className="h-3 rounded-full bg-gradient-to-l from-primary to-violet" style={{ width: `${pct}%` }} />
             </div>
@@ -182,46 +181,34 @@ function Dashboard() {
               </span>
             </div>
           </Card>
+          )}
 
-          <Card>
-            <h3 className="font-bold">{tr("برنامج الإحالة المالي", "Affiliate program")}</h3>
-            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-              {tr(
-                "برنامج الإحالة المالي: 20% للشهر الأول ثم 10% لبقية الـ 12 شهراً",
-                "Affiliate program: 20% for the first month, then 10% for the rest of the 12 months",
-              )}
-            </p>
-            <div className="mt-3 flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-xs">
-              <span className="truncate font-mono text-accent">{refLink || tr("جارٍ التحميل…", "Loading…")}</span>
-              <button
-                type="button"
-                className="ms-auto shrink-0 text-primary"
-                onClick={() => { if (refLink) { navigator.clipboard.writeText(refLink); setCopied(true); setTimeout(() => setCopied(false), 1500); } }}
-                aria-label={tr("نسخ", "Copy")}
+          {view === "buyer" && (
+            <Card>
+              <h3 className="font-bold">{tr("مؤشرات المشتري", "Buyer metrics")}</h3>
+              <dl className="mt-3 grid gap-2 text-sm">
+                <div className="flex justify-between border-b border-border pb-2">
+                  <dt className="text-muted-foreground">{tr("طلبات مكتملة", "Completed orders")}</dt>
+                  <dd className="font-semibold">{completed.length}</dd>
+                </div>
+                <div className="flex justify-between border-b border-border pb-2">
+                  <dt className="text-muted-foreground">{tr("طلبات جارية", "Ongoing orders")}</dt>
+                  <dd className="font-semibold">{active.length}</dd>
+                </div>
+                <div className="flex justify-between">
+                  <dt className="text-muted-foreground">{tr("مبالغ محجوزة في الضمان", "Held in escrow")}</dt>
+                  <dd className="font-semibold text-accent" dir="ltr">{escrow.toFixed(2)} USDT</dd>
+                </div>
+              </dl>
+              <Link
+                to="/store"
+                className="mt-4 flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-bold text-primary-foreground"
               >
-                <Copy className="size-4" />
-              </button>
-            </div>
-            {copied && <p className="mt-2 text-xs text-primary">{tr("تم النسخ", "Copied")}</p>}
-            <Link
-              to="/referrals"
-              className="mt-4 flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-bold text-primary-foreground"
-            >
-              {tr("فتح مركز الإحالة والعمولات", "Open the referral hub")}
-              <ArrowLeft className="size-4 rtl:rotate-180" />
-            </Link>
-            <dl className="mt-3 grid gap-2 text-sm">
-              <div className="flex justify-between border-b border-border pb-2">
-                <dt className="text-muted-foreground">{tr("عدد الإحالات", "Referrals")}</dt>
-                <dd className="font-semibold">{referrals.data?.referrals.length ?? 0}</dd>
-              </div>
-              <div className="flex justify-between">
-                <dt className="text-muted-foreground">{tr("إجمالي العمولات", "Total commissions")}</dt>
-                <dd className="font-semibold">{(referrals.data?.totalEarned ?? 0).toLocaleString()} USDT</dd>
-              </div>
-            </dl>
-          </Card>
-
+                {tr("تصفّح المتجر", "Browse the store")}
+                <ArrowLeft className="size-4 rtl:rotate-180" />
+              </Link>
+            </Card>
+          )}
         </div>
       </div>
     </Section>

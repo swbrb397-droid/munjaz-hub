@@ -7,23 +7,18 @@ import {
   Camera,
   CheckCircle2,
   Crown,
-  KeyRound,
   Loader2,
-  Lock,
   Percent,
   ShieldCheck,
   Timer,
   Upload,
-  X,
 } from "lucide-react";
 import { Card, Section } from "@/components/site/Shell";
 import { VerifiedBadge } from "@/components/site/VerifiedBadge";
 import { useUserProfile } from "@/hooks/use-user-profile";
-import { ReferralWidget } from "@/components/site/ReferralWidget";
 import { useLang } from "@/lib/lang";
 import { useNotify } from "@/lib/notify";
 import { useAuth } from "@/hooks/use-auth";
-import { PayoutSecurityCard } from "@/components/site/PayoutSecurityCard";
 import { SecurityPanel } from "@/components/site/SecurityPanel";
 import { EXECUTABLE_REJECTION, isDangerousFile } from "@/lib/file-guard";
 import { NameChangeControl } from "@/components/site/NameChangeCard";
@@ -78,7 +73,6 @@ function ProfilePage() {
   const [tab, setTab] = useState<"kyc" | "settings">("kyc");
   const isVerified = liveProfile?.is_verified === true;
   const [tier] = useState<Tier>("pro");
-  const [twoFa, setTwoFa] = useState(false);
   const [avatar, setAvatar] = useState<string | null>(null);
   const avatarRef = useRef<HTMLInputElement>(null);
 
@@ -99,11 +93,10 @@ function ProfilePage() {
   const rejectionReason = kyc === "rejected" ? (latest?.admin_note ?? null) : null;
 
   const meta = TIER_META[tier];
-  const handle = liveProfile?.display_name
-    ? `@${liveProfile.display_name}`
-    : user?.email
-      ? `@${user.email.split("@")[0]}`
-      : "@user";
+  // Clean text only — no leading "@" anywhere in the profile header.
+  const handle = (
+    liveProfile?.display_name || user?.email?.split("@")[0] || "user"
+  ).replace(/^@+/, "");
 
   return (
     <div className="overflow-x-hidden">
@@ -121,7 +114,7 @@ function ProfilePage() {
                 {avatar ? (
                   <img src={avatar} alt="صورة الملف الشخصي" className="size-full object-cover" />
                 ) : (
-                  handle.slice(1, 3).toUpperCase()
+                  handle.slice(0, 2).toUpperCase()
                 )}
               </div>
               <button
@@ -190,10 +183,10 @@ function ProfilePage() {
               value={meta.fee}
             />
             <Metric
-              icon={<Lock className="size-4" />}
-              label="حالة مصادقة الأمان"
-              value={twoFa ? "2FA مفعّل" : "2FA غير مفعّل"}
-              tone={twoFa ? "ok" : "warn"}
+              icon={<ShieldCheck className="size-4" />}
+              label="حالة التوثيق الرسمي"
+              value={isVerified ? "موثق معتمد" : "غير موثق"}
+              tone={isVerified ? "ok" : "warn"}
             />
           </div>
         </Card>
@@ -215,13 +208,11 @@ function ProfilePage() {
           ))}
         </div>
 
-        <ReferralWidget className="mt-4" />
-
         <div className="mt-4">
           {tab === "kyc" && !isVerified ? (
             <KycWizard state={kyc} reason={rejectionReason} />
           ) : (
-            <SettingsPanel twoFa={twoFa} setTwoFa={setTwoFa} />
+            <SettingsPanel />
           )}
         </div>
       </Section>
@@ -616,9 +607,7 @@ function Field({
   );
 }
 
-function SettingsPanel({ twoFa, setTwoFa }: { twoFa: boolean; setTwoFa: (v: boolean) => void }) {
-  const { tr } = useLang();
-  const { user } = useAuth();
+function SettingsPanel() {
   const { prefs: notif, setPref, notify } = useNotify();
 
   return (
@@ -675,8 +664,6 @@ function SettingsPanel({ twoFa, setTwoFa }: { twoFa: boolean; setTwoFa: (v: bool
           ))}
         </div>
       </Card>
-
-      <PayoutSecurityCard className="lg:col-span-2" />
 
       <SecurityPanel className="lg:col-span-2" />
     </div>

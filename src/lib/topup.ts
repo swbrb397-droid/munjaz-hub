@@ -20,7 +20,8 @@ export function topUpErrorMessage(raw: string, ar: boolean): string {
   };
   const key = Object.keys(map).find((k) => raw.includes(k));
   const entry = key ? map[key] : undefined;
-  if (!entry) return ar ? "حدث خطأ غير متوقع." : "Something went wrong.";
+  // Never mask an unknown gateway error — surface the real text to the user.
+  if (!entry) return raw?.trim() || (ar ? "فشل إنشاء الفاتورة" : "Failed to create the invoice");
   return ar ? entry[0] : entry[1];
 }
 

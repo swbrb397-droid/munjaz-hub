@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useEnsureReferralCode } from "@/lib/referral-code";
 import { toast } from "sonner";
-import { Copy, Info, ShieldAlert, Users, CheckCircle2, Wallet2, Clock, X } from "lucide-react";
+import { Copy, Info, ShieldAlert, Users, Lock, Wallet2, Clock, X } from "lucide-react";
 import { Card, Section } from "@/components/site/Shell";
 import { useLang } from "@/lib/lang";
 import { useProfile, useReferrals } from "@/lib/queries";
@@ -43,12 +43,23 @@ function ReferralHub() {
   const commissions = data.data?.commissions ?? [];
 
   const kpis = useMemo(() => {
-    const total = commissions.reduce((s, c) => s + Number(c.commission_usdt ?? 0), 0);
+    // Every row in referral_commissions is already settled from a realised NET
+    // platform fee (Commission = NetPlatformFee × Rate) — those are available.
+    // Anything accrued on the referral but not yet settled is still escrow-held.
+    const available = commissions.reduce((s, c) => s + Number(c.commission_usdt ?? 0), 0);
+    const lifetime = referrals.reduce((s, r) => s + Number(r.total_earned_usdt ?? 0), 0);
+    const escrowLocked = Math.max(0, lifetime - available);
+    const now = Date.now();
+    const daysLeft = referrals
+      .map((r) => Math.ceil((new Date(r.expires_at).getTime() - now) / 86_400_000))
+      .filter((d) => d > 0);
     return {
       joined: referrals.length,
       active: referrals.filter((r) => r.is_active).length,
-      total,
-      lifetime: referrals.reduce((s, r) => s + Number(r.total_earned_usdt ?? 0), 0),
+      available,
+      escrowLocked,
+      lifetime,
+      cycleDaysLeft: daysLeft.length ? Math.max(...daysLeft) : 0,
     };
   }, [referrals, commissions]);
 
@@ -99,18 +110,24 @@ function ReferralHub() {
           <div className="flex items-start gap-2 rounded-2xl border border-accent/40 bg-accent/10 p-4 text-xs leading-relaxed text-accent">
             <ShieldAlert className="mt-0.5 size-4 shrink-0" />
             <p>
-              تنبيه مالي وقانوني: يستفيد المُحيل من عمولة الإحالة على مشتريات المستخدم لمدة 12 شهراً فقط من تاريخ التسجيل
-              (20% ترويجية خلال أول 30 يوماً، ثم 10% للأشهر الـ 11 المتبقية). تُقتطع كافة العمولات حصراً من صافي أرباح
-              المنصة؛ وإذا كان ربح المنصة 0%، تكون العمولة 0 USDT تلقائياً دون أي مساس بمستحقات البائع.
+              تنبيه مالي وقانوني: يستفيد المُحيل من عمولة الإحالة على مشتريات المستخدم لمدة 12 شهراً (365 يوماً) فقط من
+              تاريخ التسجيل (20% ترويجية خلال أول 30 يوماً، ثم 10% للأشهر الـ 11 المتبقية). تُحتسب العمولة حصراً وفق
+              المعادلة: العمولة = صافي رسوم المنصة × النسبة؛ وإذا كان ربح المنصة 0%، تكون العمولة 0.00 USDT تلقائياً دون
+              أي مساس بمستحقات البائع. ولا تدخل مشتريات باقات الاشتراك (Pro / Corporate) ضمن وعاء احتساب العمولات إطلاقاً.
             </p>
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {[
               { icon: Users, label: tr("إجمالي المسجلين", "Total joined"), value: kpis.joined.toString(), tone: "text-foreground" },
-              { icon: CheckCircle2, label: tr("الإحالات النشطة", "Active referrals"), value: kpis.active.toString(), tone: "text-foreground" },
-              { icon: Wallet2, label: tr("إجمالي العمولات (USDT)", "Total commissions (USDT)"), value: kpis.total.toFixed(2), tone: "text-primary" },
-              { icon: Clock, label: tr("الأرباح التراكمية (USDT)", "Lifetime earnings (USDT)"), value: kpis.lifetime.toFixed(2), tone: "text-accent" },
+              { icon: Wallet2, label: tr("أرباح الإحالة المتاحة (USDT)", "Available referral earnings (USDT)"), value: kpis.available.toFixed(2), tone: "text-primary" },
+              { icon: Lock, label: tr("أرباح قيد حجز الضمان (USDT)", "Escrow-locked earnings (USDT)"), value: kpis.escrowLocked.toFixed(2), tone: "text-accent" },
+              {
+                icon: Clock,
+                label: tr("دورة الاستحقاق (365 يوماً)", "Eligibility cycle (365 days)"),
+                value: kpis.cycleDaysLeft ? `${kpis.cycleDaysLeft} ${tr("يوماً", "days")}` : tr("لا توجد دورة نشطة", "No active cycle"),
+                tone: "text-foreground",
+              },
             ].map((k) => (
               <Card key={k.label}>
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">

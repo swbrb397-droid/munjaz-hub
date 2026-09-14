@@ -4,6 +4,7 @@ import { ArrowLeft, Loader2, ShieldCheck, Star, Timer } from "lucide-react";
 import { Card, Section } from "@/components/site/Shell";
 import { VerifiedBadge } from "@/components/site/VerifiedBadge";
 import { MediaShowcase } from "@/components/site/MediaShowcase";
+import { DmcaTrigger } from "@/components/site/DmcaModal";
 
 import { useLang } from "@/lib/lang";
 import { useAuth } from "@/hooks/use-auth";
@@ -176,6 +177,9 @@ function ListingDetail() {
             <p className="mt-3 text-[11px] text-muted-foreground">
               {tr("يُنشأ الطلب بحالة (قيد الانتظار)، ثم تموّله من مساحة الطلب لتجميد المبلغ في الضمان.", "The order is created as pending; fund it from the workspace to lock the amount in escrow.")}
             </p>
+            <div className="mt-3">
+              <DmcaTrigger />
+            </div>
           </Card>
         </div>
       </div>

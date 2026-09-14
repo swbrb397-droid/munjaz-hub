@@ -15,6 +15,7 @@ import { ErrorBoundary } from "@/components/site/ErrorBoundary";
 import { useWallet } from "@/lib/queries";
 import { useUserProfile } from "@/hooks/use-user-profile";
 import { SupportWidget } from "@/components/site/SupportWidget";
+import { DmcaTrigger } from "@/components/site/DmcaModal";
 import { ManifestoModal, useManifestoFirstRun } from "@/components/site/ManifestoModal";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -354,6 +355,7 @@ export function Shell({ children }: { children: ReactNode }) {
             <Link to="/terms" className="hover:text-foreground transition-colors">
               {t("terms")}
             </Link>
+            <DmcaTrigger />
             {isAdmin && (
               <Link to="/admin" className="flex items-center gap-1.5 text-muted-foreground/70 hover:text-foreground">
                 <ShieldCheck size={18} strokeWidth={1.8} /> {t("admin")}

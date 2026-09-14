@@ -47,6 +47,8 @@ function AdminKyc() {
   const { tr } = useLang();
   const { isAdmin } = useUserProfile();
   const [status, setStatus] = useState<StatusFilter>("pending");
+  const [rejecting, setRejecting] = useState<string | null>(null);
+  const [reason, setReason] = useState("");
   const rows = useKycSubmissions(isAdmin, status);
   const review = useReviewKyc();
 
@@ -57,18 +59,15 @@ function AdminKyc() {
     else toast.error(tr("تعذّر فتح المستند.", "Could not open the document."));
   };
 
-  const act = (id: string, approve: boolean) => {
-    let note: string | undefined;
-    if (!approve) {
-      const reason = window.prompt(tr("سبب الرفض:", "Rejection reason:"))?.trim();
-      if (!reason) return;
-      note = reason;
-    }
+  const act = (id: string, approve: boolean, note?: string) => {
     review.mutate(
       { id, approve, ...(note ? { note } : {}) },
       {
-        onSuccess: () =>
-          toast.success(approve ? tr("تم قبول التوثيق ✅", "Verification approved ✅") : tr("تم رفض الطلب", "Request rejected")),
+        onSuccess: () => {
+          setRejecting(null);
+          setReason("");
+          toast.success(approve ? tr("تم قبول التوثيق ✅", "Verification approved ✅") : tr("تم رفض الطلب", "Request rejected"));
+        },
         onError: (e: Error) => toast.error(e.message),
       },
     );
@@ -143,8 +142,11 @@ function AdminKyc() {
                   <button
                     type="button"
                     disabled={review.isPending || r.status === "rejected"}
-                    onClick={() => act(r.id, false)}
-                    className="rounded-lg border border-destructive/60 px-3 py-1.5 text-xs font-bold text-destructive disabled:opacity-50"
+                    onClick={() => {
+                      setReason("");
+                      setRejecting(r.id);
+                    }}
+                    className="min-h-[44px] rounded-lg border border-destructive/60 px-3 py-1.5 text-xs font-bold text-destructive disabled:opacity-50"
                   >
                     {tr("رفض", "Reject")}
                   </button>
@@ -154,6 +156,48 @@ function AdminKyc() {
           </div>
         )}
       </Card>
+
+      {rejecting && (
+        <div
+          className="fixed inset-0 z-[80] grid place-items-center overflow-y-auto bg-background/85 p-4 backdrop-blur"
+          role="dialog"
+          aria-modal="true"
+        >
+          <div className="max-h-[85vh] w-full max-w-md overflow-y-auto rounded-2xl border border-slate-800 bg-[#0F172A] p-6">
+            <h2 className="text-lg font-black">{tr("سبب رفض طلب التوثيق", "KYC rejection reason")}</h2>
+            <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+              {tr(
+                "يُحفظ السبب في سجل الطلب ويظهر للمستخدم داخل صفحة التوثيق.",
+                "The reason is stored on the submission and shown to the user on their verification page.",
+              )}
+            </p>
+            <textarea
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              rows={4}
+              placeholder={tr("مثال: صورة الوثيقة غير واضحة", "e.g. the document image is unreadable")}
+              className="mt-4 w-full rounded-xl border border-slate-700 bg-slate-900/60 px-3 py-2.5 text-sm outline-none focus:border-primary"
+            />
+            <div className="mt-4 flex flex-wrap gap-2">
+              <button
+                type="button"
+                disabled={review.isPending || reason.trim().length < 5}
+                onClick={() => act(rejecting, false, reason.trim())}
+                className="inline-flex min-h-[44px] flex-1 items-center justify-center rounded-xl border border-destructive/60 bg-destructive/10 px-4 py-2.5 text-sm font-bold text-destructive disabled:opacity-40"
+              >
+                {review.isPending ? tr("جارٍ الحفظ…", "Saving…") : tr("تأكيد الرفض", "Confirm rejection")}
+              </button>
+              <button
+                type="button"
+                onClick={() => setRejecting(null)}
+                className="min-h-[44px] rounded-xl border border-slate-700 px-4 py-2.5 text-sm font-bold"
+              >
+                {tr("إلغاء", "Cancel")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </Section>
   );
 }

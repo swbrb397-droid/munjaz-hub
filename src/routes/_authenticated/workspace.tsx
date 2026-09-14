@@ -386,6 +386,16 @@ function Workspace() {
   const [extDone, setExtDone] = useState<string | null>(null);
   const [extStatus, setExtStatus] = useState<"none" | "pending" | "approved">("none");
 
+  /** Role isolation — each party only ever sees its own controls. */
+  const isBuyer = !!order && !!user && order.buyer_id === user.id;
+  const isSeller = !!order && !!user && order.seller_id === user.id;
+  /** Rating is only possible on a completed order, and never after arbitration. */
+  const arbitrated = !!order && (order.status === "disputed" || order.status === "refunded");
+  const canReview = !!order && order.status === "completed" && !arbitrated;
+
+  // In-app video room (no popup windows)
+  const [callOpen, setCallOpen] = useState(false);
+
   // Post-completion 2-way review
   const [reviewOpen, setReviewOpen] = useState(false);
   const [stars, setStars] = useState({ quality: 5, communication: 5, speed: 5 });
@@ -678,9 +688,15 @@ function Workspace() {
       }
       action={
         <div className="flex flex-wrap gap-2">
-          <button className="inline-flex items-center gap-2 rounded-xl border border-accent/50 bg-accent/10 px-4 py-2 text-sm font-semibold text-accent">
+          <button
+            type="button"
+            disabled={!order}
+            onClick={() => setCallOpen(true)}
+            className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-accent/50 bg-accent/10 px-4 py-2 text-sm font-semibold text-accent disabled:opacity-40"
+          >
             <Video className="size-4" /> {tr("بدء مكالمة فيديو", "Start video call")}
           </button>
+          {isSeller && (
           <button
             type="button"
             onClick={() => setExtOpen(true)}
