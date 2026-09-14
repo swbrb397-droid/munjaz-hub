@@ -1,7 +1,28 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { AlertTriangle, CalendarClock, CheckCircle2, Circle, FileCheck2, FileUp, History, Languages, Loader2, Lock, Paperclip, Send, FileDown, ShieldAlert, ShieldCheck, Sparkles, Star, Unlock, Video, X } from "lucide-react";
+import {
+  AlertTriangle,
+  CalendarClock,
+  CheckCircle2,
+  Circle,
+  FileCheck2,
+  FileUp,
+  History,
+  Languages,
+  Loader2,
+  Lock,
+  Paperclip,
+  Send,
+  FileDown,
+  ShieldAlert,
+  ShieldCheck,
+  Sparkles,
+  Star,
+  Unlock,
+  Video,
+  X,
+} from "lucide-react";
 import { toast } from "sonner";
 import { Card, Section } from "@/components/site/Shell";
 import { SecureDownload } from "@/components/site/SecureDownload";
@@ -9,11 +30,10 @@ import { ChatSecurityNotice } from "@/components/site/ChatSecurityNotice";
 import { downloadElementPdf } from "@/lib/pdf";
 import { logAuditEvent } from "@/lib/audit";
 
-
-
 import { useLang } from "@/lib/lang";
 import { useAuth } from "@/hooks/use-auth";
-import { useOrders } from "@/lib/queries";
+import { useOrders, useProfile } from "@/lib/queries";
+import { checkUpload } from "@/lib/file-guard";
 import { nextActions, useOrderTransition, type OrderStatus } from "@/lib/orders";
 import {
   useCreateMilestones,
@@ -33,7 +53,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { sanitizeText } from "@/lib/security";
 import { useServerFn } from "@tanstack/react-start";
 import { orderAiAssistant } from "@/lib/order-ai.functions";
-
 
 type Tr = (ar: string, en: string) => string;
 
@@ -75,26 +94,36 @@ function fileMeta(value: string) {
   }
   const seed = Math.abs(h);
   const ext = (value.split("?")[0] ?? "").split(".").pop()?.toLowerCase() ?? "";
-  const mime =
-    ["png", "jpg", "jpeg", "webp"].includes(ext) ? "image/" + ext
-    : ext === "pdf" ? "application/pdf"
-    : ext === "zip" ? "application/zip"
-    : ext === "fig" ? "application/figma"
-    : ext === "mp4" ? "video/mp4"
-    : "link/url";
+  const mime = ["png", "jpg", "jpeg", "webp"].includes(ext)
+    ? "image/" + ext
+    : ext === "pdf"
+      ? "application/pdf"
+      : ext === "zip"
+        ? "application/zip"
+        : ext === "fig"
+          ? "application/figma"
+          : ext === "mp4"
+            ? "video/mp4"
+            : "link/url";
   const sizeMb = ((seed % 4800) / 100 + 0.4).toFixed(1);
   const sha = seed.toString(16).padStart(8, "0").repeat(2).slice(0, 16);
   return { mime, sizeMb, sha };
 }
 
-
 export const Route = createFileRoute("/_authenticated/workspace")({
   head: () => ({
     meta: [
       { title: "مساحة عمل الطلب | المُنجِز" },
-      { name: "description", content: "محادثة لحظية مع ترجمة فورية بالذكاء الاصطناعي، مكالمات فيديو، تسليم الملفات، وفتح نزاع محمي بضمان المنصة." },
+      {
+        name: "description",
+        content:
+          "محادثة لحظية مع ترجمة فورية بالذكاء الاصطناعي، مكالمات فيديو، تسليم الملفات، وفتح نزاع محمي بضمان المنصة.",
+      },
       { property: "og:title", content: "مساحة عمل الطلب | المُنجِز" },
-      { property: "og:description", content: "تواصل، سلّم، وأدر نزاعاتك داخل مساحة عمل واحدة آمنة." },
+      {
+        property: "og:description",
+        content: "تواصل، سلّم، وأدر نزاعاتك داخل مساحة عمل واحدة آمنة.",
+      },
     ],
   }),
   validateSearch: (search: Record<string, unknown>): { order?: string } =>
@@ -190,8 +219,6 @@ function translateCached(id: string, lang: "ar" | "en", source: string, rev = 0)
   return { text: source, cached: false };
 }
 
-
-
 function Workspace() {
   const { tr, lang } = useLang();
   const { user } = useAuth();
@@ -236,24 +263,27 @@ function Workspace() {
   const [aiReplies, setAiReplies] = useState<{ id: string; text: string }[]>([]);
   const [aiBusy, setAiBusy] = useState(false);
 
-
   // Live chat backed by order_messages (realtime).
   const messagesQuery = useOrderMessages(selected);
   const sendMessage = useSendMessage(selected);
   const editMessage = useEditMessage(selected);
   const sendAttachment = useSendAttachment(selected);
+  const myProfileQuery = useProfile();
+  const uploadTier =
+    (myProfileQuery.data as { account_tier?: string } | null | undefined)?.account_tier ?? "free";
   const chatFileRef = useRef<HTMLInputElement>(null);
 
   function handleFileSelected(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     e.target.value = "";
     if (!file) return;
-    if (file.size > 50 * 1024 * 1024) {
-      toast.error(tr("الحد الأقصى للمرفق 50MB", "Attachments are limited to 50MB"));
+    const rejection = checkUpload(file, uploadTier);
+    if (rejection) {
+      toast.error(rejection);
       return;
     }
     sendAttachment.mutate(
-      { file, lang },
+      { file, lang, tier: uploadTier },
       {
         onSuccess: () => toast.success(tr("تم إرسال المرفق", "Attachment sent")),
         onError: (err: Error) => toast.error(err.message),
@@ -315,7 +345,6 @@ function Workspace() {
     return { map, billed, cached };
   }, [messages, translate, lang, msgRev]);
 
-
   // Instant digital asset anti-piracy shield
   const [assetLocked, setAssetLocked] = useState(false);
   const [disputeCategory, setDisputeCategory] = useState<"general" | "corrupt">("general");
@@ -323,7 +352,6 @@ function Workspace() {
   // Post-delivery warranty escrow
   const [warrantyOn, setWarrantyOn] = useState(false);
   const [warrantyPct, setWarrantyPct] = useState(10);
-
 
   // Deliverables vault (private digital-vault bucket + order_deliverables rows)
   const deliverablesQuery = useOrderDeliverables(selected);
@@ -333,10 +361,13 @@ function Workspace() {
   const transition = useOrderTransition();
   const releaseEscrow = useMutation({
     mutationFn: async (orderId: string) => {
-      const { data, error } = await supabase.rpc("release_escrow_to_seller", { p_order_id: orderId });
+      const { data, error } = await supabase.rpc("release_escrow_to_seller", {
+        p_order_id: orderId,
+      });
       if (error) throw new Error(error.message);
       const result = data as { success?: boolean; message?: string } | null;
-      if (!result?.success) throw new Error(result?.message ?? tr("تعذّر تحرير الضمان.", "Escrow release failed."));
+      if (!result?.success)
+        throw new Error(result?.message ?? tr("تعذّر تحرير الضمان.", "Escrow release failed."));
       return result;
     },
     onSuccess: () => {
@@ -392,7 +423,15 @@ function Workspace() {
         const amount = Number(d.amount);
         return {
           title: d.due ? `${d.title.trim()} · ${tr("تسليم", "due")} ${d.due}` : d.title.trim(),
-          pct: Number((((i === draftMilestones.length - 1 ? orderAmount : draftMilestones.slice(0, i + 1).reduce((s, r) => s + Number(r.amount), 0)) / orderAmount) * 100).toFixed(2)),
+          pct: Number(
+            (
+              ((i === draftMilestones.length - 1
+                ? orderAmount
+                : draftMilestones.slice(0, i + 1).reduce((s, r) => s + Number(r.amount), 0)) /
+                orderAmount) *
+              100
+            ).toFixed(2),
+          ),
           amount_usdt: Number(amount.toFixed(2)),
           position: i + 1,
         };
@@ -401,15 +440,23 @@ function Workspace() {
     );
   }
 
-
-
-
-  const autoUpTo = order?.status === "completed" ? 100 : order?.status === "delivered" ? 70 : order?.status === "in_progress" ? 30 : 0;
+  const autoUpTo =
+    order?.status === "completed"
+      ? 100
+      : order?.status === "delivered"
+        ? 70
+        : order?.status === "in_progress"
+          ? 30
+          : 0;
   /** Warranty escrow retains 10–15% for a 7-day stability window after delivery. */
   const maxReleasable = warrantyOn ? 100 - warrantyPct : 100;
   const releasedPct = Math.min(
     maxReleasable,
-    Math.max(autoUpTo, ...milestoneRows.filter((m) => m.status === "released").map((m) => Number(m.pct)), 0),
+    Math.max(
+      autoUpTo,
+      ...milestoneRows.filter((m) => m.status === "released").map((m) => Number(m.pct)),
+      0,
+    ),
   );
   const warrantyEndsAt = useMemo(
     () => new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toLocaleDateString(),
@@ -436,12 +483,21 @@ function Workspace() {
     };
   }, [rawFiles.map((f) => f.id).join(",")]);
 
-
-
   // Immutable audit timeline derived from the order record
   const timeline = useMemo(() => {
-    if (!order) return [] as { at: string | null; title: string; detail: string; tone: "primary" | "accent" | "muted" | "danger" }[];
-    const items: { at: string | null; title: string; detail: string; tone: "primary" | "accent" | "muted" | "danger" }[] = [
+    if (!order)
+      return [] as {
+        at: string | null;
+        title: string;
+        detail: string;
+        tone: "primary" | "accent" | "muted" | "danger";
+      }[];
+    const items: {
+      at: string | null;
+      title: string;
+      detail: string;
+      tone: "primary" | "accent" | "muted" | "danger";
+    }[] = [
       {
         at: order.created_at,
         title: tr("إنشاء الطلب ونطاق العمل", "Order created & scope agreed"),
@@ -453,23 +509,35 @@ function Workspace() {
       items.push({
         at: order.created_at,
         title: tr("حجز أموال الضمان (Escrow Locked)", "Escrow funds locked"),
-        detail: tr(`تم حجز ${Number(order.amount_usdt)} USDT لصالح الطلب.`, `${Number(order.amount_usdt)} USDT locked for this order.`),
+        detail: tr(
+          `تم حجز ${Number(order.amount_usdt)} USDT لصالح الطلب.`,
+          `${Number(order.amount_usdt)} USDT locked for this order.`,
+        ),
         tone: "primary",
       });
     if (rawFiles.length)
       items.push({
         at: order.updated_at,
         title: tr("رفع مسودات ومرفقات العمل", "Work drafts uploaded"),
-        detail: tr(`${rawFiles.length} ملف/رابط داخل خزنة التسليمات.`, `${rawFiles.length} file(s) in the deliverables vault.`),
+        detail: tr(
+          `${rawFiles.length} ملف/رابط داخل خزنة التسليمات.`,
+          `${rawFiles.length} file(s) in the deliverables vault.`,
+        ),
         tone: "accent",
       });
     if (extStatus !== "none")
       items.push({
         at: null,
-        title: tr(`طلب تمديد الموعد +${extHours} ساعة`, `Deadline extension requested +${extHours}h`),
+        title: tr(
+          `طلب تمديد الموعد +${extHours} ساعة`,
+          `Deadline extension requested +${extHours}h`,
+        ),
         detail:
           extStatus === "approved"
-            ? tr("تمت الموافقة من المشتري وتم تأجيل الإطلاق التلقائي.", "Approved by the buyer; auto-release postponed.")
+            ? tr(
+                "تمت الموافقة من المشتري وتم تأجيل الإطلاق التلقائي.",
+                "Approved by the buyer; auto-release postponed.",
+              )
             : tr("بانتظار موافقة المشتري.", "Awaiting buyer approval."),
         tone: extStatus === "approved" ? "primary" : "accent",
       });
@@ -477,35 +545,47 @@ function Workspace() {
       items.push({
         at: order.delivered_at,
         title: tr("تسليم العمل النهائي", "Final delivery submitted"),
-        detail: tr("أصبحت الملفات النهائية متاحة للمشتري للاعتماد.", "Final assets released to the buyer for approval."),
+        detail: tr(
+          "أصبحت الملفات النهائية متاحة للمشتري للاعتماد.",
+          "Final assets released to the buyer for approval.",
+        ),
         tone: "accent",
       });
     if (order.auto_release_at && order.status === "delivered")
       items.push({
         at: order.auto_release_at,
         title: tr("فك حجز الضمان التلقائي المُجدوَل", "Scheduled automatic escrow release"),
-        detail: tr("يُحرَّر المبلغ للبائع تلقائياً ما لم يُفتح نزاع.", "Funds auto-release to the seller unless a dispute is opened."),
+        detail: tr(
+          "يُحرَّر المبلغ للبائع تلقائياً ما لم يُفتح نزاع.",
+          "Funds auto-release to the seller unless a dispute is opened.",
+        ),
         tone: "muted",
       });
     if (order.status === "disputed")
       items.push({
         at: order.updated_at,
         title: tr("فتح نزاع رسمي للتحكيم", "Formal dispute opened"),
-        detail: tr("جارٍ مراجعة الأدلة بواسطة وكيل الذكاء الاصطناعي.", "Evidence under review by the AI arbitration agent."),
+        detail: tr(
+          "جارٍ مراجعة الأدلة بواسطة وكيل الذكاء الاصطناعي.",
+          "Evidence under review by the AI arbitration agent.",
+        ),
         tone: "danger",
       });
     if (order.completed_at)
       items.push({
         at: order.completed_at,
         title: tr("اعتماد التسليم وتحرير الضمان", "Delivery approved & escrow released"),
-        detail: tr("اكتمل الطلب وتم تحويل المبلغ لمحفظة البائع.", "Order completed and funds transferred to the seller wallet."),
+        detail: tr(
+          "اكتمل الطلب وتم تحويل المبلغ لمحفظة البائع.",
+          "Order completed and funds transferred to the seller wallet.",
+        ),
         tone: "primary",
       });
     return items;
   }, [order, rawFiles.length, extStatus, extHours, tr]);
 
-
-  const evidenceUploaded = evidence.length > 0 && evidence.every((n) => (evidenceProgress[n] ?? 100) >= 100);
+  const evidenceUploaded =
+    evidence.length > 0 && evidence.every((n) => (evidenceProgress[n] ?? 100) >= 100);
 
   function send() {
     const text = draft.trim();
@@ -529,19 +609,33 @@ function Workspace() {
         .catch(() => {
           setAiReplies((prev) => [
             ...prev,
-            { id: `${Date.now()}`, text: tr("تعذّر الوصول للمساعد الذكي حالياً.", "The AI assistant is unavailable right now.") },
+            {
+              id: `${Date.now()}`,
+              text: tr(
+                "تعذّر الوصول للمساعد الذكي حالياً.",
+                "The AI assistant is unavailable right now.",
+              ),
+            },
           ]);
         })
         .finally(() => setAiBusy(false));
     }
   }
 
-
   const openDispute = useMutation({
     mutationFn: async () => {
       if (!order) throw new Error(tr("اختر طلباً أولاً", "Select an order first"));
-      if (reason.trim().length < 50) throw new Error(tr("اكتب سبب النزاع بما لا يقل عن 50 حرفاً", "Describe the dispute in at least 50 characters"));
-      if (evidence.length === 0) throw new Error(tr("أرفق دليلاً واحداً على الأقل", "Attach at least one piece of evidence"));
+      if (reason.trim().length < 50)
+        throw new Error(
+          tr(
+            "اكتب سبب النزاع بما لا يقل عن 50 حرفاً",
+            "Describe the dispute in at least 50 characters",
+          ),
+        );
+      if (evidence.length === 0)
+        throw new Error(
+          tr("أرفق دليلاً واحداً على الأقل", "Attach at least one piece of evidence"),
+        );
       const against = order.buyer_id === user!.id ? order.seller_id : order.buyer_id;
       const { error } = await supabase.from("dispute_cases").insert({
         order_id: order.id,
@@ -556,7 +650,12 @@ function Workspace() {
     onSuccess: () => {
       setReason("");
       setEvidence([]);
-      setDisputeMsg(tr("تم فتح النزاع وسيراجعه وكيل الذكاء الاصطناعي.", "Dispute opened; the AI agent will review it."));
+      setDisputeMsg(
+        tr(
+          "تم فتح النزاع وسيراجعه وكيل الذكاء الاصطناعي.",
+          "Dispute opened; the AI agent will review it.",
+        ),
+      );
       qc.invalidateQueries({ queryKey: ["disputes"] });
     },
     onError: (e: Error) => setDisputeMsg(e.message),
@@ -564,8 +663,19 @@ function Workspace() {
 
   return (
     <Section
-      title={order ? tr(`مساحة عمل الطلب #MJ-${order.order_number}`, `Order workspace #MJ-${order.order_number}`) : tr("مساحة عمل الطلب", "Order workspace")}
-      subtitle={order ? `${order.title} · ${Number(order.amount_usdt)} USDT · ${statusLabel(order.status, tr)}` : tr("لا توجد طلبات بعد", "No orders yet")}
+      title={
+        order
+          ? tr(
+              `مساحة عمل الطلب #MJ-${order.order_number}`,
+              `Order workspace #MJ-${order.order_number}`,
+            )
+          : tr("مساحة عمل الطلب", "Order workspace")
+      }
+      subtitle={
+        order
+          ? `${order.title} · ${Number(order.amount_usdt)} USDT · ${statusLabel(order.status, tr)}`
+          : tr("لا توجد طلبات بعد", "No orders yet")
+      }
       action={
         <div className="flex flex-wrap gap-2">
           <button className="inline-flex items-center gap-2 rounded-xl border border-accent/50 bg-accent/10 px-4 py-2 text-sm font-semibold text-accent">
@@ -576,10 +686,15 @@ function Workspace() {
             onClick={() => setExtOpen(true)}
             className="inline-flex items-center gap-2 rounded-xl border border-border px-4 py-2 text-sm font-semibold"
           >
-            <CalendarClock className="size-4" /> {tr("طلب تمديد مهلة التسليم", "Request deadline extension")}
+            <CalendarClock className="size-4" />{" "}
+            {tr("طلب تمديد مهلة التسليم", "Request deadline extension")}
             {extStatus !== "none" && (
-              <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${extStatus === "approved" ? "bg-primary/15 text-primary" : "bg-accent/15 text-accent"}`}>
-                {extStatus === "approved" ? tr("تمت الموافقة", "Approved") : tr("قيد الانتظار", "Pending")}
+              <span
+                className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${extStatus === "approved" ? "bg-primary/15 text-primary" : "bg-accent/15 text-accent"}`}
+              >
+                {extStatus === "approved"
+                  ? tr("تمت الموافقة", "Approved")
+                  : tr("قيد الانتظار", "Pending")}
               </span>
             )}
           </button>
@@ -589,7 +704,8 @@ function Workspace() {
             onClick={() => setReviewOpen(true)}
             className="inline-flex items-center gap-2 rounded-xl border border-border px-4 py-2 text-sm font-semibold"
           >
-            <Star className="size-4 text-accent" /> {tr("تقييم الطرف الآخر", "Review the other party")}
+            <Star className="size-4 text-accent" />{" "}
+            {tr("تقييم الطرف الآخر", "Review the other party")}
           </button>
 
           <button
@@ -597,7 +713,8 @@ function Workspace() {
             onClick={() => setTab("dispute")}
             className="inline-flex items-center gap-2 rounded-xl border border-destructive/50 bg-destructive/10 px-4 py-2 text-sm font-semibold text-destructive"
           >
-            <AlertTriangle className="size-4" /> {tr("فتح نزاع رسمي للتحكيم ⚖️", "Open formal arbitration ⚖️")}
+            <AlertTriangle className="size-4" />{" "}
+            {tr("فتح نزاع رسمي للتحكيم ⚖️", "Open formal arbitration ⚖️")}
           </button>
         </div>
       }
@@ -660,9 +777,11 @@ function Workspace() {
               </div>
               <div className="flex-1 space-y-3 overflow-y-auto py-4">
                 {messages.length === 0 && (
-
                   <p className="py-10 text-center text-sm text-muted-foreground">
-                    {tr("ابدأ المحادثة مع الطرف الآخر.", "Start the conversation with the other party.")}
+                    {tr(
+                      "ابدأ المحادثة مع الطرف الآخر.",
+                      "Start the conversation with the other party.",
+                    )}
                   </p>
                 )}
                 {messages.map((m) => {
@@ -672,9 +791,17 @@ function Workspace() {
                   const shown = cachedTx && !original ? cachedTx.text : m.text;
                   const isEditing = editing?.id === m.id;
                   return (
-                    <div key={m.id} className={`flex ${m.from === "them" ? "justify-start" : "justify-end"}`}>
-                      <div className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm sm:max-w-[75%] ${m.from === "them" ? "bg-secondary" : "bg-primary text-primary-foreground"}`}>
-                        <p className="mb-1 text-xs opacity-70">{m.name} · {m.time}{(m.rev ?? 0) > 0 && ` · ${tr("مُعدَّلة", "edited")}`}</p>
+                    <div
+                      key={m.id}
+                      className={`flex ${m.from === "them" ? "justify-start" : "justify-end"}`}
+                    >
+                      <div
+                        className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm sm:max-w-[75%] ${m.from === "them" ? "bg-secondary" : "bg-primary text-primary-foreground"}`}
+                      >
+                        <p className="mb-1 text-xs opacity-70">
+                          {m.name} · {m.time}
+                          {(m.rev ?? 0) > 0 && ` · ${tr("مُعدَّلة", "edited")}`}
+                        </p>
                         {isEditing ? (
                           <div className="grid gap-2">
                             <textarea
@@ -698,7 +825,11 @@ function Workspace() {
                               >
                                 {tr("حفظ وإعادة الترجمة", "Save & re-translate")}
                               </button>
-                              <button type="button" onClick={() => setEditing(null)} className="rounded-lg border border-current/40 px-2.5 py-1 text-[10px] font-bold">
+                              <button
+                                type="button"
+                                onClick={() => setEditing(null)}
+                                className="rounded-lg border border-current/40 px-2.5 py-1 text-[10px] font-bold"
+                              >
                                 {tr("إلغاء", "Cancel")}
                               </button>
                             </div>
@@ -709,7 +840,11 @@ function Workspace() {
                             onClick={() => {
                               void vaultUrl(m.attachmentPath!)
                                 .then((url) => window.open(url, "_blank", "noopener"))
-                                .catch(() => toast.error(tr("تعذّر فتح المرفق", "Could not open the attachment")));
+                                .catch(() =>
+                                  toast.error(
+                                    tr("تعذّر فتح المرفق", "Could not open the attachment"),
+                                  ),
+                                );
                             }}
                             className="flex w-full items-center gap-2 rounded-xl border border-current/30 bg-background/20 px-3 py-2 text-start text-xs font-bold"
                           >
@@ -718,7 +853,16 @@ function Workspace() {
                             <FileDown className="size-4 shrink-0" />
                           </button>
                         ) : (
-                          <p className="break-words" dir={translate && foreign && !original ? (lang === "ar" ? "rtl" : "ltr") : "auto"}>
+                          <p
+                            className="break-words"
+                            dir={
+                              translate && foreign && !original
+                                ? lang === "ar"
+                                  ? "rtl"
+                                  : "ltr"
+                                : "auto"
+                            }
+                          >
                             {shown}
                           </p>
                         )}
@@ -735,9 +879,12 @@ function Workspace() {
                           <div className="mt-2 grid gap-1 border-t border-current/15 pt-2">
                             {!original && (
                               <span className="inline-flex flex-wrap items-center gap-1 text-[10px] font-bold text-accent">
-                                <Sparkles className="size-3" /> {tr("مترجم بواسطة الذكاء الاصطناعي", "Translated by AI")}
+                                <Sparkles className="size-3" />{" "}
+                                {tr("مترجم بواسطة الذكاء الاصطناعي", "Translated by AI")}
                                 {cachedTx?.cached && (
-                                  <span className="opacity-70">· {tr("⚡ من الذاكرة المؤقتة", "⚡ cached")}</span>
+                                  <span className="opacity-70">
+                                    · {tr("⚡ من الذاكرة المؤقتة", "⚡ cached")}
+                                  </span>
                                 )}
                               </span>
                             )}
@@ -745,11 +892,15 @@ function Workspace() {
                               <button
                                 type="button"
                                 onClick={() =>
-                                  setShowOriginal((s) => (s.includes(m.id) ? s.filter((x) => x !== m.id) : [...s, m.id]))
+                                  setShowOriginal((s) =>
+                                    s.includes(m.id) ? s.filter((x) => x !== m.id) : [...s, m.id],
+                                  )
                                 }
                                 className="text-start text-[10px] font-bold underline underline-offset-2 opacity-80"
                               >
-                                {original ? tr("عرض الترجمة", "Show translation") : tr("عرض النص الأصلي / Show Original", "Show original")}
+                                {original
+                                  ? tr("عرض الترجمة", "Show translation")
+                                  : tr("عرض النص الأصلي / Show Original", "Show original")}
                               </button>
                               <button
                                 type="button"
@@ -759,7 +910,10 @@ function Workspace() {
                                 }}
                                 className="text-start text-[10px] font-bold underline underline-offset-2 opacity-80"
                               >
-                                {tr("إعادة الترجمة (تحديث الذاكرة)", "Re-translate (refresh cache)")}
+                                {tr(
+                                  "إعادة الترجمة (تحديث الذاكرة)",
+                                  "Re-translate (refresh cache)",
+                                )}
                               </button>
                             </div>
                           </div>
@@ -772,31 +926,43 @@ function Workspace() {
                   <div key={r.id} className="flex justify-start">
                     <div className="max-w-[85%] rounded-2xl border border-accent/40 bg-accent/10 px-4 py-3 text-sm sm:max-w-[75%]">
                       <p className="mb-1 flex items-center gap-1 text-xs font-bold text-accent">
-                        <Sparkles className="size-3" /> {tr("مساعد المُنجِز الذكي", "Munjaz AI assistant")}
+                        <Sparkles className="size-3" />{" "}
+                        {tr("مساعد المُنجِز الذكي", "Munjaz AI assistant")}
                       </p>
                       <p className="break-words whitespace-pre-wrap">{r.text}</p>
                     </div>
                   </div>
                 ))}
                 {aiBusy && (
-                  <p className="text-xs text-muted-foreground">{tr("المساعد الذكي يكتب…", "AI assistant is typing…")}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {tr("المساعد الذكي يكتب…", "AI assistant is typing…")}
+                  </p>
                 )}
               </div>
 
-
               {translate && (
                 <p className="mb-2 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg border border-border bg-surface/60 px-3 py-2 text-[10px] text-muted-foreground">
-                  <span className="font-bold text-foreground">{tr("مطابقة أرصدة الترجمة", "Translation credit reconciliation")}</span>
-                  <span>{tr("طلبات مُحتسبة", "Billed calls")}: <span className="font-bold text-accent">{txMap.billed}</span></span>
-                  <span>{tr("من الذاكرة المؤقتة (مجانية)", "Served from cache (free)")}: <span className="font-bold text-primary">{txMap.cached}</span></span>
+                  <span className="font-bold text-foreground">
+                    {tr("مطابقة أرصدة الترجمة", "Translation credit reconciliation")}
+                  </span>
+                  <span>
+                    {tr("طلبات مُحتسبة", "Billed calls")}:{" "}
+                    <span className="font-bold text-accent">{txMap.billed}</span>
+                  </span>
+                  <span>
+                    {tr("من الذاكرة المؤقتة (مجانية)", "Served from cache (free)")}:{" "}
+                    <span className="font-bold text-primary">{txMap.cached}</span>
+                  </span>
                 </p>
               )}
 
-
-
               {warning && (
                 <p className="mb-2 flex items-center gap-2 rounded-lg border border-destructive/50 bg-destructive/10 px-3 py-2 text-xs text-destructive">
-                  <ShieldAlert className="size-4" /> {tr("تم حظر الرسالة: محاولة تبادل وسائل تواصل خارجية.", "Message blocked: attempt to exchange external contact info.")}
+                  <ShieldAlert className="size-4" />{" "}
+                  {tr(
+                    "تم حظر الرسالة: محاولة تبادل وسائل تواصل خارجية.",
+                    "Message blocked: attempt to exchange external contact info.",
+                  )}
                 </p>
               )}
 
@@ -814,7 +980,11 @@ function Workspace() {
                   className="grid size-9 shrink-0 place-items-center rounded-lg border border-border text-muted-foreground disabled:opacity-50"
                   aria-label={tr("إرفاق ملف", "Attach file")}
                 >
-                  {sendAttachment.isPending ? <Loader2 className="size-4 animate-spin" /> : <Paperclip className="size-4" />}
+                  {sendAttachment.isPending ? (
+                    <Loader2 className="size-4 animate-spin" />
+                  ) : (
+                    <Paperclip className="size-4" />
+                  )}
                 </button>
                 <input
                   value={draft}
@@ -827,7 +997,11 @@ function Workspace() {
 
                   className="flex-1 rounded-lg border border-input bg-surface px-3 py-2 text-sm outline-none focus:border-primary"
                 />
-                <button onClick={send} className="grid size-9 place-items-center rounded-lg bg-primary text-primary-foreground" aria-label={tr("إرسال", "Send")}>
+                <button
+                  onClick={send}
+                  className="grid size-9 place-items-center rounded-lg bg-primary text-primary-foreground"
+                  aria-label={tr("إرسال", "Send")}
+                >
                   <Send className="size-4" />
                 </button>
               </div>
@@ -838,8 +1012,15 @@ function Workspace() {
             <div className="flex-1 py-4">
               <div className="grid place-items-center rounded-xl border border-dashed border-border p-10 text-center">
                 <FileUp className="size-8 text-primary" />
-                <p className="mt-3 font-semibold">{tr("اسحب ملفات التسليم هنا", "Drag deliverable files here")}</p>
-                <p className="text-xs text-muted-foreground">{tr("حتى 2GB لكل ملف · تُفتح للمشتري بعد اعتماد المرحلة", "Up to 2GB per file · unlocked for the buyer after milestone approval")}</p>
+                <p className="mt-3 font-semibold">
+                  {tr("اسحب ملفات التسليم هنا", "Drag deliverable files here")}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {tr(
+                    "حتى 2GB لكل ملف · تُفتح للمشتري بعد اعتماد المرحلة",
+                    "Up to 2GB per file · unlocked for the buyer after milestone approval",
+                  )}
+                </p>
               </div>
               {order && order.seller_id === user?.id && (
                 <div className="mt-4 grid gap-2">
@@ -879,14 +1060,20 @@ function Workspace() {
                     <input
                       value={deliverable}
                       onChange={(e) => setDeliverable(e.target.value)}
-                      placeholder={tr("رابط أو وصف التسليم (Drive, Figma, ...)", "Deliverable link or description (Drive, Figma, ...)")}
+                      placeholder={tr(
+                        "رابط أو وصف التسليم (Drive, Figma, ...)",
+                        "Deliverable link or description (Drive, Figma, ...)",
+                      )}
                       className="flex-1 rounded-lg border border-input bg-surface px-3 py-2 text-sm outline-none focus:border-primary"
                     />
                     <button
                       onClick={() => {
                         const v = deliverable.trim();
                         if (!v) return;
-                        linkDeliverable.mutate({ link: v, isFinal: false }, { onSuccess: () => setDeliverable("") });
+                        linkDeliverable.mutate(
+                          { link: v, isFinal: false },
+                          { onSuccess: () => setDeliverable("") },
+                        );
                       }}
                       disabled={linkDeliverable.isPending}
                       className="rounded-lg bg-primary px-4 py-2 text-sm font-bold text-primary-foreground disabled:opacity-50"
@@ -897,16 +1084,32 @@ function Workspace() {
                 </div>
               )}
               {rawFiles.length === 0 && (
-                <p className="mt-4 text-xs text-muted-foreground">{tr("لا توجد ملفات بعد.", "No files yet.")}</p>
+                <p className="mt-4 text-xs text-muted-foreground">
+                  {tr("لا توجد ملفات بعد.", "No files yet.")}
+                </p>
               )}
 
               {[
-                { key: "drafts" as const, items: drafts, title: tr("مسودات للمراجعة (Drafts)", "Drafts for review"), tone: "accent" },
-                { key: "final" as const, items: finals, title: tr("التسليم النهائي المعتمد (Final Assets)", "Approved final assets"), tone: "primary" },
+                {
+                  key: "drafts" as const,
+                  items: drafts,
+                  title: tr("مسودات للمراجعة (Drafts)", "Drafts for review"),
+                  tone: "accent",
+                },
+                {
+                  key: "final" as const,
+                  items: finals,
+                  title: tr("التسليم النهائي المعتمد (Final Assets)", "Approved final assets"),
+                  tone: "primary",
+                },
               ].map((group) =>
                 group.items.length === 0 ? null : (
                   <div key={group.key} className="mt-5">
-                    <h4 className={`text-xs font-black ${group.tone === "primary" ? "text-primary" : "text-accent"}`}>{group.title}</h4>
+                    <h4
+                      className={`text-xs font-black ${group.tone === "primary" ? "text-primary" : "text-accent"}`}
+                    >
+                      {group.title}
+                    </h4>
                     <div className="mt-2 grid gap-2">
                       {group.items.map((f) => {
                         const sha = (f.checksum ?? "").slice(0, 16);
@@ -914,7 +1117,10 @@ function Workspace() {
                         const url = signedUrls[f.id];
                         const state = f.approval_state as "pending" | "revision" | "approved";
                         return (
-                          <div key={f.id} className={`grid gap-2 rounded-xl border px-3 py-3 ${group.tone === "primary" ? "border-primary/40 bg-primary/5" : "border-border"}`}>
+                          <div
+                            key={f.id}
+                            className={`grid gap-2 rounded-xl border px-3 py-3 ${group.tone === "primary" ? "border-primary/40 bg-primary/5" : "border-border"}`}
+                          >
                             <p className="text-sm font-semibold break-all">{f.file_name}</p>
                             {group.key === "final" ? (
                               <SecureDownload
@@ -935,56 +1141,89 @@ function Workspace() {
                                 }}
                               />
                             ) : (
-                            <div className="flex flex-wrap items-center gap-2">
-                              <a
-                                href={url}
-                                target="_blank"
-                                rel="noreferrer noopener"
-                                className="peer inline-flex items-center gap-1 rounded-lg border border-primary/50 bg-primary/10 px-3 py-1.5 text-[11px] font-bold text-primary"
-                              >
-                                <FileDown className="size-3" /> {tr("تنزيل الملف", "Download file")}
-                              </a>
-                              <span className="hidden items-center gap-1 rounded-lg border border-primary/40 px-2 py-1 text-[10px] font-bold text-primary peer-hover:inline-flex peer-focus:inline-flex">
-                                <ShieldCheck className="size-3" /> {tr("تم فحص الملف: التوقيع مطابق وخالٍ من البرمجيات الخبيثة", "Integrity checked: signature matches, no malware")}
-                              </span>
-                            </div>
+                              <div className="flex flex-wrap items-center gap-2">
+                                <a
+                                  href={url}
+                                  target="_blank"
+                                  rel="noreferrer noopener"
+                                  className="peer inline-flex items-center gap-1 rounded-lg border border-primary/50 bg-primary/10 px-3 py-1.5 text-[11px] font-bold text-primary"
+                                >
+                                  <FileDown className="size-3" />{" "}
+                                  {tr("تنزيل الملف", "Download file")}
+                                </a>
+                                <span className="hidden items-center gap-1 rounded-lg border border-primary/40 px-2 py-1 text-[10px] font-bold text-primary peer-hover:inline-flex peer-focus:inline-flex">
+                                  <ShieldCheck className="size-3" />{" "}
+                                  {tr(
+                                    "تم فحص الملف: التوقيع مطابق وخالٍ من البرمجيات الخبيثة",
+                                    "Integrity checked: signature matches, no malware",
+                                  )}
+                                </span>
+                              </div>
                             )}
 
-
                             <div className="flex flex-wrap items-center gap-1.5 text-[10px]">
-                              <span className="rounded-full border border-border px-2 py-0.5 font-mono text-muted-foreground" dir="ltr">{f.mime_type}</span>
-                              <span className="rounded-full border border-border px-2 py-0.5 font-mono text-muted-foreground" dir="ltr">{sizeMb} MB</span>
+                              <span
+                                className="rounded-full border border-border px-2 py-0.5 font-mono text-muted-foreground"
+                                dir="ltr"
+                              >
+                                {f.mime_type}
+                              </span>
+                              <span
+                                className="rounded-full border border-border px-2 py-0.5 font-mono text-muted-foreground"
+                                dir="ltr"
+                              >
+                                {sizeMb} MB
+                              </span>
                               {sha && (
-                                <span className="max-w-full truncate rounded-full border border-border px-2 py-0.5 font-mono text-muted-foreground" dir="ltr">SHA-256 {sha}…</span>
+                                <span
+                                  className="max-w-full truncate rounded-full border border-border px-2 py-0.5 font-mono text-muted-foreground"
+                                  dir="ltr"
+                                >
+                                  SHA-256 {sha}…
+                                </span>
                               )}
                               {sha && (
                                 <span className="inline-flex items-center gap-1 rounded-full border border-primary/50 bg-primary/10 px-2 py-0.5 font-bold text-primary">
-                                  <Lock className="size-3" /> SHA-256 {tr("موثّق 🔒", "Verified 🔒")}
+                                  <Lock className="size-3" /> SHA-256{" "}
+                                  {tr("موثّق 🔒", "Verified 🔒")}
                                 </span>
                               )}
                               <span className="inline-flex items-center gap-1 rounded-full border border-primary/50 bg-primary/10 px-2 py-0.5 font-bold text-primary">
-                                <ShieldCheck className="size-3" /> {tr("خالٍ من الفيروسات والبرمجيات الخبيثة ✅", "Malware & virus free ✅")}
+                                <ShieldCheck className="size-3" />{" "}
+                                {tr(
+                                  "خالٍ من الفيروسات والبرمجيات الخبيثة ✅",
+                                  "Malware & virus free ✅",
+                                )}
                               </span>
                             </div>
                             {group.key === "drafts" && order?.buyer_id === user?.id && (
                               <div className="flex flex-wrap gap-2">
                                 <button
                                   type="button"
-                                  onClick={() => setApproval.mutate({ id: f.id, state: "revision" })}
+                                  onClick={() =>
+                                    setApproval.mutate({ id: f.id, state: "revision" })
+                                  }
                                   className="rounded-lg border border-accent/50 bg-accent/10 px-3 py-1.5 text-[11px] font-bold text-accent"
                                 >
                                   {tr("طلب تعديل على المسودة", "Request draft revision")}
                                 </button>
                                 <button
                                   type="button"
-                                  onClick={() => setApproval.mutate({ id: f.id, state: "approved" })}
+                                  onClick={() =>
+                                    setApproval.mutate({ id: f.id, state: "approved" })
+                                  }
                                   className="inline-flex items-center gap-1 rounded-lg bg-primary px-3 py-1.5 text-[11px] font-bold text-primary-foreground"
                                 >
-                                  <FileCheck2 className="size-3" /> {tr("اعتماد المسودة والمتابعة", "Approve draft & continue")}
+                                  <FileCheck2 className="size-3" />{" "}
+                                  {tr("اعتماد المسودة والمتابعة", "Approve draft & continue")}
                                 </button>
                                 {state !== "pending" && (
-                                  <span className={`inline-flex items-center rounded-full px-2 py-1 text-[10px] font-bold ${state === "approved" ? "bg-primary/15 text-primary" : "bg-accent/15 text-accent"}`}>
-                                    {state === "approved" ? tr("معتمدة", "Approved") : tr("طلب تعديل مُرسل", "Revision requested")}
+                                  <span
+                                    className={`inline-flex items-center rounded-full px-2 py-1 text-[10px] font-bold ${state === "approved" ? "bg-primary/15 text-primary" : "bg-accent/15 text-accent"}`}
+                                  >
+                                    {state === "approved"
+                                      ? tr("معتمدة", "Approved")
+                                      : tr("طلب تعديل مُرسل", "Revision requested")}
                                   </span>
                                 )}
                               </div>
@@ -996,7 +1235,6 @@ function Workspace() {
                   </div>
                 ),
               )}
-
             </div>
           )}
 
@@ -1004,7 +1242,8 @@ function Workspace() {
             <div ref={timelineRef} className="flex-1 py-4">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <h3 className="flex items-center gap-2 text-sm font-black">
-                  <History className="size-4 text-primary" /> {tr("السجل الزمني للطلب (Audit Timeline)", "Order audit timeline")}
+                  <History className="size-4 text-primary" />{" "}
+                  {tr("السجل الزمني للطلب (Audit Timeline)", "Order audit timeline")}
                 </h3>
                 <button
                   type="button"
@@ -1016,7 +1255,11 @@ function Workspace() {
                       const hash = await downloadElementPdf(
                         timelineRef.current,
                         `munjaz-audit-log-${order ? `MJ-${order.order_number}` : "order"}.pdf`,
-                        { docType: "AUDIT LOG", reference: order ? `MJ-${order.order_number}` : "order", userId: user?.id ?? null },
+                        {
+                          docType: "AUDIT LOG",
+                          reference: order ? `MJ-${order.order_number}` : "order",
+                          userId: user?.id ?? null,
+                        },
                       );
                       setLogHash(hash ?? null);
                     } finally {
@@ -1027,28 +1270,47 @@ function Workspace() {
                   className="pdf-hide inline-flex shrink-0 items-center gap-2 rounded-lg border border-primary/50 bg-primary/10 px-3 py-1.5 text-[11px] font-bold text-primary disabled:opacity-50"
                 >
                   <FileDown className="size-3.5" />
-                  {exportingLog ? tr("جارٍ التصدير...", "Exporting...") : tr("تصدير السجل الزمني PDF 📄", "Export timeline PDF 📄")}
+                  {exportingLog
+                    ? tr("جارٍ التصدير...", "Exporting...")
+                    : tr("تصدير السجل الزمني PDF 📄", "Export timeline PDF 📄")}
                 </button>
               </div>
               <p className="mt-1 text-xs text-muted-foreground">
-                {tr("سجل غير قابل للتعديل لكل حدث مالي أو تعاقدي على الطلب.", "An immutable log of every financial and contractual event on this order.")}
+                {tr(
+                  "سجل غير قابل للتعديل لكل حدث مالي أو تعاقدي على الطلب.",
+                  "An immutable log of every financial and contractual event on this order.",
+                )}
               </p>
               {logHash && (
                 <p className="pdf-hide mt-2 break-all rounded-lg border border-primary/40 bg-primary/10 px-3 py-2 text-[10px] font-bold text-primary">
-                  ✅ {tr("تم ختم المستند رقمياً · بصمة التحقق:", "Document digitally sealed · verification hash:")}{" "}
-                  <span dir="ltr" className="font-mono">{logHash}</span>
+                  ✅{" "}
+                  {tr(
+                    "تم ختم المستند رقمياً · بصمة التحقق:",
+                    "Document digitally sealed · verification hash:",
+                  )}{" "}
+                  <span dir="ltr" className="font-mono">
+                    {logHash}
+                  </span>
                 </p>
               )}
 
               {timeline.length === 0 ? (
-                <p className="mt-6 text-xs text-muted-foreground">{tr("اختر طلباً لعرض سجله الزمني.", "Select an order to view its timeline.")}</p>
+                <p className="mt-6 text-xs text-muted-foreground">
+                  {tr("اختر طلباً لعرض سجله الزمني.", "Select an order to view its timeline.")}
+                </p>
               ) : (
                 <ol className="mt-4 grid gap-3 border-s border-border ps-4">
                   {timeline.map((ev, i) => (
                     <li key={i} className="relative">
                       <span
                         className={`absolute -start-[22px] top-1.5 size-2.5 rounded-full ${
-                          ev.tone === "primary" ? "bg-primary" : ev.tone === "accent" ? "bg-accent" : ev.tone === "danger" ? "bg-destructive" : "bg-muted-foreground"
+                          ev.tone === "primary"
+                            ? "bg-primary"
+                            : ev.tone === "accent"
+                              ? "bg-accent"
+                              : ev.tone === "danger"
+                                ? "bg-destructive"
+                                : "bg-muted-foreground"
                         }`}
                       />
                       <div className="rounded-xl border border-border px-3 py-2.5">
@@ -1068,9 +1330,15 @@ function Workspace() {
           {tab === "dispute" && (
             <div className="flex-1 py-4">
               <div className="rounded-xl border border-destructive/40 bg-destructive/10 p-4">
-                <p className="flex items-center gap-2 font-bold text-destructive"><AlertTriangle className="size-4" /> {tr("فتح نزاع رسمي للتحكيم ⚖️", "Open a formal arbitration dispute ⚖️")}</p>
+                <p className="flex items-center gap-2 font-bold text-destructive">
+                  <AlertTriangle className="size-4" />{" "}
+                  {tr("فتح نزاع رسمي للتحكيم ⚖️", "Open a formal arbitration dispute ⚖️")}
+                </p>
                 <p className="mt-2 text-sm text-muted-foreground">
-                  {tr("سيراجع وكيل الذكاء الاصطناعي نطاق العمل والمحادثة وملفات التسليم ويصدر حكماً أولياً خلال دقائق، مع إمكانية التصعيد البشري.", "An AI agent will review the scope, chat history, and deliverables, and issue a preliminary ruling within minutes, with the option to escalate to a human.")}
+                  {tr(
+                    "سيراجع وكيل الذكاء الاصطناعي نطاق العمل والمحادثة وملفات التسليم ويصدر حكماً أولياً خلال دقائق، مع إمكانية التصعيد البشري.",
+                    "An AI agent will review the scope, chat history, and deliverables, and issue a preliminary ruling within minutes, with the option to escalate to a human.",
+                  )}
                 </p>
               </div>
 
@@ -1085,16 +1353,24 @@ function Workspace() {
                   </p>
                   <p className="text-muted-foreground">
                     {tr("سبب النزاع المتاح حصراً:", "Only this dispute reason is available:")}{" "}
-                    <span className="font-bold text-foreground">{tr("ملف تالف أو غير مطابق للوصف", "Corrupt file or not as described")}</span>
+                    <span className="font-bold text-foreground">
+                      {tr("ملف تالف أو غير مطابق للوصف", "Corrupt file or not as described")}
+                    </span>
                   </p>
                 </div>
               )}
 
               <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                {([
-                  { key: "general" as const, label: tr("نزاع عام على التنفيذ", "General delivery dispute") },
-                  { key: "corrupt" as const, label: tr("ملف تالف أو غير مطابق للوصف", "Corrupt file / not as described") },
-                ]).map((c) => {
+                {[
+                  {
+                    key: "general" as const,
+                    label: tr("نزاع عام على التنفيذ", "General delivery dispute"),
+                  },
+                  {
+                    key: "corrupt" as const,
+                    label: tr("ملف تالف أو غير مطابق للوصف", "Corrupt file / not as described"),
+                  },
+                ].map((c) => {
                   const disabled = assetLocked && c.key === "general";
                   return (
                     <button
@@ -1104,7 +1380,9 @@ function Workspace() {
                       onClick={() => setDisputeCategory(c.key)}
                       aria-pressed={disputeCategory === c.key}
                       className={`min-w-0 rounded-xl border px-3 py-2 text-xs font-bold transition-colors ${
-                        disputeCategory === c.key ? "border-destructive bg-destructive/15 text-destructive" : "border-border text-muted-foreground"
+                        disputeCategory === c.key
+                          ? "border-destructive bg-destructive/15 text-destructive"
+                          : "border-border text-muted-foreground"
                       } ${disabled ? "cursor-not-allowed opacity-40" : ""}`}
                     >
                       {c.label} {disabled && "🔒"}
@@ -1113,14 +1391,26 @@ function Workspace() {
                 })}
               </div>
 
-              <textarea value={reason} onChange={(e) => setReason(e.target.value)} rows={5} placeholder={tr("اشرح سبب النزاع بالتفصيل (50 حرفاً على الأقل)...", "Explain the dispute in detail (minimum 50 characters)...")} className="mt-4 w-full rounded-xl border border-input bg-surface p-3 text-sm outline-none focus:border-primary" />
-              <p className={`mt-1 text-[11px] ${reason.trim().length >= 50 ? "text-primary" : "text-muted-foreground"}`}>
+              <textarea
+                value={reason}
+                onChange={(e) => setReason(e.target.value)}
+                rows={5}
+                placeholder={tr(
+                  "اشرح سبب النزاع بالتفصيل (50 حرفاً على الأقل)...",
+                  "Explain the dispute in detail (minimum 50 characters)...",
+                )}
+                className="mt-4 w-full rounded-xl border border-input bg-surface p-3 text-sm outline-none focus:border-primary"
+              />
+              <p
+                className={`mt-1 text-[11px] ${reason.trim().length >= 50 ? "text-primary" : "text-muted-foreground"}`}
+              >
                 {reason.trim().length}/50 {tr("حرفاً", "characters")}
               </p>
 
               <div className="mt-3 grid gap-2">
                 <label className="inline-flex w-fit cursor-pointer items-center gap-2 rounded-lg border border-border px-3 py-2 text-xs font-bold">
-                  <Paperclip className="size-4" /> {tr("إرفاق دليل (صورة / ملف)", "Attach evidence (image / file)")}
+                  <Paperclip className="size-4" />{" "}
+                  {tr("إرفاق دليل (صورة / ملف)", "Attach evidence (image / file)")}
                   <input
                     type="file"
                     multiple
@@ -1151,10 +1441,15 @@ function Workspace() {
                       {evidence.map((n) => {
                         const meta = fileMeta(n);
                         return (
-                          <span key={`chip-${n}`} className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-border bg-surface px-2.5 py-1 text-[10px]">
+                          <span
+                            key={`chip-${n}`}
+                            className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-border bg-surface px-2.5 py-1 text-[10px]"
+                          >
                             <Paperclip className="size-3 shrink-0 text-primary" />
                             <span className="min-w-0 truncate font-bold">{n}</span>
-                            <span className="shrink-0 font-mono text-muted-foreground" dir="ltr">{meta.sizeMb} MB</span>
+                            <span className="shrink-0 font-mono text-muted-foreground" dir="ltr">
+                              {meta.sizeMb} MB
+                            </span>
                             <button
                               type="button"
                               aria-label={tr("إزالة المرفق", "Remove attachment")}
@@ -1170,15 +1465,24 @@ function Workspace() {
                     {evidence.map((n) => {
                       const pct = evidenceProgress[n] ?? 100;
                       return (
-                        <div key={n} className="grid gap-1 rounded-lg border border-border px-3 py-2">
+                        <div
+                          key={n}
+                          className="grid gap-1 rounded-lg border border-border px-3 py-2"
+                        >
                           <div className="flex items-center justify-between gap-2 text-[10px] font-bold">
                             <span className="min-w-0 truncate">{n}</span>
-                            <span className={pct >= 100 ? "text-primary" : "text-muted-foreground"} dir="ltr">
+                            <span
+                              className={pct >= 100 ? "text-primary" : "text-muted-foreground"}
+                              dir="ltr"
+                            >
                               {pct >= 100 ? tr("تم الرفع ✅", "Uploaded ✅") : `${pct}%`}
                             </span>
                           </div>
                           <div className="h-1.5 w-full overflow-hidden rounded-full bg-secondary">
-                            <div className="h-full rounded-full bg-primary transition-all duration-200" style={{ width: `${pct}%` }} />
+                            <div
+                              className="h-full rounded-full bg-primary transition-all duration-200"
+                              style={{ width: `${pct}%` }}
+                            />
                           </div>
                         </div>
                       );
@@ -1194,22 +1498,48 @@ function Workspace() {
                         `Detailed explanation of 50+ characters (${reason.trim().length}/50)`,
                       ),
                     },
-                    { ok: evidence.length > 0, label: tr(`إرفاق دليل واحد على الأقل (${evidence.length})`, `At least one evidence attachment (${evidence.length})`) },
-                    { ok: evidenceUploaded, label: tr("اكتمال رفع جميع المرفقات", "All attachments finished uploading") },
-                    { ok: !assetLocked || disputeCategory === "corrupt", label: tr("تحديد سبب نزاع مسموح به", "A permitted dispute reason is selected") },
+                    {
+                      ok: evidence.length > 0,
+                      label: tr(
+                        `إرفاق دليل واحد على الأقل (${evidence.length})`,
+                        `At least one evidence attachment (${evidence.length})`,
+                      ),
+                    },
+                    {
+                      ok: evidenceUploaded,
+                      label: tr("اكتمال رفع جميع المرفقات", "All attachments finished uploading"),
+                    },
+                    {
+                      ok: !assetLocked || disputeCategory === "corrupt",
+                      label: tr(
+                        "تحديد سبب نزاع مسموح به",
+                        "A permitted dispute reason is selected",
+                      ),
+                    },
                   ].map((c) => (
-                    <li key={c.label} className={`flex items-center gap-2 ${c.ok ? "text-primary" : "text-muted-foreground"}`}>
-                      {c.ok ? <CheckCircle2 className="size-3.5 shrink-0" /> : <Circle className="size-3.5 shrink-0" />}
+                    <li
+                      key={c.label}
+                      className={`flex items-center gap-2 ${c.ok ? "text-primary" : "text-muted-foreground"}`}
+                    >
+                      {c.ok ? (
+                        <CheckCircle2 className="size-3.5 shrink-0" />
+                      ) : (
+                        <Circle className="size-3.5 shrink-0" />
+                      )}
                       <span className="min-w-0">{c.label}</span>
                     </li>
                   ))}
                 </ul>
-
               </div>
 
               <button
                 onClick={() => openDispute.mutate()}
-                disabled={openDispute.isPending || reason.trim().length < 50 || evidence.length === 0 || !evidenceUploaded}
+                disabled={
+                  openDispute.isPending ||
+                  reason.trim().length < 50 ||
+                  evidence.length === 0 ||
+                  !evidenceUploaded
+                }
                 className="mt-3 rounded-xl bg-destructive px-4 py-2 font-bold text-destructive-foreground disabled:opacity-50"
               >
                 {tr("فتح نزاع رسمي للتحكيم ⚖️", "Open formal arbitration ⚖️")}
@@ -1217,14 +1547,17 @@ function Workspace() {
               {disputeMsg && <p className="mt-3 text-xs text-primary">{disputeMsg}</p>}
             </div>
           )}
-
         </Card>
 
         <div className="grid content-start gap-4">
           <Card>
             <h3 className="font-bold">{tr("طلباتي", "My orders")}</h3>
             <div className="mt-3 grid gap-2 text-sm">
-              {rows.length === 0 && <p className="text-xs text-muted-foreground">{tr("لا توجد طلبات بعد.", "No orders yet.")}</p>}
+              {rows.length === 0 && (
+                <p className="text-xs text-muted-foreground">
+                  {tr("لا توجد طلبات بعد.", "No orders yet.")}
+                </p>
+              )}
               {rows.map((o) => (
                 <button
                   key={o.id}
@@ -1245,12 +1578,22 @@ function Workspace() {
               <h3 className="font-bold">{tr("سير الطلب", "Order lifecycle")}</h3>
               <ol className="mt-3 grid gap-2 text-xs">
                 {(["pending", "in_progress", "delivered", "completed"] as const).map((s) => {
-                  const idx = ["pending", "in_progress", "delivered", "completed"].indexOf(order.status);
+                  const idx = ["pending", "in_progress", "delivered", "completed"].indexOf(
+                    order.status,
+                  );
                   const here = ["pending", "in_progress", "delivered", "completed"].indexOf(s);
                   const done = idx >= here && idx >= 0;
                   return (
-                    <li key={s} className={`flex items-center gap-2 rounded-lg border px-3 py-2 ${done ? "border-primary/50 bg-primary/10 text-primary" : "border-border text-muted-foreground"}`}>
-                      {done ? <CheckCircle2 className="size-3.5" /> : <Circle className="size-3.5" />} {statusLabel(s, tr)}
+                    <li
+                      key={s}
+                      className={`flex items-center gap-2 rounded-lg border px-3 py-2 ${done ? "border-primary/50 bg-primary/10 text-primary" : "border-border text-muted-foreground"}`}
+                    >
+                      {done ? (
+                        <CheckCircle2 className="size-3.5" />
+                      ) : (
+                        <Circle className="size-3.5" />
+                      )}{" "}
+                      {statusLabel(s, tr)}
                     </li>
                   );
                 })}
@@ -1277,7 +1620,11 @@ function Workspace() {
                       );
                     }}
 
-                    disabled={transition.isPending || releaseEscrow.isPending || order.status === "completed"}
+                    disabled={
+                      transition.isPending ||
+                      releaseEscrow.isPending ||
+                      order.status === "completed"
+                    }
                     className={`inline-flex w-full items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold disabled:opacity-50 ${
                       a.tone === "danger"
                         ? "border border-destructive/50 bg-destructive/10 text-destructive"
@@ -1286,13 +1633,18 @@ function Workspace() {
                           : "bg-primary text-primary-foreground"
                     }`}
                   >
-                    {(transition.isPending || releaseEscrow.isPending) && <Loader2 className="size-4 animate-spin" />}
+                    {(transition.isPending || releaseEscrow.isPending) && (
+                      <Loader2 className="size-4 animate-spin" />
+                    )}
                     {actionLabel(a.key, tr)}
                   </button>
                 ))}
                 {nextActions(order, user?.id).length === 0 && (
                   <p className="text-xs text-muted-foreground">
-                    {tr("لا يوجد إجراء مطلوب منك حالياً على هذا الطلب.", "No action is required from you on this order right now.")}
+                    {tr(
+                      "لا يوجد إجراء مطلوب منك حالياً على هذا الطلب.",
+                      "No action is required from you on this order right now.",
+                    )}
                   </p>
                 )}
                 {actionMsg && <p className="text-xs text-destructive">{actionMsg}</p>}
@@ -1303,8 +1655,14 @@ function Workspace() {
             <h3 className="font-bold">{tr("حالة الضمان", "Escrow status")}</h3>
             <p className="mt-2 text-sm text-muted-foreground">
               {order?.escrow_locked
-                ? tr("المبلغ محجوز في الضمان حتى اعتماد التسليم.", "Funds are held in escrow until delivery is approved.")
-                : tr("لا توجد مبالغ محجوزة على هذا الطلب.", "No funds are currently held for this order.")}
+                ? tr(
+                    "المبلغ محجوز في الضمان حتى اعتماد التسليم.",
+                    "Funds are held in escrow until delivery is approved.",
+                  )
+                : tr(
+                    "لا توجد مبالغ محجوزة على هذا الطلب.",
+                    "No funds are currently held for this order.",
+                  )}
             </p>
             {order?.due_at && (
               <p className="mt-2 text-xs text-muted-foreground">
@@ -1313,14 +1671,17 @@ function Workspace() {
             )}
             {order?.auto_release_at && (
               <p className="mt-2 text-xs text-primary">
-                {tr("إطلاق تلقائي في", "Auto-release at")}: {new Date(order.auto_release_at).toLocaleString()}
+                {tr("إطلاق تلقائي في", "Auto-release at")}:{" "}
+                {new Date(order.auto_release_at).toLocaleString()}
               </p>
             )}
           </Card>
 
           <Card>
             <div className="flex items-center justify-between gap-3">
-              <h3 className="min-w-0 text-sm font-bold">{tr("المعالم المرحلية للطلب", "Order milestones")}</h3>
+              <h3 className="min-w-0 text-sm font-bold">
+                {tr("المعالم المرحلية للطلب", "Order milestones")}
+              </h3>
               <button
                 type="button"
                 role="switch"
@@ -1329,7 +1690,9 @@ function Workspace() {
                 disabled={milestonesOn || createMilestones.isPending}
                 onClick={() => setBuilderOn((v) => !v)}
                 className={`relative inline-flex h-7 w-12 shrink-0 cursor-pointer touch-manipulation items-center rounded-full border transition-colors disabled:cursor-default disabled:opacity-70 ${
-                  milestonesOn || builderOn ? "border-primary bg-primary/80" : "border-border bg-secondary"
+                  milestonesOn || builderOn
+                    ? "border-primary bg-primary/80"
+                    : "border-border bg-secondary"
                 }`}
               >
                 <span
@@ -1341,21 +1704,31 @@ function Workspace() {
             </div>
             {!milestonesOn && !builderOn ? (
               <p className="mt-2 text-xs text-muted-foreground">
-                {tr("اختياري — قسّم الطلب إلى مراحل مع تحرير جزئي للضمان.", "Optional — split the order into milestones with partial escrow release.")}
+                {tr(
+                  "اختياري — قسّم الطلب إلى مراحل مع تحرير جزئي للضمان.",
+                  "Optional — split the order into milestones with partial escrow release.",
+                )}
               </p>
             ) : !milestonesOn ? (
               <div className="mt-3 grid gap-2">
                 <p className="text-[11px] text-muted-foreground">
-                  {tr("أضف مراحل التسليم — يجب أن يساوي مجموع المبالغ قيمة الطلب.", "Add delivery stages — the amounts must add up to the order total.")}
+                  {tr(
+                    "أضف مراحل التسليم — يجب أن يساوي مجموع المبالغ قيمة الطلب.",
+                    "Add delivery stages — the amounts must add up to the order total.",
+                  )}
                 </p>
                 {draftMilestones.map((d, i) => (
                   <div key={i} className="grid gap-2 rounded-xl border border-border p-3">
                     <div className="flex items-center justify-between gap-2">
-                      <span className="text-[11px] font-bold text-muted-foreground">{tr("المرحلة", "Stage")} {i + 1}</span>
+                      <span className="text-[11px] font-bold text-muted-foreground">
+                        {tr("المرحلة", "Stage")} {i + 1}
+                      </span>
                       {draftMilestones.length > 1 && (
                         <button
                           type="button"
-                          onClick={() => setDraftMilestones((rows) => rows.filter((_, k) => k !== i))}
+                          onClick={() =>
+                            setDraftMilestones((rows) => rows.filter((_, k) => k !== i))
+                          }
                           className="rounded-lg border border-destructive/40 px-2 py-1 text-[10px] font-bold text-destructive"
                         >
                           {tr("حذف", "Remove")}
@@ -1373,7 +1746,9 @@ function Workspace() {
                         value={d.amount}
                         dir="ltr"
                         inputMode="decimal"
-                        onChange={(e) => updateDraft(i, { amount: e.target.value.replace(/[^0-9.]/g, "") })}
+                        onChange={(e) =>
+                          updateDraft(i, { amount: e.target.value.replace(/[^0-9.]/g, "") })
+                        }
                         placeholder={tr("المبلغ USDT", "Amount USDT")}
                         className="w-full rounded-lg border border-input bg-surface px-3 py-2 text-xs outline-none focus:border-primary"
                       />
@@ -1388,14 +1763,25 @@ function Workspace() {
                 ))}
                 <button
                   type="button"
-                  onClick={() => setDraftMilestones((rows) => [...rows, { title: "", amount: "", due: "" }])}
+                  onClick={() =>
+                    setDraftMilestones((rows) => [...rows, { title: "", amount: "", due: "" }])
+                  }
                   className="rounded-xl border border-border py-2 text-[11px] font-bold"
                 >
                   + {tr("إضافة مرحلة", "Add stage")}
                 </button>
-                <p className={`text-[11px] font-bold ${draftValid ? "text-primary" : "text-destructive"}`} dir="auto">
-                  {tr("مجموع المراحل", "Milestones total")}: <span dir="ltr" className="font-mono">{draftTotal.toFixed(2)}</span> /{" "}
-                  <span dir="ltr" className="font-mono">{orderAmount.toFixed(2)} USDT</span>
+                <p
+                  className={`text-[11px] font-bold ${draftValid ? "text-primary" : "text-destructive"}`}
+                  dir="auto"
+                >
+                  {tr("مجموع المراحل", "Milestones total")}:{" "}
+                  <span dir="ltr" className="font-mono">
+                    {draftTotal.toFixed(2)}
+                  </span>{" "}
+                  /{" "}
+                  <span dir="ltr" className="font-mono">
+                    {orderAmount.toFixed(2)} USDT
+                  </span>
                 </p>
                 <div className="grid grid-cols-2 gap-2">
                   <button
@@ -1406,30 +1792,49 @@ function Workspace() {
                   >
                     {tr("حفظ المعالم", "Save milestones")}
                   </button>
-                  <button type="button" onClick={() => setBuilderOn(false)} className="rounded-xl border border-border py-2.5 text-xs font-bold">
+                  <button
+                    type="button"
+                    onClick={() => setBuilderOn(false)}
+                    className="rounded-xl border border-border py-2.5 text-xs font-bold"
+                  >
                     {tr("إلغاء", "Cancel")}
                   </button>
                 </div>
               </div>
             ) : (
-
               <div className="mt-3 grid gap-2">
                 <div className="h-2 w-full overflow-hidden rounded-full bg-secondary">
-                  <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${releasedPct}%` }} />
+                  <div
+                    className="h-full rounded-full bg-primary transition-all"
+                    style={{ width: `${releasedPct}%` }}
+                  />
                 </div>
-                <p className="text-[11px] text-muted-foreground">{tr("نسبة الضمان المُحرَّرة", "Escrow released")}: {releasedPct}%</p>
+                <p className="text-[11px] text-muted-foreground">
+                  {tr("نسبة الضمان المُحرَّرة", "Escrow released")}: {releasedPct}%
+                </p>
                 {milestoneRows.map((m) => {
                   const isReleased = m.status === "released" || releasedPct >= Number(m.pct);
-                  const state = isReleased ? (releasedPct >= 100 ? tr("مكتمل", "Completed") : tr("محرر", "Released")) : tr("معلق", "Pending");
+                  const state = isReleased
+                    ? releasedPct >= 100
+                      ? tr("مكتمل", "Completed")
+                      : tr("محرر", "Released")
+                    : tr("معلق", "Pending");
                   return (
                     <div
                       key={m.id}
                       className={`grid gap-2 rounded-lg border px-3 py-2.5 text-xs ${isReleased ? "border-primary/50 bg-primary/10" : "border-border"}`}
                     >
                       <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2">
-                        <span className={`min-w-0 font-bold ${isReleased ? "text-primary" : "text-foreground"}`}>{m.title} ({m.pct}%)</span>
-                        <span className={`inline-flex shrink-0 items-center gap-1 rounded-full border px-2 py-0.5 ${isReleased ? "border-primary/50 text-primary" : "border-border text-muted-foreground"}`}>
-                          {isReleased ? <Unlock className="size-3" /> : <Lock className="size-3" />} {state}
+                        <span
+                          className={`min-w-0 font-bold ${isReleased ? "text-primary" : "text-foreground"}`}
+                        >
+                          {m.title} ({m.pct}%)
+                        </span>
+                        <span
+                          className={`inline-flex shrink-0 items-center gap-1 rounded-full border px-2 py-0.5 ${isReleased ? "border-primary/50 text-primary" : "border-border text-muted-foreground"}`}
+                        >
+                          {isReleased ? <Unlock className="size-3" /> : <Lock className="size-3" />}{" "}
+                          {state}
                         </span>
                       </div>
                       <div className="flex items-center justify-between gap-2">
@@ -1442,7 +1847,9 @@ function Workspace() {
                           onClick={() => releaseMilestone.mutate(m.id)}
                           className="shrink-0 rounded-lg border border-primary/50 bg-primary/10 px-3 py-1.5 text-[11px] font-bold text-primary disabled:opacity-40"
                         >
-                          {isReleased ? tr("تم التحرير", "Released") : tr("تحرير هذه المرحلة", "Release this milestone")}
+                          {isReleased
+                            ? tr("تم التحرير", "Released")
+                            : tr("تحرير هذه المرحلة", "Release this milestone")}
                         </button>
                       </div>
                     </div>
@@ -1452,7 +1859,12 @@ function Workspace() {
                 <div className="grid gap-2 rounded-xl border border-accent/40 bg-accent/5 p-3 text-[11px]">
                   <label className="flex items-start justify-between gap-3">
                     <span className="min-w-0">
-                      <span className="block font-bold text-foreground">{tr("ضمان الاستقرار والدعم الفني (Warranty Escrow)", "Stability & support warranty (Warranty Escrow)")}</span>
+                      <span className="block font-bold text-foreground">
+                        {tr(
+                          "ضمان الاستقرار والدعم الفني (Warranty Escrow)",
+                          "Stability & support warranty (Warranty Escrow)",
+                        )}
+                      </span>
                       <span className="mt-1 block text-muted-foreground">
                         {tr(
                           "احتجاز جزء من الضمان لمدة 7 أيام إضافية بعد التسليم لتغطية التعديلات والاستقرار في مشاريع الذكاء الاصطناعي والأتمتة.",
@@ -1460,7 +1872,12 @@ function Workspace() {
                         )}
                       </span>
                     </span>
-                    <input type="checkbox" checked={warrantyOn} onChange={(e) => setWarrantyOn(e.target.checked)} className="mt-0.5 size-4 shrink-0 accent-primary" />
+                    <input
+                      type="checkbox"
+                      checked={warrantyOn}
+                      onChange={(e) => setWarrantyOn(e.target.checked)}
+                      className="mt-0.5 size-4 shrink-0 accent-primary"
+                    />
                   </label>
                   {warrantyOn && (
                     <>
@@ -1480,30 +1897,49 @@ function Workspace() {
                       <p className="text-muted-foreground">
                         {tr("المبلغ المحتجز", "Retained amount")}:{" "}
                         <span className="font-mono font-bold text-accent" dir="ltr">
-                          {order ? ((Number(order.amount_usdt) * warrantyPct) / 100).toFixed(2) : "0.00"} USDT
+                          {order
+                            ? ((Number(order.amount_usdt) * warrantyPct) / 100).toFixed(2)
+                            : "0.00"}{" "}
+                          USDT
                         </span>{" "}
-                        · {tr("يُحرَّر تلقائياً بعد 7 أيام من التسليم النهائي.", "Auto-released 7 days after final delivery.")}
+                        ·{" "}
+                        {tr(
+                          "يُحرَّر تلقائياً بعد 7 أيام من التسليم النهائي.",
+                          "Auto-released 7 days after final delivery.",
+                        )}
                       </p>
                     </>
                   )}
                 </div>
                 <p className="text-[11px] text-muted-foreground">
-                  {tr("يُحرَّر جزء الضمان تلقائياً عند اعتماد كل مرحلة.", "Each milestone releases its escrow share on approval.")}
+                  {tr(
+                    "يُحرَّر جزء الضمان تلقائياً عند اعتماد كل مرحلة.",
+                    "Each milestone releases its escrow share on approval.",
+                  )}
                 </p>
-
               </div>
             )}
-
           </Card>
         </div>
       </div>
 
       {extOpen && (
-        <div className="fixed inset-0 z-[70] grid place-items-center overflow-y-auto bg-background/85 p-4 backdrop-blur" role="dialog" aria-modal="true">
+        <div
+          className="fixed inset-0 z-[70] grid place-items-center overflow-y-auto bg-background/85 p-4 backdrop-blur"
+          role="dialog"
+          aria-modal="true"
+        >
           <Card className="w-full max-w-md">
             <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
-              <h2 className="min-w-0 truncate text-lg font-black">{tr("طلب تمديد مهلة التسليم", "Request deadline extension")}</h2>
-              <button type="button" aria-label={tr("إغلاق", "Close")} onClick={() => setExtOpen(false)} className="grid size-8 shrink-0 place-items-center rounded-lg border border-border">
+              <h2 className="min-w-0 truncate text-lg font-black">
+                {tr("طلب تمديد مهلة التسليم", "Request deadline extension")}
+              </h2>
+              <button
+                type="button"
+                aria-label={tr("إغلاق", "Close")}
+                onClick={() => setExtOpen(false)}
+                className="grid size-8 shrink-0 place-items-center rounded-lg border border-border"
+              >
                 <X className="size-4" />
               </button>
             </div>
@@ -1531,7 +1967,12 @@ function Workspace() {
               disabled={extReason.trim().length < 10}
               onClick={() => {
                 setExtStatus("pending");
-                setExtDone(tr(`تم إرسال طلب تمديد ${extHours} ساعة للمشتري — بانتظار الموافقة.`, `Extension request of ${extHours}h sent to the buyer — awaiting approval.`));
+                setExtDone(
+                  tr(
+                    `تم إرسال طلب تمديد ${extHours} ساعة للمشتري — بانتظار الموافقة.`,
+                    `Extension request of ${extHours}h sent to the buyer — awaiting approval.`,
+                  ),
+                );
                 setExtOpen(false);
                 setExtReason("");
               }}
@@ -1541,34 +1982,60 @@ function Workspace() {
             </button>
 
             <p className="mt-2 text-[11px] text-muted-foreground">
-              {tr("يبقى المبلغ محجوزاً في الضمان ويُؤجَّل الإطلاق التلقائي بعد الموافقة.", "Funds stay in escrow and auto-release is postponed once approved.")}
+              {tr(
+                "يبقى المبلغ محجوزاً في الضمان ويُؤجَّل الإطلاق التلقائي بعد الموافقة.",
+                "Funds stay in escrow and auto-release is postponed once approved.",
+              )}
             </p>
           </Card>
         </div>
       )}
 
       {reviewOpen && (
-        <div className="fixed inset-0 z-[70] grid place-items-center overflow-y-auto bg-background/85 p-4 backdrop-blur" role="dialog" aria-modal="true">
+        <div
+          className="fixed inset-0 z-[70] grid place-items-center overflow-y-auto bg-background/85 p-4 backdrop-blur"
+          role="dialog"
+          aria-modal="true"
+        >
           <Card className="w-full max-w-md">
             <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
-              <h2 className="min-w-0 truncate text-lg font-black">{tr("تقييم متبادل بعد الإنجاز", "Two-way review after completion")}</h2>
-              <button type="button" aria-label={tr("إغلاق", "Close")} onClick={() => setReviewOpen(false)} className="grid size-8 shrink-0 place-items-center rounded-lg border border-border">
+              <h2 className="min-w-0 truncate text-lg font-black">
+                {tr("تقييم متبادل بعد الإنجاز", "Two-way review after completion")}
+              </h2>
+              <button
+                type="button"
+                aria-label={tr("إغلاق", "Close")}
+                onClick={() => setReviewOpen(false)}
+                className="grid size-8 shrink-0 place-items-center rounded-lg border border-border"
+              >
                 <X className="size-4" />
               </button>
             </div>
             <div className="mt-4 grid gap-3">
-              {([
-                ["quality", tr("جودة العمل والاحترافية", "Work quality & professionalism")],
-                ["communication", tr("سرعة وجودة التواصل", "Communication speed & quality")],
-                ["speed", tr("الالتزام بموعد التسليم", "On-time delivery")],
-              ] as const).map(([k, label]) => (
-                <div key={k} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-xl border border-border px-3 py-2.5">
+              {(
+                [
+                  ["quality", tr("جودة العمل والاحترافية", "Work quality & professionalism")],
+                  ["communication", tr("سرعة وجودة التواصل", "Communication speed & quality")],
+                  ["speed", tr("الالتزام بموعد التسليم", "On-time delivery")],
+                ] as const
+              ).map(([k, label]) => (
+                <div
+                  key={k}
+                  className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-xl border border-border px-3 py-2.5"
+                >
                   <span className="min-w-0 text-sm font-bold">{label}</span>
 
                   <div className="flex shrink-0 gap-1">
                     {[1, 2, 3, 4, 5].map((n) => (
-                      <button key={n} type="button" aria-label={`${label} ${n}`} onClick={() => setStars({ ...stars, [k]: n })}>
-                        <Star className={`size-4 ${n <= stars[k] ? "fill-accent text-accent" : "text-muted-foreground"}`} />
+                      <button
+                        key={n}
+                        type="button"
+                        aria-label={`${label} ${n}`}
+                        onClick={() => setStars({ ...stars, [k]: n })}
+                      >
+                        <Star
+                          className={`size-4 ${n <= stars[k] ? "fill-accent text-accent" : "text-muted-foreground"}`}
+                        />
                       </button>
                     ))}
                   </div>
@@ -1578,14 +2045,22 @@ function Workspace() {
                 value={reviewText}
                 onChange={(e) => setReviewText(e.target.value)}
                 rows={4}
-                placeholder={tr("اكتب تقييمك وتجربتك بالتفصيل...", "Write your review and experience in detail...")}
+                placeholder={tr(
+                  "اكتب تقييمك وتجربتك بالتفصيل...",
+                  "Write your review and experience in detail...",
+                )}
                 className="w-full rounded-xl border border-input bg-surface p-3 text-sm outline-none focus:border-primary"
               />
               <button
                 type="button"
                 onClick={() => {
                   const avg = ((stars.quality + stars.communication + stars.speed) / 3).toFixed(1);
-                  setReviewDone(tr(`تم نشر تقييمك (${avg}/5) واعتماد الطلب.`, `Review published (${avg}/5) and order approved.`));
+                  setReviewDone(
+                    tr(
+                      `تم نشر تقييمك (${avg}/5) واعتماد الطلب.`,
+                      `Review published (${avg}/5) and order approved.`,
+                    ),
+                  );
                   setReviewOpen(false);
                   setReviewText("");
                 }}
@@ -1593,7 +2068,6 @@ function Workspace() {
               >
                 {tr("نشر التقييم واعتماد الطلب", "Publish review & approve order")}
               </button>
-
             </div>
           </Card>
         </div>

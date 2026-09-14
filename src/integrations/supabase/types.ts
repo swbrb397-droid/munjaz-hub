@@ -181,6 +181,50 @@ export type Database = {
           },
         ]
       }
+      extension_requests: {
+        Row: {
+          created_at: string
+          hours: number
+          id: string
+          order_id: string
+          reason: string
+          requested_by: string
+          resolved_at: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          hours: number
+          id?: string
+          order_id: string
+          reason: string
+          requested_by: string
+          resolved_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          hours?: number
+          id?: string
+          order_id?: string
+          reason?: string
+          requested_by?: string
+          resolved_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "extension_requests_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       governance_settings: {
         Row: {
           ai_autonomous_enabled: boolean
@@ -546,6 +590,7 @@ export type Database = {
           due_at: string | null
           escrow_locked: boolean
           id: string
+          inspection_window_hours: number
           listing_id: string | null
           order_number: number
           platform_fee_usdt: number
@@ -569,6 +614,7 @@ export type Database = {
           due_at?: string | null
           escrow_locked?: boolean
           id?: string
+          inspection_window_hours?: number
           listing_id?: string | null
           order_number?: number
           platform_fee_usdt?: number
@@ -592,6 +638,7 @@ export type Database = {
           due_at?: string | null
           escrow_locked?: boolean
           id?: string
+          inspection_window_hours?: number
           listing_id?: string | null
           order_number?: number
           platform_fee_usdt?: number
@@ -671,6 +718,8 @@ export type Database = {
           kyc_status: string
           kyc_tier: Database["public"]["Enums"]["kyc_tier"]
           level: number
+          mfa_updated_at: string | null
+          password_last_changed_at: string | null
           plan_expires_at: string | null
           rating: number
           referral_code: string
@@ -696,6 +745,8 @@ export type Database = {
           kyc_status?: string
           kyc_tier?: Database["public"]["Enums"]["kyc_tier"]
           level?: number
+          mfa_updated_at?: string | null
+          password_last_changed_at?: string | null
           plan_expires_at?: string | null
           rating?: number
           referral_code: string
@@ -721,6 +772,8 @@ export type Database = {
           kyc_status?: string
           kyc_tier?: Database["public"]["Enums"]["kyc_tier"]
           level?: number
+          mfa_updated_at?: string | null
+          password_last_changed_at?: string | null
           plan_expires_at?: string | null
           rating?: number
           referral_code?: string
@@ -843,6 +896,47 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      reviews: {
+        Row: {
+          comment: string | null
+          created_at: string
+          id: string
+          order_id: string
+          rating: number
+          reviewee_id: string
+          reviewer_id: string
+          updated_at: string
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string
+          id?: string
+          order_id: string
+          rating: number
+          reviewee_id: string
+          reviewer_id: string
+          updated_at?: string
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string
+          id?: string
+          order_id?: string
+          rating?: number
+          reviewee_id?: string
+          reviewer_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reviews_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       security_incidents: {
         Row: {
@@ -1003,6 +1097,7 @@ export type Database = {
           lifetime_earned: number
           locked_usdt: number
           payout_address: string | null
+          payout_address_updated_at: string | null
           updated_at: string
           user_id: string
         }
@@ -1014,6 +1109,7 @@ export type Database = {
           lifetime_earned?: number
           locked_usdt?: number
           payout_address?: string | null
+          payout_address_updated_at?: string | null
           updated_at?: string
           user_id: string
         }
@@ -1025,6 +1121,7 @@ export type Database = {
           lifetime_earned?: number
           locked_usdt?: number
           payout_address?: string | null
+          payout_address_updated_at?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -1213,6 +1310,19 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      get_leaderboard: {
+        Args: { p_filter?: string; p_limit?: number }
+        Returns: {
+          avatar_url: string
+          completed_orders: number
+          display_name: string
+          id: string
+          is_verified: boolean
+          level: number
+          rating: number
+          xp_points: number
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -1365,6 +1475,26 @@ export type Database = {
         SetofOptions: {
           from: "*"
           to: "withdrawal_requests"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      resolve_extension_request: {
+        Args: { _accept: boolean; _id: string }
+        Returns: {
+          created_at: string
+          hours: number
+          id: string
+          order_id: string
+          reason: string
+          requested_by: string
+          resolved_at: string | null
+          status: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "extension_requests"
           isOneToOne: true
           isSetofReturn: false
         }

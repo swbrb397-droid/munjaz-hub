@@ -4,8 +4,7 @@ import { BadgeCheck, Crown, Medal, Sparkles, Star, Trophy, Zap } from "lucide-re
 import { Card, Section } from "@/components/site/Shell";
 import { useLang } from "@/lib/lang";
 import { useLeaderboard, type LeaderboardMetric } from "@/lib/platform";
-import { ghostTag, useGhostMode } from "@/lib/ghost";
-import { useAuth } from "@/hooks/use-auth";
+import { maskUser } from "@/lib/mask";
 
 export const Route = createFileRoute("/leaderboard")({
   head: () => ({
@@ -29,9 +28,6 @@ const rankStyles = [
 
 function Leaderboard() {
   const { tr } = useLang();
-  const { user } = useAuth();
-  const ghost = useGhostMode();
-  const tag = ghostTag(user?.id);
   const [metric, setMetric] = useState<LeaderboardMetric>("rating");
   const board = useLeaderboard(metric);
   const rows = board.data ?? [];
@@ -50,12 +46,6 @@ function Leaderboard() {
         "Purely meritocratic ranking from real platform data — no paid boosting or pinning.",
       )}
     >
-      {ghost.enabled && (
-        <Card className="mb-4 border-violet/40 bg-violet/10 text-xs leading-relaxed text-violet">
-          وضع التخفي مُفعّل — يتم إخفاء هويتك في لوحة المتصدرين وسجلات الصفقات العامة واستبدالها بالمعرف المشفر{" "}
-          <span className="font-mono font-bold">{tag}</span>
-        </Card>
-      )}
 
       <Card className="mb-6 flex flex-wrap items-center gap-2">
         <span className="me-2 text-sm text-muted-foreground">{tr("الفرز حسب", "Sort by")}</span>
@@ -101,7 +91,7 @@ function Leaderboard() {
             </thead>
             <tbody>
               {rows.map((s, i) => {
-                const masked = ghost.enabled && user?.id === s.id;
+                const masked = maskUser(s.display_name || s.id);
                 return (
                   <tr key={s.id} className="border-b border-border/60 last:border-0 hover:bg-surface-2/60">
                     <td className="p-4">
@@ -124,8 +114,8 @@ function Leaderboard() {
                         )}
                         <span>
                           <span className="flex items-center gap-1 font-bold">
-                            {masked ? <span className="font-mono text-violet">{tag}</span> : s.display_name}
-                            {!masked && s.is_verified && <BadgeCheck className="size-4 text-accent" />}
+                            <span className="font-mono" dir="ltr">{masked}</span>
+                            {s.is_verified && <BadgeCheck className="size-4 text-accent" />}
                           </span>
                           <span className="block text-xs text-muted-foreground">
                             {tr("المستوى", "Level")} {s.level}
