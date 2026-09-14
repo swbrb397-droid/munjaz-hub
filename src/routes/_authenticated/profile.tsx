@@ -7,7 +7,6 @@ import {
   Camera,
   CheckCircle2,
   Crown,
-  Ghost,
   KeyRound,
   Loader2,
   Lock,
@@ -25,7 +24,6 @@ import { useLang } from "@/lib/lang";
 import { useNotify } from "@/lib/notify";
 import { useAuth } from "@/hooks/use-auth";
 import { PayoutSecurityCard, Toggle } from "@/components/site/PayoutSecurityCard";
-import { ghostTag, useGhostMode } from "@/lib/ghost";
 import { NameChangeControl } from "@/components/site/NameChangeCard";
 import { useMyKyc, useSubmitKyc } from "@/lib/kyc";
 
@@ -51,7 +49,7 @@ type Tier = "free" | "pro" | "corp";
 
 const TIER_META: Record<Tier, { name: string; escrow: string; fee: string }> = {
   free: { name: "الباقة المجانية · 0 USDT", escrow: "36 ساعة", fee: "10%" },
-  pro: { name: "باقة المحترفين · 10 USDT", escrow: "12 ساعة (مع KYC)", fee: "5%" },
+  pro: { name: "باقة المحترفين · 10 USDT", escrow: "24 ساعة (مع KYC)", fee: "5%" },
   corp: { name: "باقة الشركات · 49 USDT", escrow: "6 ساعات", fee: "2.5%" },
 };
 
@@ -466,7 +464,6 @@ function Field({
 function SettingsPanel({ twoFa, setTwoFa }: { twoFa: boolean; setTwoFa: (v: boolean) => void }) {
   const { tr } = useLang();
   const { user } = useAuth();
-  const ghost = useGhostMode();
   const [network, setNetwork] = useState<"TRC-20" | "BEP-20">("TRC-20");
   const [address, setAddress] = useState("");
   const { prefs: notif, setPref, notify } = useNotify();
