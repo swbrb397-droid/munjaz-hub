@@ -2019,6 +2019,30 @@ function Workspace() {
         </div>
       )}
 
+      {callOpen && order && (
+        <div className="fixed inset-0 z-[90] flex flex-col bg-[#0B0F17]" role="dialog" aria-modal="true">
+          <div className="flex items-center justify-between gap-3 border-b border-slate-800 px-4 py-3">
+            <p className="min-w-0 truncate text-sm font-black">
+              {tr("مكالمة فيديو مشفّرة داخل المنصة", "Encrypted in-app video call")} · MJ-{order.order_number}
+            </p>
+            <button
+              type="button"
+              onClick={() => setCallOpen(false)}
+              aria-label={tr("إنهاء المكالمة", "End call")}
+              className="grid size-11 shrink-0 place-items-center rounded-xl border border-slate-700 text-muted-foreground hover:text-foreground"
+            >
+              <X className="size-5" />
+            </button>
+          </div>
+          <iframe
+            title={tr("غرفة الاجتماع", "Meeting room")}
+            src={`https://meet.jit.si/almunjaz-${order.id}`}
+            allow="camera; microphone; fullscreen; display-capture; autoplay"
+            className="min-h-0 w-full flex-1 border-0"
+          />
+        </div>
+      )}
+
       {reviewOpen && (
         <div
           className="fixed inset-0 z-[70] grid place-items-center overflow-y-auto bg-background/85 p-4 backdrop-blur"
