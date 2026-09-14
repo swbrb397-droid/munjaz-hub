@@ -28,9 +28,6 @@ const rankStyles = [
 
 function Leaderboard() {
   const { tr } = useLang();
-  const { user } = useAuth();
-  const ghost = useGhostMode();
-  const tag = ghostTag(user?.id);
   const [metric, setMetric] = useState<LeaderboardMetric>("rating");
   const board = useLeaderboard(metric);
   const rows = board.data ?? [];
