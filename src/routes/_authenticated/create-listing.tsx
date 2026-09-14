@@ -77,6 +77,9 @@ function CreateListing() {
   const [step, setStep] = useState<1 | 2>(1);
   const [codeAudit, setCodeAudit] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const tier = (profile.data?.account_tier ?? "free") as "free" | "pro" | "corporate";
+  const inspectionChoices = INSPECTION_OPTIONS[tier];
+  const inspectionLocked = tier === "free";
   const [menuFor, setMenuFor] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; title: string } | null>(null);
   const isCodeCategory = form.category === "freelance" || form.category === "product";
