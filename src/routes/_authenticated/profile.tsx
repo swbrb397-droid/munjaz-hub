@@ -23,7 +23,7 @@ import { ReferralWidget } from "@/components/site/ReferralWidget";
 import { useLang } from "@/lib/lang";
 import { useNotify } from "@/lib/notify";
 import { useAuth } from "@/hooks/use-auth";
-import { PayoutSecurityCard, Toggle } from "@/components/site/PayoutSecurityCard";
+import { PayoutSecurityCard } from "@/components/site/PayoutSecurityCard";
 import { NameChangeControl } from "@/components/site/NameChangeCard";
 import { useMyKyc, useSubmitKyc } from "@/lib/kyc";
 
@@ -464,47 +464,10 @@ function Field({
 function SettingsPanel({ twoFa, setTwoFa }: { twoFa: boolean; setTwoFa: (v: boolean) => void }) {
   const { tr } = useLang();
   const { user } = useAuth();
-  const [network, setNetwork] = useState<"TRC-20" | "BEP-20">("TRC-20");
-  const [address, setAddress] = useState("");
   const { prefs: notif, setPref, notify } = useNotify();
-  const [pwOpen, setPwOpen] = useState(false);
-
-  const pattern = network === "TRC-20" ? /^T[1-9A-HJ-NP-Za-km-z]{33}$/ : /^0x[a-fA-F0-9]{40}$/;
-  const invalid = address.length > 0 && !pattern.test(address.trim());
 
   return (
     <div className="grid gap-4 lg:grid-cols-2">
-      <Card>
-        <h3 className="text-sm font-black">محفظة السحب المعتمدة</h3>
-        <div className="mt-3 flex gap-1.5">
-          {(["TRC-20", "BEP-20"] as const).map((n) => (
-            <button
-              key={n}
-              type="button"
-              onClick={() => setNetwork(n)}
-              className={`rounded-lg px-3 py-1.5 text-xs font-bold ${network === n ? "bg-primary text-primary-foreground" : "border border-border text-muted-foreground"}`}
-            >
-              {n}
-            </button>
-          ))}
-        </div>
-        <input
-          value={address}
-          onChange={(e) => setAddress(e.target.value)}
-          placeholder={network === "TRC-20" ? "T..." : "0x..."}
-          className={`mt-3 w-full rounded-xl border bg-surface px-3 py-2.5 text-sm outline-none ${invalid ? "border-destructive" : "border-input focus:border-primary"}`}
-        />
-        {invalid && <p className="mt-1 text-[11px] font-bold text-destructive">عنوان المحفظة غير مطابق لصيغة شبكة {network}</p>}
-        <button
-          type="button"
-          disabled={!address || invalid}
-          onClick={() => toast.success("تم حفظ عنوان السحب")}
-          className="mt-3 w-full rounded-xl bg-primary py-2.5 text-sm font-bold text-primary-foreground disabled:opacity-40"
-        >
-          حفظ عنوان السحب
-        </button>
-      </Card>
-
       <Card>
         <h3 className="text-sm font-black">تفضيلات التنبيهات</h3>
         <div className="mt-3 grid gap-2">
@@ -542,31 +505,6 @@ function SettingsPanel({ twoFa, setTwoFa }: { twoFa: boolean; setTwoFa: (v: bool
 
       <PayoutSecurityCard className="lg:col-span-2" />
 
-      <Card className="lg:col-span-2">
-        <h3 className="text-sm font-black">إعدادات الخصوصية</h3>
-        <div className="mt-3 rounded-xl border border-border px-4 py-3">
-          <div className="flex items-center justify-between gap-3">
-            <p className="flex min-w-0 items-center gap-2 text-sm font-bold">
-              <Ghost className="size-4 shrink-0 text-violet" />
-              <span className="min-w-0">وضع التخفي وحماية الخصوصية (Ghost Mode)</span>
-            </p>
-            <Toggle
-              checked={ghost.enabled}
-              label="وضع التخفي"
-              onChange={(v) => {
-                ghost.toggle(v);
-                toast.success(v ? "تم تفعيل وضع التخفي" : "تم إيقاف وضع التخفي");
-              }}
-            />
-          </div>
-          {ghost.enabled && (
-            <p className="mt-3 rounded-lg border border-violet/40 bg-violet/10 px-3 py-2 text-[11px] leading-relaxed text-violet">
-              يتم إخفاء هويتك ومعرفاتك في لوحة المتصدرين وسجلات الصفقات العامة واستبدالها بمعرف رقمي مشفر:{" "}
-              <span className="font-mono font-bold">{ghostTag(user?.id)}</span>
-            </p>
-          )}
-        </div>
-      </Card>
 
       <Card className="lg:col-span-2">
         <h3 className="text-sm font-black">كلمة المرور والمصادقة الثنائية</h3>
