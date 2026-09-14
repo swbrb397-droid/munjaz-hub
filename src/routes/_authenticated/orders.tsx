@@ -115,8 +115,12 @@ function OrdersPage() {
       <div className="mt-6 grid gap-3">
         {visible.map((o) => {
           const amount = Number(o.amount_usdt ?? 0);
-          const paidOut = released.data?.[o.id] ?? 0;
-          const remaining = Math.max(0, amount - paidOut);
+          const fee = Number(o.platform_fee_usdt ?? 0);
+          const milestonePaid = released.data?.[o.id] ?? 0;
+          const isSettled = o.status === "completed" || o.status === "refunded" || o.status === "cancelled";
+          // A settled order holds nothing: the seller received the amount net of the platform fee.
+          const paidOut = o.status === "completed" ? Math.max(0, amount - fee) : milestonePaid;
+          const remaining = isSettled ? 0 : Math.max(0, amount - milestonePaid);
           const isBuyer = o.buyer_id === user?.id;
           const needsFunding = isBuyer && o.status === "pending";
           const shortfall = Math.max(0, amount - balance);
@@ -148,8 +152,17 @@ function OrdersPage() {
                   <dd className="mt-0.5 text-sm font-bold" dir="ltr">{amount.toFixed(2)} USDT</dd>
                 </div>
                 <div className="rounded-xl border border-border bg-secondary/40 px-3 py-2">
-                  <dt className="text-[11px] text-muted-foreground">{tr("المُحرَّر للبائع", "Released to seller")}</dt>
+                  <dt className="text-[11px] text-muted-foreground">
+                    {o.status === "completed"
+                      ? tr("الصافي المُحرَّر للبائع", "Net released to seller")
+                      : tr("المُحرَّر للبائع", "Released to seller")}
+                  </dt>
                   <dd className="mt-0.5 text-sm font-bold" dir="ltr">{paidOut.toFixed(2)} USDT</dd>
+                  {o.status === "completed" && (
+                    <dd className="mt-0.5 text-[10px] text-muted-foreground" dir="ltr">
+                      {amount.toFixed(2)} − {fee.toFixed(2)} {tr("عمولة المنصة", "platform fee")}
+                    </dd>
+                  )}
                 </div>
                 <div className="rounded-xl border border-primary/40 bg-primary/10 px-3 py-2">
                   <dt className="text-[11px] text-muted-foreground">{tr("المتبقي في الضمان", "Remaining in escrow")}</dt>
