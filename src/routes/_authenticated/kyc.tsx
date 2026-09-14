@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
+import { EXECUTABLE_REJECTION, isDangerousFile } from "@/lib/file-guard";
 import { BadgeCheck, Clock, ShieldCheck, Upload, XCircle } from "lucide-react";
 import { Card, Section } from "@/components/site/Shell";
 import { useLang } from "@/lib/lang";
@@ -45,6 +46,10 @@ function KycPage() {
   const rejectionReason = status === "rejected" ? latest?.admin_note : null;
 
   const pick = (file: File | null, set: (f: File | null) => void) => {
+    if (file && isDangerousFile(file.name)) {
+      toast.error(EXECUTABLE_REJECTION);
+      return;
+    }
     if (file && file.size > MAX_MB * 1024 * 1024) {
       toast.error(tr(`الحجم الأقصى ${MAX_MB} ميغابايت.`, `Maximum size is ${MAX_MB} MB.`));
       return;
