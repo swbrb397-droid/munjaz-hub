@@ -173,8 +173,10 @@ function WalletPage() {
   const sla = slaHoursForTier(tier);
   const parsed = parseUsdt(amount) ?? 0;
 
+  // Triple trigger: password change, MFA change, or payout-address change.
   const lockHours = coolingHoursLeft([
     (profile.data as { password_last_changed_at?: string | null } | null)?.password_last_changed_at,
+    (profile.data as { mfa_updated_at?: string | null } | null)?.mfa_updated_at,
     (wallet.data as { payout_address_updated_at?: string | null } | null)
       ?.payout_address_updated_at,
   ]);

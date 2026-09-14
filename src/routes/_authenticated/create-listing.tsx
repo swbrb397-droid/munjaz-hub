@@ -42,6 +42,7 @@ type FormState = {
   tag_ar: string;
   tag_en: string;
   description_ar: string;
+  inspection_window_hours: number;
 };
 
 const emptyForm: FormState = {
@@ -52,6 +53,14 @@ const emptyForm: FormState = {
   tag_ar: "",
   tag_en: "",
   description_ar: "",
+  inspection_window_hours: 24,
+};
+
+/** Escrow inspection window allowed per account tier. */
+const INSPECTION_OPTIONS: Record<"free" | "pro" | "corporate", number[]> = {
+  free: [48, 72],
+  pro: [24, 48, 72],
+  corporate: [16, 24, 48, 72],
 };
 
 function CreateListing() {
@@ -68,6 +77,11 @@ function CreateListing() {
   const [step, setStep] = useState<1 | 2>(1);
   const [codeAudit, setCodeAudit] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const tier = (profile.data?.account_tier ?? "free") as "free" | "pro" | "corporate";
+  const inspectionChoices = INSPECTION_OPTIONS[tier];
+  const inspectionLocked = tier === "free";
+  // Free tier is contractually pinned to the 48h hold.
+  const inspectionHours = inspectionLocked ? 48 : form.inspection_window_hours;
   const [menuFor, setMenuFor] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; title: string } | null>(null);
   const isCodeCategory = form.category === "freelance" || form.category === "product";
@@ -180,6 +194,7 @@ function CreateListing() {
             price_usdt: price,
             tag_ar: sanitizeText(form.tag_ar, 40),
             tag_en: sanitizeText(form.tag_en, 40) || sanitizeText(form.tag_ar, 40),
+            inspection_window_hours: inspectionHours,
           })
           .eq("id", editingId);
         if (updErr) throw updErr;
@@ -213,6 +228,7 @@ function CreateListing() {
         price_usdt: price,
         tag_ar: sanitizeText(form.tag_ar, 40),
         tag_en: sanitizeText(form.tag_en, 40) || sanitizeText(form.tag_ar, 40),
+        inspection_window_hours: inspectionHours,
         cover_key: "product",
         cover_url: coverUrl,
         verified: !!profile.data?.is_verified,
@@ -390,6 +406,36 @@ function CreateListing() {
                   <span className="text-muted-foreground">{tr("وسم قصير (إنجليزي)", "Short tag (English)")}</span>
                   <input className={field} maxLength={40} value={form.tag_en} onChange={(e) => setForm({ ...form, tag_en: e.target.value })} />
                 </label>
+
+                <label className="grid gap-1.5 text-sm sm:col-span-2">
+                  <span className="text-muted-foreground">
+                    {tr("مهلة فحص واعتماد الضمان بعد التسليم", "Post-delivery escrow inspection window")}
+                  </span>
+                  <select
+                    className={field}
+                    disabled={inspectionLocked}
+                    value={inspectionHours}
+                    onChange={(e) => setForm({ ...form, inspection_window_hours: Number(e.target.value) })}
+                  >
+                    {inspectionChoices.map((h) => (
+                      <option key={h} value={h}>
+                        {h} {tr("ساعة", "hours")}
+                      </option>
+                    ))}
+                  </select>
+                  <span className="text-[11px] text-muted-foreground">
+                    {inspectionLocked
+                      ? tr(
+                          "الباقة المجانية مقفولة على 48 ساعة — رقِّ حسابك إلى Pro أو الشركات لتقليص المهلة.",
+                          "Free tier is locked to 48 hours — upgrade to Pro or Corporate to shorten it.",
+                        )
+                      : tr(
+                          "تُحرَّر الأموال تلقائياً للبائع بعد انقضاء هذه المهلة دون اعتراض.",
+                          "Funds auto-release to the seller once this window lapses without objection.",
+                        )}
+                  </span>
+                </label>
+
 
                 {isCodeCategory && (
                   <label className="flex items-start gap-2 rounded-xl border border-primary/40 bg-primary/5 p-3 text-xs leading-relaxed sm:col-span-2">
@@ -580,6 +626,9 @@ function CreateListing() {
                             tag_ar: l.tag_ar ?? "",
                             tag_en: l.tag_en ?? "",
                             description_ar: "",
+                            inspection_window_hours: Number(
+                              (l as { inspection_window_hours?: number }).inspection_window_hours ?? 24,
+                            ),
                           });
                           setStep(1);
                           window.scrollTo({ top: 0, behavior: "smooth" });
