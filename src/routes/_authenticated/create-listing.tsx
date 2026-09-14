@@ -589,6 +589,9 @@ function CreateListing() {
                             tag_ar: l.tag_ar ?? "",
                             tag_en: l.tag_en ?? "",
                             description_ar: "",
+                            inspection_window_hours: Number(
+                              (l as { inspection_window_hours?: number }).inspection_window_hours ?? 24,
+                            ),
                           });
                           setStep(1);
                           window.scrollTo({ top: 0, behavior: "smooth" });
