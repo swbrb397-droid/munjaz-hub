@@ -88,16 +88,6 @@ function Admin() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["disputes"] }),
   });
 
-  const verifyUser = useMutation({
-    mutationFn: async ({ id, verified }: { id: string; verified: boolean }) => {
-      const { error } = await supabase
-        .from("profiles")
-        .update({ is_verified: verified, kyc_tier: verified ? "tier2" : "tier0" })
-        .eq("id", id);
-      if (error) throw error;
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["kyc-queue"] }),
-  });
 
   const rows = orders.data ?? [];
   const volume = rows.reduce((s, o) => s + Number(o.amount_usdt ?? 0), 0);
