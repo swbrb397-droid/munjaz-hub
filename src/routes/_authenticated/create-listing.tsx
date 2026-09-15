@@ -215,7 +215,18 @@ function CreateListing() {
             tr("فشل رفع صورة الغلاف: تحقق من الاتصال وحاول مجدداً", "Cover upload failed: check your connection and try again"),
           );
         }
-        coverUrl = supabase.storage.from(COVER_BUCKET).getPublicUrl(filePath).data.publicUrl;
+        // The covers bucket is private (workspace policy blocks public buckets),
+        // so store a long-lived signed URL (10 years) that renders for everyone.
+        const signed = await supabase.storage
+          .from(COVER_BUCKET)
+          .createSignedUrl(filePath, 60 * 60 * 24 * 365 * 10);
+        if (signed.error || !signed.data?.signedUrl) {
+          console.error("Cover sign error:", signed.error);
+          throw new Error(
+            tr("فشل تجهيز رابط صورة الغلاف: حاول مجدداً", "Failed to prepare the cover image link: try again"),
+          );
+        }
+        coverUrl = signed.data.signedUrl;
       }
       const sellerName = profile.data?.display_name || tr("بائع", "Seller");
       const { error } = await supabase.from("listings").insert({
