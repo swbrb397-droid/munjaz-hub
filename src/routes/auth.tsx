@@ -363,7 +363,7 @@ function AuthPage() {
           {tr("محفظة USDT، ضمان الطلبات، وعمولات الإحالة.", "USDT wallet, order escrow, and referral commissions.")}
         </p>
 
-        <form ref={formRef} onSubmit={handleSubmit} className="mt-6 grid gap-3 text-sm">
+        <form ref={formRef} data-auth-form="true" onSubmit={handleSubmit} className="mt-6 grid gap-3 text-sm">
           {mode === "signup" && (
             <label className="grid gap-1.5">
               <span className="text-muted-foreground">{tr("الاسم الظاهر", "Display name")}</span>
