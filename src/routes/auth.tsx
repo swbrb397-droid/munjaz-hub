@@ -271,10 +271,18 @@ function AuthPage() {
         if (!data.session?.access_token || !data.user) {
           throw new Error(tr("تعذّر إنشاء جلسة تسجيل الدخول", "Could not establish a sign-in session"));
         }
+
+        // Immediate optimistic navigation: never wait for profile/role/balance data.
+        const stored = safeRedirect(window.sessionStorage.getItem(REDIRECT_KEY));
+        const target = redirectTo ?? stored ?? "/dashboard";
+        window.sessionStorage.removeItem(REDIRECT_KEY);
+        window.sessionStorage.removeItem(CTX_KEY);
+
         setNavigating(true);
-        await router.invalidate();
+        setBusy(false);
         toast.success(tr("تم تسجيل الدخول بنجاح", "Signed in successfully"));
-        await navigate({ to: "/dashboard", replace: true });
+        void navigate({ href: withContext(target), replace: true });
+        return;
       }
     } catch (e) {
       const raw = e instanceof Error ? e.message : String(e);
