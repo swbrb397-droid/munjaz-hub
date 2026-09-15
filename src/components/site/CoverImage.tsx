@@ -21,11 +21,11 @@ export function CoverImage({
   className = "",
   iconClassName = "size-8",
 }: {
-  src?: string | null;
+  src?: string | null | undefined;
   alt: string;
-  category?: string;
-  className?: string;
-  iconClassName?: string;
+  category?: string | undefined;
+  className?: string | undefined;
+  iconClassName?: string | undefined;
 }) {
   const [failed, setFailed] = useState(false);
   const clean = (src ?? "").trim();
