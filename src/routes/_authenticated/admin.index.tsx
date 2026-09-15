@@ -121,33 +121,7 @@ function Admin() {
       </Card>
 
 
-      {tab === "disputes" && (
-        <Card>
-          <h3 className="font-bold">{tr("قائمة النزاعات", "Disputes list")}</h3>
-          <div className="mt-4 grid gap-3">
-            {(disputes.data ?? []).length === 0 && (
-              <p className="rounded-xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
-                {tr("لا توجد نزاعات مفتوحة.", "No open disputes.")}
-              </p>
-            )}
-            {(disputes.data ?? []).map((d) => (
-              <div key={d.id} className="flex flex-wrap items-center gap-3 rounded-xl border border-border p-4 text-sm">
-                <div className="min-w-48">
-                  <p className="font-semibold">{d.kind} · {d.status}</p>
-                  <p className="text-xs text-muted-foreground">{d.reason}</p>
-                </div>
-                <span className="text-muted-foreground">
-                  {tr("حكم AI", "AI ruling")}: {d.ai_verdict ?? tr("قيد التحليل", "Analyzing")}
-                </span>
-                <div className="ms-auto flex flex-wrap gap-2">
-                  <button onClick={() => resolveCase.mutate({ id: d.id, status: "resolved" })} className="rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground">{tr("اعتماد", "Approve")}</button>
-                  <button onClick={() => resolveCase.mutate({ id: d.id, status: "rejected" })} className="rounded-lg border border-border px-3 py-1.5 text-xs">{tr("رفض", "Reject")}</button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </Card>
-      )}
+      {tab === "disputes" && <DisputeDesk isAdmin={isAdmin} />}
 
       {tab === "payouts" && (
         <Card>
