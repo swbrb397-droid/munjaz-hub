@@ -321,7 +321,83 @@ function Admin() {
           ))}
         </div>
       )}
+
+      {tab === "sandbox" && <SandboxPanel />}
     </Section>
+  );
+}
+
+/* --------------------------------------------- super-admin test & sandbox */
+
+/** Private bench for the platform owner to exercise deposits, KYC, and arbitration. */
+function SandboxPanel() {
+  const { tr } = useLang();
+  const sandbox = useSandboxAction();
+  const [last, setLast] = useState<string | null>(null);
+
+  const run = (kind: SandboxKind, done: string) =>
+    sandbox.mutate(kind, {
+      onSuccess: (res) => {
+        setLast(`${done} — ${JSON.stringify(res)}`);
+        toast.success(done);
+      },
+      onError: (e: unknown) => toast.error(e instanceof Error ? e.message : tr("فشل التنفيذ", "Action failed")),
+    });
+
+  const actions: { kind: SandboxKind; title: string; detail: string; done: string }[] = [
+    {
+      kind: "deposit",
+      title: tr("محاكاة إشعار إيداع", "Simulate deposit webhook"),
+      detail: tr("إضافة 10 USDT إلى محفظتك كإيداع مؤكد لاختبار القيد التلقائي.", "Credits 10 USDT to your wallet as a confirmed deposit."),
+      done: tr("تم قيد إيداع اختباري بقيمة 10 USDT", "Test deposit of 10 USDT credited"),
+    },
+    {
+      kind: "kyc",
+      title: tr("إنشاء طلب توثيق اختباري", "Inject test KYC"),
+      detail: tr("إنشاء طلب توثيق معلّق لاختبار الاعتماد والرفض.", "Creates a pending verification request to test approve/reject."),
+      done: tr("تم إنشاء طلب توثيق معلّق", "Pending KYC request created"),
+    },
+    {
+      kind: "dispute",
+      title: tr("إنشاء طلب متنازع عليه", "Simulate disputed order"),
+      detail: tr("إنشاء طلب ضمان بقيمة 25 USDT تحت النزاع لاختبار قرارات التحكيم دون أموال حقيقية.", "Creates a 25 USDT escrow order under dispute to test arbitration."),
+      done: tr("تم إنشاء طلب متنازع عليه", "Disputed order created"),
+    },
+  ];
+
+  return (
+    <Card>
+      <h3 className="font-bold">{tr("مختبر الاختبار والتشخيص", "Test & debug sandbox")}</h3>
+      <p className="mt-1 text-xs text-muted-foreground">
+        {tr(
+          "هذه الأدوات متاحة للمشرف الأعلى فقط وتنفّذ عمليات حقيقية على حسابك أنت لأغراض الاختبار.",
+          "Owner-only tools. They run real operations against your own account for testing.",
+        )}
+      </p>
+      <div className="mt-4 grid gap-3 md:grid-cols-3">
+        {actions.map((a) => (
+          <div key={a.kind} className="grid content-between gap-3 rounded-xl border border-border p-4">
+            <div>
+              <p className="text-sm font-bold">{a.title}</p>
+              <p className="mt-1 text-xs text-muted-foreground">{a.detail}</p>
+            </div>
+            <button
+              type="button"
+              disabled={sandbox.isPending}
+              onClick={() => run(a.kind, a.done)}
+              className="min-h-[44px] rounded-lg bg-primary px-4 text-sm font-bold text-primary-foreground disabled:opacity-50"
+            >
+              {sandbox.isPending ? tr("جارٍ التنفيذ…", "Running…") : tr("تشغيل", "Run")}
+            </button>
+          </div>
+        ))}
+      </div>
+      {last && (
+        <p className="mt-4 break-all rounded-xl border border-border bg-surface-2/60 p-3 font-mono text-[11px] text-muted-foreground" dir="ltr">
+          {last}
+        </p>
+      )}
+    </Card>
   );
 }
 
