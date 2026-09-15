@@ -245,7 +245,12 @@ function Admin() {
 
       {tab === "kyc" && (
         <Card>
-          <h3 className="font-bold">{tr("مركز توثيق الهوية", "KYC center")}</h3>
+          <div className="flex flex-wrap items-center gap-3">
+            <h3 className="font-bold">{tr("مركز توثيق الهوية", "KYC center")}</h3>
+            <Link to="/admin/kyc" className="ms-auto text-xs font-bold text-primary">
+              {tr("فتح طابور المراجعة الكامل ←", "Open full review queue ←")}
+            </Link>
+          </div>
           <div className="mt-4 grid gap-3">
             {(kyc.data ?? []).length === 0 && (
               <p className="rounded-xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
@@ -255,13 +260,24 @@ function Admin() {
             {(kyc.data ?? []).map((u) => (
               <div key={u.id} className="flex flex-wrap items-center gap-3 rounded-xl border border-border p-4 text-sm">
                 <div className="min-w-44">
-                  <p className="font-semibold">{u.display_name || u.id.slice(0, 8)}</p>
-                  <p className="text-xs text-muted-foreground">{u.kyc_tier}</p>
+                  <p className="font-semibold">{u.full_name || u.profile?.display_name || u.user_id.slice(0, 8)}</p>
+                  <p className="text-xs text-muted-foreground">{u.doc_type} · {u.status}</p>
                 </div>
                 <span className="text-xs text-muted-foreground">{new Date(u.created_at).toLocaleDateString()}</span>
                 <div className="ms-auto flex flex-wrap gap-2">
-                  <button onClick={() => verifyUser.mutate({ id: u.id, verified: true })} className="rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground">{tr("قبول", "Accept")}</button>
-                  <button onClick={() => verifyUser.mutate({ id: u.id, verified: false })} className="rounded-lg border border-destructive/50 px-3 py-1.5 text-xs text-destructive">{tr("رفض", "Reject")}</button>
+                  <button
+                    disabled={reviewKyc.isPending}
+                    onClick={() => reviewKyc.mutate({ id: u.id, approve: true })}
+                    className="min-h-[44px] rounded-lg bg-primary px-4 text-xs font-bold text-primary-foreground disabled:opacity-50"
+                  >
+                    {tr("اعتماد التوثيق", "Approve")}
+                  </button>
+                  <Link
+                    to="/admin/kyc"
+                    className="inline-flex min-h-[44px] items-center rounded-lg border border-destructive/50 px-4 text-xs text-destructive"
+                  >
+                    {tr("رفض مع ذكر السبب", "Reject with reason")}
+                  </Link>
                 </div>
               </div>
             ))}
