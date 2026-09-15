@@ -1482,9 +1482,11 @@ function Workspace() {
                     type="file"
                     multiple
                     className="hidden"
-                    onChange={(e) => {
-                      const names = Array.from(e.target.files ?? []).map((f) => f.name);
-                      setEvidence(names);
+                     onChange={(e) => {
+                       const picked = Array.from(e.target.files ?? []);
+                       const names = picked.map((f) => f.name);
+                       setEvidenceFiles(picked);
+                       setEvidence(names);
                       setEvidenceProgress(Object.fromEntries(names.map((n) => [n, 8])));
                       const timer = window.setInterval(() => {
                         setEvidenceProgress((prev) => {
@@ -1520,7 +1522,10 @@ function Workspace() {
                             <button
                               type="button"
                               aria-label={tr("إزالة المرفق", "Remove attachment")}
-                              onClick={() => setEvidence((list) => list.filter((x) => x !== n))}
+                              onClick={() => {
+                                setEvidence((list) => list.filter((x) => x !== n));
+                                setEvidenceFiles((list) => list.filter((f) => f.name !== n));
+                              }}
                               className="shrink-0 text-muted-foreground hover:text-destructive"
                             >
                               <X className="size-3" />
