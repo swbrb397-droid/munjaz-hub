@@ -52,7 +52,7 @@ function Landing() {
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {nfts.slice(0, 3).map((n) => <NftCard key={n.id} {...n} />)}
           </div>
-        ) : <EmptyState text={tr("لا توجد أصول NFT معروضة حالياً", "No NFT assets listed yet")} />}
+        ) : <EmptyState text={tr("لا توجد عناصر NFT معروضة حالياً", "No NFT items listed yet")} />}
       </Section>
 
 

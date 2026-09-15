@@ -267,7 +267,13 @@ function Store() {
               ))}
             </div>
             {(nfts.data ?? []).length === 0 && (
-              <p className="py-10 text-center text-muted-foreground">{tr("لا توجد نتائج مطابقة.", "No matching results.")}</p>
+              <div className="grid place-items-center gap-2 rounded-2xl border border-dashed border-border px-4 py-12 text-center">
+                <p className="text-sm font-bold text-muted-foreground">
+                  {query
+                    ? tr("لا توجد نتائج مطابقة.", "No matching results.")
+                    : tr("لا توجد عناصر NFT معروضة حالياً", "No NFT items listed yet")}
+                </p>
+              </div>
             )}
           </>
         )}
