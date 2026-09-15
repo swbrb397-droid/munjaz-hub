@@ -207,7 +207,7 @@ export function ServiceCard({
     <Link to="/listing/$id" params={{ id }} className="block">
       <Card className="flex h-full flex-col transition-colors hover:border-primary/50">
         <div className="relative mb-4 h-28 overflow-hidden rounded-xl border border-border">
-          <img src={cover} alt={title} loading="lazy" width={768} height={512} className="size-full object-cover" />
+          <CoverImage src={cover} alt={title} category={category} className="size-full" />
           <ShareListing id={id} title={title} />
           <span className="absolute bottom-2 start-2 rounded-full bg-background/70 px-2 py-0.5 text-[10px] font-semibold text-foreground backdrop-blur">
             {tag}
