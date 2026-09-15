@@ -142,6 +142,10 @@ export function useResolveDispute() {
       void qc.invalidateQueries({ queryKey: ["disputes"] });
       void qc.invalidateQueries({ queryKey: ["orders"] });
       void qc.invalidateQueries({ queryKey: ["wallet"] });
+      void qc.invalidateQueries({ queryKey: ["order_messages"] });
+      void qc.invalidateQueries({ queryKey: ["admin-case-messages"] });
+      void qc.invalidateQueries({ queryKey: ["locked-escrow"] });
+      void qc.invalidateQueries({ queryKey: ["transactions"] });
     },
   });
 }
