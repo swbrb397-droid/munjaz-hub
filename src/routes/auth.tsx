@@ -1,5 +1,5 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { createFileRoute, Link, useNavigate, useRouter } from "@tanstack/react-router";
+import { useEffect, useState, type FormEvent } from "react";
 import { toast } from "sonner";
 import { Loader2, LogIn, RefreshCw, UserPlus } from "lucide-react";
 
@@ -7,7 +7,7 @@ import { Card } from "@/components/site/Shell";
 import { useLang } from "@/lib/lang";
 import { useAuth } from "@/hooks/use-auth";
 import { useUserProfile } from "@/hooks/use-user-profile";
-import { supabase } from "@/lib/cloud-client";
+import { supabase } from "@/integrations/supabase/client";
 
 type SignupRole = "hybrid" | "corporate";
 
@@ -116,6 +116,7 @@ export const Route = createFileRoute("/auth")({
 function AuthPage() {
   const { tr, lang } = useLang();
   const navigate = useNavigate();
+  const router = useRouter();
   const { isAuthenticated, loading: authLoading } = useAuth();
   const { isAdmin, loading: profileLoading } = useUserProfile();
   const { redirectTo } = Route.useSearch();
@@ -207,8 +208,10 @@ function AuthPage() {
   }, [redirectTo]);
 
 
-  async function submit(e: React.FormEvent) {
+  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    e.stopPropagation();
+    if (loading) return;
     setBusy(true);
     setErr(null);
     setMsg(null);
@@ -256,7 +259,7 @@ function AuthPage() {
         }
 
       } else {
-        const { error } = await supabase.auth.signInWithPassword({
+        const { data, error } = await supabase.auth.signInWithPassword({
           email: normalizedEmail,
           password: normalizedPassword,
         });
@@ -267,16 +270,21 @@ function AuthPage() {
           }
           throw error;
         }
+        if (!data.session?.access_token || !data.user) {
+          throw new Error(tr("تعذّر إنشاء جلسة تسجيل الدخول", "Could not establish a sign-in session"));
+        }
         setNavigating(true);
-        toast.success("تم تسجيل الدخول بنجاح");
-        navigate({ to: "/dashboard", replace: true });
+        await router.invalidate();
+        toast.success(tr("تم تسجيل الدخول بنجاح", "Signed in successfully"));
+        await navigate({ to: "/dashboard", replace: true });
       }
     } catch (e) {
       const raw = e instanceof Error ? e.message : String(e);
       const message = authErrorMessage(raw, lang === "ar");
       setErr(message);
       if (mode === "signin") {
-        toast.error(raw);
+        console.error("Sign-in failed:", raw);
+        toast.error(message);
       }
       setNavigating(false);
       if (mode === "signup" && (raw === "__EMAIL_TAKEN__" || /already registered/i.test(raw))) {
@@ -303,7 +311,7 @@ function AuthPage() {
           {tr("محفظة USDT، ضمان الطلبات، وعمولات الإحالة.", "USDT wallet, order escrow, and referral commissions.")}
         </p>
 
-        <form onSubmit={submit} className="mt-6 grid gap-3 text-sm">
+        <form onSubmit={handleSubmit} className="mt-6 grid gap-3 text-sm">
           {mode === "signup" && (
             <label className="grid gap-1.5">
               <span className="text-muted-foreground">{tr("الاسم الظاهر", "Display name")}</span>
