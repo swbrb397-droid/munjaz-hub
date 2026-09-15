@@ -33,7 +33,28 @@ export function useAdminDisputes(enabled: boolean, onlyOpen = true) {
         orders = (res.data ?? []) as Order[];
       }
       const byId = new Map(orders.map((o) => [o.id, o]));
-      return cases.map((c) => ({ ...c, order: c.order_id ? (byId.get(c.order_id) ?? null) : null }));
+
+      // Buyer / seller display names for the resolution desk.
+      const partyIds = Array.from(
+        new Set(orders.flatMap((o) => [o.buyer_id, o.seller_id]).filter(Boolean)),
+      );
+      let parties: DisputeParty[] = [];
+      if (partyIds.length) {
+        const pres = await supabase.from("profiles").select("id, display_name").in("id", partyIds);
+        if (pres.error) throw pres.error;
+        parties = (pres.data ?? []) as DisputeParty[];
+      }
+      const byParty = new Map(parties.map((p) => [p.id, p]));
+
+      return cases.map((c) => {
+        const order = c.order_id ? (byId.get(c.order_id) ?? null) : null;
+        return {
+          ...c,
+          order,
+          buyer: order ? (byParty.get(order.buyer_id) ?? null) : null,
+          seller: order ? (byParty.get(order.seller_id) ?? null) : null,
+        };
+      });
     },
   });
 }
