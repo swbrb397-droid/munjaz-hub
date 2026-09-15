@@ -17,6 +17,14 @@ export function topUpErrorMessage(raw: string, ar: boolean): string {
       "The payment gateway is not enabled yet — contact support.",
     ],
     GATEWAY_ERROR: ["تعذّر إنشاء الفاتورة، حاول مرة أخرى.", "Could not create the invoice, please try again."],
+    SESSION_EXPIRED: [
+      "انتهت صلاحية جلستك — يرجى تسجيل الدخول من جديد ثم إعادة المحاولة.",
+      "Your session expired — please sign in again and retry.",
+    ],
+    Unauthorized: [
+      "انتهت صلاحية جلستك — يرجى تسجيل الدخول من جديد ثم إعادة المحاولة.",
+      "Your session expired — please sign in again and retry.",
+    ],
   };
   const key = Object.keys(map).find((k) => raw.includes(k));
   const entry = key ? map[key] : undefined;
@@ -25,11 +33,43 @@ export function topUpErrorMessage(raw: string, ar: boolean): string {
   return ar ? entry[0] : entry[1];
 }
 
+/**
+ * Guarantees the bearer token attached to the server call is a live JWT.
+ * A token that is missing, malformed or about to expire is refreshed first,
+ * so the gateway call never fails with "Unauthorized: Invalid token".
+ */
+async function ensureFreshSession(force = false): Promise<string> {
+  const { data } = await supabase.auth.getSession();
+  const session = data.session;
+  const token = session?.access_token ?? "";
+  const expiresAt = session?.expires_at ? session.expires_at * 1000 : 0;
+  const stale = !token || token.split(".").length !== 3 || expiresAt - Date.now() < 60_000;
+
+  if (force || stale) {
+    const { data: refreshed, error } = await supabase.auth.refreshSession();
+    const next = refreshed.session?.access_token ?? "";
+    if (error || next.split(".").length !== 3) throw new Error("SESSION_EXPIRED");
+    return next;
+  }
+  return token;
+}
+
 /** Creates a gateway invoice for a USDT wallet top-up. */
 export function useCreateTopUp() {
   const create = useServerFn(createTopUpInvoice);
   return useMutation({
-    mutationFn: (input: { amount: number; network: TopUpNetwork; method: TopUpMethod }) => create({ data: input }),
+    mutationFn: async (input: { amount: number; network: TopUpNetwork; method: TopUpMethod }) => {
+      await ensureFreshSession();
+      try {
+        return await create({ data: input });
+      } catch (e) {
+        const message = e instanceof Error ? e.message : String(e ?? "");
+        // One retry with a force-refreshed token covers a race with token rotation.
+        if (!/unauthorized|invalid token|jwt/i.test(message)) throw e;
+        await ensureFreshSession(true);
+        return await create({ data: input });
+      }
+    },
   });
 }
 
