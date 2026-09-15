@@ -131,6 +131,27 @@ function Admin() {
       </Card>
 
 
+      <div className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {[
+          [tr("إجمالي المستخدمين", "Registered users"), String(overview.data?.totalUsers ?? 0)],
+          [tr("طلبات توثيق معلّقة", "Pending KYC requests"), String(overview.data?.pendingKyc ?? 0)],
+          [tr("أموال محجوزة في الضمان", "Funds in escrow"), `${formatUsdt(overview.data?.escrowLocked ?? 0)} USDT`],
+          [
+            tr("إجمالي الإيداعات المكتملة", "Completed deposits"),
+            `${formatUsdt(overview.data?.depositsTotal ?? 0)} USDT · ${overview.data?.depositsCount ?? 0}`,
+          ],
+          [tr("نزاعات مفتوحة", "Open disputes"), String(overview.data?.openDisputes ?? 0)],
+          [tr("طلبات سحب قيد المعالجة", "Pending withdrawals"), String(overview.data?.pendingWithdrawals ?? 0)],
+        ].map(([label, value]) => (
+          <Card key={label}>
+            <p className="text-xs text-muted-foreground">{label}</p>
+            <p className="mt-1 text-2xl font-black text-primary" dir="ltr">
+              {overview.isLoading ? "…" : value}
+            </p>
+          </Card>
+        ))}
+      </div>
+
       {tab === "disputes" && <DisputeDesk isAdmin={isAdmin} />}
 
       {tab === "payouts" && (
