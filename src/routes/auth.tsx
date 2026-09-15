@@ -207,6 +207,7 @@ function AuthPage() {
 
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
+    console.log("[auth] handleSubmit fired", mode, (e.target as HTMLFormElement)?.action);
     e.preventDefault();
     e.stopPropagation();
     if (loading) return;
