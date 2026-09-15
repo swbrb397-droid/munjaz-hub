@@ -460,8 +460,7 @@ function AuthPage() {
           <button
             disabled={loading || emailInvalid}
             aria-busy={loading}
-            type="button"
-            onClick={submitForm}
+            type="submit"
             className="mt-2 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 font-bold text-primary-foreground glow transition-all duration-200 hover:scale-[1.01] disabled:opacity-60"
           >
             {loading ? (
