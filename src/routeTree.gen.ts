@@ -33,6 +33,7 @@ import { Route as AuthenticatedAdminAuditRouteImport } from './routes/_authentic
 import { Route as AuthenticatedAdminDisputesRouteImport } from './routes/_authenticated/admin.disputes'
 import { Route as AuthenticatedAdminGovernanceRouteImport } from './routes/_authenticated/admin.governance'
 import { Route as AuthenticatedAdminKycRouteImport } from './routes/_authenticated/admin.kyc'
+import { Route as AuthenticatedAdminServicesRouteImport } from './routes/_authenticated/admin.services'
 import { Route as ApiPublicCryptoDepositWebhookRouteImport } from './routes/api/public/crypto-deposit-webhook'
 
 const IndexRoute = IndexRouteImport.update({
@@ -157,6 +158,12 @@ const AuthenticatedAdminKycRoute = AuthenticatedAdminKycRouteImport.update({
   path: '/kyc',
   getParentRoute: () => AuthenticatedAdminRoute,
 } as any)
+const AuthenticatedAdminServicesRoute =
+  AuthenticatedAdminServicesRouteImport.update({
+    id: '/services',
+    path: '/services',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 const ApiPublicCryptoDepositWebhookRoute =
   ApiPublicCryptoDepositWebhookRouteImport.update({
     id: '/api/public/crypto-deposit-webhook',
@@ -187,6 +194,7 @@ export interface FileRoutesByFullPath {
   '/admin/disputes': typeof AuthenticatedAdminDisputesRoute
   '/admin/governance': typeof AuthenticatedAdminGovernanceRoute
   '/admin/kyc': typeof AuthenticatedAdminKycRoute
+  '/admin/services': typeof AuthenticatedAdminServicesRoute
   '/api/public/crypto-deposit-webhook': typeof ApiPublicCryptoDepositWebhookRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
 }
@@ -212,6 +220,7 @@ export interface FileRoutesByTo {
   '/admin/disputes': typeof AuthenticatedAdminDisputesRoute
   '/admin/governance': typeof AuthenticatedAdminGovernanceRoute
   '/admin/kyc': typeof AuthenticatedAdminKycRoute
+  '/admin/services': typeof AuthenticatedAdminServicesRoute
   '/api/public/crypto-deposit-webhook': typeof ApiPublicCryptoDepositWebhookRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
 }
@@ -240,6 +249,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/disputes': typeof AuthenticatedAdminDisputesRoute
   '/_authenticated/admin/governance': typeof AuthenticatedAdminGovernanceRoute
   '/_authenticated/admin/kyc': typeof AuthenticatedAdminKycRoute
+  '/_authenticated/admin/services': typeof AuthenticatedAdminServicesRoute
   '/api/public/crypto-deposit-webhook': typeof ApiPublicCryptoDepositWebhookRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
 }
@@ -268,6 +278,7 @@ export interface FileRouteTypes {
     | '/admin/disputes'
     | '/admin/governance'
     | '/admin/kyc'
+    | '/admin/services'
     | '/api/public/crypto-deposit-webhook'
     | '/admin/'
   fileRoutesByTo: FileRoutesByTo
@@ -293,6 +304,7 @@ export interface FileRouteTypes {
     | '/admin/disputes'
     | '/admin/governance'
     | '/admin/kyc'
+    | '/admin/services'
     | '/api/public/crypto-deposit-webhook'
     | '/admin'
   id:
@@ -320,6 +332,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/disputes'
     | '/_authenticated/admin/governance'
     | '/_authenticated/admin/kyc'
+    | '/_authenticated/admin/services'
     | '/api/public/crypto-deposit-webhook'
     | '/_authenticated/admin/'
   fileRoutesById: FileRoutesById
@@ -509,6 +522,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminKycRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/services': {
+      id: '/_authenticated/admin/services'
+      path: '/services'
+      fullPath: '/admin/services'
+      preLoaderRoute: typeof AuthenticatedAdminServicesRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/api/public/crypto-deposit-webhook': {
       id: '/api/public/crypto-deposit-webhook'
       path: '/api/public/crypto-deposit-webhook'
@@ -524,6 +544,7 @@ interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminDisputesRoute: typeof AuthenticatedAdminDisputesRoute
   AuthenticatedAdminGovernanceRoute: typeof AuthenticatedAdminGovernanceRoute
   AuthenticatedAdminKycRoute: typeof AuthenticatedAdminKycRoute
+  AuthenticatedAdminServicesRoute: typeof AuthenticatedAdminServicesRoute
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
 }
 
@@ -532,6 +553,7 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminDisputesRoute: AuthenticatedAdminDisputesRoute,
   AuthenticatedAdminGovernanceRoute: AuthenticatedAdminGovernanceRoute,
   AuthenticatedAdminKycRoute: AuthenticatedAdminKycRoute,
+  AuthenticatedAdminServicesRoute: AuthenticatedAdminServicesRoute,
   AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
 }
 

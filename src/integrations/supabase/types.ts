@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      audit_logs: {
+        Row: {
+          action_type: string
+          admin_id: string
+          created_at: string
+          id: string
+          meta: Json
+          target_id: string | null
+          target_table: string
+        }
+        Insert: {
+          action_type: string
+          admin_id: string
+          created_at?: string
+          id?: string
+          meta?: Json
+          target_id?: string | null
+          target_table?: string
+        }
+        Update: {
+          action_type?: string
+          admin_id?: string
+          created_at?: string
+          id?: string
+          meta?: Json
+          target_id?: string | null
+          target_table?: string
+        }
+        Relationships: []
+      }
       crypto_invoices: {
         Row: {
           amount_usdt: number
