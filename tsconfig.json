@@ -24,6 +24,7 @@
     "exactOptionalPropertyTypes": true,
     "noUncheckedSideEffectImports": true,
     "paths": {
+      "@/integrations/supabase/client": ["./src/lib/cloud-client.ts"],
       "@/*": ["./src/*"]
     }
   }
