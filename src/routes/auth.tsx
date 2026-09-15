@@ -376,7 +376,7 @@ function AuthPage() {
 
           <label className="grid gap-1.5">
             <span className="text-muted-foreground">{tr("البريد الإلكتروني", "Email")}</span>
-            <input type="email" required autoComplete="email" inputMode="email" dir="ltr" value={email} onChange={(e) => setEmail(e.target.value)} aria-invalid={emailInvalid} className={`min-h-12 w-full rounded-lg border bg-surface px-3 py-2 text-start outline-none focus:ring-2 focus:ring-primary/40 ${emailInvalid ? "border-destructive" : "border-input focus:border-primary"}`} />
+            <input type="email" required autoComplete="email" inputMode="email" dir="ltr" value={email} onChange={(e) => setEmail(e.target.value)} onKeyDown={onInputKeyDown} aria-invalid={emailInvalid} className={`min-h-12 w-full rounded-lg border bg-surface px-3 py-2 text-start outline-none focus:ring-2 focus:ring-primary/40 ${emailInvalid ? "border-destructive" : "border-input focus:border-primary"}`} />
             {emailInvalid && (
               <span className="text-[11px] text-destructive">{tr("صيغة البريد الإلكتروني غير صحيحة", "Invalid email address")}</span>
             )}
@@ -460,7 +460,8 @@ function AuthPage() {
           <button
             disabled={loading || emailInvalid}
             aria-busy={loading}
-            type="submit"
+            type="button"
+            onClick={submitForm}
             className="mt-2 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 font-bold text-primary-foreground glow transition-all duration-200 hover:scale-[1.01] disabled:opacity-60"
           >
             {loading ? (
