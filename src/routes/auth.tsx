@@ -139,6 +139,24 @@ function AuthPage() {
   const [pendingEmail, setPendingEmail] = useState<string | null>(null);
   const [cooldown, setCooldown] = useState(0);
   const [resends, setResends] = useState(0);
+  const formRef = useRef<HTMLFormElement>(null);
+  const submitHandlerRef = useRef(handleSubmit);
+  submitHandlerRef.current = handleSubmit;
+
+  // Fallback: attach a native submit listener so the form works even if React's
+  // synthetic onSubmit fails to fire (observed on some hydration paths).
+  useEffect(() => {
+    const form = formRef.current;
+    if (!form) return;
+    const onNativeSubmit = (e: Event) => {
+      if (e.defaultPrevented) return;
+      e.preventDefault();
+      e.stopPropagation();
+      void submitHandlerRef.current(e as unknown as FormEvent<HTMLFormElement>);
+    };
+    form.addEventListener("submit", onNativeSubmit);
+    return () => form.removeEventListener("submit", onNativeSubmit);
+  }, []);
 
   useEffect(() => {
     if (cooldown <= 0) return;
