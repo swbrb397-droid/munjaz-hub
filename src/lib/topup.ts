@@ -17,6 +17,14 @@ export function topUpErrorMessage(raw: string, ar: boolean): string {
       "The payment gateway is not enabled yet — contact support.",
     ],
     GATEWAY_ERROR: ["تعذّر إنشاء الفاتورة، حاول مرة أخرى.", "Could not create the invoice, please try again."],
+    SESSION_EXPIRED: [
+      "انتهت صلاحية جلستك — يرجى تسجيل الدخول من جديد ثم إعادة المحاولة.",
+      "Your session expired — please sign in again and retry.",
+    ],
+    Unauthorized: [
+      "انتهت صلاحية جلستك — يرجى تسجيل الدخول من جديد ثم إعادة المحاولة.",
+      "Your session expired — please sign in again and retry.",
+    ],
   };
   const key = Object.keys(map).find((k) => raw.includes(k));
   const entry = key ? map[key] : undefined;
