@@ -6,7 +6,13 @@ import { logAuditEvent } from "@/lib/audit";
 export type DisputeCase = Tables<"dispute_cases">;
 export type Order = Tables<"orders">;
 
-export type AdminDispute = DisputeCase & { order: Order | null };
+export type DisputeParty = { id: string; display_name: string };
+
+export type AdminDispute = DisputeCase & {
+  order: Order | null;
+  buyer: DisputeParty | null;
+  seller: DisputeParty | null;
+};
 
 /** All dispute cases joined with their escrow order (admin only). */
 export function useAdminDisputes(enabled: boolean, onlyOpen = true) {
