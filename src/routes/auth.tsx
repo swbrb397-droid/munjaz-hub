@@ -169,18 +169,18 @@ function AuthPage() {
   }
 
   useEffect(() => {
-    if (navigating || authLoading || profileLoading || !isAuthenticated) return;
+    if (navigating || authLoading || !isAuthenticated) return;
     const stored = safeRedirect(window.sessionStorage.getItem(REDIRECT_KEY));
     const target = redirectTo ?? stored;
     if (target) {
       const full = withContext(target);
       window.sessionStorage.removeItem(REDIRECT_KEY);
       window.sessionStorage.removeItem(CTX_KEY);
-      navigate({ href: full, replace: true });
+      void navigate({ href: full, replace: true });
       return;
     }
-    navigate({ to: isAdmin ? "/admin" : "/", replace: true });
-  }, [navigating, authLoading, profileLoading, isAuthenticated, isAdmin, navigate, redirectTo]);
+    void navigate({ to: "/dashboard", replace: true });
+  }, [navigating, authLoading, isAuthenticated, navigate, redirectTo]);
 
   // Persist deep-link context (listingId, lang, ref) across failed logins, signup and session timeouts.
   useEffect(() => {
