@@ -51,7 +51,9 @@ function Admin() {
   const isAdmin = (roles.data ?? []).includes("admin");
 
   const disputes = useDisputes();
-  const kyc = useKycQueue(isAdmin);
+  const kyc = useKycSubmissions(isAdmin, "pending");
+  const reviewKyc = useReviewKyc();
+  const overview = useAdminOverview(isAdmin);
   const orders = useOrders();
   const payouts = useWithdrawalQueue(isAdmin);
   const incidents = useSecurityIncidents(isAdmin);
@@ -70,6 +72,7 @@ function Admin() {
     { key: "security", label: tr("الأمن", "Security"), icon: ShieldAlert },
     { key: "kyc", label: tr("التوثيق", "KYC"), icon: ShieldCheck },
     { key: "revenue", label: tr("الإيرادات", "Revenue"), icon: TrendingUp },
+    { key: "sandbox", label: tr("مختبر الاختبار", "Test sandbox"), icon: FlaskConical },
   ] as const;
 
   const [tab, setTab] = useState<(typeof tabs)[number]["key"]>("disputes");
