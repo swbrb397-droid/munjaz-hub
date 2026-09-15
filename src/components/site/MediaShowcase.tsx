@@ -9,8 +9,9 @@ export type MediaFormat = "image" | "live" | "code" | "video";
 export type MediaItem = {
   id: string;
   src: string;
-  title?: string;
+  title?: string | undefined;
   format: MediaFormat;
+  category?: string | undefined;
 };
 
 const FORMAT_META: Record<MediaFormat, { icon: typeof ImageIcon; ar: string; en: string; cls: string }> = {
