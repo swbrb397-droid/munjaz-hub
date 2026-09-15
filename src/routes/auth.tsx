@@ -192,10 +192,23 @@ function AuthPage() {
     };
     document.addEventListener("input", onInput, true);
 
+    // Capture Enter on the auth form inputs even if React keydown handlers fail.
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== "Enter") return;
+      const target = e.target;
+      if (!(target instanceof HTMLInputElement)) return;
+      const form = target.closest('[data-auth-form="true"]');
+      if (!form) return;
+      e.preventDefault();
+      (form as HTMLFormElement).requestSubmit();
+    };
+    document.addEventListener("keydown", onKeyDown, true);
+
     return () => {
       document.removeEventListener("submit", onSubmit, true);
       document.removeEventListener("click", onClick, true);
       document.removeEventListener("input", onInput, true);
+      document.removeEventListener("keydown", onKeyDown, true);
     };
   }, []);
 
