@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate, useRouter } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
 import { toast } from "sonner";
 import { Loader2, LogIn, RefreshCw, UserPlus } from "lucide-react";
@@ -6,7 +6,7 @@ import { Loader2, LogIn, RefreshCw, UserPlus } from "lucide-react";
 import { Card } from "@/components/site/Shell";
 import { useLang } from "@/lib/lang";
 import { useAuth } from "@/hooks/use-auth";
-import { useUserProfile } from "@/hooks/use-user-profile";
+
 import { supabase } from "@/integrations/supabase/client";
 
 type SignupRole = "hybrid" | "corporate";
