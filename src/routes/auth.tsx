@@ -151,14 +151,10 @@ function AuthPage() {
     }
   };
 
-  // Fallback: attach native listeners directly to the form and button so the
-  // auth flow works even if React's synthetic events fail to attach (observed
-  // on some hydration paths in this route).
+  // Robust fallback: listen at the document level in the capture phase so the
+  // auth form still submits even if React's synthetic events or DOM nodes are
+  // recreated after hydration mismatches.
   useEffect(() => {
-    const form = formRef.current;
-    const button = buttonRef.current;
-    if (!form || !button) return;
-
     const runSubmit = (e: Event) => {
       if (e.defaultPrevented) return;
       e.preventDefault();
@@ -166,12 +162,27 @@ function AuthPage() {
       void submitHandlerRef.current(e as unknown as FormEvent<HTMLFormElement>);
     };
 
-    form.addEventListener("submit", runSubmit);
-    button.addEventListener("click", runSubmit);
+    const onSubmit = (e: Event) => {
+      const form = e.target;
+      if (!(form instanceof HTMLFormElement)) return;
+      if (form.dataset.authForm !== "true") return;
+      runSubmit(e);
+    };
+
+    const onClick = (e: Event) => {
+      const target = e.target;
+      if (!(target instanceof HTMLElement)) return;
+      const button = target.closest('[data-auth-submit="true"]');
+      if (!button) return;
+      runSubmit(e);
+    };
+
+    document.addEventListener("submit", onSubmit, true);
+    document.addEventListener("click", onClick, true);
 
     return () => {
-      form.removeEventListener("submit", runSubmit);
-      button.removeEventListener("click", runSubmit);
+      document.removeEventListener("submit", onSubmit, true);
+      document.removeEventListener("click", onClick, true);
     };
   }, []);
 
