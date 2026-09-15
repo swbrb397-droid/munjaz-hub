@@ -143,7 +143,10 @@ function AuthPage() {
   const submitHandlerRef = useRef(handleSubmit);
   submitHandlerRef.current = handleSubmit;
 
-  const submitForm = () => formRef.current?.requestSubmit();
+  const submitForm = () => {
+    console.log("[auth] submitForm called, ref=", !!formRef.current);
+    formRef.current?.requestSubmit();
+  };
   const onInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
       e.preventDefault();
