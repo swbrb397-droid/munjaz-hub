@@ -143,6 +143,14 @@ function AuthPage() {
   const submitHandlerRef = useRef(handleSubmit);
   submitHandlerRef.current = handleSubmit;
 
+  const submitForm = () => formRef.current?.requestSubmit();
+  const onInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      submitForm();
+    }
+  };
+
   // Fallback: attach a native submit listener so the form works even if React's
   // synthetic onSubmit fails to fire (observed on some hydration paths).
   useEffect(() => {
