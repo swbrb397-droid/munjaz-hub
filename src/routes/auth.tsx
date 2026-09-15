@@ -9,6 +9,13 @@ import { useAuth } from "@/hooks/use-auth";
 
 import { supabase } from "@/lib/cloud-client";
 
+// CRITICAL — AUTH CONFIG LOCK: this route uses the live Almunjaz-hub Supabase
+// project via src/lib/cloud-client. Do NOT replace this with the generated
+// @/integrations/supabase/client or any mock/secondary client, and do NOT
+// await profile/role/balance fetches before redirecting after a successful
+// sign-in. The form also relies on capture-phase DOM fallbacks so it keeps
+// working across hydration edge cases.
+
 type SignupRole = "hybrid" | "corporate";
 
 /** Unified dual selector: one account buys and sells freely. */
