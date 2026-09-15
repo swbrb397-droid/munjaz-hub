@@ -1,10 +1,18 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Banknote, Gavel, ScrollText, ShieldAlert, ShieldCheck, TrendingUp } from "lucide-react";
+import {
+  Banknote,
+  FlaskConical,
+  Gavel,
+  ScrollText,
+  ShieldAlert,
+  ShieldCheck,
+  TrendingUp,
+} from "lucide-react";
 import { Card, Section } from "@/components/site/Shell";
 import { useLang } from "@/lib/lang";
-import { useDisputes, useKycQueue, useOrders, useRoles } from "@/lib/queries";
+import { useDisputes, useOrders, useRoles } from "@/lib/queries";
 import { supabase } from "@/lib/cloud-client";
 import {
   logSecurityEvent,
@@ -21,6 +29,8 @@ import {
   vaultUrl,
   type AdminDispute,
 } from "@/lib/admin-cases";
+import { useAdminOverview, useSandboxAction, type SandboxKind } from "@/lib/admin-ops";
+import { useKycSubmissions, useReviewKyc } from "@/lib/kyc";
 
 export const Route = createFileRoute("/_authenticated/admin/")({
   head: () => ({
@@ -41,7 +51,9 @@ function Admin() {
   const isAdmin = (roles.data ?? []).includes("admin");
 
   const disputes = useDisputes();
-  const kyc = useKycQueue(isAdmin);
+  const kyc = useKycSubmissions(isAdmin, "pending");
+  const reviewKyc = useReviewKyc();
+  const overview = useAdminOverview(isAdmin);
   const orders = useOrders();
   const payouts = useWithdrawalQueue(isAdmin);
   const incidents = useSecurityIncidents(isAdmin);
@@ -60,6 +72,7 @@ function Admin() {
     { key: "security", label: tr("الأمن", "Security"), icon: ShieldAlert },
     { key: "kyc", label: tr("التوثيق", "KYC"), icon: ShieldCheck },
     { key: "revenue", label: tr("الإيرادات", "Revenue"), icon: TrendingUp },
+    { key: "sandbox", label: tr("مختبر الاختبار", "Test sandbox"), icon: FlaskConical },
   ] as const;
 
   const [tab, setTab] = useState<(typeof tabs)[number]["key"]>("disputes");
@@ -75,16 +88,6 @@ function Admin() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["disputes"] }),
   });
 
-  const verifyUser = useMutation({
-    mutationFn: async ({ id, verified }: { id: string; verified: boolean }) => {
-      const { error } = await supabase
-        .from("profiles")
-        .update({ is_verified: verified, kyc_tier: verified ? "tier2" : "tier0" })
-        .eq("id", id);
-      if (error) throw error;
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["kyc-queue"] }),
-  });
 
   const rows = orders.data ?? [];
   const volume = rows.reduce((s, o) => s + Number(o.amount_usdt ?? 0), 0);
@@ -127,6 +130,27 @@ function Admin() {
         </Link>
       </Card>
 
+
+      <div className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {[
+          [tr("إجمالي المستخدمين", "Registered users"), String(overview.data?.totalUsers ?? 0)],
+          [tr("طلبات توثيق معلّقة", "Pending KYC requests"), String(overview.data?.pendingKyc ?? 0)],
+          [tr("أموال محجوزة في الضمان", "Funds in escrow"), `${formatUsdt(overview.data?.escrowLocked ?? 0)} USDT`],
+          [
+            tr("إجمالي الإيداعات المكتملة", "Completed deposits"),
+            `${formatUsdt(overview.data?.depositsTotal ?? 0)} USDT · ${overview.data?.depositsCount ?? 0}`,
+          ],
+          [tr("نزاعات مفتوحة", "Open disputes"), String(overview.data?.openDisputes ?? 0)],
+          [tr("طلبات سحب قيد المعالجة", "Pending withdrawals"), String(overview.data?.pendingWithdrawals ?? 0)],
+        ].map(([label, value]) => (
+          <Card key={label}>
+            <p className="text-xs text-muted-foreground">{label}</p>
+            <p className="mt-1 text-2xl font-black text-primary" dir="ltr">
+              {overview.isLoading ? "…" : value}
+            </p>
+          </Card>
+        ))}
+      </div>
 
       {tab === "disputes" && <DisputeDesk isAdmin={isAdmin} />}
 
@@ -242,7 +266,12 @@ function Admin() {
 
       {tab === "kyc" && (
         <Card>
-          <h3 className="font-bold">{tr("مركز توثيق الهوية", "KYC center")}</h3>
+          <div className="flex flex-wrap items-center gap-3">
+            <h3 className="font-bold">{tr("مركز توثيق الهوية", "KYC center")}</h3>
+            <Link to="/admin/kyc" className="ms-auto text-xs font-bold text-primary">
+              {tr("فتح طابور المراجعة الكامل ←", "Open full review queue ←")}
+            </Link>
+          </div>
           <div className="mt-4 grid gap-3">
             {(kyc.data ?? []).length === 0 && (
               <p className="rounded-xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
@@ -252,13 +281,24 @@ function Admin() {
             {(kyc.data ?? []).map((u) => (
               <div key={u.id} className="flex flex-wrap items-center gap-3 rounded-xl border border-border p-4 text-sm">
                 <div className="min-w-44">
-                  <p className="font-semibold">{u.display_name || u.id.slice(0, 8)}</p>
-                  <p className="text-xs text-muted-foreground">{u.kyc_tier}</p>
+                  <p className="font-semibold">{u.full_name || u.profile?.display_name || u.user_id.slice(0, 8)}</p>
+                  <p className="text-xs text-muted-foreground">{u.doc_type} · {u.status}</p>
                 </div>
                 <span className="text-xs text-muted-foreground">{new Date(u.created_at).toLocaleDateString()}</span>
                 <div className="ms-auto flex flex-wrap gap-2">
-                  <button onClick={() => verifyUser.mutate({ id: u.id, verified: true })} className="rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground">{tr("قبول", "Accept")}</button>
-                  <button onClick={() => verifyUser.mutate({ id: u.id, verified: false })} className="rounded-lg border border-destructive/50 px-3 py-1.5 text-xs text-destructive">{tr("رفض", "Reject")}</button>
+                  <button
+                    disabled={reviewKyc.isPending}
+                    onClick={() => reviewKyc.mutate({ id: u.id, approve: true })}
+                    className="min-h-[44px] rounded-lg bg-primary px-4 text-xs font-bold text-primary-foreground disabled:opacity-50"
+                  >
+                    {tr("اعتماد التوثيق", "Approve")}
+                  </button>
+                  <Link
+                    to="/admin/kyc"
+                    className="inline-flex min-h-[44px] items-center rounded-lg border border-destructive/50 px-4 text-xs text-destructive"
+                  >
+                    {tr("رفض مع ذكر السبب", "Reject with reason")}
+                  </Link>
                 </div>
               </div>
             ))}
@@ -281,7 +321,83 @@ function Admin() {
           ))}
         </div>
       )}
+
+      {tab === "sandbox" && <SandboxPanel />}
     </Section>
+  );
+}
+
+/* --------------------------------------------- super-admin test & sandbox */
+
+/** Private bench for the platform owner to exercise deposits, KYC, and arbitration. */
+function SandboxPanel() {
+  const { tr } = useLang();
+  const sandbox = useSandboxAction();
+  const [last, setLast] = useState<string | null>(null);
+
+  const run = (kind: SandboxKind, done: string) =>
+    sandbox.mutate(kind, {
+      onSuccess: (res) => {
+        setLast(`${done} — ${JSON.stringify(res)}`);
+        toast.success(done);
+      },
+      onError: (e: unknown) => toast.error(e instanceof Error ? e.message : tr("فشل التنفيذ", "Action failed")),
+    });
+
+  const actions: { kind: SandboxKind; title: string; detail: string; done: string }[] = [
+    {
+      kind: "deposit",
+      title: tr("محاكاة إشعار إيداع", "Simulate deposit webhook"),
+      detail: tr("إضافة 10 USDT إلى محفظتك كإيداع مؤكد لاختبار القيد التلقائي.", "Credits 10 USDT to your wallet as a confirmed deposit."),
+      done: tr("تم قيد إيداع اختباري بقيمة 10 USDT", "Test deposit of 10 USDT credited"),
+    },
+    {
+      kind: "kyc",
+      title: tr("إنشاء طلب توثيق اختباري", "Inject test KYC"),
+      detail: tr("إنشاء طلب توثيق معلّق لاختبار الاعتماد والرفض.", "Creates a pending verification request to test approve/reject."),
+      done: tr("تم إنشاء طلب توثيق معلّق", "Pending KYC request created"),
+    },
+    {
+      kind: "dispute",
+      title: tr("إنشاء طلب متنازع عليه", "Simulate disputed order"),
+      detail: tr("إنشاء طلب ضمان بقيمة 25 USDT تحت النزاع لاختبار قرارات التحكيم دون أموال حقيقية.", "Creates a 25 USDT escrow order under dispute to test arbitration."),
+      done: tr("تم إنشاء طلب متنازع عليه", "Disputed order created"),
+    },
+  ];
+
+  return (
+    <Card>
+      <h3 className="font-bold">{tr("مختبر الاختبار والتشخيص", "Test & debug sandbox")}</h3>
+      <p className="mt-1 text-xs text-muted-foreground">
+        {tr(
+          "هذه الأدوات متاحة للمشرف الأعلى فقط وتنفّذ عمليات حقيقية على حسابك أنت لأغراض الاختبار.",
+          "Owner-only tools. They run real operations against your own account for testing.",
+        )}
+      </p>
+      <div className="mt-4 grid gap-3 md:grid-cols-3">
+        {actions.map((a) => (
+          <div key={a.kind} className="grid content-between gap-3 rounded-xl border border-border p-4">
+            <div>
+              <p className="text-sm font-bold">{a.title}</p>
+              <p className="mt-1 text-xs text-muted-foreground">{a.detail}</p>
+            </div>
+            <button
+              type="button"
+              disabled={sandbox.isPending}
+              onClick={() => run(a.kind, a.done)}
+              className="min-h-[44px] rounded-lg bg-primary px-4 text-sm font-bold text-primary-foreground disabled:opacity-50"
+            >
+              {sandbox.isPending ? tr("جارٍ التنفيذ…", "Running…") : tr("تشغيل", "Run")}
+            </button>
+          </div>
+        ))}
+      </div>
+      {last && (
+        <p className="mt-4 break-all rounded-xl border border-border bg-surface-2/60 p-3 font-mono text-[11px] text-muted-foreground" dir="ltr">
+          {last}
+        </p>
+      )}
+    </Card>
   );
 }
 

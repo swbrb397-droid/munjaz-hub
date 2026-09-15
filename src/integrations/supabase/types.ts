@@ -1204,6 +1204,18 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_platform_overview: {
+        Args: never
+        Returns: {
+          deposits_count: number
+          deposits_total: number
+          escrow_locked: number
+          open_disputes: number
+          pending_kyc: number
+          pending_withdrawals: number
+          total_users: number
+        }[]
+      }
       admin_resolve_dispute: {
         Args: { _action: string; _case_id: string; _ruling?: string }
         Returns: {
@@ -1256,6 +1268,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      admin_sandbox_action: { Args: { _kind: string }; Returns: Json }
       auto_release_escrow: { Args: never; Returns: number }
       check_rate_limit: {
         Args: { _action: string; _max: number; _window: string }

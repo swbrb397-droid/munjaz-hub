@@ -35,7 +35,7 @@ function Landing() {
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {featured.slice(0, 4).map((s) => <ServiceCard key={s.id} {...s} />)}
           </div>
-        ) : <EmptyState text={tr("لا توجد خدمات مميزة حالياً", "No featured services yet")} />}
+        ) : <EmptyState text={tr("لا توجد خدمات معروضة حالياً — كن أول من يضيف عرضاً في المنصة", "No services listed yet — be the first to publish an offer")} />}
       </Section>
 
       <Section title={tr("منتجات رقمية ودورات", "Digital products & courses")} subtitle={tr("تسليم فوري وتشغيل داخل المنصة", "Instant delivery and in-platform access")}>
@@ -166,7 +166,18 @@ function LiveStats() {
 }
 
 function EmptyState({ text }: { text: string }) {
-  return <p className="rounded-lg border border-dashed border-border px-4 py-8 text-center text-sm text-muted-foreground">{text}</p>;
+  const { tr } = useLang();
+  return (
+    <div className="grid place-items-center gap-3 rounded-lg border border-dashed border-border px-4 py-10 text-center">
+      <p className="text-sm font-bold text-muted-foreground">{text}</p>
+      <Link
+        to="/create-listing"
+        className="inline-flex min-h-[44px] items-center rounded-xl bg-primary px-5 text-sm font-bold text-primary-foreground"
+      >
+        {tr("إنشاء عرض", "Create an offer")}
+      </Link>
+    </div>
+  );
 }
 
 function Ticker() {
