@@ -4,7 +4,7 @@ import { BadgeCheck, Crown, Medal, Sparkles, Star, Trophy, Zap } from "lucide-re
 import { Card, Section } from "@/components/site/Shell";
 import { useLang } from "@/lib/lang";
 import { useLeaderboard, type LeaderboardMetric } from "@/lib/platform";
-import { maskUser } from "@/lib/mask";
+
 
 export const Route = createFileRoute("/leaderboard")({
   head: () => ({
