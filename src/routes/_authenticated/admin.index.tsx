@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { Card, Section } from "@/components/site/Shell";
 import { useLang } from "@/lib/lang";
-import { useDisputes, useKycQueue, useOrders, useRoles } from "@/lib/queries";
+import { useDisputes, useOrders, useRoles } from "@/lib/queries";
 import { supabase } from "@/lib/cloud-client";
 import {
   logSecurityEvent,
