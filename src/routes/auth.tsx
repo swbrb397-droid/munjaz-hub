@@ -180,9 +180,22 @@ function AuthPage() {
     document.addEventListener("submit", onSubmit, true);
     document.addEventListener("click", onClick, true);
 
+    // Mirror form input values into React state in case hydration issues stop
+    // the synthetic onChange events from firing on these inputs.
+    const onInput = (e: Event) => {
+      const target = e.target;
+      if (!(target instanceof HTMLInputElement)) return;
+      const form = target.closest('[data-auth-form="true"]');
+      if (!form) return;
+      if (target.type === "email") setEmail(target.value);
+      if (target.type === "password") setPassword(target.value);
+    };
+    document.addEventListener("input", onInput, true);
+
     return () => {
       document.removeEventListener("submit", onSubmit, true);
       document.removeEventListener("click", onClick, true);
+      document.removeEventListener("input", onInput, true);
     };
   }, []);
 
