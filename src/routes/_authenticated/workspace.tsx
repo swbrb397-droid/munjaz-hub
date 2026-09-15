@@ -48,6 +48,7 @@ import {
   useSetDeliverableApproval,
   useUploadDeliverable,
   vaultUrl,
+  VAULT_BUCKET,
 } from "@/lib/workspace-data";
 import { supabase } from "@/lib/cloud-client";
 import { sanitizeText } from "@/lib/security";
@@ -316,6 +317,8 @@ function Workspace() {
   const [warning, setWarning] = useState(false);
   const [reason, setReason] = useState("");
   const [evidence, setEvidence] = useState<string[]>([]);
+  /** Real File handles for the attached evidence, uploaded on submit. */
+  const [evidenceFiles, setEvidenceFiles] = useState<File[]>([]);
   const [evidenceProgress, setEvidenceProgress] = useState<Record<string, number>>({});
   const timelineRef = useRef<HTMLDivElement>(null);
   const [exportingLog, setExportingLog] = useState(false);
