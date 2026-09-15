@@ -17,7 +17,7 @@ import { useUserProfile } from "@/hooks/use-user-profile";
 import { SupportWidget } from "@/components/site/SupportWidget";
 import { DmcaTrigger } from "@/components/site/DmcaModal";
 import { ManifestoModal, useManifestoFirstRun } from "@/components/site/ManifestoModal";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/cloud-client";
 
 type NavItem = { to: string; key: TranslationKey; icon: LucideIcon };
 type NavGroup = { title: [string, string]; items: ReadonlyArray<NavItem> };

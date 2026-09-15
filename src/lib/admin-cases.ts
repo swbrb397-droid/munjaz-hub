@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/cloud-client";
 import type { Tables } from "@/integrations/supabase/types";
 import { logAuditEvent } from "@/lib/audit";
 

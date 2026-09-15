@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, BadgeCheck, Star, TrendingUp, Trophy, Zap } from "lucide-react";
 import { Card, Section } from "@/components/site/Shell";
 import { useLang } from "@/lib/lang";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/cloud-client";
 import { ServiceCard } from "@/routes/index";
 import { COVERS } from "@/lib/catalog";
 

@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/cloud-client";
 
 /** Live platform counters (published offers, sellers, completed orders, volume). */
 export function usePlatformStats() {

@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/cloud-client";
 import { sanitizeText } from "@/lib/security";
 import { useAuth } from "@/hooks/use-auth";
 import { useLang } from "@/lib/lang";
