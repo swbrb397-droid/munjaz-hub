@@ -160,6 +160,7 @@ function AuthPage() {
     const form = formRef.current;
     if (!form) return;
     const onNativeSubmit = (e: Event) => {
+      console.log("[auth] native submit event", e.type, "defaultPrevented", e.defaultPrevented);
       if (e.defaultPrevented) return;
       e.preventDefault();
       e.stopPropagation();
