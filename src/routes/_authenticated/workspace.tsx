@@ -654,7 +654,7 @@ function Workspace() {
       // 1) Upload every attached proof to the private evidence vault.
       const entries: { name: string; path: string; type: string; size: number }[] = [];
       for (const file of evidenceFiles) {
-        const rejection = checkUpload(file, profile.data?.account_tier ?? null);
+        const rejection = checkUpload(file, uploadTier);
         if (rejection) throw new Error(rejection);
         const safeName = file.name.replace(/[^\w.\-]+/g, "_").slice(-80);
         const path = `disputes/${order.id}/${Date.now()}_${safeName}`;
