@@ -38,9 +38,11 @@ export function PrestigeTracker({ metrics }: { metrics: PrestigeMetrics }) {
           <div key={r.key} className="rounded-xl border border-border p-3">
             <div className="flex items-center justify-between text-xs">
               <span className="text-muted-foreground">{tr(r.ar, r.en)}</span>
-              <span className="whitespace-nowrap font-bold" dir="ltr">
-                {r.key === "rating" ? r.value.toFixed(2) : Math.round(r.value).toLocaleString()}
-                {next ? ` / ${r.key === "rating" ? r.target.toFixed(2) : Math.round(r.target).toLocaleString()}` : ""}
+              <span className="inline-flex items-baseline gap-1 whitespace-nowrap font-bold" dir="ltr">
+                <bdi>{r.key === "rating" ? r.value.toFixed(2) : Math.round(r.value).toLocaleString("en-US")}</bdi>
+                {next && <span aria-hidden="true">/</span>}
+                {next && <bdi>{r.key === "rating" ? r.target.toFixed(2) : Math.round(r.target).toLocaleString("en-US")}</bdi>}
+                {r.key === "volume" && <span className="font-normal text-muted-foreground">USDT</span>}
               </span>
             </div>
             <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-secondary">

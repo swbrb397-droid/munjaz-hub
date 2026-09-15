@@ -349,7 +349,7 @@ export function Shell({ children }: { children: ReactNode }) {
 
 
       <footer className="mt-24 border-t border-border">
-        <div className="mx-auto flex max-w-7xl flex-col items-center gap-4 px-4 py-9 text-center text-sm text-muted-foreground sm:flex-row sm:justify-between sm:py-8 sm:text-start">
+        <div className="mx-auto flex max-w-7xl flex-col items-center gap-4 px-4 pb-28 pt-9 text-center text-sm text-muted-foreground sm:flex-row sm:justify-between sm:py-8 sm:text-start">
           <p className="leading-relaxed">{t("footer")}</p>
           <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-3 text-xs sm:justify-end">
             <Link to="/terms" className="hover:text-foreground transition-colors">

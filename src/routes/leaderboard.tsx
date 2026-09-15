@@ -31,9 +31,7 @@ function Leaderboard() {
   const [metric, setMetric] = useState<LeaderboardMetric>("rating");
   const board = useLeaderboard(metric);
   const rows = board.data ?? [];
-  const rankedRows = rows.filter(
-    (seller) => seller.completed_orders > 0 || seller.rating > 0 || seller.xp_points > 0,
-  );
+  const rankedRows = rows.filter((seller) => seller.completed_orders > 0);
 
   const metrics: { key: LeaderboardMetric; label: string; icon: typeof Star }[] = [
     { key: "rating", label: tr("التقييم", "Rating"), icon: Star },
