@@ -166,7 +166,18 @@ function LiveStats() {
 }
 
 function EmptyState({ text }: { text: string }) {
-  return <p className="rounded-lg border border-dashed border-border px-4 py-8 text-center text-sm text-muted-foreground">{text}</p>;
+  const { tr } = useLang();
+  return (
+    <div className="grid place-items-center gap-3 rounded-lg border border-dashed border-border px-4 py-10 text-center">
+      <p className="text-sm font-bold text-muted-foreground">{text}</p>
+      <Link
+        to="/create-listing"
+        className="inline-flex min-h-[44px] items-center rounded-xl bg-primary px-5 text-sm font-bold text-primary-foreground"
+      >
+        {tr("إنشاء عرض", "Create an offer")}
+      </Link>
+    </div>
+  );
 }
 
 function Ticker() {

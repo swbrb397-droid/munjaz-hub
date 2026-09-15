@@ -211,9 +211,17 @@ function Store() {
         ) : listings.error ? (
           <p className="py-10 text-center text-muted-foreground">{tr("تعذّر تحميل الخدمات.", "Could not load services.")}</p>
         ) : items.length === 0 ? (
-          <p className="rounded-2xl border border-dashed border-border py-12 text-center text-muted-foreground">
-            {tr("لا توجد خدمات معروضة حالياً", "No services are currently listed")}
-          </p>
+          <div className="grid place-items-center gap-3 rounded-2xl border border-dashed border-border px-4 py-12 text-center">
+            <p className="text-sm font-bold text-muted-foreground">
+              {tr("لا توجد خدمات معروضة حالياً — كن أول من يضيف عرضاً في المنصة", "No services listed yet — be the first to publish an offer")}
+            </p>
+            <Link
+              to="/create-listing"
+              className="inline-flex min-h-[44px] items-center rounded-xl bg-primary px-5 text-sm font-bold text-primary-foreground"
+            >
+              {tr("إنشاء عرض", "Create an offer")}
+            </Link>
+          </div>
         ) : (
           <>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

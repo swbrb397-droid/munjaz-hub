@@ -102,7 +102,7 @@ function Leaderboard() {
                       )}
                       <span className="min-w-0">
                         <span className="flex min-w-0 items-center gap-1 font-bold">
-                          <span className="truncate font-mono" dir="ltr">{masked}</span>
+                          <span className="truncate">{masked}</span>
                           {seller.is_verified && <BadgeCheck className="size-4 shrink-0 text-accent" />}
                         </span>
                         <span className="block text-[11px] text-muted-foreground">
@@ -171,7 +171,7 @@ function Leaderboard() {
                         )}
                         <span>
                           <span className="flex items-center gap-1 font-bold">
-                            <span className="font-mono" dir="ltr">{masked}</span>
+                            <span className="truncate">{masked}</span>
                             {s.is_verified && <BadgeCheck className="size-4 text-accent" />}
                           </span>
                           <span className="block text-xs text-muted-foreground">
