@@ -14,6 +14,13 @@ import {
   useWithdrawalQueue,
 } from "@/lib/withdrawals";
 import { formatUsdt } from "@/lib/security";
+import { toast } from "sonner";
+import {
+  useAdminDisputes,
+  useResolveDispute,
+  vaultUrl,
+  type AdminDispute,
+} from "@/lib/admin-cases";
 
 export const Route = createFileRoute("/_authenticated/admin/")({
   head: () => ({
