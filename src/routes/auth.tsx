@@ -1,13 +1,20 @@
-import { createFileRoute, Link, useNavigate, useRouter } from "@tanstack/react-router";
-import { useEffect, useState, type FormEvent } from "react";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { toast } from "sonner";
 import { Loader2, LogIn, RefreshCw, UserPlus } from "lucide-react";
 
 import { Card } from "@/components/site/Shell";
 import { useLang } from "@/lib/lang";
 import { useAuth } from "@/hooks/use-auth";
-import { useUserProfile } from "@/hooks/use-user-profile";
-import { supabase } from "@/integrations/supabase/client";
+
+import { supabase } from "@/lib/cloud-client";
+
+// CRITICAL — AUTH CONFIG LOCK: this route uses the live Almunjaz-hub Supabase
+// project via src/lib/cloud-client. Do NOT replace this with the generated
+// @/integrations/supabase/client or any mock/secondary client, and do NOT
+// await profile/role/balance fetches before redirecting after a successful
+// sign-in. The form also relies on capture-phase DOM fallbacks so it keeps
+// working across hydration edge cases.
 
 type SignupRole = "hybrid" | "corporate";
 
@@ -116,9 +123,7 @@ export const Route = createFileRoute("/auth")({
 function AuthPage() {
   const { tr, lang } = useLang();
   const navigate = useNavigate();
-  const router = useRouter();
   const { isAuthenticated, loading: authLoading } = useAuth();
-  const { isAdmin, loading: profileLoading } = useUserProfile();
   const { redirectTo } = Route.useSearch();
 
   // Persist the deep link (path + query) so it survives the signup/confirmation round-trip.
@@ -141,6 +146,78 @@ function AuthPage() {
   const [pendingEmail, setPendingEmail] = useState<string | null>(null);
   const [cooldown, setCooldown] = useState(0);
   const [resends, setResends] = useState(0);
+  const formRef = useRef<HTMLFormElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const submitHandlerRef = useRef(handleSubmit);
+  submitHandlerRef.current = handleSubmit;
+
+  const onInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      formRef.current?.requestSubmit();
+    }
+  };
+
+  // Robust fallback: listen at the document level in the capture phase so the
+  // auth form still submits even if React's synthetic events or DOM nodes are
+  // recreated after hydration mismatches.
+  useEffect(() => {
+    const runSubmit = (e: Event) => {
+      if (e.defaultPrevented) return;
+      e.preventDefault();
+      e.stopPropagation();
+      void submitHandlerRef.current(e as unknown as FormEvent<HTMLFormElement>);
+    };
+
+    const onSubmit = (e: Event) => {
+      const form = e.target;
+      if (!(form instanceof HTMLFormElement)) return;
+      if (form.getAttribute("data-auth-form") !== "true") return;
+      runSubmit(e);
+    };
+
+    const onClick = (e: Event) => {
+      const target = e.target;
+      if (!(target instanceof HTMLElement)) return;
+      const button = target.closest('[data-auth-submit="true"]');
+      if (!button) return;
+      runSubmit(e);
+    };
+
+    document.addEventListener("submit", onSubmit, true);
+    document.addEventListener("click", onClick, true);
+
+    // Mirror form input values into React state in case hydration issues stop
+    // the synthetic onChange events from firing on these inputs.
+    const onInput = (e: Event) => {
+      const target = e.target;
+      if (!(target instanceof HTMLInputElement)) return;
+      const form = target.closest('[data-auth-form="true"]');
+      if (!form) return;
+      if (target.type === "email") setEmail(target.value);
+      if (target.type === "password") setPassword(target.value);
+    };
+    document.addEventListener("input", onInput, true);
+
+    // Capture Enter on the auth form inputs even if React keydown handlers fail.
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== "Enter") return;
+      const target = e.target;
+      if (!(target instanceof HTMLInputElement)) return;
+      const form = target.closest('[data-auth-form="true"]');
+      if (!form) return;
+      e.preventDefault();
+      (form as HTMLFormElement).requestSubmit();
+    };
+    document.addEventListener("keydown", onKeyDown, true);
+
+    return () => {
+      document.removeEventListener("submit", onSubmit, true);
+      document.removeEventListener("click", onClick, true);
+      document.removeEventListener("input", onInput, true);
+      document.removeEventListener("keydown", onKeyDown, true);
+    };
+  }, []);
 
   useEffect(() => {
     if (cooldown <= 0) return;
@@ -171,18 +248,18 @@ function AuthPage() {
   }
 
   useEffect(() => {
-    if (navigating || authLoading || profileLoading || !isAuthenticated) return;
+    if (navigating || authLoading || !isAuthenticated) return;
     const stored = safeRedirect(window.sessionStorage.getItem(REDIRECT_KEY));
     const target = redirectTo ?? stored;
     if (target) {
       const full = withContext(target);
       window.sessionStorage.removeItem(REDIRECT_KEY);
       window.sessionStorage.removeItem(CTX_KEY);
-      navigate({ href: full, replace: true });
+      void navigate({ href: full, replace: true });
       return;
     }
-    navigate({ to: isAdmin ? "/admin" : "/", replace: true });
-  }, [navigating, authLoading, profileLoading, isAuthenticated, isAdmin, navigate, redirectTo]);
+    void navigate({ to: "/dashboard", replace: true });
+  }, [navigating, authLoading, isAuthenticated, navigate, redirectTo]);
 
   // Persist deep-link context (listingId, lang, ref) across failed logins, signup and session timeouts.
   useEffect(() => {
@@ -273,10 +350,18 @@ function AuthPage() {
         if (!data.session?.access_token || !data.user) {
           throw new Error(tr("تعذّر إنشاء جلسة تسجيل الدخول", "Could not establish a sign-in session"));
         }
+
+        // Immediate optimistic navigation: never wait for profile/role/balance data.
+        const stored = safeRedirect(window.sessionStorage.getItem(REDIRECT_KEY));
+        const target = redirectTo ?? stored ?? "/dashboard";
+        window.sessionStorage.removeItem(REDIRECT_KEY);
+        window.sessionStorage.removeItem(CTX_KEY);
+
         setNavigating(true);
-        await router.invalidate();
+        setBusy(false);
         toast.success(tr("تم تسجيل الدخول بنجاح", "Signed in successfully"));
-        await navigate({ to: "/dashboard", replace: true });
+        void navigate({ href: withContext(target), replace: true });
+        return;
       }
     } catch (e) {
       const raw = e instanceof Error ? e.message : String(e);
@@ -311,7 +396,7 @@ function AuthPage() {
           {tr("محفظة USDT، ضمان الطلبات، وعمولات الإحالة.", "USDT wallet, order escrow, and referral commissions.")}
         </p>
 
-        <form onSubmit={handleSubmit} className="mt-6 grid gap-3 text-sm">
+        <form ref={formRef} data-auth-form="true" onSubmit={handleSubmit} className="mt-6 grid gap-3 text-sm">
           {mode === "signup" && (
             <label className="grid gap-1.5">
               <span className="text-muted-foreground">{tr("الاسم الظاهر", "Display name")}</span>
@@ -344,14 +429,14 @@ function AuthPage() {
 
           <label className="grid gap-1.5">
             <span className="text-muted-foreground">{tr("البريد الإلكتروني", "Email")}</span>
-            <input type="email" required autoComplete="email" inputMode="email" dir="ltr" value={email} onChange={(e) => setEmail(e.target.value)} aria-invalid={emailInvalid} className={`min-h-12 w-full rounded-lg border bg-surface px-3 py-2 text-start outline-none focus:ring-2 focus:ring-primary/40 ${emailInvalid ? "border-destructive" : "border-input focus:border-primary"}`} />
+            <input type="email" required autoComplete="email" inputMode="email" dir="ltr" value={email} onChange={(e) => setEmail(e.target.value)} onKeyDown={onInputKeyDown} aria-invalid={emailInvalid} className={`min-h-12 w-full rounded-lg border bg-surface px-3 py-2 text-start outline-none focus:ring-2 focus:ring-primary/40 ${emailInvalid ? "border-destructive" : "border-input focus:border-primary"}`} />
             {emailInvalid && (
               <span className="text-[11px] text-destructive">{tr("صيغة البريد الإلكتروني غير صحيحة", "Invalid email address")}</span>
             )}
           </label>
           <label className="grid gap-1.5">
             <span className="text-muted-foreground">{tr("كلمة المرور", "Password")}</span>
-            <input type="password" required minLength={6} autoComplete={mode === "signin" ? "current-password" : "new-password"} dir="ltr" value={password} onChange={(e) => setPassword(e.target.value)} className="min-h-12 w-full rounded-lg border border-input bg-surface px-3 py-2 text-start outline-none focus:border-primary focus:ring-2 focus:ring-primary/40" />
+            <input type="password" required minLength={6} autoComplete={mode === "signin" ? "current-password" : "new-password"} dir="ltr" value={password} onChange={(e) => setPassword(e.target.value)} onKeyDown={onInputKeyDown} className="min-h-12 w-full rounded-lg border border-input bg-surface px-3 py-2 text-start outline-none focus:border-primary focus:ring-2 focus:ring-primary/40" />
             {mode === "signup" && password.length > 0 && (
               <>
                 <span className="flex gap-1">
@@ -426,9 +511,11 @@ function AuthPage() {
           )}
 
           <button
+            ref={buttonRef}
+            data-auth-submit="true"
             disabled={loading || emailInvalid}
             aria-busy={loading}
-            type="submit"
+            type="button"
             className="mt-2 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 font-bold text-primary-foreground glow transition-all duration-200 hover:scale-[1.01] disabled:opacity-60"
           >
             {loading ? (
