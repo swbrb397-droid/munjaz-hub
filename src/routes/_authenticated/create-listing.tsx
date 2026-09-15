@@ -669,7 +669,8 @@ function CreateListing() {
                       >
                         <Trash2 className="size-3.5" /> {tr("حذف العرض", "Delete listing")}
                       </button>
-                    </div>
+                      </div>
+                    </>
                   )}
                 </div>
               </Card>
