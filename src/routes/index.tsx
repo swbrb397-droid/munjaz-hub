@@ -8,6 +8,7 @@ import { usePlatformStats } from "@/lib/platform";
 import { useLang } from "@/lib/lang";
 import { VerifiedBadge } from "@/components/site/VerifiedBadge";
 import { ShareListing } from "@/components/site/ShareListing";
+import { CoverImage } from "@/components/site/CoverImage";
 
 export const Route = createFileRoute("/")({
   head: () => ({

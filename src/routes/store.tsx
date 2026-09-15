@@ -4,6 +4,7 @@ import { ArrowLeft, Filter, Loader2, Star, X } from "lucide-react";
 import { useListing } from "@/lib/orders";
 import { useLang as useLangCtx } from "@/lib/lang";
 import { Card, Section } from "@/components/site/Shell";
+import { CoverImage } from "@/components/site/CoverImage";
 import { useLang } from "@/lib/lang";
 import { PAGE_SIZE, useListings, useNfts, type ListingCategory, type SortKey } from "@/lib/catalog";
 import { NftCard, ServiceCard } from "./index";
