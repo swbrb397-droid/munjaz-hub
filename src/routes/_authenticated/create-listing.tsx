@@ -608,10 +608,18 @@ function CreateListing() {
                     <MoreHorizontal className="size-4" /> {tr("إجراءات", "Actions")}
                   </button>
                   {menuFor === l.id && (
-                    <div
-                      role="menu"
-                      className="absolute end-0 z-20 mt-2 w-52 overflow-hidden rounded-xl border border-border bg-card shadow-xl"
-                    >
+                    <>
+                      <button
+                        type="button"
+                        aria-hidden
+                        tabIndex={-1}
+                        onClick={() => setMenuFor(null)}
+                        className="fixed inset-0 z-30 cursor-default bg-transparent"
+                      />
+                      <div
+                        role="menu"
+                        className="absolute end-0 z-40 mt-2 w-52 max-w-[calc(100vw-2rem)] overflow-hidden rounded-xl border border-border bg-card shadow-xl max-sm:fixed max-sm:bottom-6 max-sm:end-auto max-sm:left-1/2 max-sm:top-auto max-sm:mt-0 max-sm:w-[min(18rem,calc(100vw-2rem))] max-sm:-translate-x-1/2"
+                      >
                       <button
                         type="button"
                         role="menuitem"
@@ -661,7 +669,8 @@ function CreateListing() {
                       >
                         <Trash2 className="size-3.5" /> {tr("حذف العرض", "Delete listing")}
                       </button>
-                    </div>
+                      </div>
+                    </>
                   )}
                 </div>
               </Card>

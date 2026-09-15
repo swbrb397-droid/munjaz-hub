@@ -1,0 +1,1 @@
+DELETE FROM public.nft_items WHERE id IN ('d49778bd-b6ff-436a-b819-1623dc0ed5a0','6bf0101c-f3f6-44de-8333-7074918962a8','85ee6932-eff1-4cca-8799-4ee6f148b1b0','97b2b375-fc31-4a67-80a2-70acfa363d30','9b40d661-2ef6-495a-b1b1-6b16fe60e177','6976799d-e9c2-4228-8c0d-80acdac044cd');
