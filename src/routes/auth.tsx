@@ -116,9 +116,7 @@ export const Route = createFileRoute("/auth")({
 function AuthPage() {
   const { tr, lang } = useLang();
   const navigate = useNavigate();
-  const router = useRouter();
   const { isAuthenticated, loading: authLoading } = useAuth();
-  const { isAdmin, loading: profileLoading } = useUserProfile();
   const { redirectTo } = Route.useSearch();
 
   // Persist the deep link (path + query) so it survives the signup/confirmation round-trip.
