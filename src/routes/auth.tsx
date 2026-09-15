@@ -7,7 +7,7 @@ import { Card } from "@/components/site/Shell";
 import { useLang } from "@/lib/lang";
 import { useAuth } from "@/hooks/use-auth";
 
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/cloud-client";
 
 type SignupRole = "hybrid" | "corporate";
 
