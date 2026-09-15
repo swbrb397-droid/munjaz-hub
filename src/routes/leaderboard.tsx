@@ -81,7 +81,7 @@ function Leaderboard() {
         <>
           <div className="grid gap-3 sm:hidden">
             {rankedRows.map((seller, index) => {
-              const masked = maskUser(seller.display_name || seller.id);
+              const masked = seller.display_name?.trim() || seller.id.slice(0, 8);
               return (
                 <Card key={seller.id} className="p-4">
                   <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3">
@@ -148,7 +148,7 @@ function Leaderboard() {
             </thead>
             <tbody>
               {rankedRows.map((s, i) => {
-                const masked = maskUser(s.display_name || s.id);
+                const masked = s.display_name?.trim() || s.id.slice(0, 8);
                 return (
                   <tr key={s.id} className="border-b border-border/60 last:border-0 hover:bg-surface-2/60">
                     <td className="p-4">
