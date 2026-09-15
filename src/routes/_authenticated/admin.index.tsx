@@ -1,7 +1,15 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Banknote, Gavel, ScrollText, ShieldAlert, ShieldCheck, TrendingUp } from "lucide-react";
+import {
+  Banknote,
+  FlaskConical,
+  Gavel,
+  ScrollText,
+  ShieldAlert,
+  ShieldCheck,
+  TrendingUp,
+} from "lucide-react";
 import { Card, Section } from "@/components/site/Shell";
 import { useLang } from "@/lib/lang";
 import { useDisputes, useKycQueue, useOrders, useRoles } from "@/lib/queries";
@@ -21,6 +29,8 @@ import {
   vaultUrl,
   type AdminDispute,
 } from "@/lib/admin-cases";
+import { useAdminOverview, useSandboxAction, type SandboxKind } from "@/lib/admin-ops";
+import { useKycSubmissions, useReviewKyc } from "@/lib/kyc";
 
 export const Route = createFileRoute("/_authenticated/admin/")({
   head: () => ({
