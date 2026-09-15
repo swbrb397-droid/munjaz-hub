@@ -479,6 +479,7 @@ function AuthPage() {
 
           <button
             ref={buttonRef}
+            data-auth-submit="true"
             disabled={loading || emailInvalid}
             aria-busy={loading}
             type="button"
