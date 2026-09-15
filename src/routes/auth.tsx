@@ -140,6 +140,7 @@ function AuthPage() {
   const [cooldown, setCooldown] = useState(0);
   const [resends, setResends] = useState(0);
   const formRef = useRef<HTMLFormElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
   const submitHandlerRef = useRef(handleSubmit);
   submitHandlerRef.current = handleSubmit;
 
