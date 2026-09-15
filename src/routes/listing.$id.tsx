@@ -137,7 +137,7 @@ function ListingDetail() {
 
         <div className="grid content-start gap-4">
           <Card>
-            <p className="text-3xl font-black text-primary">{item.price} USDT</p>
+            <p className="text-3xl font-black text-primary">{price.toFixed(2)} USDT</p>
             <div className="mt-4 grid gap-2 text-sm">
               <label className="text-xs text-muted-foreground" htmlFor="days">{tr("مدة التسليم (أيام)", "Delivery time (days)")}</label>
               <input
@@ -152,9 +152,9 @@ function ListingDetail() {
             </div>
 
             <dl className="mt-4 grid gap-1 border-t border-border pt-4 text-sm">
-              <div className="flex justify-between"><dt className="text-muted-foreground">{tr("مبلغ الضمان", "Escrow amount")}</dt><dd>{item.price} USDT</dd></div>
-              <div className="flex justify-between"><dt className="text-muted-foreground">{tr("عمولة المنصة (10%)", "Platform fee (10%)")}</dt><dd>{fee} USDT</dd></div>
-              <div className="flex justify-between font-bold"><dt>{tr("صافي البائع", "Seller net")}</dt><dd className="text-primary">{(item.price - fee).toFixed(2)} USDT</dd></div>
+              <div className="flex justify-between"><dt className="text-muted-foreground">{tr("مبلغ الضمان", "Escrow amount")}</dt><dd><bdi>{price.toFixed(2)} USDT</bdi></dd></div>
+              <div className="flex justify-between"><dt className="text-muted-foreground">{tr("عمولة المنصة (10%)", "Platform fee (10%)")}</dt><dd><bdi>{fee.toFixed(2)} USDT</bdi></dd></div>
+              <div className="flex justify-between font-bold"><dt>{tr("صافي البائع", "Seller net")}</dt><dd className="text-primary"><bdi>{sellerNet.toFixed(2)} USDT</bdi></dd></div>
             </dl>
 
             {user && (
