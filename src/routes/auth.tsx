@@ -165,7 +165,7 @@ function AuthPage() {
     const onSubmit = (e: Event) => {
       const form = e.target;
       if (!(form instanceof HTMLFormElement)) return;
-      if (form.dataset.authForm !== "true") return;
+      if (form.getAttribute("data-auth-form") !== "true") return;
       runSubmit(e);
     };
 
