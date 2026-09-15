@@ -349,9 +349,9 @@ export function Shell({ children }: { children: ReactNode }) {
 
 
       <footer className="mt-24 border-t border-border">
-        <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-8 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
-          <p>{t("footer")}</p>
-          <div className="flex items-center gap-4 text-xs">
+        <div className="mx-auto flex max-w-7xl flex-col items-center gap-4 px-4 py-9 text-center text-sm text-muted-foreground sm:flex-row sm:justify-between sm:py-8 sm:text-start">
+          <p className="leading-relaxed">{t("footer")}</p>
+          <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-3 text-xs sm:justify-end">
             <Link to="/terms" className="hover:text-foreground transition-colors">
               {t("terms")}
             </Link>
@@ -361,8 +361,8 @@ export function Shell({ children }: { children: ReactNode }) {
                 <ShieldCheck size={18} strokeWidth={1.8} /> {t("admin")}
               </Link>
             )}
-            <span className="hidden sm:inline">·</span>
-            <p className="hidden sm:block">{t("footerSub")}</p>
+            <span className="hidden sm:inline" aria-hidden="true">·</span>
+            <p className="w-full leading-relaxed sm:w-auto">{t("footerSub")}</p>
           </div>
         </div>
       </footer>

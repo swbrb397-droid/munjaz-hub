@@ -38,7 +38,7 @@ export function PrestigeTracker({ metrics }: { metrics: PrestigeMetrics }) {
           <div key={r.key} className="rounded-xl border border-border p-3">
             <div className="flex items-center justify-between text-xs">
               <span className="text-muted-foreground">{tr(r.ar, r.en)}</span>
-              <span className="font-bold">
+              <span className="whitespace-nowrap font-bold" dir="ltr">
                 {r.key === "rating" ? r.value.toFixed(2) : Math.round(r.value).toLocaleString()}
                 {next ? ` / ${r.key === "rating" ? r.target.toFixed(2) : Math.round(r.target).toLocaleString()}` : ""}
               </span>
