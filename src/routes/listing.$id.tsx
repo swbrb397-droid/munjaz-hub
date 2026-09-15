@@ -5,6 +5,7 @@ import { Card, Section } from "@/components/site/Shell";
 import { VerifiedBadge } from "@/components/site/VerifiedBadge";
 import { MediaShowcase } from "@/components/site/MediaShowcase";
 import { DmcaTrigger } from "@/components/site/DmcaModal";
+import { CoverImage } from "@/components/site/CoverImage";
 
 import { useLang } from "@/lib/lang";
 import { useAuth } from "@/hooks/use-auth";
@@ -55,7 +56,9 @@ function ListingDetail() {
     );
   }
 
-  const fee = Number((item.price * 0.1).toFixed(2));
+  const price = Number.isFinite(Number(item.price)) ? Number(item.price) : 0;
+  const fee = Number((price * 0.1).toFixed(2));
+  const sellerNet = Number((price - fee).toFixed(2));
   const balance = Number(wallet.data?.available_usdt ?? 0);
   const isOwner = !!user && item.ownerId === user.id;
 
@@ -94,7 +97,7 @@ function ListingDetail() {
       <div className="grid gap-4 lg:grid-cols-[1.4fr_.6fr]">
         <Card>
           <div className="overflow-hidden rounded-xl border border-border">
-            <img src={item.cover} alt={item.title} width={1024} height={512} className="h-64 w-full object-cover" />
+            <CoverImage src={item.cover} alt={item.title} category={item.category} className="h-64 w-full" iconClassName="size-12" />
           </div>
           <h1 className="mt-5 text-2xl font-black">{item.title}</h1>
           <p className="mt-2 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
@@ -127,7 +130,7 @@ function ListingDetail() {
           />
 
           <MediaShowcase
-            items={[{ id: "cover", src: item.cover, title: tr("غلاف الخدمة", "Service cover"), format: "image" }]}
+            items={[{ id: "cover", src: item.cover, title: tr("غلاف الخدمة", "Service cover"), format: "image", category: item.category }]}
           />
         </Card>
 
