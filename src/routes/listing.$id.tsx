@@ -5,6 +5,7 @@ import { Card, Section } from "@/components/site/Shell";
 import { VerifiedBadge } from "@/components/site/VerifiedBadge";
 import { MediaShowcase } from "@/components/site/MediaShowcase";
 import { DmcaTrigger } from "@/components/site/DmcaModal";
+import { CoverImage } from "@/components/site/CoverImage";
 
 import { useLang } from "@/lib/lang";
 import { useAuth } from "@/hooks/use-auth";
@@ -55,7 +56,9 @@ function ListingDetail() {
     );
   }
 
-  const fee = Number((item.price * 0.1).toFixed(2));
+  const price = Number.isFinite(Number(item.price)) ? Number(item.price) : 0;
+  const fee = Number((price * 0.1).toFixed(2));
+  const sellerNet = Number((price - fee).toFixed(2));
   const balance = Number(wallet.data?.available_usdt ?? 0);
   const isOwner = !!user && item.ownerId === user.id;
 
@@ -94,7 +97,7 @@ function ListingDetail() {
       <div className="grid gap-4 lg:grid-cols-[1.4fr_.6fr]">
         <Card>
           <div className="overflow-hidden rounded-xl border border-border">
-            <img src={item.cover} alt={item.title} width={1024} height={512} className="h-64 w-full object-cover" />
+            <CoverImage src={item.cover} alt={item.title} category={item.category} className="h-64 w-full" iconClassName="size-12" />
           </div>
           <h1 className="mt-5 text-2xl font-black">{item.title}</h1>
           <p className="mt-2 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
@@ -127,14 +130,14 @@ function ListingDetail() {
           />
 
           <MediaShowcase
-            items={[{ id: "cover", src: item.cover, title: tr("غلاف الخدمة", "Service cover"), format: "image" }]}
+            items={[{ id: "cover", src: item.cover, title: tr("غلاف الخدمة", "Service cover"), format: "image", category: item.category }]}
           />
         </Card>
 
 
         <div className="grid content-start gap-4">
           <Card>
-            <p className="text-3xl font-black text-primary">{item.price} USDT</p>
+            <p className="text-3xl font-black text-primary">{price.toFixed(2)} USDT</p>
             <div className="mt-4 grid gap-2 text-sm">
               <label className="text-xs text-muted-foreground" htmlFor="days">{tr("مدة التسليم (أيام)", "Delivery time (days)")}</label>
               <input
@@ -149,9 +152,9 @@ function ListingDetail() {
             </div>
 
             <dl className="mt-4 grid gap-1 border-t border-border pt-4 text-sm">
-              <div className="flex justify-between"><dt className="text-muted-foreground">{tr("مبلغ الضمان", "Escrow amount")}</dt><dd>{item.price} USDT</dd></div>
-              <div className="flex justify-between"><dt className="text-muted-foreground">{tr("عمولة المنصة (10%)", "Platform fee (10%)")}</dt><dd>{fee} USDT</dd></div>
-              <div className="flex justify-between font-bold"><dt>{tr("صافي البائع", "Seller net")}</dt><dd className="text-primary">{(item.price - fee).toFixed(2)} USDT</dd></div>
+              <div className="flex justify-between"><dt className="text-muted-foreground">{tr("مبلغ الضمان", "Escrow amount")}</dt><dd><bdi>{price.toFixed(2)} USDT</bdi></dd></div>
+              <div className="flex justify-between"><dt className="text-muted-foreground">{tr("عمولة المنصة (10%)", "Platform fee (10%)")}</dt><dd><bdi>{fee.toFixed(2)} USDT</bdi></dd></div>
+              <div className="flex justify-between font-bold"><dt>{tr("صافي البائع", "Seller net")}</dt><dd className="text-primary"><bdi>{sellerNet.toFixed(2)} USDT</bdi></dd></div>
             </dl>
 
             {user && (

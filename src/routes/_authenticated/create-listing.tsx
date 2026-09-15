@@ -329,7 +329,7 @@ function CreateListing() {
           `Unlimited listings · minimum ${MIN_PRICE} USDT per listing`,
         )}
       >
-        <Card>
+        <Card className="relative isolate z-10 border-border bg-card! shadow-2xl backdrop-blur-none">
           <div className="mb-5 grid grid-cols-2 gap-2 rounded-xl border border-border p-1">
             {([1, 2] as const).map((s) => (
               <button

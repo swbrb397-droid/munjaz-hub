@@ -4,6 +4,7 @@ import { ArrowLeft, Filter, Loader2, Star, X } from "lucide-react";
 import { useListing } from "@/lib/orders";
 import { useLang as useLangCtx } from "@/lib/lang";
 import { Card, Section } from "@/components/site/Shell";
+import { CoverImage } from "@/components/site/CoverImage";
 import { useLang } from "@/lib/lang";
 import { PAGE_SIZE, useListings, useNfts, type ListingCategory, type SortKey } from "@/lib/catalog";
 import { NftCard, ServiceCard } from "./index";
@@ -51,7 +52,7 @@ function ListingDeepLink({ id, onClose }: { id: string; onClose: () => void }) {
         ) : (
           <>
             <div className="mt-4 h-32 overflow-hidden rounded-xl border border-border">
-              <img src={item.cover} alt={item.title} className="size-full object-cover" width={768} height={512} />
+              <CoverImage src={item.cover} alt={item.title} category={item.category} className="size-full" />
             </div>
             <h3 className="mt-3 font-bold leading-snug">{item.title}</h3>
             <p className="mt-1 text-sm text-muted-foreground">{item.seller}</p>

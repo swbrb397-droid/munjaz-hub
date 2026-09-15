@@ -114,7 +114,7 @@ export function useListings(opts: ListingFilters = {}) {
           orders: r.orders_count,
           verified: r.verified,
           tag: lang === "ar" ? r.tag_ar : r.tag_en,
-          cover: (r.cover_url ?? "").trim() || COVERS[r.cover_key] || coverProduct,
+          cover: (r.cover_url ?? "").trim(),
           deliveryDays: r.delivery_days ?? 3,
         })),
       };
