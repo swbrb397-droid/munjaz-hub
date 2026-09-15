@@ -1,0 +1,1 @@
+DELETE FROM public.listings WHERE owner_id IS NULL;
