@@ -151,19 +151,28 @@ function AuthPage() {
     }
   };
 
-  // Fallback: attach a native submit listener so the form works even if React's
-  // synthetic onSubmit fails to fire (observed on some hydration paths).
+  // Fallback: attach native listeners directly to the form and button so the
+  // auth flow works even if React's synthetic events fail to attach (observed
+  // on some hydration paths in this route).
   useEffect(() => {
     const form = formRef.current;
-    if (!form) return;
-    const onNativeSubmit = (e: Event) => {
+    const button = buttonRef.current;
+    if (!form || !button) return;
+
+    const runSubmit = (e: Event) => {
       if (e.defaultPrevented) return;
       e.preventDefault();
       e.stopPropagation();
       void submitHandlerRef.current(e as unknown as FormEvent<HTMLFormElement>);
     };
-    form.addEventListener("submit", onNativeSubmit);
-    return () => form.removeEventListener("submit", onNativeSubmit);
+
+    form.addEventListener("submit", runSubmit);
+    button.addEventListener("click", runSubmit);
+
+    return () => {
+      form.removeEventListener("submit", runSubmit);
+      button.removeEventListener("click", runSubmit);
+    };
   }, []);
 
   useEffect(() => {
