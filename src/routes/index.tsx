@@ -35,7 +35,7 @@ function Landing() {
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {featured.slice(0, 4).map((s) => <ServiceCard key={s.id} {...s} />)}
           </div>
-        ) : <EmptyState text={tr("لا توجد خدمات مميزة حالياً", "No featured services yet")} />}
+        ) : <EmptyState text={tr("لا توجد خدمات معروضة حالياً — كن أول من يضيف عرضاً في المنصة", "No services listed yet — be the first to publish an offer")} />}
       </Section>
 
       <Section title={tr("منتجات رقمية ودورات", "Digital products & courses")} subtitle={tr("تسليم فوري وتشغيل داخل المنصة", "Instant delivery and in-platform access")}>
