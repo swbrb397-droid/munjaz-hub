@@ -197,17 +197,26 @@ export function TopUpDialog({ onClose, defaultAmount }: { onClose: () => void; d
             {invoice.pay_address && (
               <div className="grid place-items-center rounded-xl border border-border p-5">
                 <QrCode value={invoice.pay_address} size={168} />
-                <p className="mt-3 break-all text-center font-mono text-[11px] text-muted-foreground">{invoice.pay_address}</p>
-                <button
-                  type="button"
-                  onClick={() => {
-                    void navigator.clipboard.writeText(invoice.pay_address ?? "");
-                    toast.success(tr("تم نسخ العنوان", "Address copied"));
-                  }}
-                  className="mt-3 inline-flex items-center gap-2 rounded-lg border border-border px-3 py-1.5 text-xs"
-                >
-                  <Copy className="size-3.5" /> {tr("نسخ العنوان", "Copy address")}
-                </button>
+                <div className="mt-4 grid w-full min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center overflow-hidden rounded-lg border border-border bg-secondary/60" dir="ltr">
+                  <code
+                    title={invoice.pay_address}
+                    className="min-w-0 overflow-x-auto whitespace-nowrap px-3 py-3 font-mono text-xs text-foreground [scrollbar-width:thin]"
+                  >
+                    {invoice.pay_address}
+                  </code>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      void navigator.clipboard.writeText(invoice.pay_address ?? "");
+                      toast.success(tr("تم نسخ العنوان", "Address copied"));
+                    }}
+                    aria-label={tr("نسخ عنوان الإيداع", "Copy deposit address")}
+                    title={tr("نسخ العنوان", "Copy address")}
+                    className="grid min-h-[44px] w-11 shrink-0 place-items-center border-s border-border bg-surface text-primary transition-colors hover:bg-primary/10"
+                  >
+                    <Copy className="size-4" />
+                  </button>
+                </div>
               </div>
             )}
 

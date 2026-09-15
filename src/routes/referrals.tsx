@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useEnsureReferralCode } from "@/lib/referral-code";
 import { toast } from "sonner";
-import { Copy, Info, ShieldAlert, Users, Lock, Wallet2, Clock, X } from "lucide-react";
+import { CheckCircle2, Copy, Info, Percent, ShieldAlert, Users, Lock, Wallet2, Clock, X } from "lucide-react";
 import { Card, Section } from "@/components/site/Shell";
 import { useLang } from "@/lib/lang";
 import { useProfile, useReferrals } from "@/lib/queries";
@@ -37,7 +37,7 @@ function ReferralHub() {
   const storedCode = (profile.data as { referral_code?: string } | null)?.referral_code ?? "";
   const code = useEnsureReferralCode(storedCode, profile.isSuccess || profile.isError);
   const origin = typeof window !== "undefined" ? window.location.origin : "";
-  const refLink = code ? `${origin}/auth?ref=${code}` : "";
+  const refLink = code ? `${origin}/?ref=${code}` : "";
 
   const referrals = data.data?.referrals ?? [];
   const commissions = data.data?.commissions ?? [];
@@ -83,14 +83,11 @@ function ReferralHub() {
           <Card>
             <p className="mb-3 text-sm font-bold">{tr("رابط الإحالة الفريد", "Unique affiliate link")}</p>
             <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-2">
-              <input
-                readOnly
-                value={refLink || tr("سجّل الدخول لإنشاء رابطك", "Sign in to generate your link")}
-                dir="ltr"
-                aria-label={tr("رابط الإحالة", "Affiliate link")}
-                onFocus={(e) => e.currentTarget.select()}
-                className="field-lux min-w-0 overflow-x-auto px-3 py-2.5 font-mono text-[11px] text-accent sm:text-xs"
-              />
+              <div className="field-lux min-w-0 overflow-x-auto px-3 py-2.5" dir="ltr">
+                <p className="whitespace-nowrap font-mono text-[11px] text-accent sm:text-xs">
+                  {refLink || tr("سجّل الدخول لإنشاء رابطك", "Sign in to generate your link")}
+                </p>
+              </div>
               <button
                 type="button"
                 onClick={copy}
@@ -107,14 +104,29 @@ function ReferralHub() {
             </p>
           </Card>
 
-          <div className="flex items-start gap-2 rounded-2xl border border-accent/40 bg-accent/10 p-4 text-xs leading-relaxed text-accent">
-            <ShieldAlert className="mt-0.5 size-4 shrink-0" />
-            <p>
-              تنبيه مالي وقانوني: يستفيد المُحيل من عمولة الإحالة على مشتريات المستخدم لمدة 12 شهراً (365 يوماً) فقط من
-              تاريخ التسجيل (20% ترويجية خلال أول 30 يوماً، ثم 10% للأشهر الـ 11 المتبقية). تُحتسب العمولة حصراً وفق
-              المعادلة: العمولة = صافي رسوم المنصة × النسبة؛ وإذا كان ربح المنصة 0%، تكون العمولة 0.00 USDT تلقائياً دون
-              أي مساس بمستحقات البائع. ولا تدخل مشتريات باقات الاشتراك (Pro / Corporate) ضمن وعاء احتساب العمولات إطلاقاً.
+          <div className="rounded-lg border border-accent/40 bg-accent/10 p-4">
+            <p className="flex items-center gap-2 text-sm font-bold text-accent">
+              <ShieldAlert className="size-4 shrink-0" />
+              {tr("تنبيه مالي وقانوني", "Financial and legal notice")}
             </p>
+            <ul className="mt-3 grid gap-3 text-xs leading-relaxed text-muted-foreground sm:grid-cols-2">
+              <li className="flex items-start gap-2">
+                <Clock className="mt-0.5 size-4 shrink-0 text-accent" />
+                {tr("الاستحقاق لمدة 365 يوماً: 20% لأول 30 يوماً، ثم 10% للأشهر الـ11 التالية.", "Eligibility lasts 365 days: 20% for the first 30 days, then 10% for the next 11 months.")}
+              </li>
+              <li className="flex items-start gap-2">
+                <Percent className="mt-0.5 size-4 shrink-0 text-accent" />
+                {tr("العمولة = صافي رسوم المنصة × النسبة، وإذا كانت الرسوم صفراً فالعمولة 0.00 USDT.", "Commission equals net platform fee × rate; zero fees produce 0.00 USDT commission.")}
+              </li>
+              <li className="flex items-start gap-2">
+                <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-accent" />
+                {tr("لا تمس عمولة الإحالة مستحقات البائع أو قيمة الطلب.", "Referral commission never reduces the seller's proceeds or order value.")}
+              </li>
+              <li className="flex items-start gap-2">
+                <Lock className="mt-0.5 size-4 shrink-0 text-accent" />
+                {tr("مشتريات باقات Pro وCorporate مستثناة من احتساب العمولات.", "Pro and Corporate plan purchases are excluded from commissions.")}
+              </li>
+            </ul>
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

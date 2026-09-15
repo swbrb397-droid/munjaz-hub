@@ -110,7 +110,7 @@ function ProfilePage() {
         <Card>
           <div className="flex flex-wrap items-center gap-4">
             <div className="relative shrink-0">
-              <div className="grid size-20 place-items-center overflow-hidden rounded-2xl border border-border bg-secondary text-xl font-black">
+              <div className="grid size-20 place-items-center overflow-hidden rounded-full border border-border bg-secondary text-xl font-black">
                 {avatar ? (
                   <img src={avatar} alt="صورة الملف الشخصي" className="size-full object-cover" />
                 ) : (
@@ -121,7 +121,7 @@ function ProfilePage() {
                 type="button"
                 onClick={() => avatarRef.current?.click()}
                 aria-label="تغيير الصورة الشخصية"
-                className="absolute -bottom-2 -left-2 grid size-8 place-items-center rounded-full bg-primary text-primary-foreground"
+                className="absolute bottom-0 right-0 grid size-8 translate-x-1/4 translate-y-1/4 place-items-center rounded-full border-2 border-card bg-primary text-primary-foreground shadow-lg"
               >
                 <Camera className="size-4" />
               </button>
