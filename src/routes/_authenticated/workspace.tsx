@@ -650,26 +650,71 @@ function Workspace() {
           tr("أرفق دليلاً واحداً على الأقل", "Attach at least one piece of evidence"),
         );
       const against = order.buyer_id === user!.id ? order.seller_id : order.buyer_id;
+
+      // 1) Upload every attached proof to the private evidence vault.
+      const entries: { name: string; path: string; type: string; size: number }[] = [];
+      for (const file of evidenceFiles) {
+        const rejection = checkUpload(file, profile.data?.account_tier ?? null);
+        if (rejection) throw new Error(rejection);
+        const safeName = file.name.replace(/[^\w.\-]+/g, "_").slice(-80);
+        const path = `disputes/${order.id}/${Date.now()}_${safeName}`;
+        const up = await supabase.storage.from(VAULT_BUCKET).upload(path, file, {
+          contentType: file.type || "application/octet-stream",
+          upsert: false,
+        });
+        if (up.error) throw up.error;
+        entries.push({
+          name: file.name.slice(0, 160),
+          path,
+          type: file.type || "application/octet-stream",
+          size: file.size,
+        });
+      }
+
+      // 2) Open the formal case.
       const { error } = await supabase.from("dispute_cases").insert({
         order_id: order.id,
         kind: "dispute",
         raised_by: user!.id,
         against_user: against,
-        reason: sanitizeText(reason, 2000),
-        evidence: evidence.map((name) => ({ name })),
+        reason: `[${disputeCategory}] ${sanitizeText(reason, 2000)}`,
+        evidence: entries.length ? entries : evidence.map((name) => ({ name })),
       });
       if (error) throw error;
+
+      // 3) Freeze the order and lock escrow release.
+      const upd = await supabase
+        .from("orders")
+        .update({ status: "disputed", escrow_locked: true })
+        .eq("id", order.id);
+      if (upd.error) throw upd.error;
+
+      // 4) Official system notice inside the order chat for both parties.
+      const notice = await supabase.from("order_messages").insert({
+        order_id: order.id,
+        sender_id: user!.id,
+        body: "⚖️ إشعار نظامي من المُنجِز: تم فتح نزاع رسمي على هذا الطلب. تم تجميد المعاملة وقفل تحرير مبلغ الضمان حتى صدور حكم الإدارة العليا. يُرجى من الطرفين إرفاق كل الأدلة داخل هذه المحادثة.",
+        lang: "ar",
+      });
+      if (notice.error) throw notice.error;
     },
     onSuccess: () => {
       setReason("");
       setEvidence([]);
+      setEvidenceFiles([]);
+      setEvidenceProgress({});
       setDisputeMsg(
         tr(
-          "تم فتح النزاع وسيراجعه وكيل الذكاء الاصطناعي.",
-          "Dispute opened; the AI agent will review it.",
+          "تم فتح النزاع، وتم تجميد الطلب وقفل الضمان بانتظار حكم الإدارة.",
+          "Dispute opened; the order is frozen and escrow locked pending the admin ruling.",
         ),
       );
+      toast.success(
+        tr("تم فتح النزاع وتجميد الضمان ⚖️", "Dispute opened and escrow frozen ⚖️"),
+      );
       qc.invalidateQueries({ queryKey: ["disputes"] });
+      qc.invalidateQueries({ queryKey: ["orders"] });
+      qc.invalidateQueries({ queryKey: ["order_messages", order?.id] });
     },
     onError: (e: Error) => setDisputeMsg(e.message),
   });
