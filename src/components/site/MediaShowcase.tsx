@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Code2, Image as ImageIcon, MonitorPlay, PlayCircle, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { useLang } from "@/lib/lang";
+import { CoverImage } from "@/components/site/CoverImage";
 
 // TODO: Connect to secure Supabase Storage Media Bucket via Signed URLs.
 
@@ -66,8 +67,18 @@ export function MediaShowcase({ items, title }: { items: MediaItem[]; title?: st
             className="group relative min-w-[78%] snap-start overflow-hidden rounded-2xl border border-border bg-surface text-start transition-colors hover:border-primary/60 sm:min-w-0"
             aria-label={m.title ?? tr("عرض الوسيط", "View media")}
           >
-            <img src={m.src} alt={m.title ?? ""} loading="lazy" width={768} height={512} className="h-40 w-full object-cover transition-transform duration-300 group-hover:scale-105" />
-            <span className="absolute top-2 start-2"><FormatBadge format={m.format} /></span>
+            <span className="relative block h-40 w-full overflow-hidden rounded-t-2xl">
+              <CoverImage
+                src={m.src}
+                alt={m.title ?? ""}
+                category={m.category}
+                className="h-40 w-full transition-transform duration-300 group-hover:scale-105"
+                iconClassName="size-10"
+              />
+              <span className="pointer-events-none absolute top-2 start-2 z-10 max-w-[calc(100%-1rem)]">
+                <FormatBadge format={m.format} />
+              </span>
+            </span>
             {m.title && <span className="block truncate px-3 py-2 text-sm font-semibold">{m.title}</span>}
           </button>
         ))}
@@ -87,7 +98,13 @@ export function MediaShowcase({ items, title }: { items: MediaItem[]; title?: st
                 <X className="size-4" />
               </button>
             </div>
-            <img src={active.src} alt={active.title ?? ""} className="max-h-[70vh] w-full rounded-2xl border border-border object-contain" />
+            <CoverImage
+              src={active.src}
+              alt={active.title ?? ""}
+              category={active.category}
+              className="max-h-[70vh] min-h-60 w-full rounded-2xl border border-border !object-contain"
+              iconClassName="size-16"
+            />
             <div className="mt-3 flex items-center justify-between gap-3">
               <button
                 onClick={() => setOpen((i) => (i === null ? i : (i - 1 + items.length) % items.length))}
