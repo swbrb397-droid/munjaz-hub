@@ -101,18 +101,40 @@ export async function vaultUrl(path: string): Promise<string | null> {
 export function useResolveDispute() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (input: { id: string; action: "release" | "refund"; ruling?: string }) => {
+    mutationFn: async (input: {
+      id: string;
+      action: "release" | "refund";
+      ruling?: string;
+      orderId?: string | null;
+    }) => {
       const { error } = await supabase.rpc("admin_resolve_dispute", {
         _case_id: input.id,
         _action: input.action,
         ...(input.ruling ? { _ruling: input.ruling } : {}),
       });
       if (error) throw error;
+
+      // Broadcast the verdict into the order chat so both parties see it.
+      if (input.orderId) {
+        const { data: auth } = await supabase.auth.getUser();
+        if (auth.user) {
+          await supabase.from("order_messages").insert({
+            order_id: input.orderId,
+            sender_id: auth.user.id,
+            body:
+              input.action === "release"
+                ? `⚖️ حكم الإدارة العليا: تم الحكم لصالح البائع وتحرير مبلغ الضمان بعد خصم عمولة المنصة، وأُغلق النزاع نهائياً.${input.ruling ? ` الحيثيات: ${input.ruling}` : ""}`
+                : `⚖️ حكم الإدارة العليا: تم الحكم لصالح المشتري واسترداد كامل مبلغ الضمان إلى محفظته، وأُغلق النزاع نهائياً.${input.ruling ? ` الحيثيات: ${input.ruling}` : ""}`,
+            lang: "ar",
+          });
+        }
+      }
+
       logAuditEvent({
         type: "DISPUTE_FLAG",
         userId: null,
         target: input.id,
-        meta: { action: input.action },
+        meta: { action: input.action, order: input.orderId ?? "" },
       });
     },
     onSuccess: () => {
