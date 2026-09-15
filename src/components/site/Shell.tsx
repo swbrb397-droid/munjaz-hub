@@ -60,6 +60,7 @@ const adminGroup: { title: [string, string]; items: { to: string; label: [string
     { to: "/admin", label: ["لوحة الإدارة العامة", "Admin overview"], icon: ShieldCheck },
     { to: "/admin/disputes", label: ["مركز تسوية النزاعات والضمان", "Disputes & escrow"], icon: Gavel },
     { to: "/admin/kyc", label: ["مراجعة توثيق الهوية KYC", "KYC review"], icon: BadgeCheck },
+    { to: "/admin/services", label: ["إدارة العروض والخدمات", "Services moderation"], icon: Store },
     { to: "/admin/governance", label: ["مولد الاشتراكات وحوكمة الرسوم", "Passes & governance"], icon: Settings2 },
   ],
 };
