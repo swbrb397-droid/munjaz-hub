@@ -9,7 +9,7 @@ import { TopUpDialog } from "@/components/site/TopUpDialog";
 import { useLang } from "@/lib/lang";
 import { useAuth } from "@/hooks/use-auth";
 import { useProfile, useWallet } from "@/lib/queries";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/cloud-client";
 
 export const Route = createFileRoute("/pricing")({
   head: () => ({

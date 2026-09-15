@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/cloud-client";
 import { useAuth } from "@/hooks/use-auth";
 
 /** Deterministic code derived from the user id, used when the profile has none yet. */

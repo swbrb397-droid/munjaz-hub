@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { toast } from "sonner";
 import { Scale, X } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/cloud-client";
 import { useAuth } from "@/hooks/use-auth";
 import { useLang } from "@/lib/lang";
 import { sanitizeText } from "@/lib/security";

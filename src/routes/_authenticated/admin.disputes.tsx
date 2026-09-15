@@ -6,7 +6,7 @@ import { Card, Section } from "@/components/site/Shell";
 import { useLang } from "@/lib/lang";
 import { useUserProfile } from "@/hooks/use-user-profile";
 import { useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/cloud-client";
 import { useAuth } from "@/hooks/use-auth";
 import { sanitizeText } from "@/lib/security";
 import {

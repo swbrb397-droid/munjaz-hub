@@ -1,5 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { getRequest } from "@tanstack/react-start/server";
+import { createClient } from "@supabase/supabase-js";
+import type { Database } from "@/integrations/supabase/types";
 
 export type TopUpNetwork = "trc20" | "bep20" | "polygon";
 export type TopUpMethod = "crypto" | "card";
@@ -23,6 +25,67 @@ const NP_CURRENCY: Record<TopUpNetwork, string> = {
   polygon: "usdtmatic",
 };
 
+type VerifiedDepositUser = {
+  userId: string;
+};
+
+/**
+ * Verify the exact bearer token sent with this server-function request.
+ *
+ * This deliberately uses Auth's `getUser(token)` endpoint instead of local
+ * JWKS/claims validation. That keeps invoice creation reliable while signing
+ * keys rotate and gives us precise diagnostics without ever logging the JWT.
+ */
+async function verifyDepositUser(): Promise<VerifiedDepositUser> {
+  const request = getRequest();
+  const authHeader = request?.headers.get("authorization")?.trim() ?? "";
+
+  if (!authHeader) {
+    console.error("[createTopUpInvoice:auth] Missing Authorization header");
+    throw new Error("AUTH_HEADER_MISSING");
+  }
+  if (!authHeader.startsWith("Bearer ")) {
+    console.error("[createTopUpInvoice:auth] Authorization header is not Bearer");
+    throw new Error("AUTH_HEADER_INVALID");
+  }
+
+  const token = authHeader.slice("Bearer ".length).trim();
+  if (!token) {
+    console.error("[createTopUpInvoice:auth] Bearer token is empty");
+    throw new Error("AUTH_TOKEN_MISSING");
+  }
+
+  const supabaseUrl = process.env["SUPABASE_URL"];
+  const publishableKey = process.env["SUPABASE_PUBLISHABLE_KEY"];
+  if (!supabaseUrl || !publishableKey) {
+    console.error("[createTopUpInvoice:auth] Auth service environment is unavailable");
+    throw new Error("AUTH_SERVICE_UNAVAILABLE");
+  }
+
+  const authClient = createClient<Database>(supabaseUrl, publishableKey, {
+    auth: {
+      storage: undefined,
+      persistSession: false,
+      autoRefreshToken: false,
+    },
+  });
+  const {
+    data: { user },
+    error,
+  } = await authClient.auth.getUser(token);
+
+  if (error || !user) {
+    console.error("[createTopUpInvoice:auth] Token verification failed", {
+      status: error?.status ?? null,
+      code: error?.code ?? null,
+      message: error?.message ?? "No user returned",
+    });
+    throw new Error("AUTH_TOKEN_INVALID");
+  }
+
+  return { userId: user.id };
+}
+
 /**
  * Creates a NOWPayments invoice for a wallet top-up.
  *
@@ -33,7 +96,6 @@ const NP_CURRENCY: Record<TopUpNetwork, string> = {
  * Without gateway keys we return a simulated invoice so preview flows stay usable.
  */
 export const createTopUpInvoice = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
   .inputValidator((input: { amount: number; network: TopUpNetwork; method?: TopUpMethod }) => {
     const amount = Math.round(Number(input.amount) * 1e6) / 1e6;
     if (!Number.isFinite(amount) || amount < 10) throw new Error("MIN_TOPUP_10");
@@ -43,8 +105,8 @@ export const createTopUpInvoice = createServerFn({ method: "POST" })
     const method: TopUpMethod = input.method === "card" ? "card" : "crypto";
     return { amount, network: input.network, method };
   })
-  .handler(async ({ data, context }): Promise<TopUpInvoice> => {
-    const { userId } = context;
+  .handler(async ({ data }): Promise<TopUpInvoice> => {
+    const { userId } = await verifyDepositUser();
     const apiKey = process.env["NOWPAYMENTS_API_KEY"];
     const fallbackAddress =
       data.network === "trc20"

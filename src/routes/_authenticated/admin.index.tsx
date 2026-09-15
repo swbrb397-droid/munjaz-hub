@@ -5,7 +5,7 @@ import { Banknote, Gavel, ScrollText, ShieldAlert, ShieldCheck, TrendingUp } fro
 import { Card, Section } from "@/components/site/Shell";
 import { useLang } from "@/lib/lang";
 import { useDisputes, useKycQueue, useOrders, useRoles } from "@/lib/queries";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/cloud-client";
 import {
   logSecurityEvent,
   useResolveWithdrawal,

@@ -7,7 +7,7 @@ import { Card, Section } from "@/components/site/Shell";
 import { useLang } from "@/lib/lang";
 import { useAuth } from "@/hooks/use-auth";
 import { useProfile } from "@/lib/queries";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/cloud-client";
 import { parseUsdt, sanitizeText } from "@/lib/security";
 import { screenCoverImage } from "@/lib/moderation.functions";
 import { type ListingCategory } from "@/lib/catalog";

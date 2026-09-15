@@ -2,7 +2,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Lock, Pencil, X } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/cloud-client";
 import { useAuth } from "@/hooks/use-auth";
 
 type ProfileLike = { display_name?: string | null; is_verified?: boolean | null; name_changes_count?: number | null } | null;

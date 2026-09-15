@@ -3,7 +3,7 @@ import { toast } from "sonner";
 import { Copy, KeyRound, Loader2, Lock, ShieldCheck, ShieldAlert, X } from "lucide-react";
 import { Card } from "@/components/site/Shell";
 import { QrCode } from "@/components/site/QrCode";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/cloud-client";
 import { useAuth } from "@/hooks/use-auth";
 
 const PW_RATE_KEY = "munjaz.pw-change-at";

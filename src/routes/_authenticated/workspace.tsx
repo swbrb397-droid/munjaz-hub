@@ -49,7 +49,7 @@ import {
   useUploadDeliverable,
   vaultUrl,
 } from "@/lib/workspace-data";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/cloud-client";
 import { sanitizeText } from "@/lib/security";
 import { useServerFn } from "@tanstack/react-start";
 import { orderAiAssistant } from "@/lib/order-ai.functions";

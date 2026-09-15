@@ -18,7 +18,7 @@ import { NotifyProvider } from "../lib/notify";
 import { Toaster } from "@/components/ui/sonner";
 
 
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/cloud-client";
 import { cleanupLegacyStorage } from "@/lib/storage-cleanup";
 
 

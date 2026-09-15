@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/cloud-client";
 import { useAuth } from "@/hooks/use-auth";
 import { createTopUpInvoice, type TopUpInvoice, type TopUpMethod, type TopUpNetwork } from "@/lib/topup.functions";
 
@@ -21,6 +21,26 @@ export function topUpErrorMessage(raw: string, ar: boolean): string {
       "انتهت صلاحية جلستك — يرجى تسجيل الدخول من جديد ثم إعادة المحاولة.",
       "Your session expired — please sign in again and retry.",
     ],
+    AUTH_HEADER_MISSING: [
+      "تعذّر إرسال جلسة تسجيل الدخول — حدّث الصفحة وحاول مرة أخرى.",
+      "Your sign-in session could not be sent — refresh the page and retry.",
+    ],
+    AUTH_HEADER_INVALID: [
+      "تعذّر قراءة جلسة تسجيل الدخول — حدّث الصفحة وحاول مرة أخرى.",
+      "Your sign-in session could not be read — refresh the page and retry.",
+    ],
+    AUTH_TOKEN_MISSING: [
+      "لم يتم العثور على جلسة تسجيل دخول — يرجى تسجيل الدخول من جديد.",
+      "No sign-in session was found — please sign in again.",
+    ],
+    AUTH_TOKEN_INVALID: [
+      "تعذّر التحقق من جلسة تسجيل الدخول بعد تحديثها — يرجى تسجيل الدخول من جديد.",
+      "Your refreshed sign-in session could not be verified — please sign in again.",
+    ],
+    AUTH_SERVICE_UNAVAILABLE: [
+      "خدمة التحقق من الحساب غير متاحة مؤقتاً — حاول بعد قليل.",
+      "Account verification is temporarily unavailable — please try again shortly.",
+    ],
     Unauthorized: [
       "انتهت صلاحية جلستك — يرجى تسجيل الدخول من جديد ثم إعادة المحاولة.",
       "Your session expired — please sign in again and retry.",
@@ -39,7 +59,10 @@ export function topUpErrorMessage(raw: string, ar: boolean): string {
  * so the gateway call never fails with "Unauthorized: Invalid token".
  */
 async function ensureFreshSession(force = false): Promise<string> {
-  const { data } = await supabase.auth.getSession();
+  const { data, error: sessionError } = await supabase.auth.getSession();
+  if (sessionError) {
+    console.error("[deposit-auth] Failed to read session", sessionError.message);
+  }
   const session = data.session;
   const token = session?.access_token ?? "";
   const expiresAt = session?.expires_at ? session.expires_at * 1000 : 0;
@@ -48,7 +71,10 @@ async function ensureFreshSession(force = false): Promise<string> {
   if (force || stale) {
     const { data: refreshed, error } = await supabase.auth.refreshSession();
     const next = refreshed.session?.access_token ?? "";
-    if (error || next.split(".").length !== 3) throw new Error("SESSION_EXPIRED");
+    if (error || next.split(".").length !== 3) {
+      console.error("[deposit-auth] Session refresh failed", error?.message ?? "No valid access token returned");
+      throw new Error("SESSION_EXPIRED");
+    }
     return next;
   }
   return token;
@@ -65,7 +91,7 @@ export function useCreateTopUp() {
       } catch (e) {
         const message = e instanceof Error ? e.message : String(e ?? "");
         // One retry with a force-refreshed token covers a race with token rotation.
-        if (!/unauthorized|invalid token|jwt/i.test(message)) throw e;
+        if (!/unauthorized|invalid token|jwt|AUTH_TOKEN_INVALID|AUTH_HEADER_MISSING|AUTH_TOKEN_MISSING/i.test(message)) throw e;
         await ensureFreshSession(true);
         return await create({ data: input });
       }
