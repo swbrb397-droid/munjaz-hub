@@ -14,6 +14,13 @@ import {
   useWithdrawalQueue,
 } from "@/lib/withdrawals";
 import { formatUsdt } from "@/lib/security";
+import { toast } from "sonner";
+import {
+  useAdminDisputes,
+  useResolveDispute,
+  vaultUrl,
+  type AdminDispute,
+} from "@/lib/admin-cases";
 
 export const Route = createFileRoute("/_authenticated/admin/")({
   head: () => ({
@@ -121,33 +128,7 @@ function Admin() {
       </Card>
 
 
-      {tab === "disputes" && (
-        <Card>
-          <h3 className="font-bold">{tr("قائمة النزاعات", "Disputes list")}</h3>
-          <div className="mt-4 grid gap-3">
-            {(disputes.data ?? []).length === 0 && (
-              <p className="rounded-xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
-                {tr("لا توجد نزاعات مفتوحة.", "No open disputes.")}
-              </p>
-            )}
-            {(disputes.data ?? []).map((d) => (
-              <div key={d.id} className="flex flex-wrap items-center gap-3 rounded-xl border border-border p-4 text-sm">
-                <div className="min-w-48">
-                  <p className="font-semibold">{d.kind} · {d.status}</p>
-                  <p className="text-xs text-muted-foreground">{d.reason}</p>
-                </div>
-                <span className="text-muted-foreground">
-                  {tr("حكم AI", "AI ruling")}: {d.ai_verdict ?? tr("قيد التحليل", "Analyzing")}
-                </span>
-                <div className="ms-auto flex flex-wrap gap-2">
-                  <button onClick={() => resolveCase.mutate({ id: d.id, status: "resolved" })} className="rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground">{tr("اعتماد", "Approve")}</button>
-                  <button onClick={() => resolveCase.mutate({ id: d.id, status: "rejected" })} className="rounded-lg border border-border px-3 py-1.5 text-xs">{tr("رفض", "Reject")}</button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </Card>
-      )}
+      {tab === "disputes" && <DisputeDesk isAdmin={isAdmin} />}
 
       {tab === "payouts" && (
         <Card>
@@ -301,5 +282,197 @@ function Admin() {
         </div>
       )}
     </Section>
+  );
+}
+
+/* ------------------------------------------------- dispute resolution desk */
+
+/** Super-admin desk: live disputes with escrow figures, evidence, and verdicts. */
+function DisputeDesk({ isAdmin }: { isAdmin: boolean }) {
+  const { tr } = useLang();
+  const cases = useAdminDisputes(isAdmin, true);
+  const resolve = useResolveDispute();
+  const [ruling, setRuling] = useState("");
+  const [confirming, setConfirming] = useState<{
+    item: AdminDispute;
+    action: "release" | "refund";
+  } | null>(null);
+
+  const runVerdict = () => {
+    if (!confirming) return;
+    resolve.mutate(
+      {
+        id: confirming.item.id,
+        action: confirming.action,
+        orderId: confirming.item.order_id,
+        ...(ruling.trim() ? { ruling: ruling.trim() } : {}),
+      },
+      {
+        onSuccess: () => {
+          toast.success(
+            confirming.action === "refund"
+              ? tr("تم استرداد كامل الضمان للمشتري ✅", "Full escrow refunded to the buyer ✅")
+              : tr("تم تحرير الضمان للبائع ✅", "Escrow released to the seller ✅"),
+          );
+          setRuling("");
+          setConfirming(null);
+        },
+        onError: (e: Error) => toast.error(e.message),
+      },
+    );
+  };
+
+  return (
+    <Card>
+      <h3 className="font-bold">{tr("مكتب حسم النزاعات", "Dispute resolution desk")}</h3>
+      <p className="mt-1 text-xs text-muted-foreground">
+        {tr(
+          "قرارات نهائية تُحرّك أرصدة المحافظ فوراً وتُسجَّل في سجل التدقيق.",
+          "Final verdicts move wallet balances immediately and are written to the audit log.",
+        )}
+      </p>
+
+      <div className="mt-4 grid gap-3">
+        {cases.isLoading && (
+          <p className="p-6 text-center text-sm text-muted-foreground">
+            {tr("جارٍ تحميل النزاعات…", "Loading disputes…")}
+          </p>
+        )}
+        {!cases.isLoading && (cases.data ?? []).length === 0 && (
+          <p className="rounded-xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
+            {tr("لا توجد نزاعات مفتوحة.", "No open disputes.")}
+          </p>
+        )}
+        {(cases.data ?? []).map((d) => (
+          <div key={d.id} className="grid gap-3 rounded-xl border border-border p-4 text-sm">
+            <div className="grid gap-1">
+              <p className="font-bold">
+                {d.order?.title ?? tr("بدون طلب مرتبط", "No linked order")}
+                {d.order && (
+                  <span className="ms-2 font-mono text-xs text-muted-foreground" dir="ltr">
+                    #MJ-{d.order.order_number}
+                  </span>
+                )}
+              </p>
+              <p className="text-xs text-muted-foreground">{d.reason}</p>
+              <p className="text-xs">
+                <span className="rounded-md border border-border px-2 py-0.5">{d.status}</span>
+                {d.order && (
+                  <span className="ms-2 font-bold text-primary">
+                    {tr("محجوز في الضمان", "Held in escrow")}: {formatUsdt(d.order.amount_usdt)} USDT
+                  </span>
+                )}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {tr("المشتري", "Buyer")}: {d.buyer?.display_name ?? "—"} ·{" "}
+                {tr("البائع", "Seller")}: {d.seller?.display_name ?? "—"}
+              </p>
+            </div>
+
+            <div className="grid gap-1 rounded-lg border border-border/70 p-3 text-[11px]">
+              <p className="font-bold">{tr("الأدلة المرفوعة", "Submitted evidence")}</p>
+              {(Array.isArray(d.evidence) ? d.evidence : []).length === 0 ? (
+                <p className="text-muted-foreground">{tr("لا توجد أدلة.", "No evidence.")}</p>
+              ) : (
+                (Array.isArray(d.evidence) ? d.evidence : []).map((raw, i) => {
+                  const entry = (typeof raw === "string" ? { name: raw } : (raw ?? {})) as Record<
+                    string,
+                    unknown
+                  >;
+                  const name = String(entry["name"] ?? `evidence-${i + 1}`);
+                  const path = typeof entry["path"] === "string" ? (entry["path"] as string) : null;
+                  return (
+                    <button
+                      key={`${name}-${i}`}
+                      type="button"
+                      disabled={!path}
+                      onClick={async () => {
+                        if (!path) return;
+                        const url = await vaultUrl(path);
+                        if (url) window.open(url, "_blank", "noopener");
+                        else toast.error(tr("تعذّر فتح الدليل.", "Could not open the evidence."));
+                      }}
+                      className="truncate rounded-md border border-border px-2 py-1 text-start hover:border-primary hover:text-primary disabled:opacity-50"
+                    >
+                      {name}
+                    </button>
+                  );
+                })
+              )}
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => setConfirming({ item: d, action: "refund" })}
+                className="min-h-[44px] rounded-xl border border-destructive/60 px-4 py-2 text-xs font-bold text-destructive"
+              >
+                {tr("حكم لصالح المشتري (استرداد)", "Rule for buyer (refund)")}
+              </button>
+              <button
+                type="button"
+                onClick={() => setConfirming({ item: d, action: "release" })}
+                className="min-h-[44px] rounded-xl bg-primary px-4 py-2 text-xs font-bold text-primary-foreground"
+              >
+                {tr("حكم لصالح البائع (تحرير)", "Rule for seller (release)")}
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {confirming && (
+        <div
+          className="fixed inset-0 z-[80] grid place-items-center overflow-y-auto bg-background/85 p-4 backdrop-blur"
+          role="dialog"
+          aria-modal="true"
+        >
+          <div className="max-h-[85vh] w-full max-w-md overflow-y-auto rounded-2xl border border-border bg-card p-6">
+            <h4 className="text-sm font-black">
+              {confirming.action === "refund"
+                ? tr("تأكيد الحكم لصالح المشتري", "Confirm ruling for the buyer")
+                : tr("تأكيد الحكم لصالح البائع", "Confirm ruling for the seller")}
+            </h4>
+            <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+              {confirming.action === "refund"
+                ? tr(
+                    `سيُعاد كامل مبلغ ${formatUsdt(confirming.item.order?.amount_usdt ?? 0)} USDT إلى رصيد المشتري، ويُعلَّم الطلب كمسترد، ويُغلق النزاع نهائياً.`,
+                    "The full escrow amount returns to the buyer, the order is marked refunded, and the dispute closes permanently.",
+                  )
+                : tr(
+                    `سيُحرَّر مبلغ ${formatUsdt(confirming.item.order?.amount_usdt ?? 0)} USDT إلى رصيد البائع بعد خصم عمولة المنصة، ويُعلَّم الطلب كمكتمل، ويُغلق النزاع نهائياً.`,
+                    "The escrow is released to the seller minus the platform commission, the order is marked completed, and the dispute closes permanently.",
+                  )}
+            </p>
+            <textarea
+              value={ruling}
+              onChange={(e) => setRuling(e.target.value)}
+              rows={3}
+              placeholder={tr("حيثيات القرار (اختياري)…", "Ruling notes (optional)…")}
+              className="mt-3 w-full rounded-lg border border-input bg-surface px-3 py-2 text-sm outline-none focus:border-primary"
+            />
+            <div className="mt-4 flex flex-wrap gap-2">
+              <button
+                type="button"
+                disabled={resolve.isPending}
+                onClick={runVerdict}
+                className="min-h-[44px] flex-1 rounded-xl bg-primary px-4 py-2 text-sm font-bold text-primary-foreground disabled:opacity-60"
+              >
+                {resolve.isPending
+                  ? tr("جارٍ التنفيذ…", "Executing…")
+                  : tr("تأكيد الحكم النهائي", "Confirm final verdict")}
+              </button>
+              <button
+                type="button"
+                onClick={() => setConfirming(null)}
+                className="min-h-[44px] rounded-xl border border-border px-4 py-2 text-sm font-bold"
+              >
+                {tr("إلغاء", "Cancel")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </Card>
   );
 }

@@ -6,7 +6,13 @@ import { logAuditEvent } from "@/lib/audit";
 export type DisputeCase = Tables<"dispute_cases">;
 export type Order = Tables<"orders">;
 
-export type AdminDispute = DisputeCase & { order: Order | null };
+export type DisputeParty = { id: string; display_name: string };
+
+export type AdminDispute = DisputeCase & {
+  order: Order | null;
+  buyer: DisputeParty | null;
+  seller: DisputeParty | null;
+};
 
 /** All dispute cases joined with their escrow order (admin only). */
 export function useAdminDisputes(enabled: boolean, onlyOpen = true) {
@@ -27,7 +33,28 @@ export function useAdminDisputes(enabled: boolean, onlyOpen = true) {
         orders = (res.data ?? []) as Order[];
       }
       const byId = new Map(orders.map((o) => [o.id, o]));
-      return cases.map((c) => ({ ...c, order: c.order_id ? (byId.get(c.order_id) ?? null) : null }));
+
+      // Buyer / seller display names for the resolution desk.
+      const partyIds = Array.from(
+        new Set(orders.flatMap((o) => [o.buyer_id, o.seller_id]).filter(Boolean)),
+      );
+      let parties: DisputeParty[] = [];
+      if (partyIds.length) {
+        const pres = await supabase.from("profiles").select("id, display_name").in("id", partyIds);
+        if (pres.error) throw pres.error;
+        parties = (pres.data ?? []) as DisputeParty[];
+      }
+      const byParty = new Map(parties.map((p) => [p.id, p]));
+
+      return cases.map((c) => {
+        const order = c.order_id ? (byId.get(c.order_id) ?? null) : null;
+        return {
+          ...c,
+          order,
+          buyer: order ? (byParty.get(order.buyer_id) ?? null) : null,
+          seller: order ? (byParty.get(order.seller_id) ?? null) : null,
+        };
+      });
     },
   });
 }
@@ -74,18 +101,40 @@ export async function vaultUrl(path: string): Promise<string | null> {
 export function useResolveDispute() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (input: { id: string; action: "release" | "refund"; ruling?: string }) => {
+    mutationFn: async (input: {
+      id: string;
+      action: "release" | "refund";
+      ruling?: string;
+      orderId?: string | null;
+    }) => {
       const { error } = await supabase.rpc("admin_resolve_dispute", {
         _case_id: input.id,
         _action: input.action,
         ...(input.ruling ? { _ruling: input.ruling } : {}),
       });
       if (error) throw error;
+
+      // Broadcast the verdict into the order chat so both parties see it.
+      if (input.orderId) {
+        const { data: auth } = await supabase.auth.getUser();
+        if (auth.user) {
+          await supabase.from("order_messages").insert({
+            order_id: input.orderId,
+            sender_id: auth.user.id,
+            body:
+              input.action === "release"
+                ? `⚖️ حكم الإدارة العليا: تم الحكم لصالح البائع وتحرير مبلغ الضمان بعد خصم عمولة المنصة، وأُغلق النزاع نهائياً.${input.ruling ? ` الحيثيات: ${input.ruling}` : ""}`
+                : `⚖️ حكم الإدارة العليا: تم الحكم لصالح المشتري واسترداد كامل مبلغ الضمان إلى محفظته، وأُغلق النزاع نهائياً.${input.ruling ? ` الحيثيات: ${input.ruling}` : ""}`,
+            lang: "ar",
+          });
+        }
+      }
+
       logAuditEvent({
         type: "DISPUTE_FLAG",
         userId: null,
         target: input.id,
-        meta: { action: input.action },
+        meta: { action: input.action, order: input.orderId ?? "" },
       });
     },
     onSuccess: () => {
@@ -93,6 +142,10 @@ export function useResolveDispute() {
       void qc.invalidateQueries({ queryKey: ["disputes"] });
       void qc.invalidateQueries({ queryKey: ["orders"] });
       void qc.invalidateQueries({ queryKey: ["wallet"] });
+      void qc.invalidateQueries({ queryKey: ["order_messages"] });
+      void qc.invalidateQueries({ queryKey: ["admin-case-messages"] });
+      void qc.invalidateQueries({ queryKey: ["locked-escrow"] });
+      void qc.invalidateQueries({ queryKey: ["transactions"] });
     },
   });
 }
