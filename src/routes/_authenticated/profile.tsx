@@ -49,9 +49,9 @@ type Kyc = "unverified" | "review" | "verified" | "rejected";
 type Tier = "free" | "pro" | "corp";
 
 const TIER_META: Record<Tier, { name: string; escrow: string; fee: string }> = {
-  free: { name: "الباقة المجانية · 0 USDT", escrow: "36 ساعة", fee: "10%" },
+  free: { name: "الباقة المجانية", escrow: "48 ساعة", fee: "10%" },
   pro: { name: "باقة المحترفين · 10 USDT", escrow: "24 ساعة (مع KYC)", fee: "5%" },
-  corp: { name: "باقة الشركات · 49 USDT", escrow: "6 ساعات", fee: "2.5%" },
+  corp: { name: "باقة الشركات · 49 USDT", escrow: "12–16 ساعة", fee: "2.5%" },
 };
 
 const NATIONALITIES = [
@@ -72,7 +72,12 @@ function ProfilePage() {
   const { profile: liveProfile } = useUserProfile();
   const [tab, setTab] = useState<"kyc" | "settings">("kyc");
   const isVerified = liveProfile?.is_verified === true;
-  const [tier] = useState<Tier>("pro");
+  // Tier is decoupled from the admin role: only a live, unexpired paid plan
+  // on the profile row may show Pro/Corporate.
+  const planActive =
+    !liveProfile?.plan_expires_at || new Date(liveProfile.plan_expires_at).getTime() > Date.now();
+  const dbTier = liveProfile?.account_tier;
+  const tier: Tier = !planActive ? "free" : dbTier === "pro" ? "pro" : dbTier === "corporate" ? "corp" : "free";
   const [avatar, setAvatar] = useState<string | null>(null);
   const avatarRef = useRef<HTMLInputElement>(null);
 
