@@ -6,7 +6,7 @@ import { QrCode } from "@/components/site/QrCode";
 import { ReceiptModal, type ReceiptData } from "@/components/site/ReceiptModal";
 import { useLang } from "@/lib/lang";
 import { parseUsdt } from "@/lib/security";
-import { useConfirmDeposit, useCreateDeposit } from "@/lib/deposits";
+import { useConfirmDeposit, useCreateDeposit, useWalletCredit } from "@/lib/deposits";
 import {
   useCreateTopUp,
   useInvoiceRealtime,
@@ -42,6 +42,23 @@ export function TopUpDialog({ onClose, defaultAmount }: { onClose: () => void; d
   }, [tr]);
 
   useInvoiceRealtime(invoice && !invoice.simulated ? invoice.id : null, onPaid);
+
+  // Realtime wallet credit: the balance rising closes the waiting state at once.
+  useWalletCredit(
+    useCallback(
+      (delta: number) => {
+        setPaid(true);
+        toast.success(
+          tr(
+            `تم تأكيد الدفع وإضافة ${delta.toFixed(2)} USDT إلى رصيدك ✅`,
+            `Payment confirmed — ${delta.toFixed(2)} USDT credited ✅`,
+          ),
+        );
+        window.setTimeout(() => onClose(), 1800);
+      },
+      [tr, onClose],
+    ),
+  );
 
   const submit = () => {
     const value = parseUsdt(amount) ?? 0;

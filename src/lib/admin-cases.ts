@@ -93,7 +93,7 @@ export function useCaseDeliverables(orderId: string | null) {
 
 /** Signed URL for a file kept in the private digital-vault bucket. */
 export async function vaultUrl(path: string): Promise<string | null> {
-  const { data } = await supabase.storage.from("digital-vault").createSignedUrl(path, 300);
+  const { data } = await supabase.storage.from("digital-vault").createSignedUrl(path, 3600);
   return data?.signedUrl ?? null;
 }
 
