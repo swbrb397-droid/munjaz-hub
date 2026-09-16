@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { useAuth } from "@/hooks/use-auth";
 import { useProfile } from "@/lib/queries";
+import { useLang } from "@/lib/lang";
 import { supportAssistant } from "@/lib/support.functions";
 
 type Msg = { id: string; role: "ai" | "user"; text: string };
@@ -62,6 +63,7 @@ export function SupportWidget() {
   const listRef = useRef<HTMLDivElement>(null);
   const keyboardHidden = useKeyboardAware();
   const askSupport = useServerFn(supportAssistant);
+  const { lang } = useLang();
 
   const { isAuthenticated } = useAuth();
   const profile = useProfile();
