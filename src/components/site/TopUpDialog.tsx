@@ -6,7 +6,7 @@ import { QrCode } from "@/components/site/QrCode";
 import { ReceiptModal, type ReceiptData } from "@/components/site/ReceiptModal";
 import { useLang } from "@/lib/lang";
 import { parseUsdt } from "@/lib/security";
-import { useConfirmDeposit, useCreateDeposit } from "@/lib/deposits";
+import { useConfirmDeposit, useCreateDeposit, useWalletCredit } from "@/lib/deposits";
 import {
   useCreateTopUp,
   useInvoiceRealtime,
