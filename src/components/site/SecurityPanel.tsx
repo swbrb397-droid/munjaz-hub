@@ -147,7 +147,7 @@ export function SecurityPanel({ className = "" }: { className?: string }) {
       setCurrentPw("");
       setNewPw("");
       setConfirmPw("");
-      toast.success("تم تحديث كلمة المرور");
+      toast.success("تم تغيير كلمة المرور بنجاح");
       toast.warning("السحب مجمد مؤقتاً لمدة 24 ساعة لحماية أصولك بعد إجراء تعديل أمني على حسابك");
     } catch (e) {
       toast.error((e as Error).message || "تعذّر تحديث كلمة المرور");
