@@ -19,7 +19,7 @@ import {
 import { Card, Section } from "@/components/site/Shell";
 import { ReceiptModal, type ReceiptData } from "@/components/site/ReceiptModal";
 import { useLang } from "@/lib/lang";
-import { useProfile, useTransactions, useWallet } from "@/lib/queries";
+import { useProfile, useRoles, useTransactions, useWallet } from "@/lib/queries";
 import {
   MIN_WITHDRAWAL,
   WITHDRAWAL_FEE,
@@ -96,6 +96,8 @@ function WalletPage() {
   const { tr, lang } = useLang();
   const wallet = useWallet();
   const profile = useProfile();
+  const roles = useRoles();
+  const isAdmin = (roles.data ?? []).includes("admin");
   const txs = useTransactions();
   const requests = useMyWithdrawals();
   const lockedEscrow = useLockedEscrow();
