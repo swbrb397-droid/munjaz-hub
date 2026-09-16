@@ -455,6 +455,42 @@ export type Database = {
         }
         Relationships: []
       }
+      notifications: {
+        Row: {
+          body: string | null
+          created_at: string
+          id: string
+          kind: string
+          link: string | null
+          meta: Json
+          read_at: string | null
+          title: string
+          user_id: string
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          kind: string
+          link?: string | null
+          meta?: Json
+          read_at?: string | null
+          title: string
+          user_id: string
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          kind?: string
+          link?: string | null
+          meta?: Json
+          read_at?: string | null
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       order_deliverables: {
         Row: {
           approval_state: string
@@ -632,6 +668,10 @@ export type Database = {
           status: Database["public"]["Enums"]["order_status"]
           title: string
           updated_at: string
+          video_call_caller_id: string | null
+          video_call_room_id: string | null
+          video_call_status: string
+          video_call_updated_at: string | null
         }
         Insert: {
           amount_usdt: number
@@ -656,6 +696,10 @@ export type Database = {
           status?: Database["public"]["Enums"]["order_status"]
           title: string
           updated_at?: string
+          video_call_caller_id?: string | null
+          video_call_room_id?: string | null
+          video_call_status?: string
+          video_call_updated_at?: string | null
         }
         Update: {
           amount_usdt?: number
@@ -680,6 +724,10 @@ export type Database = {
           status?: Database["public"]["Enums"]["order_status"]
           title?: string
           updated_at?: string
+          video_call_caller_id?: string | null
+          video_call_room_id?: string | null
+          video_call_status?: string
+          video_call_updated_at?: string | null
         }
         Relationships: [
           {
@@ -752,6 +800,7 @@ export type Database = {
           kyc_tier: Database["public"]["Enums"]["kyc_tier"]
           level: number
           mfa_updated_at: string | null
+          notification_preferences: Json
           password_last_changed_at: string | null
           plan_expires_at: string | null
           rating: number
@@ -779,6 +828,7 @@ export type Database = {
           kyc_tier?: Database["public"]["Enums"]["kyc_tier"]
           level?: number
           mfa_updated_at?: string | null
+          notification_preferences?: Json
           password_last_changed_at?: string | null
           plan_expires_at?: string | null
           rating?: number
@@ -806,6 +856,7 @@ export type Database = {
           kyc_tier?: Database["public"]["Enums"]["kyc_tier"]
           level?: number
           mfa_updated_at?: string | null
+          notification_preferences?: Json
           password_last_changed_at?: string | null
           plan_expires_at?: string | null
           rating?: number
@@ -1641,6 +1692,7 @@ export type Database = {
               isSetofReturn: false
             }
           }
+      unspent_deposit_balance: { Args: { _user_id: string }; Returns: number }
     }
     Enums: {
       account_tier: "free" | "pro" | "corporate"
