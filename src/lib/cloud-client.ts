@@ -22,8 +22,14 @@ function createCloudFetch(apiKey: string): typeof fetch {
   };
 }
 
+/** Strict base URL: no trailing slash, no `/rest/v1` suffix. */
+function normalizeBaseUrl(raw: string): string {
+  return raw.trim().replace(/\/+$/, "").replace(/\/rest\/v1$/, "");
+}
+
 function createCloudClient() {
-  const url = import.meta.env["VITE_SUPABASE_URL"];
+  const rawUrl = import.meta.env["VITE_SUPABASE_URL"];
+  const url = rawUrl ? normalizeBaseUrl(rawUrl) : rawUrl;
   const publishableKey = import.meta.env["VITE_SUPABASE_PUBLISHABLE_KEY"];
 
   if (!url || !publishableKey) {
