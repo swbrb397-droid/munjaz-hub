@@ -27,13 +27,13 @@ import { useMyKyc, useSubmitKyc } from "@/lib/kyc";
 export const Route = createFileRoute("/_authenticated/profile")({
   head: () => ({
     meta: [
-      { title: "الملف الشخصي وتوثيق الهوية | المُنجِز" },
+      { title: "الملف الشخصي وتوثيق الهوية | المنجز" },
       {
         name: "description",
         content:
           "أدر ملفك الشخصي، وثّق هويتك (KYC) عبر ثلاث خطوات، واضبط محفظة السحب والتنبيهات والمصادقة الثنائية.",
       },
-      { property: "og:title", content: "الملف الشخصي وتوثيق الهوية | المُنجِز" },
+      { property: "og:title", content: "الملف الشخصي وتوثيق الهوية | المنجز" },
       {
         property: "og:description",
         content: "توثيق KYC، دورة الضمان، عمولة الباقة، وإعدادات الأمان في مكان واحد.",

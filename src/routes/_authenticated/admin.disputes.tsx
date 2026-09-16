@@ -22,9 +22,9 @@ import { formatUsdt } from "@/lib/security";
 export const Route = createFileRoute("/_authenticated/admin/disputes")({
   head: () => ({
     meta: [
-      { title: "مركز تسوية النزاعات والضمان | المُنجِز" },
+      { title: "مركز تسوية النزاعات والضمان | المنجز" },
       { name: "description", content: "مراجعة النزاعات المفتوحة، تفقّد ملفات التسليم ومحادثات الطلب، وتحرير أو إرجاع مبالغ الضمان بضغطة واحدة." },
-      { property: "og:title", content: "مركز تسوية النزاعات والضمان | المُنجِز" },
+      { property: "og:title", content: "مركز تسوية النزاعات والضمان | المنجز" },
       { property: "og:description", content: "تسوية نزاعات الضمان مع سجل تدقيق كامل." },
     ],
   }),
@@ -83,7 +83,7 @@ function CaseModal({ item, onClose }: { item: AdminDispute; onClose: () => void 
     const { error } = await supabase.from("order_messages").insert({
       order_id: item.order_id,
       sender_id: user.id,
-      body: `⚖️ توجيه إداري رسمي من إدارة المُنجِز: ${sanitizeText(directive, 2000)}`,
+      body: `⚖️ توجيه إداري رسمي من إدارة المنجز: ${sanitizeText(directive, 2000)}`,
       lang: "ar",
     });
     setSendingDirective(false);

@@ -17,14 +17,14 @@ const dict = {
     kyc: "التوثيق",
     orders: "الطلبات",
     profile: "الملف والتوثيق",
-    brand: "المُنجِز",
+    brand: "المنجز",
 
 
     notifications: "التنبيهات",
     menu: "القائمة",
     verified: "موثّق",
     terms: "الشروط والأحكام",
-    footer: "جميع الحقوق محفوظة لـ المُنجِز",
+    footer: "جميع الحقوق محفوظة لـ المنجز",
     footerSub: "TRC-20 · BEP-20 · Polygon",
   },
   en: {

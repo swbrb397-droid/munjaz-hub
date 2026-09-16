@@ -15,9 +15,9 @@ import { useCreateOrder, useListing } from "@/lib/orders";
 export const Route = createFileRoute("/listing/$id")({
   head: () => ({
     meta: [
-      { title: "تفاصيل العرض | المُنجِز" },
-      { name: "description", content: "تفاصيل الخدمة أو المنتج الرقمي على المُنجِز: السعر بعملة USDT، مدة التسليم، نطاق العمل، وشراء محمي بضمان الوساطة." },
-      { property: "og:title", content: "تفاصيل العرض | المُنجِز" },
+      { title: "تفاصيل العرض | المنجز" },
+      { name: "description", content: "تفاصيل الخدمة أو المنتج الرقمي على المنجز: السعر بعملة USDT، مدة التسليم، نطاق العمل، وشراء محمي بضمان الوساطة." },
+      { property: "og:title", content: "تفاصيل العرض | المنجز" },
       { property: "og:description", content: "اشترِ بضمان الوساطة USDT مع تحرير تلقائي بعد اعتماد التسليم." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -57,7 +57,9 @@ function ListingDetail() {
   }
 
   const price = Number.isFinite(Number(item.price)) ? Number(item.price) : 0;
-  const fee = Number((price * 0.1).toFixed(2));
+  const feeRate = item.feeRate ?? 0.10;
+  const feePct = Math.round(feeRate * 1000) / 10; // e.g. 10, 5, 2.5
+  const fee = Number((price * feeRate).toFixed(2));
   const sellerNet = Number((price - fee).toFixed(2));
   const balance = Number(wallet.data?.available_usdt ?? 0);
   const isOwner = !!user && item.ownerId === user.id;
@@ -153,7 +155,7 @@ function ListingDetail() {
 
             <dl className="mt-4 grid gap-1 border-t border-border pt-4 text-sm">
               <div className="flex justify-between"><dt className="text-muted-foreground">{tr("مبلغ الضمان", "Escrow amount")}</dt><dd><bdi>{price.toFixed(2)} USDT</bdi></dd></div>
-              <div className="flex justify-between"><dt className="text-muted-foreground">{tr("عمولة المنصة (10%)", "Platform fee (10%)")}</dt><dd><bdi>{fee.toFixed(2)} USDT</bdi></dd></div>
+              <div className="flex justify-between"><dt className="text-muted-foreground">{tr(`عمولة المنصة (${feePct}%)`, `Platform fee (${feePct}%)`)}</dt><dd><bdi>{fee.toFixed(2)} USDT</bdi></dd></div>
               <div className="flex justify-between font-bold"><dt>{tr("صافي البائع", "Seller net")}</dt><dd className="text-primary"><bdi>{sellerNet.toFixed(2)} USDT</bdi></dd></div>
             </dl>
 

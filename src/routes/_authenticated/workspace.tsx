@@ -114,13 +114,13 @@ function fileMeta(value: string) {
 export const Route = createFileRoute("/_authenticated/workspace")({
   head: () => ({
     meta: [
-      { title: "مساحة عمل الطلب | المُنجِز" },
+      { title: "مساحة عمل الطلب | المنجز" },
       {
         name: "description",
         content:
           "محادثة لحظية مع ترجمة فورية بالذكاء الاصطناعي، مكالمات فيديو، تسليم الملفات، وفتح نزاع محمي بضمان المنصة.",
       },
-      { property: "og:title", content: "مساحة عمل الطلب | المُنجِز" },
+      { property: "og:title", content: "مساحة عمل الطلب | المنجز" },
       {
         property: "og:description",
         content: "تواصل، سلّم، وأدر نزاعاتك داخل مساحة عمل واحدة آمنة.",
@@ -693,7 +693,7 @@ function Workspace() {
       const notice = await supabase.from("order_messages").insert({
         order_id: order.id,
         sender_id: user!.id,
-        body: "⚖️ إشعار نظامي من المُنجِز: تم فتح نزاع رسمي على هذا الطلب. تم تجميد المعاملة وقفل تحرير مبلغ الضمان حتى صدور حكم الإدارة العليا. يُرجى من الطرفين إرفاق كل الأدلة داخل هذه المحادثة.",
+        body: "⚖️ إشعار نظامي من المنجز: تم فتح نزاع رسمي على هذا الطلب. تم تجميد المعاملة وقفل تحرير مبلغ الضمان حتى صدور حكم الإدارة العليا. يُرجى من الطرفين إرفاق كل الأدلة داخل هذه المحادثة.",
         lang: "ar",
       });
       if (notice.error) throw notice.error;
@@ -775,14 +775,16 @@ function Workspace() {
             </button>
           )}
 
-          <button
-            type="button"
-            onClick={() => setTab("dispute")}
-            className="inline-flex items-center gap-2 rounded-xl border border-destructive/50 bg-destructive/10 px-4 py-2 text-sm font-semibold text-destructive"
-          >
-            <AlertTriangle className="size-4" />{" "}
-            {tr("فتح نزاع رسمي للتحكيم ⚖️", "Open formal arbitration ⚖️")}
-          </button>
+          {order && !["completed", "refunded", "cancelled"].includes(order.status) && (
+            <button
+              type="button"
+              onClick={() => setTab("dispute")}
+              className="inline-flex items-center gap-2 rounded-xl border border-destructive/50 bg-destructive/10 px-4 py-2 text-sm font-semibold text-destructive"
+            >
+              <AlertTriangle className="size-4" />{" "}
+              {tr("فتح نزاع رسمي للتحكيم ⚖️", "Open formal arbitration ⚖️")}
+            </button>
+          )}
         </div>
       }
     >
@@ -994,7 +996,7 @@ function Workspace() {
                     <div className="max-w-[85%] rounded-2xl border border-accent/40 bg-accent/10 px-4 py-3 text-sm sm:max-w-[75%]">
                       <p className="mb-1 flex items-center gap-1 text-xs font-bold text-accent">
                         <Sparkles className="size-3" />{" "}
-                        {tr("مساعد المُنجِز الذكي", "Munjaz AI assistant")}
+                        {tr("مساعد المنجز الذكي", "Munjaz AI assistant")}
                       </p>
                       <p className="break-words whitespace-pre-wrap">{r.text}</p>
                     </div>

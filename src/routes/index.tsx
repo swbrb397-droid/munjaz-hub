@@ -13,9 +13,9 @@ import { CoverImage } from "@/components/site/CoverImage";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "المُنجِز | سوق الخدمات الرقمية بعملة USDT" },
-      { name: "description", content: "منصة المُنجِز: خدمات مستقلين بضمان الوساطة، منتجات رقمية، دورات، جلسات قيمنق، ومعرض NFT — بمحفظة USDT داخلية بدون رسوم." },
-      { property: "og:title", content: "المُنجِز | سوق الخدمات الرقمية بعملة USDT" },
+      { title: "المنجز | سوق الخدمات الرقمية بعملة USDT" },
+      { name: "description", content: "منصة المنجز: خدمات مستقلين بضمان الوساطة، منتجات رقمية، دورات، جلسات قيمنق، ومعرض NFT — بمحفظة USDT داخلية بدون رسوم." },
+      { property: "og:title", content: "المنجز | سوق الخدمات الرقمية بعملة USDT" },
       { property: "og:description", content: "ضمان ذكي، محفظة USDT داخلية، وتسويات نزاعات بالذكاء الاصطناعي." },
     ],
   }),

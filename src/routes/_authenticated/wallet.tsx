@@ -40,13 +40,13 @@ import { RedeemPassCard } from "@/components/site/RedeemPassCard";
 export const Route = createFileRoute("/_authenticated/wallet")({
   head: () => ({
     meta: [
-      { title: "المحفظة الداخلية USDT | المُنجِز" },
+      { title: "المحفظة الداخلية USDT | المنجز" },
       {
         name: "description",
         content:
           "أودع واسحب USDT عبر TRC-20 و BEP-20 و Polygon، وتابع سجل المعاملات والمبالغ المحجوزة في الضمان.",
       },
-      { property: "og:title", content: "المحفظة الداخلية USDT | المُنجِز" },
+      { property: "og:title", content: "المحفظة الداخلية USDT | المنجز" },
       {
         property: "og:description",
         content: "إيداع وسحب USDT بدون رسوم داخلية مع سحب فوري للحسابات الموثقة.",
@@ -105,6 +105,7 @@ function WalletPage() {
   const gasRows = useMemo(() => gasEstimates(), []);
 
   const [amount, setAmount] = useState("250");
+  const [legalAck, setLegalAck] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [receipt, setReceipt] = useState<ReceiptData | null>(null);
   const [payoutAddress, setPayoutAddress] = useState("");
@@ -481,7 +482,7 @@ function WalletPage() {
             </span>
             <button
               onClick={submit}
-              disabled={withdraw.isPending || frozen || lockHours > 0}
+              disabled={withdraw.isPending || frozen || lockHours > 0 || !legalAck}
               className="inline-flex min-h-[44px] items-center gap-2 rounded-lg bg-primary px-4 py-2 font-bold text-primary-foreground disabled:opacity-60"
             >
               {withdraw.isPending && <Loader2 className="size-4 animate-spin" />}
@@ -490,6 +491,21 @@ function WalletPage() {
                 : tr("تأكيد السحب", "Confirm withdrawal")}
             </button>
           </div>
+
+          <label className="mt-3 flex items-start gap-2 rounded-xl border border-border/70 bg-surface-2/40 p-3 text-[11px] leading-relaxed text-muted-foreground">
+            <input
+              type="checkbox"
+              checked={legalAck}
+              onChange={(e) => setLegalAck(e.target.checked)}
+              className="mt-0.5 size-4 shrink-0 accent-primary"
+            />
+            <span>
+              {tr(
+                "أقر بأن الأموال المسحوبة ناتجة عن نشاط اقتصادي حقيقي على المنصة، وأوافق على تطبيق رسوم مكافحة خلط الأموال بنسبة 5% على أي جزء من مبلغ الإيداع الكريبتو لم يدخل ضمان أي طلب (البند 2 من الشروط).",
+                "I confirm the withdrawn funds stem from real on-platform economic activity and I accept the 5% anti-mixing surcharge on any portion of crypto-deposit funds that never entered escrow (Terms §2).",
+              )}
+            </span>
+          </label>
           {feedback && <p className="mt-3 text-xs text-primary">{feedback}</p>}
           <p className="mt-3 text-xs text-muted-foreground">
             {tr(

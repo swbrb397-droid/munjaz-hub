@@ -9,7 +9,15 @@ import type { Tables } from "@/integrations/supabase/types";
 export type Order = Tables<"orders">;
 export type OrderStatus = Order["status"];
 
-/** Public single-listing fetch (anon-readable when published). */
+/** Platform commission rate keyed to the seller's active tier. */
+export function feeRateForTier(tier: string | null | undefined): number {
+  if (tier === "pro") return 0.05;
+  if (tier === "corporate") return 0.025;
+  return 0.10;
+}
+
+/** Public single-listing fetch (anon-readable when published). Also pulls the
+ *  seller's tier so the buyer sees the correct dynamic platform fee. */
 export function useListing(id: string) {
   const { lang } = useLang();
   return useQuery({
@@ -23,6 +31,17 @@ export function useListing(id: string) {
         .maybeSingle();
       if (error) throw error;
       if (!data) return null;
+
+      let sellerTier: string | null = null;
+      if (data.owner_id) {
+        const prof = await supabase
+          .from("profiles")
+          .select("account_tier")
+          .eq("id", data.owner_id)
+          .maybeSingle();
+        sellerTier = (prof.data as { account_tier?: string } | null)?.account_tier ?? null;
+      }
+
       return {
         raw: data,
         id: data.id,
@@ -36,6 +55,8 @@ export function useListing(id: string) {
         verified: data.verified,
         ownerId: data.owner_id,
         cover: (data.cover_url ?? "").trim(),
+        sellerTier,
+        feeRate: feeRateForTier(sellerTier),
       };
     },
   });
@@ -62,6 +83,14 @@ export function useCreateOrder() {
       if (input.sellerId === user.id) throw new Error(tr("لا يمكنك شراء عرضك الخاص", "You cannot buy your own listing"));
       if (!(input.amount >= 3)) throw new Error(tr("الحد الأدنى 3 USDT", "Minimum amount is 3 USDT"));
 
+      // Dynamic platform fee keyed to the seller's tier (Free 10% / Pro 5% / Corp 2.5%).
+      const sellerProfile = await supabase
+        .from("profiles")
+        .select("account_tier")
+        .eq("id", input.sellerId)
+        .maybeSingle();
+      const rate = feeRateForTier((sellerProfile.data as { account_tier?: string } | null)?.account_tier);
+
       const { data, error } = await supabase
         .from("orders")
         .insert({
@@ -71,7 +100,7 @@ export function useCreateOrder() {
           title: sanitizeText(input.title, 160),
           category: input.category,
           amount_usdt: input.amount,
-          platform_fee_usdt: Number((input.amount * 0.1).toFixed(6)),
+          platform_fee_usdt: Number((input.amount * rate).toFixed(6)),
           delivery_days: input.deliveryDays,
           sow_terms: sanitizeText(input.sowTerms, 4000),
           status: "pending",

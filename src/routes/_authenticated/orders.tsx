@@ -14,13 +14,13 @@ import { isAbandoned, usePendingExtensions, useResolveExtension } from "@/lib/ex
 export const Route = createFileRoute("/_authenticated/orders")({
   head: () => ({
     meta: [
-      { title: "طلباتي وحالة الضمان | المُنجِز" },
+      { title: "طلباتي وحالة الضمان | المنجز" },
       {
         name: "description",
         content:
           "كل طلباتك في مكان واحد: رقم الطلب، حالة الضمان، المبلغ المتبقي بعملة USDT، ورابط مباشر لمساحة العمل.",
       },
-      { property: "og:title", content: "طلباتي وحالة الضمان | المُنجِز" },
+      { property: "og:title", content: "طلباتي وحالة الضمان | المنجز" },
       {
         property: "og:description",
         content: "تابع أرقام الطلبات وحالة الضمان والمبالغ المتبقية بعملة USDT.",

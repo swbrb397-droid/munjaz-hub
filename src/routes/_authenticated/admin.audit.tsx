@@ -9,9 +9,9 @@ import { readAuditEvents, type AuditEvent, type AuditEventType } from "@/lib/aud
 export const Route = createFileRoute("/_authenticated/admin/audit")({
   head: () => ({
     meta: [
-      { title: "عارض سجل التدقيق | المُنجِز" },
+      { title: "عارض سجل التدقيق | المنجز" },
       { name: "description", content: "تصفية وتصدير سجل تدقيق المنصة: تنزيلات PDF، بلاغات النزاعات، وبصمات المستندات." },
-      { property: "og:title", content: "عارض سجل التدقيق | المُنجِز" },
+      { property: "og:title", content: "عارض سجل التدقيق | المنجز" },
       { property: "og:description", content: "فلاتر تفاعلية حسب المستخدم ونوع الحدث وبصمة المستند مع تصدير CSV." },
     ],
   }),
