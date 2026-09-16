@@ -60,6 +60,38 @@ function Admin() {
   const resolvePayout = useResolveWithdrawal();
   const setFrozen = useSetAccountFrozen();
 
+  // Withdrawal governance dialogs (tx hash on payout, reason on rejection).
+  const [payoutAction, setPayoutAction] = useState<{ id: string; mode: "pay" | "reject" } | null>(null);
+  const [payoutInput, setPayoutInput] = useState("");
+
+  const runPayoutAction = () => {
+    if (!payoutAction) return;
+    const value = payoutInput.trim();
+    resolvePayout.mutate(
+      payoutAction.mode === "pay"
+        ? { id: payoutAction.id, action: "pay", txHash: value }
+        : { id: payoutAction.id, action: "reject", note: value },
+      {
+        onSuccess: async () => {
+          await logAdminAction(
+            payoutAction.mode === "pay" ? "withdrawal_paid" : "withdrawal_rejected",
+            "withdrawal_requests",
+            payoutAction.id,
+            payoutAction.mode === "pay" ? { tx_hash: value } : { reason: value },
+          );
+          setPayoutAction(null);
+          setPayoutInput("");
+          toast.success(
+            payoutAction.mode === "pay"
+              ? tr("تم اعتماد التحويل وتسجيل هاش المعاملة ✅", "Payout completed and hash recorded ✅")
+              : tr("تم رفض الطلب وإرجاع الرصيد للمستخدم", "Request rejected and balance refunded"),
+          );
+        },
+        onError: (e: Error) => toast.error(e.message),
+      },
+    );
+  };
+
   // Security sentinel: record unauthorized attempts to reach the admin area.
   useEffect(() => {
     if (roles.isLoading || roles.data === undefined || isAdmin) return;
@@ -202,17 +234,17 @@ function Admin() {
                   </button>
                   <button
                     disabled={resolvePayout.isPending || w.status === "paid" || w.status === "rejected"}
-                    onClick={() => resolvePayout.mutate({ id: w.id, action: "pay" })}
+                    onClick={() => setPayoutAction({ id: w.id, mode: "pay" })}
                     className="rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground disabled:opacity-50"
                   >
-                    {tr("تم الدفع", "Mark paid")}
+                    {tr("اعتماد وإتمام التحويل", "Approve & complete transfer")}
                   </button>
                   <button
                     disabled={resolvePayout.isPending || w.status === "paid" || w.status === "rejected"}
-                    onClick={() => resolvePayout.mutate({ id: w.id, action: "reject" })}
+                    onClick={() => setPayoutAction({ id: w.id, mode: "reject" })}
                     className="rounded-lg border border-destructive/50 px-3 py-1.5 text-xs text-destructive disabled:opacity-50"
                   >
-                    {tr("رفض وإرجاع", "Reject & refund")}
+                    {tr("رفض مع استرجاع الرصيد", "Reject & refund balance")}
                   </button>
                 </div>
               </div>
