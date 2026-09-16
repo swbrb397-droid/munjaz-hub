@@ -56,10 +56,10 @@ function TermsPage() {
 
         <Clause
           icon={<Wallet className="size-5 text-accent" />}
-          title={tr("2. إخلاء المسؤولية المالية والبلوكتشين", "2. Blockchain & USDT Financial Disclaimer")}
+          title={tr("2. إخلاء المسؤولية المالية ومكافحة خلط الأموال", "2. Blockchain, USDT & Anti-Mixing Disclaimer")}
           body={tr(
-            `المستخدم وحده مسؤول عن إدخال عناوين محافظ USDT الصحيحة واختيار الشبكة المتوافقة (TRC-20 أو BEP-20 أو Polygon). لا تتحمّل المنجز أي مسؤولية عن فقدان الأموال نتيجة اختيار شبكة خاطئ، أو خطأ في العنوان، أو انقطاع خدمة المحفظة الخارجية. المنجز ليست بنكاً أو مؤسسة مالية، ولا تضمن سرعة تأكيدات الشبكات الخارجية أو تقلّبات رسوم الغاز (gas fees) أو تغيّر الأنظمة التنظيمية للعملات الرقمية في اختصاص المستخدم. لا يتم تقديم أي مشورة مالية أو استثمارية عبر المنصة.`,
-            `The user is solely responsible for entering correct USDT wallet addresses and selecting the compatible network (TRC-20, BEP-20, or Polygon). Al-Munjaz is not liable for any loss of funds resulting from incorrect network selection, wrong addresses, or failure of an external wallet service. Al-Munjaz is not a bank or financial institution, does not guarantee confirmation speeds on external networks, gas fee fluctuations, or regulatory changes regarding cryptocurrencies in the user's jurisdiction. No financial or investment advice is provided through the platform.`,
+            `المستخدم وحده مسؤول عن إدخال عناوين محافظ USDT الصحيحة واختيار الشبكة المتوافقة (TRC-20 أو BEP-20 أو Polygon). لا تتحمّل المنصة أي مسؤولية عن فقدان الأموال نتيجة اختيار شبكة خاطئ، أو خطأ في العنوان، أو انقطاع خدمة المحفظة الخارجية. المنصة ليست بنكاً أو مؤسسة مالية، ولا تضمن سرعة تأكيدات الشبكات الخارجية أو تقلّبات رسوم الغاز أو تغيّر الأنظمة التنظيمية. مكافحة خلط الأموال (Anti-Mixing): تُطبَّق رسوم إضافية بنسبة 5% على أي طلب سحب لأموال إيداع كريبتو لم تدخل ضمان أي طلب داخل المنصة، لتثبيط استخدام المنصة كوسيلة لتحويل الأموال دون نشاط اقتصادي حقيقي.`,
+            `The user is solely responsible for entering correct USDT wallet addresses and selecting the compatible network (TRC-20, BEP-20, or Polygon). Al-Munjaz is not liable for any loss from incorrect network selection, wrong addresses, or wallet outages. Al-Munjaz is not a bank, provides no financial advice, and does not guarantee external confirmation speeds or gas fees. Anti-Mixing Fee: A 5% surcharge applies to any withdrawal of crypto-deposit funds that never entered escrow on the platform, discouraging pass-through use without real economic activity.`,
           )}
         />
 
