@@ -775,14 +775,16 @@ function Workspace() {
             </button>
           )}
 
-          <button
-            type="button"
-            onClick={() => setTab("dispute")}
-            className="inline-flex items-center gap-2 rounded-xl border border-destructive/50 bg-destructive/10 px-4 py-2 text-sm font-semibold text-destructive"
-          >
-            <AlertTriangle className="size-4" />{" "}
-            {tr("فتح نزاع رسمي للتحكيم ⚖️", "Open formal arbitration ⚖️")}
-          </button>
+          {order && !["completed", "refunded", "cancelled"].includes(order.status) && (
+            <button
+              type="button"
+              onClick={() => setTab("dispute")}
+              className="inline-flex items-center gap-2 rounded-xl border border-destructive/50 bg-destructive/10 px-4 py-2 text-sm font-semibold text-destructive"
+            >
+              <AlertTriangle className="size-4" />{" "}
+              {tr("فتح نزاع رسمي للتحكيم ⚖️", "Open formal arbitration ⚖️")}
+            </button>
+          )}
         </div>
       }
     >
