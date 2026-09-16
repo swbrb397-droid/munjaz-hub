@@ -111,7 +111,7 @@ function ListingDetail() {
           <div className="mt-6 grid gap-3 sm:grid-cols-3">
             {[
               { icon: ShieldCheck, t: tr("ضمان وساطة", "Escrow protected"), s: tr("تُجمَّد الأموال حتى الاعتماد", "Funds held until approval") },
-              { icon: Timer, t: tr("تحرير تلقائي", "Auto-release"), s: tr("خلال 72 ساعة من التسليم", "72 hours after delivery") },
+              { icon: Timer, t: tr("تحرير تلقائي", "Auto-release"), s: tr("خلال 48 ساعة من التسليم (الباقة المجانية)", "48 hours after delivery (Free tier)") },
               { icon: Star, t: tr("جودة موثقة", "Verified quality"), s: tr("تقييمات محمية ضد الابتزاز", "Ratings protected from blackmail") },
             ].map((b) => (
               <div key={b.t} className="rounded-xl border border-border p-3">
