@@ -31,6 +31,7 @@ import {
 } from "@/lib/admin-cases";
 import { useAdminOverview, useSandboxAction, type SandboxKind } from "@/lib/admin-ops";
 import { useKycSubmissions, useReviewKyc } from "@/lib/kyc";
+import { logAdminAction } from "@/lib/admin-audit";
 
 export const Route = createFileRoute("/_authenticated/admin/")({
   head: () => ({
