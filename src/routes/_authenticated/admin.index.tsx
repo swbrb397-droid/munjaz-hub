@@ -146,7 +146,7 @@ function Admin() {
           <Card key={label}>
             <p className="text-xs text-muted-foreground">{label}</p>
             <p className="mt-1 text-2xl font-black text-primary" dir="ltr">
-              {overview.isLoading ? "…" : value}
+              {overview.isLoading ? "0" : value}
             </p>
           </Card>
         ))}
