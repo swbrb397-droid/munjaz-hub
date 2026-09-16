@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { toast } from "sonner";
+import { supabase } from "@/lib/cloud-client";
 
 export type NotifyChannel = "sales" | "escrow" | "disputes" | "delivery" | "referral";
 
@@ -45,6 +46,8 @@ export function NotifyProvider({ children }: { children: ReactNode }) {
   const prefsRef = useRef<NotifyPrefs>(DEFAULT_PREFS);
   prefsRef.current = prefs;
 
+  // Hydrate from localStorage first (offline-safe), then reconcile with the
+  // signed-in user's profile row so preferences follow them across devices.
   useEffect(() => {
     try {
       const raw = window.localStorage.getItem(STORAGE_KEY);
@@ -56,6 +59,22 @@ export function NotifyProvider({ children }: { children: ReactNode }) {
     } catch {
       /* ignore malformed storage */
     }
+    let cancelled = false;
+    void (async () => {
+      const { data: auth } = await supabase.auth.getUser();
+      const uid = auth.user?.id;
+      if (!uid || cancelled) return;
+      const { data } = await supabase.from("profiles").select("notification_preferences").eq("id", uid).maybeSingle();
+      const remote = (data as { notification_preferences?: Partial<NotifyPrefs> } | null)?.notification_preferences;
+      if (remote && !cancelled) {
+        const merged = { ...DEFAULT_PREFS, ...remote };
+        prefsRef.current = merged;
+        setPrefs(merged);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const setPref = useCallback((channel: NotifyChannel, value: boolean) => {
@@ -67,6 +86,13 @@ export function NotifyProvider({ children }: { children: ReactNode }) {
       } catch {
         /* ignore quota errors */
       }
+      // Optimistic remote sync — falls back silently for signed-out users.
+      void (async () => {
+        const { data: auth } = await supabase.auth.getUser();
+        const uid = auth.user?.id;
+        if (!uid) return;
+        await supabase.from("profiles").update({ notification_preferences: next }).eq("id", uid);
+      })();
       return next;
     });
   }, []);
