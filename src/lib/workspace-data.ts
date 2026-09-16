@@ -298,7 +298,7 @@ export function useSetDeliverableApproval(orderId: string | null) {
 }
 
 /** Time-limited signed URL for a private vault object (links pass through unchanged). */
-export async function vaultUrl(storagePath: string, seconds = 900) {
+export async function vaultUrl(storagePath: string, seconds = 3600) {
   if (/^https?:\/\//.test(storagePath)) return storagePath;
   const { data, error } = await supabase.storage
     .from(VAULT_BUCKET)
