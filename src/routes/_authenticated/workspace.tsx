@@ -32,6 +32,7 @@ import { logAuditEvent } from "@/lib/audit";
 
 import { useLang } from "@/lib/lang";
 import { useAuth } from "@/hooks/use-auth";
+import { VideoCallPanel } from "@/components/site/VideoCallPanel";
 import { useOrders, useProfile } from "@/lib/queries";
 import { checkUpload } from "@/lib/file-guard";
 import { nextActions, useOrderTransition, type OrderStatus } from "@/lib/orders";
@@ -2059,28 +2060,14 @@ function Workspace() {
         </div>
       )}
 
-      {callOpen && order && (
-        <div className="fixed inset-0 z-[90] flex flex-col bg-[#0B0F17]" role="dialog" aria-modal="true">
-          <div className="flex items-center justify-between gap-3 border-b border-slate-800 px-4 py-3">
-            <p className="min-w-0 truncate text-sm font-black">
-              {tr("مكالمة فيديو مشفّرة داخل المنصة", "Encrypted in-app video call")} · MJ-{order.order_number}
-            </p>
-            <button
-              type="button"
-              onClick={() => setCallOpen(false)}
-              aria-label={tr("إنهاء المكالمة", "End call")}
-              className="grid size-11 shrink-0 place-items-center rounded-xl border border-slate-700 text-muted-foreground hover:text-foreground"
-            >
-              <X className="size-5" />
-            </button>
-          </div>
-          <iframe
-            title={tr("غرفة الاجتماع", "Meeting room")}
-            src={`https://meet.jit.si/almunjaz-${order.id}`}
-            allow="camera; microphone; fullscreen; display-capture; autoplay"
-            className="min-h-0 w-full flex-1 border-0"
-          />
-        </div>
+      {callOpen && order && user && (
+        <VideoCallPanel
+          orderId={order.id}
+          orderNumber={order.order_number}
+          userId={user.id}
+          open={callOpen}
+          onClose={() => setCallOpen(false)}
+        />
       )}
 
       {reviewOpen && (
