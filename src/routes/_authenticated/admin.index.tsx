@@ -31,6 +31,7 @@ import {
 } from "@/lib/admin-cases";
 import { useAdminOverview, useSandboxAction, type SandboxKind } from "@/lib/admin-ops";
 import { useKycSubmissions, useReviewKyc } from "@/lib/kyc";
+import { logAdminAction } from "@/lib/admin-audit";
 
 export const Route = createFileRoute("/_authenticated/admin/")({
   head: () => ({
@@ -59,6 +60,38 @@ function Admin() {
   const incidents = useSecurityIncidents(isAdmin);
   const resolvePayout = useResolveWithdrawal();
   const setFrozen = useSetAccountFrozen();
+
+  // Withdrawal governance dialogs (tx hash on payout, reason on rejection).
+  const [payoutAction, setPayoutAction] = useState<{ id: string; mode: "pay" | "reject" } | null>(null);
+  const [payoutInput, setPayoutInput] = useState("");
+
+  const runPayoutAction = () => {
+    if (!payoutAction) return;
+    const value = payoutInput.trim();
+    resolvePayout.mutate(
+      payoutAction.mode === "pay"
+        ? { id: payoutAction.id, action: "pay", txHash: value }
+        : { id: payoutAction.id, action: "reject", note: value },
+      {
+        onSuccess: async () => {
+          await logAdminAction(
+            payoutAction.mode === "pay" ? "withdrawal_paid" : "withdrawal_rejected",
+            "withdrawal_requests",
+            payoutAction.id,
+            payoutAction.mode === "pay" ? { tx_hash: value } : { reason: value },
+          );
+          setPayoutAction(null);
+          setPayoutInput("");
+          toast.success(
+            payoutAction.mode === "pay"
+              ? tr("تم اعتماد التحويل وتسجيل هاش المعاملة ✅", "Payout completed and hash recorded ✅")
+              : tr("تم رفض الطلب وإرجاع الرصيد للمستخدم", "Request rejected and balance refunded"),
+          );
+        },
+        onError: (e: Error) => toast.error(e.message),
+      },
+    );
+  };
 
   // Security sentinel: record unauthorized attempts to reach the admin area.
   useEffect(() => {
@@ -202,23 +235,76 @@ function Admin() {
                   </button>
                   <button
                     disabled={resolvePayout.isPending || w.status === "paid" || w.status === "rejected"}
-                    onClick={() => resolvePayout.mutate({ id: w.id, action: "pay" })}
+                    onClick={() => setPayoutAction({ id: w.id, mode: "pay" })}
                     className="rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground disabled:opacity-50"
                   >
-                    {tr("تم الدفع", "Mark paid")}
+                    {tr("اعتماد وإتمام التحويل", "Approve & complete transfer")}
                   </button>
                   <button
                     disabled={resolvePayout.isPending || w.status === "paid" || w.status === "rejected"}
-                    onClick={() => resolvePayout.mutate({ id: w.id, action: "reject" })}
+                    onClick={() => setPayoutAction({ id: w.id, mode: "reject" })}
                     className="rounded-lg border border-destructive/50 px-3 py-1.5 text-xs text-destructive disabled:opacity-50"
                   >
-                    {tr("رفض وإرجاع", "Reject & refund")}
+                    {tr("رفض مع استرجاع الرصيد", "Reject & refund balance")}
                   </button>
                 </div>
               </div>
             ))}
           </div>
         </Card>
+      )}
+
+      {payoutAction && (
+        <div
+          className="fixed inset-0 z-[80] grid place-items-center overflow-y-auto bg-background/85 p-4 backdrop-blur"
+          role="dialog"
+          aria-modal="true"
+        >
+          <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6">
+            <h3 className="text-lg font-black">
+              {payoutAction.mode === "pay"
+                ? tr("اعتماد وإتمام التحويل", "Approve & complete transfer")
+                : tr("رفض مع استرجاع الرصيد", "Reject & refund balance")}
+            </h3>
+            <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+              {payoutAction.mode === "pay"
+                ? tr(
+                    "أدخل هاش المعاملة (tx_hash) لإتمام السحب وتسجيله في سجل التدقيق.",
+                    "Enter the transaction hash (tx_hash) to complete the payout and log it.",
+                  )
+                : tr(
+                    "أدخل سبب الرفض — يُعاد المبلغ المحجوز إلى الرصيد المتاح للمستخدم فوراً.",
+                    "Enter a rejection reason — the locked amount returns to the user's available balance.",
+                  )}
+            </p>
+            <input
+              value={payoutInput}
+              onChange={(e) => setPayoutInput(e.target.value)}
+              placeholder={payoutAction.mode === "pay" ? "0x…" : tr("سبب الرفض", "Rejection reason")}
+              className="mt-4 w-full rounded-xl border border-border bg-surface px-3 py-2.5 text-sm outline-none focus:border-primary"
+            />
+            <div className="mt-4 flex flex-wrap gap-2">
+              <button
+                type="button"
+                disabled={resolvePayout.isPending || payoutInput.trim().length < 5}
+                onClick={runPayoutAction}
+                className="min-h-[44px] flex-1 rounded-xl bg-primary px-4 text-sm font-bold text-primary-foreground disabled:opacity-40"
+              >
+                {resolvePayout.isPending ? tr("جارٍ التنفيذ…", "Working…") : tr("تأكيد", "Confirm")}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setPayoutAction(null);
+                  setPayoutInput("");
+                }}
+                className="min-h-[44px] rounded-xl border border-border px-4 text-sm font-bold"
+              >
+                {tr("إلغاء", "Cancel")}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {tab === "security" && (

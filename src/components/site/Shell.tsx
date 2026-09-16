@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useLang, type TranslationKey } from "@/lib/lang";
-import { useNotify, type NotifyChannel } from "@/lib/notify";
+import { useLiveNotifications, useMarkNotificationRead } from "@/lib/notifications";
 import { useAuth } from "@/hooks/use-auth";
 import { useViewMode } from "@/lib/view-mode";
 import { ErrorBoundary } from "@/components/site/ErrorBoundary";
@@ -153,7 +153,7 @@ function LangSwitch() {
 }
 
 function Notifications() {
-  const { tr } = useLang();
+  const { tr, lang } = useLang();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -166,19 +166,11 @@ function Notifications() {
     return () => document.removeEventListener("mousedown", onDown);
   }, [open]);
 
-  const { events, prefs } = useNotify();
-
-  // Static feed respects the same granular preferences as live toasts.
-  const baseline: { channel: NotifyChannel; text: string }[] = [
-    { channel: "escrow", text: tr("تم تحرير 250 USDT من الضمان.", "250 USDT released from escrow.") },
-    { channel: "delivery", text: tr("رسالة جديدة في مساحة الطلب #4821.", "New message in workspace #4821.") },
-    { channel: "sales", text: tr("اكتمل توثيق حسابك (KYC 2).", "Your account verification is complete (KYC 2).") },
-  ];
-
-  const items = [
-    ...events.map((e) => ({ id: e.id, text: e.message })),
-    ...baseline.filter((b) => prefs[b.channel]).map((b) => ({ id: b.text, text: b.text })),
-  ];
+  // Live feed straight from the database (realtime INSERT subscription).
+  const notifications = useLiveNotifications(5);
+  const markRead = useMarkNotificationRead();
+  const items = notifications.data ?? [];
+  const unread = items.filter((n) => !n.read_at).length;
 
   return (
     <div className="relative shrink-0" ref={ref}>
@@ -190,17 +182,41 @@ function Notifications() {
         aria-label={tr("التنبيهات", "Notifications")}
       >
         <Bell className="size-4" />
-        {items.length > 0 && <span className="absolute -top-1 -start-1 size-2 rounded-full bg-primary" />}
+        {unread > 0 && (
+          <span className="absolute -top-1.5 -start-1.5 grid min-w-[18px] place-items-center rounded-full bg-destructive px-1 text-[10px] font-bold leading-4 text-destructive-foreground">
+            {unread > 9 ? "9+" : unread}
+          </span>
+        )}
       </button>
       {open && (
-        <div className="absolute end-0 top-11 z-50 max-h-72 w-64 overflow-y-auto rounded-xl border border-border bg-card p-2 shadow-xl">
+        <div className="absolute end-0 top-11 z-50 max-h-80 w-72 overflow-y-auto rounded-xl border border-border bg-card p-2 shadow-xl">
           {items.length === 0 && (
-            <p className="px-3 py-2 text-xs text-muted-foreground">{tr("لا توجد تنبيهات مفعّلة.", "No active notifications.")}</p>
+            <p className="px-3 py-2 text-xs text-muted-foreground">
+              {tr("لا توجد إشعارات جديدة", "No new notifications")}
+            </p>
           )}
           {items.map((n) => (
-            <p key={n.id} className="rounded-lg px-3 py-2 text-xs text-muted-foreground hover:bg-secondary">
-              {n.text}
-            </p>
+            <div
+              key={n.id}
+              className={`rounded-lg px-3 py-2 text-xs hover:bg-secondary ${n.read_at ? "text-muted-foreground" : "text-foreground"}`}
+            >
+              <p className="font-bold">{n.title}</p>
+              {n.body && <p className="mt-0.5 text-muted-foreground">{n.body}</p>}
+              <div className="mt-1 flex items-center justify-between gap-2">
+                <span className="text-[10px] text-muted-foreground" dir="ltr">
+                  {new Date(n.created_at).toLocaleString(lang === "ar" ? "ar" : "en")}
+                </span>
+                {!n.read_at && (
+                  <button
+                    type="button"
+                    onClick={() => markRead.mutate(n.id)}
+                    className="text-[10px] font-bold text-primary"
+                  >
+                    {tr("تعليم كمقروء", "Mark as read")}
+                  </button>
+                )}
+              </div>
+            </div>
           ))}
         </div>
       )}

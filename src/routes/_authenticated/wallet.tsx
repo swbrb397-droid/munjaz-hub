@@ -19,7 +19,7 @@ import {
 import { Card, Section } from "@/components/site/Shell";
 import { ReceiptModal, type ReceiptData } from "@/components/site/ReceiptModal";
 import { useLang } from "@/lib/lang";
-import { useProfile, useTransactions, useWallet } from "@/lib/queries";
+import { useProfile, useRoles, useTransactions, useWallet } from "@/lib/queries";
 import {
   MIN_WITHDRAWAL,
   WITHDRAWAL_FEE,
@@ -96,6 +96,8 @@ function WalletPage() {
   const { tr, lang } = useLang();
   const wallet = useWallet();
   const profile = useProfile();
+  const roles = useRoles();
+  const isAdmin = (roles.data ?? []).includes("admin");
   const txs = useTransactions();
   const requests = useMyWithdrawals();
   const lockedEscrow = useLockedEscrow();
@@ -175,12 +177,14 @@ function WalletPage() {
   const parsed = parseUsdt(amount) ?? 0;
 
   // Triple trigger: password change, MFA change, or payout-address change.
-  const lockHours = coolingHoursLeft([
+  const rawLockHours = coolingHoursLeft([
     (profile.data as { password_last_changed_at?: string | null } | null)?.password_last_changed_at,
     (profile.data as { mfa_updated_at?: string | null } | null)?.mfa_updated_at,
     (wallet.data as { payout_address_updated_at?: string | null } | null)
       ?.payout_address_updated_at,
   ]);
+  // Administrators bypass the 24h security cooling lock (operational testing).
+  const lockHours = isAdmin ? 0 : rawLockHours;
 
   const withdraw = useMutation({
     mutationFn: async () => {

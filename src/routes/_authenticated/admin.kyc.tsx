@@ -100,7 +100,7 @@ function AdminKyc() {
       </Card>
 
       <Card>
-        {rows.isLoading ? (
+        {rows.isLoading && rows.data === undefined ? (
           <div className="grid place-items-center py-10"><Loader2 className="size-5 animate-spin text-primary" /></div>
         ) : (rows.data ?? []).length === 0 ? (
           <p className="rounded-xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
