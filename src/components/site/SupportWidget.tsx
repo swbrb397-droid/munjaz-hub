@@ -87,7 +87,7 @@ export function SupportWidget() {
     try {
       // Client-side 12s guard on top of the server's own 15s abort.
       const reply = await Promise.race([
-        askSupport({ data: { message: text } }),
+        askSupport({ data: { message: text, lang: /[\u0600-\u06FF]/.test(text) ? "ar" : lang } }),
         new Promise<never>((_, reject) => setTimeout(() => reject(new Error("TIMEOUT")), 12_000)),
       ]);
       setMsgs((m) => [...m, { id: `${Date.now()}-a`, role: "ai", text: reply.reply }]);
