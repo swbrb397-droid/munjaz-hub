@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useLang, type TranslationKey } from "@/lib/lang";
-import { useNotify, type NotifyChannel } from "@/lib/notify";
+import { useLiveNotifications, useMarkNotificationRead } from "@/lib/notifications";
 import { useAuth } from "@/hooks/use-auth";
 import { useViewMode } from "@/lib/view-mode";
 import { ErrorBoundary } from "@/components/site/ErrorBoundary";

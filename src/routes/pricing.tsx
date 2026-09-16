@@ -198,7 +198,7 @@ function PricingPage() {
           </button>
           {openTable && (
             <div className="w-full overflow-x-auto border-t border-border">
-              <table className="w-full min-w-[650px] text-right text-xs">
+              <table className="w-full min-w-[620px] text-right text-xs">
                 <thead className="bg-secondary/60 text-muted-foreground">
                   <tr>
                     {["الميزة", "المجانية", "المحترفين", "الشركات"].map((h, i) => (

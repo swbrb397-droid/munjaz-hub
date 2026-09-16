@@ -292,7 +292,7 @@ function AffiliateCalculator() {
   const { tr } = useLang();
   const [referrals, setReferrals] = useState(25);
   const [avgSpend, setAvgSpend] = useState(400);
-  const share = 0.18;
+  const share = 0.2;
   const commission = 0.1;
   const monthly = referrals * avgSpend * commission * share;
 

@@ -1009,21 +1009,6 @@ function Workspace() {
                 )}
               </div>
 
-              {translate && (
-                <p className="mb-2 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg border border-border bg-surface/60 px-3 py-2 text-[10px] text-muted-foreground">
-                  <span className="font-bold text-foreground">
-                    {tr("مطابقة أرصدة الترجمة", "Translation credit reconciliation")}
-                  </span>
-                  <span>
-                    {tr("طلبات مُحتسبة", "Billed calls")}:{" "}
-                    <span className="font-bold text-accent">{txMap.billed}</span>
-                  </span>
-                  <span>
-                    {tr("من الذاكرة المؤقتة (مجانية)", "Served from cache (free)")}:{" "}
-                    <span className="font-bold text-primary">{txMap.cached}</span>
-                  </span>
-                </p>
-              )}
 
               {warning && (
                 <p className="mb-2 flex items-center gap-2 rounded-lg border border-destructive/50 bg-destructive/10 px-3 py-2 text-xs text-destructive">
