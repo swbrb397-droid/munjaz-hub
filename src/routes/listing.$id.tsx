@@ -15,9 +15,9 @@ import { useCreateOrder, useListing } from "@/lib/orders";
 export const Route = createFileRoute("/listing/$id")({
   head: () => ({
     meta: [
-      { title: "تفاصيل العرض | المُنجِز" },
-      { name: "description", content: "تفاصيل الخدمة أو المنتج الرقمي على المُنجِز: السعر بعملة USDT، مدة التسليم، نطاق العمل، وشراء محمي بضمان الوساطة." },
-      { property: "og:title", content: "تفاصيل العرض | المُنجِز" },
+      { title: "تفاصيل العرض | المنجز" },
+      { name: "description", content: "تفاصيل الخدمة أو المنتج الرقمي على المنجز: السعر بعملة USDT، مدة التسليم، نطاق العمل، وشراء محمي بضمان الوساطة." },
+      { property: "og:title", content: "تفاصيل العرض | المنجز" },
       { property: "og:description", content: "اشترِ بضمان الوساطة USDT مع تحرير تلقائي بعد اعتماد التسليم." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },

@@ -10,9 +10,9 @@ import { kycDocUrl, useKycDocPreview, useKycSubmissions, useReviewKyc } from "@/
 export const Route = createFileRoute("/_authenticated/admin/kyc")({
   head: () => ({
     meta: [
-      { title: "مراجعة توثيق الهوية KYC | المُنجِز" },
+      { title: "مراجعة توثيق الهوية KYC | المنجز" },
       { name: "description", content: "مراجعة مستندات الهوية المرفوعة، معاينة الصور الآمنة، وقبول أو رفض طلبات التوثيق بضغطة واحدة." },
-      { property: "og:title", content: "مراجعة توثيق الهوية KYC | المُنجِز" },
+      { property: "og:title", content: "مراجعة توثيق الهوية KYC | المنجز" },
       { property: "og:description", content: "طابور مراجعة التوثيق مع معاينة آمنة للمستندات." },
     ],
   }),

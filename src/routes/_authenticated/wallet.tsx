@@ -40,13 +40,13 @@ import { RedeemPassCard } from "@/components/site/RedeemPassCard";
 export const Route = createFileRoute("/_authenticated/wallet")({
   head: () => ({
     meta: [
-      { title: "المحفظة الداخلية USDT | المُنجِز" },
+      { title: "المحفظة الداخلية USDT | المنجز" },
       {
         name: "description",
         content:
           "أودع واسحب USDT عبر TRC-20 و BEP-20 و Polygon، وتابع سجل المعاملات والمبالغ المحجوزة في الضمان.",
       },
-      { property: "og:title", content: "المحفظة الداخلية USDT | المُنجِز" },
+      { property: "og:title", content: "المحفظة الداخلية USDT | المنجز" },
       {
         property: "og:description",
         content: "إيداع وسحب USDT بدون رسوم داخلية مع سحب فوري للحسابات الموثقة.",

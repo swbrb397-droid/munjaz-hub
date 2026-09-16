@@ -176,11 +176,11 @@ export function ManifestoModal({ open, onClose }: { open: boolean; onClose: () =
       className="fixed inset-0 z-[80] grid place-items-center overflow-y-auto bg-background/70 p-4 backdrop-blur-xl"
       role="dialog"
       aria-modal="true"
-      aria-label={tr("ميثاق المُنجِز", "The Munjaz Manifesto")}
+      aria-label={tr("ميثاق المنجز", "The Munjaz Manifesto")}
     >
       <div className="mx-auto w-full max-w-sm rounded-2xl border border-border/60 bg-card p-4 shadow-2xl backdrop-blur-md sm:max-w-lg sm:p-6 md:max-w-2xl md:p-8">
         <div className="mb-4 flex items-start justify-between gap-3">
-          <h2 className="text-lg font-black sm:text-xl">{tr("ميثاق المُنجِز", "The Munjaz Manifesto")}</h2>
+          <h2 className="text-lg font-black sm:text-xl">{tr("ميثاق المنجز", "The Munjaz Manifesto")}</h2>
           <button
             type="button"
             onClick={finish}

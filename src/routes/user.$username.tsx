@@ -10,10 +10,10 @@ import { COVERS } from "@/lib/catalog";
 export const Route = createFileRoute("/user/$username")({
   head: ({ params }) => ({
     meta: [
-      { title: "ملف البائع | المُنجِز" },
-      { name: "description", content: "ملف بائع في منصة المُنجِز: التقييم الحقيقي، عدد الطلبات المكتملة، والعروض المنشورة." },
-      { property: "og:title", content: "ملف البائع | المُنجِز" },
-      { property: "og:description", content: `عروض وتقييمات البائع ${params.username} على منصة المُنجِز.` },
+      { title: "ملف البائع | المنجز" },
+      { name: "description", content: "ملف بائع في منصة المنجز: التقييم الحقيقي، عدد الطلبات المكتملة، والعروض المنشورة." },
+      { property: "og:title", content: "ملف البائع | المنجز" },
+      { property: "og:description", content: `عروض وتقييمات البائع ${params.username} على منصة المنجز.` },
       { property: "og:type", content: "profile" },
       { name: "twitter:card", content: "summary_large_image" },
     ],

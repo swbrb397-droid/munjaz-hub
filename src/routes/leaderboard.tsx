@@ -9,9 +9,9 @@ import { useLeaderboard, type LeaderboardMetric } from "@/lib/platform";
 export const Route = createFileRoute("/leaderboard")({
   head: () => ({
     meta: [
-      { title: "لوحة المتصدرين | المُنجِز" },
-      { name: "description", content: "ترتيب البائعين في المُنجِز وفق التقييم الحقيقي وعدد الطلبات المكتملة ونقاط الخبرة — بدون أي ترقية مدفوعة." },
-      { property: "og:title", content: "لوحة المتصدرين | المُنجِز" },
+      { title: "لوحة المتصدرين | المنجز" },
+      { name: "description", content: "ترتيب البائعين في المنجز وفق التقييم الحقيقي وعدد الطلبات المكتملة ونقاط الخبرة — بدون أي ترقية مدفوعة." },
+      { property: "og:title", content: "لوحة المتصدرين | المنجز" },
       { property: "og:description", content: "ترتيب استحقاقي بالكامل يعتمد على الأداء الحقيقي فقط." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },

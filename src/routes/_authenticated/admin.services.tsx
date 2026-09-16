@@ -11,10 +11,10 @@ import { useAdminServices, useDeleteService, useToggleService, type AdminService
 export const Route = createFileRoute("/_authenticated/admin/services")({
   head: () => ({
     meta: [
-      { title: "إدارة العروض والخدمات | المُنجِز" },
+      { title: "إدارة العروض والخدمات | المنجز" },
       { name: "description", content: "مكتب الإشراف على العروض: معاينة الخدمات، إيقافها أو تفعيلها، وحذفها نهائياً مع تسجيل كامل لإجراءات الإدارة." },
-      { property: "og:title", content: "إدارة العروض والخدمات | المُنجِز" },
-      { property: "og:description", content: "إشراف كامل على عروض البائعين داخل منصة المُنجِز." },
+      { property: "og:title", content: "إدارة العروض والخدمات | المنجز" },
+      { property: "og:description", content: "إشراف كامل على عروض البائعين داخل منصة المنجز." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],

@@ -234,7 +234,7 @@ export function Shell({ children }: { children: ReactNode }) {
           <Link to="/" className="flex min-w-0 shrink items-center gap-1.5 sm:gap-2" aria-label={t("brand")}>
             <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-primary/15 text-sm font-bold text-primary glow sm:size-9 sm:text-base">م</span>
             <span className="whitespace-nowrap text-sm font-extrabold leading-none neon-text sm:text-base lg:text-lg">
-              المُنجِز
+              المنجز
             </span>
 
           </Link>
