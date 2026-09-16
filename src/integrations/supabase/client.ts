@@ -28,9 +28,10 @@ function createSupabaseFetch(supabaseKey: string): typeof fetch {
 }
 
 
-// Primary project credentials (user-configured): take precedence over env injection.
-const PRIMARY_SUPABASE_URL = 'https://oeizpqnwhvptvkbfjswg.supabase.co';
-const PRIMARY_SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9laXpwcW53aHZwdHZrYmZqc3dnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc5NDc4NDksImV4cCI6MjEwMzUyMzg0OX0.kL_vqZrduw4sl0yrxRFCRZzRBnlW1aboTz3dh6agrJo';
+// AUTH CONFIG LOCK: no hardcoded project credentials. The live project is
+// resolved from environment injection only, so no shadow instance can shadow it.
+const PRIMARY_SUPABASE_URL = '';
+const PRIMARY_SUPABASE_ANON_KEY = '';
 
 function createSupabaseClient() {
   // Use import.meta.env for client-side (Vite build-time replacement)
