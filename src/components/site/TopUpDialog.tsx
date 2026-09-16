@@ -43,6 +43,23 @@ export function TopUpDialog({ onClose, defaultAmount }: { onClose: () => void; d
 
   useInvoiceRealtime(invoice && !invoice.simulated ? invoice.id : null, onPaid);
 
+  // Realtime wallet credit: the balance rising closes the waiting state at once.
+  useWalletCredit(
+    useCallback(
+      (delta: number) => {
+        setPaid(true);
+        toast.success(
+          tr(
+            `تم تأكيد الدفع وإضافة ${delta.toFixed(2)} USDT إلى رصيدك ✅`,
+            `Payment confirmed — ${delta.toFixed(2)} USDT credited ✅`,
+          ),
+        );
+        window.setTimeout(() => onClose(), 1800);
+      },
+      [tr, onClose],
+    ),
+  );
+
   const submit = () => {
     const value = parseUsdt(amount) ?? 0;
     createInvoice.mutate(
