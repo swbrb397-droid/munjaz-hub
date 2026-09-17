@@ -212,13 +212,15 @@ function txCacheInvalidate(id: string) {
   }
 }
 
-/** Returns the translation, reusing the cache so the AI endpoint is hit once per message+language+revision. */
-function translateCached(id: string, lang: "ar" | "en", source: string, rev = 0) {
-  const key = `${id}_${lang}_v${rev}`;
-  const hit = txCacheGet(key);
-  if (hit !== undefined) return { text: hit, cached: true };
-  txCacheSet(key, source);
-  return { text: source, cached: false };
+/** Cache key for a message translation: id + target language + revision. */
+function txKey(id: string, lang: "ar" | "en", rev = 0) {
+  return `${id}_${lang}_v${rev}`;
+}
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+/** True only for a real 36-character UUID. */
+function isUuid(value: unknown): value is string {
+  return typeof value === "string" && value.length === 36 && UUID_RE.test(value);
 }
 
 function Workspace() {
