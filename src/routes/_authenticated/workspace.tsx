@@ -639,6 +639,11 @@ function Workspace() {
   const openDispute = useMutation({
     mutationFn: async () => {
       if (!order) throw new Error(tr("اختر طلباً أولاً", "Select an order first"));
+      // Guard: only a real 36-char order UUID may reach the dispute insert.
+      if (!isUuid(order.id) || !user?.id || !isUuid(user.id))
+        throw new Error(
+          tr("معرّف الطلب غير صالح — أعد فتح الطلب من قائمة الطلبات.", "Invalid order reference — reopen the order from your orders list."),
+        );
       if (reason.trim().length < 50)
         throw new Error(
           tr(
