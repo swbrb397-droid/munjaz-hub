@@ -876,10 +876,10 @@ function Workspace() {
                   </p>
                 )}
                 {messages.map((m) => {
-                  const foreign = !!m.translation && m.srcLang !== lang;
+                  const foreign = m.srcLang !== lang && !m.attachmentPath;
                   const original = showOriginal.includes(m.id);
-                  const cachedTx = txMap.map.get(m.id) ?? null;
-                  const shown = cachedTx && !original ? cachedTx.text : m.text;
+                  const cachedTx = txFor(m) ?? null;
+                  const shown = m.text;
                   const isEditing = editing?.id === m.id;
                   return (
                     <div
