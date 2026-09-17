@@ -331,25 +331,37 @@ function Workspace() {
   const [actionMsg, setActionMsg] = useState<string | null>(null);
   const [deliverable, setDeliverable] = useState("");
 
-  // AI translation: per-message revision drives cache invalidation + credit reconciliation.
+  // AI translation: per-message revision drives cache invalidation.
   const [msgRev, setMsgRev] = useState<Record<string, number>>({});
   const [editing, setEditing] = useState<{ id: string; text: string } | null>(null);
-  const txMap = useMemo(() => {
-    const map = new Map<string, { text: string; cached: boolean }>();
-    let billed = 0;
-    let cached = 0;
-    if (translate) {
-      for (const m of messages) {
-        if (m.translation && m.srcLang !== lang) {
-          const r = translateCached(m.id, lang, m.translation, msgRev[m.id] ?? m.rev ?? 0);
-          map.set(m.id, r);
-          if (r.cached) cached++;
-          else billed++;
-        }
+  const runTranslate = useServerFn(translateMessage);
+  const [txState, setTxState] = useState<
+    Record<string, { text?: string; loading?: boolean; error?: boolean; cached?: boolean }>
+  >({});
+
+  /** Live translation entry for a message in the active UI language. */
+  const txFor = (m: Msg) => txState[txKey(m.id, lang, msgRev[m.id] ?? m.rev ?? 0)];
+
+  useEffect(() => {
+    if (!translate) return;
+    for (const m of messages) {
+      if (m.srcLang === lang || m.attachmentPath || !m.text.trim()) continue;
+      const key = txKey(m.id, lang, msgRev[m.id] ?? m.rev ?? 0);
+      if (txState[key]) continue;
+      const hit = txCacheGet(key);
+      if (hit !== undefined) {
+        setTxState((s) => ({ ...s, [key]: { text: hit, cached: true } }));
+        continue;
       }
+      setTxState((s) => ({ ...s, [key]: { loading: true } }));
+      void runTranslate({ data: { text: m.text, target: lang } })
+        .then((r: { text: string }) => {
+          txCacheSet(key, r.text);
+          setTxState((s) => ({ ...s, [key]: { text: r.text } }));
+        })
+        .catch(() => setTxState((s) => ({ ...s, [key]: { error: true } })));
     }
-    return { map, billed, cached };
-  }, [messages, translate, lang, msgRev]);
+  }, [translate, messages, lang, msgRev, txState, runTranslate]);
 
   // Instant digital asset anti-piracy shield
   const [assetLocked, setAssetLocked] = useState(false);
