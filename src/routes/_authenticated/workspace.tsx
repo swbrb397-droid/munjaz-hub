@@ -792,12 +792,14 @@ function Workspace() {
       <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
         <Card className="flex min-h-[560px] flex-col">
           <div className="flex flex-wrap items-center gap-2 border-b border-border pb-3">
-            <div className="-mx-1 flex max-w-full flex-1 gap-1 overflow-x-auto px-1">
+            <div className="scrollbar-none -mx-1 flex max-w-full flex-1 touch-pan-x items-center gap-2 overflow-x-auto whitespace-nowrap p-1">
               {tabs.map((t) => (
                 <button
                   key={t.key}
+                  type="button"
                   onClick={() => setTab(t.key)}
-                  className={`shrink-0 rounded-lg px-3 py-1.5 text-sm ${tab === t.key ? "bg-secondary font-bold text-primary" : "text-muted-foreground"}`}
+                  aria-pressed={tab === t.key}
+                  className={`min-h-[40px] shrink-0 rounded-lg px-3 py-1.5 text-sm ${tab === t.key ? "bg-secondary font-bold text-primary" : "text-muted-foreground"}`}
                 >
                   {t.label}
                 </button>
