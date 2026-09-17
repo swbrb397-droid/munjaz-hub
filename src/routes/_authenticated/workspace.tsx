@@ -945,16 +945,7 @@ function Workspace() {
                             <FileDown className="size-4 shrink-0" />
                           </button>
                         ) : (
-                          <p
-                            className="break-words"
-                            dir={
-                              translate && foreign && !original
-                                ? lang === "ar"
-                                  ? "rtl"
-                                  : "ltr"
-                                : "auto"
-                            }
-                          >
+                          <p className="break-words" dir="auto">
                             {shown}
                           </p>
                         )}
@@ -967,18 +958,39 @@ function Workspace() {
                             {tr("تعديل الرسالة", "Edit message")}
                           </button>
                         )}
-                        {translate && foreign && (
+                        {translate && foreign && !isEditing && (
                           <div className="mt-2 grid gap-1 border-t border-current/15 pt-2">
                             {!original && (
-                              <span className="inline-flex flex-wrap items-center gap-1 text-[10px] font-bold text-accent">
-                                <Sparkles className="size-3" />{" "}
-                                {tr("مترجم بواسطة الذكاء الاصطناعي", "Translated by AI")}
-                                {cachedTx?.cached && (
-                                  <span className="opacity-70">
-                                    · {tr("⚡ من الذاكرة المؤقتة", "⚡ cached")}
+                              <>
+                                <span className="inline-flex flex-wrap items-center gap-1 text-[10px] font-bold text-accent">
+                                  <Sparkles className="size-3" />{" "}
+                                  {tr("مترجم بواسطة الذكاء الاصطناعي", "Translated by AI")}
+                                  {cachedTx?.cached && (
+                                    <span className="opacity-70">
+                                      · {tr("⚡ من الذاكرة المؤقتة", "⚡ cached")}
+                                    </span>
+                                  )}
+                                </span>
+                                {cachedTx?.loading && (
+                                  <span className="inline-flex items-center gap-1 text-[11px] opacity-80">
+                                    <Loader2 className="size-3 animate-spin" />{" "}
+                                    {tr("جارٍ الترجمة…", "Translating…")}
                                   </span>
                                 )}
-                              </span>
+                                {cachedTx?.error && (
+                                  <span className="text-[11px] text-destructive">
+                                    {tr("تعذّرت الترجمة الآن.", "Translation unavailable right now.")}
+                                  </span>
+                                )}
+                                {cachedTx?.text && (
+                                  <p
+                                    className="break-words text-[13px] leading-relaxed"
+                                    dir={lang === "ar" ? "rtl" : "ltr"}
+                                  >
+                                    {cachedTx.text}
+                                  </p>
+                                )}
+                              </>
                             )}
                             <div className="flex flex-wrap items-center gap-3">
                               <button
@@ -992,12 +1004,19 @@ function Workspace() {
                               >
                                 {original
                                   ? tr("عرض الترجمة", "Show translation")
-                                  : tr("عرض النص الأصلي / Show Original", "Show original")}
+                                  : tr("عرض النص الأصلي", "Show original")}
                               </button>
                               <button
                                 type="button"
                                 onClick={() => {
                                   txCacheInvalidate(m.id);
+                                  setTxState((s) => {
+                                    const next = { ...s };
+                                    for (const k of Object.keys(next))
+                                      if (k.startsWith(`${m.id}_`)) delete next[k];
+                                    return next;
+                                  });
+                                  setShowOriginal((s) => s.filter((x) => x !== m.id));
                                   setMsgRev((r) => ({ ...r, [m.id]: (r[m.id] ?? 0) + 1 }));
                                 }}
                                 className="text-start text-[10px] font-bold underline underline-offset-2 opacity-80"
