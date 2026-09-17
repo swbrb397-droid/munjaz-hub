@@ -48,10 +48,21 @@ export const Route = createFileRoute("/_authenticated/profile")({
 type Kyc = "unverified" | "review" | "verified" | "rejected";
 type Tier = "free" | "pro" | "corp";
 
-const TIER_META: Record<Tier, { name: string; escrow: string; fee: string }> = {
-  free: { name: "الباقة المجانية", escrow: "48 ساعة", fee: "10%" },
-  pro: { name: "باقة المحترفين · 10 USDT", escrow: "24 ساعة (مع KYC)", fee: "5%" },
-  corp: { name: "باقة الشركات · 49 USDT", escrow: "12–16 ساعة", fee: "2.5%" },
+const TIER_META: Record<
+  Tier,
+  { name: [string, string]; escrow: [string, string]; fee: string }
+> = {
+  free: { name: ["الباقة المجانية", "Free Tier"], escrow: ["48 ساعة", "48 hours"], fee: "10%" },
+  pro: {
+    name: ["باقة المحترفين · 10 USDT", "Pro Tier · 10 USDT"],
+    escrow: ["24 ساعة (مع KYC)", "24 hours (with KYC)"],
+    fee: "5%",
+  },
+  corp: {
+    name: ["باقة الشركات · 49 USDT", "Corporate Tier · 49 USDT"],
+    escrow: ["12–16 ساعة", "12–16 hours"],
+    fee: "2.5%",
+  },
 };
 
 const NATIONALITIES = [

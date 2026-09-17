@@ -1326,6 +1326,26 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      admin_resolve_incident: {
+        Args: { _frozen: boolean; _incident_id: string }
+        Returns: {
+          created_at: string
+          detail: string
+          froze_account: boolean
+          id: string
+          kind: Database["public"]["Enums"]["incident_kind"]
+          meta: Json
+          resolved: boolean
+          severity: string
+          user_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "security_incidents"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       admin_review_kyc: {
         Args: { _approve: boolean; _note?: string; _submission_id: string }
         Returns: {

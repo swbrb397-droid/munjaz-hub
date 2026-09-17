@@ -136,13 +136,27 @@ export function useSecurityIncidents(enabled: boolean) {
 export function useSetAccountFrozen() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (input: { userId: string; frozen: boolean; reason?: string }) => {
+    mutationFn: async (input: {
+      userId: string;
+      frozen: boolean;
+      reason?: string;
+      /** When provided, the incident row is closed as resolved_frozen / resolved_unfrozen. */
+      incidentId?: string;
+    }) => {
       const { error } = await supabase.rpc("set_account_frozen", {
         _user_id: input.userId,
         _frozen: input.frozen,
         ...(input.reason ? { _reason: sanitizeText(input.reason, 300) } : {}),
       });
       if (error) throw new Error(error.message);
+
+      if (input.incidentId) {
+        const res = await supabase.rpc("admin_resolve_incident", {
+          _incident_id: input.incidentId,
+          _frozen: input.frozen,
+        });
+        if (res.error) throw new Error(res.error.message);
+      }
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["security-incidents"] });

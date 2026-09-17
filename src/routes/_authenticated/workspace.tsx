@@ -55,6 +55,7 @@ import { supabase } from "@/lib/cloud-client";
 import { sanitizeText } from "@/lib/security";
 import { useServerFn } from "@tanstack/react-start";
 import { orderAiAssistant } from "@/lib/order-ai.functions";
+import { translateMessage } from "@/lib/translate.functions";
 
 type Tr = (ar: string, en: string) => string;
 
@@ -212,13 +213,15 @@ function txCacheInvalidate(id: string) {
   }
 }
 
-/** Returns the translation, reusing the cache so the AI endpoint is hit once per message+language+revision. */
-function translateCached(id: string, lang: "ar" | "en", source: string, rev = 0) {
-  const key = `${id}_${lang}_v${rev}`;
-  const hit = txCacheGet(key);
-  if (hit !== undefined) return { text: hit, cached: true };
-  txCacheSet(key, source);
-  return { text: source, cached: false };
+/** Cache key for a message translation: id + target language + revision. */
+function txKey(id: string, lang: "ar" | "en", rev = 0) {
+  return `${id}_${lang}_v${rev}`;
+}
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+/** True only for a real 36-character UUID. */
+function isUuid(value: unknown): value is string {
+  return typeof value === "string" && value.length === 36 && UUID_RE.test(value);
 }
 
 function Workspace() {
@@ -329,25 +332,37 @@ function Workspace() {
   const [actionMsg, setActionMsg] = useState<string | null>(null);
   const [deliverable, setDeliverable] = useState("");
 
-  // AI translation: per-message revision drives cache invalidation + credit reconciliation.
+  // AI translation: per-message revision drives cache invalidation.
   const [msgRev, setMsgRev] = useState<Record<string, number>>({});
   const [editing, setEditing] = useState<{ id: string; text: string } | null>(null);
-  const txMap = useMemo(() => {
-    const map = new Map<string, { text: string; cached: boolean }>();
-    let billed = 0;
-    let cached = 0;
-    if (translate) {
-      for (const m of messages) {
-        if (m.translation && m.srcLang !== lang) {
-          const r = translateCached(m.id, lang, m.translation, msgRev[m.id] ?? m.rev ?? 0);
-          map.set(m.id, r);
-          if (r.cached) cached++;
-          else billed++;
-        }
+  const runTranslate = useServerFn(translateMessage);
+  const [txState, setTxState] = useState<
+    Record<string, { text?: string; loading?: boolean; error?: boolean; cached?: boolean }>
+  >({});
+
+  /** Live translation entry for a message in the active UI language. */
+  const txFor = (m: Msg) => txState[txKey(m.id, lang, msgRev[m.id] ?? m.rev ?? 0)];
+
+  useEffect(() => {
+    if (!translate) return;
+    for (const m of messages) {
+      if (m.srcLang === lang || m.attachmentPath || !m.text.trim()) continue;
+      const key = txKey(m.id, lang, msgRev[m.id] ?? m.rev ?? 0);
+      if (txState[key]) continue;
+      const hit = txCacheGet(key);
+      if (hit !== undefined) {
+        setTxState((s) => ({ ...s, [key]: { text: hit, cached: true } }));
+        continue;
       }
+      setTxState((s) => ({ ...s, [key]: { loading: true } }));
+      void runTranslate({ data: { text: m.text, target: lang } })
+        .then((r: { text: string }) => {
+          txCacheSet(key, r.text);
+          setTxState((s) => ({ ...s, [key]: { text: r.text } }));
+        })
+        .catch(() => setTxState((s) => ({ ...s, [key]: { error: true } })));
     }
-    return { map, billed, cached };
-  }, [messages, translate, lang, msgRev]);
+  }, [translate, messages, lang, msgRev, txState, runTranslate]);
 
   // Instant digital asset anti-piracy shield
   const [assetLocked, setAssetLocked] = useState(false);
@@ -639,6 +654,11 @@ function Workspace() {
   const openDispute = useMutation({
     mutationFn: async () => {
       if (!order) throw new Error(tr("اختر طلباً أولاً", "Select an order first"));
+      // Guard: only a real 36-char order UUID may reach the dispute insert.
+      if (!isUuid(order.id) || !user?.id || !isUuid(user.id))
+        throw new Error(
+          tr("معرّف الطلب غير صالح — أعد فتح الطلب من قائمة الطلبات.", "Invalid order reference — reopen the order from your orders list."),
+        );
       if (reason.trim().length < 50)
         throw new Error(
           tr(
@@ -792,12 +812,14 @@ function Workspace() {
       <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
         <Card className="flex min-h-[560px] flex-col">
           <div className="flex flex-wrap items-center gap-2 border-b border-border pb-3">
-            <div className="-mx-1 flex max-w-full flex-1 gap-1 overflow-x-auto px-1">
+            <div className="scrollbar-none -mx-1 flex max-w-full flex-1 touch-pan-x items-center gap-2 overflow-x-auto whitespace-nowrap p-1">
               {tabs.map((t) => (
                 <button
                   key={t.key}
+                  type="button"
                   onClick={() => setTab(t.key)}
-                  className={`shrink-0 rounded-lg px-3 py-1.5 text-sm ${tab === t.key ? "bg-secondary font-bold text-primary" : "text-muted-foreground"}`}
+                  aria-pressed={tab === t.key}
+                  className={`min-h-[40px] shrink-0 rounded-lg px-3 py-1.5 text-sm ${tab === t.key ? "bg-secondary font-bold text-primary" : "text-muted-foreground"}`}
                 >
                   {t.label}
                 </button>
@@ -855,10 +877,10 @@ function Workspace() {
                   </p>
                 )}
                 {messages.map((m) => {
-                  const foreign = !!m.translation && m.srcLang !== lang;
+                  const foreign = m.srcLang !== lang && !m.attachmentPath;
                   const original = showOriginal.includes(m.id);
-                  const cachedTx = txMap.map.get(m.id) ?? null;
-                  const shown = cachedTx && !original ? cachedTx.text : m.text;
+                  const cachedTx = txFor(m) ?? null;
+                  const shown = m.text;
                   const isEditing = editing?.id === m.id;
                   return (
                     <div
@@ -923,16 +945,7 @@ function Workspace() {
                             <FileDown className="size-4 shrink-0" />
                           </button>
                         ) : (
-                          <p
-                            className="break-words"
-                            dir={
-                              translate && foreign && !original
-                                ? lang === "ar"
-                                  ? "rtl"
-                                  : "ltr"
-                                : "auto"
-                            }
-                          >
+                          <p className="break-words" dir="auto">
                             {shown}
                           </p>
                         )}
@@ -945,18 +958,39 @@ function Workspace() {
                             {tr("تعديل الرسالة", "Edit message")}
                           </button>
                         )}
-                        {translate && foreign && (
+                        {translate && foreign && !isEditing && (
                           <div className="mt-2 grid gap-1 border-t border-current/15 pt-2">
                             {!original && (
-                              <span className="inline-flex flex-wrap items-center gap-1 text-[10px] font-bold text-accent">
-                                <Sparkles className="size-3" />{" "}
-                                {tr("مترجم بواسطة الذكاء الاصطناعي", "Translated by AI")}
-                                {cachedTx?.cached && (
-                                  <span className="opacity-70">
-                                    · {tr("⚡ من الذاكرة المؤقتة", "⚡ cached")}
+                              <>
+                                <span className="inline-flex flex-wrap items-center gap-1 text-[10px] font-bold text-accent">
+                                  <Sparkles className="size-3" />{" "}
+                                  {tr("مترجم بواسطة الذكاء الاصطناعي", "Translated by AI")}
+                                  {cachedTx?.cached && (
+                                    <span className="opacity-70">
+                                      · {tr("⚡ من الذاكرة المؤقتة", "⚡ cached")}
+                                    </span>
+                                  )}
+                                </span>
+                                {cachedTx?.loading && (
+                                  <span className="inline-flex items-center gap-1 text-[11px] opacity-80">
+                                    <Loader2 className="size-3 animate-spin" />{" "}
+                                    {tr("جارٍ الترجمة…", "Translating…")}
                                   </span>
                                 )}
-                              </span>
+                                {cachedTx?.error && (
+                                  <span className="text-[11px] text-destructive">
+                                    {tr("تعذّرت الترجمة الآن.", "Translation unavailable right now.")}
+                                  </span>
+                                )}
+                                {cachedTx?.text && (
+                                  <p
+                                    className="break-words text-[13px] leading-relaxed"
+                                    dir={lang === "ar" ? "rtl" : "ltr"}
+                                  >
+                                    {cachedTx.text}
+                                  </p>
+                                )}
+                              </>
                             )}
                             <div className="flex flex-wrap items-center gap-3">
                               <button
@@ -970,12 +1004,19 @@ function Workspace() {
                               >
                                 {original
                                   ? tr("عرض الترجمة", "Show translation")
-                                  : tr("عرض النص الأصلي / Show Original", "Show original")}
+                                  : tr("عرض النص الأصلي", "Show original")}
                               </button>
                               <button
                                 type="button"
                                 onClick={() => {
                                   txCacheInvalidate(m.id);
+                                  setTxState((s) => {
+                                    const next = { ...s };
+                                    for (const k of Object.keys(next))
+                                      if (k.startsWith(`${m.id}_`)) delete next[k];
+                                    return next;
+                                  });
+                                  setShowOriginal((s) => s.filter((x) => x !== m.id));
                                   setMsgRev((r) => ({ ...r, [m.id]: (r[m.id] ?? 0) + 1 }));
                                 }}
                                 className="text-start text-[10px] font-bold underline underline-offset-2 opacity-80"

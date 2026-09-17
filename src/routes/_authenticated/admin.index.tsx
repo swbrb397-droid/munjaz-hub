@@ -331,14 +331,43 @@ function Admin() {
                 {i.user_id && (
                   <div className="ms-auto flex flex-wrap gap-2">
                     <button
-                      onClick={() => setFrozen.mutate({ userId: i.user_id!, frozen: false })}
-                      className="rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground"
+                      disabled={setFrozen.isPending}
+                      onClick={() =>
+                        setFrozen.mutate(
+                          { userId: i.user_id!, frozen: false, incidentId: i.id },
+                          {
+                            onSuccess: async () => {
+                              await logAdminAction("account_unfrozen", "profiles", i.user_id, {
+                                incident_id: i.id,
+                              });
+                              toast.success(tr("تم رفع التجميد بنجاح", "Account unfrozen successfully"));
+                            },
+                            onError: (e: Error) => toast.error(e.message),
+                          },
+                        )
+                      }
+                      className="rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground disabled:opacity-50"
                     >
                       {tr("رفع التجميد", "Unfreeze")}
                     </button>
                     <button
-                      onClick={() => setFrozen.mutate({ userId: i.user_id!, frozen: true, reason: i.detail })}
-                      className="rounded-lg border border-destructive/50 px-3 py-1.5 text-xs text-destructive"
+                      disabled={setFrozen.isPending}
+                      onClick={() =>
+                        setFrozen.mutate(
+                          { userId: i.user_id!, frozen: true, reason: i.detail, incidentId: i.id },
+                          {
+                            onSuccess: async () => {
+                              await logAdminAction("account_frozen", "profiles", i.user_id, {
+                                incident_id: i.id,
+                                reason: i.detail,
+                              });
+                              toast.success(tr("تم تجميد الحساب بنجاح", "Account frozen successfully"));
+                            },
+                            onError: (e: Error) => toast.error(e.message),
+                          },
+                        )
+                      }
+                      className="rounded-lg border border-destructive/50 px-3 py-1.5 text-xs text-destructive disabled:opacity-50"
                     >
                       {tr("تجميد", "Freeze")}
                     </button>
