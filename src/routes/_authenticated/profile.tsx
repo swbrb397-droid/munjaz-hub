@@ -181,7 +181,7 @@ function ProfilePage() {
                 <KycBadge state={kyc} />
                 <NameChangeControl profile={liveProfile} />
                 <span className="inline-flex items-center gap-1.5 rounded-full border border-accent/40 bg-accent/10 px-3 py-1 text-[11px] font-bold text-accent">
-                  <Crown className="size-3.5" /> {meta.name}
+                  <Crown className="size-3.5" /> {tr(meta.name[0], meta.name[1])}
                 </span>
               </div>
             </div>
@@ -190,18 +190,22 @@ function ProfilePage() {
           <div className="mt-5 grid gap-3 sm:grid-cols-3">
             <Metric
               icon={<Timer className="size-4" />}
-              label="حالة الضمان المعتمدة"
-              value={meta.escrow}
+              label={tr("حالة الضمان المعتمدة", "Escrow hold period")}
+              value={tr(meta.escrow[0], meta.escrow[1])}
             />
             <Metric
               icon={<Percent className="size-4" />}
-              label="عمولة المبيعات المطبقة"
+              label={tr("عمولة المبيعات المطبقة", "Applied sales commission")}
               value={meta.fee}
             />
             <Metric
               icon={<ShieldCheck className="size-4" />}
-              label="حالة التوثيق الرسمي"
-              value={isVerified ? "موثق معتمد" : "غير موثق"}
+              label={tr("حالة التوثيق الرسمي", "Verification status")}
+              value={
+                isVerified
+                  ? tr("موثق معتمد", "Verified Account")
+                  : tr("غير موثق", "Not verified")
+              }
               tone={isVerified ? "ok" : "warn"}
             />
           </div>
