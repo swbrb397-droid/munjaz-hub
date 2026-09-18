@@ -100,7 +100,10 @@ function ReferralHub() {
 
             <p className="mt-3 flex items-start gap-2 rounded-xl border border-primary/30 bg-primary/10 p-3 text-xs leading-relaxed text-primary">
               <Info className="mt-0.5 size-4 shrink-0" />
-              لكل بائع رابط إحالة فريد واحد، ويتم تثبيت المشتري بحسابك بشكل دائم ونهائي فور إتمام التسجيل.
+              {tr(
+                "لكل بائع رابط إحالة فريد واحد، ويتم تثبيت المشتري بحسابك بشكل دائم ونهائي فور إتمام التسجيل.",
+                "Each seller has one unique referral link, and a buyer is permanently attributed to your account as soon as they sign up.",
+              )}
             </p>
           </Card>
 
