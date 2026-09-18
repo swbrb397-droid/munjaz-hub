@@ -148,13 +148,21 @@ function PricingPage() {
     <div className="overflow-x-hidden">
       <section className="border-b border-border">
         <div className="mx-auto max-w-7xl px-4 py-14 text-center">
-          <h1 className="select-none text-3xl font-black sm:text-5xl">اختر باقتك وانطلق في منظومة «المنجز»</h1>
+          <h1 className="select-none text-3xl font-black sm:text-5xl">
+            {tr("اختر باقتك وانطلق في منظومة المنجز", "Choose your plan and grow with Al-Munjaz")}
+          </h1>
           <p className="mx-auto mt-4 max-w-2xl text-sm text-muted-foreground sm:text-base">
-            محرك البحث والظهور الداخلي يعتمد 100% على الكفاءة والتقييم الحقيقي لجميع المستخدمين بلا تمييز.
+            {tr(
+              "محرك البحث والظهور الداخلي يعتمد 100% على الكفاءة والتقييم الحقيقي لجميع المستخدمين بلا تمييز.",
+              "Search visibility is based 100% on real performance and ratings, equally for every user.",
+            )}
           </p>
           <p className="mx-auto mt-5 inline-flex max-w-2xl items-start gap-2 rounded-full border border-accent/40 bg-accent/10 px-4 py-2 text-xs leading-relaxed text-accent">
             <Sparkles className="mt-0.5 size-3.5 shrink-0" />
-            فعّل باقتك مباشرة من رصيد المحفظة، أو اشحن المبلغ المتبقي بأمان عبر NOWPayments.
+            {tr(
+              "فعّل باقتك مباشرة من رصيد المحفظة، أو اشحن المبلغ المتبقي بأمان عبر NOWPayments.",
+              "Activate your plan straight from your wallet balance, or top up the remainder securely.",
+            )}
           </p>
         </div>
       </section>
