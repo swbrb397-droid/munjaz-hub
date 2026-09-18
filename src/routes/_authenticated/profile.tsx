@@ -181,7 +181,7 @@ function ProfilePage() {
                 <KycBadge state={kyc} />
                 <NameChangeControl profile={liveProfile} />
                 <span className="inline-flex items-center gap-1.5 rounded-full border border-accent/40 bg-accent/10 px-3 py-1 text-[11px] font-bold text-accent">
-                  <Crown className="size-3.5" /> {meta.name}
+                  <Crown className="size-3.5" /> {tr(meta.name[0], meta.name[1])}
                 </span>
               </div>
             </div>
@@ -190,18 +190,22 @@ function ProfilePage() {
           <div className="mt-5 grid gap-3 sm:grid-cols-3">
             <Metric
               icon={<Timer className="size-4" />}
-              label="حالة الضمان المعتمدة"
-              value={meta.escrow}
+              label={tr("حالة الضمان المعتمدة", "Escrow hold period")}
+              value={tr(meta.escrow[0], meta.escrow[1])}
             />
             <Metric
               icon={<Percent className="size-4" />}
-              label="عمولة المبيعات المطبقة"
+              label={tr("عمولة المبيعات المطبقة", "Applied sales commission")}
               value={meta.fee}
             />
             <Metric
               icon={<ShieldCheck className="size-4" />}
-              label="حالة التوثيق الرسمي"
-              value={isVerified ? "موثق معتمد" : "غير موثق"}
+              label={tr("حالة التوثيق الرسمي", "Verification status")}
+              value={
+                isVerified
+                  ? tr("موثق معتمد", "Verified Account")
+                  : tr("غير موثق", "Not verified")
+              }
               tone={isVerified ? "ok" : "warn"}
             />
           </div>
@@ -262,27 +266,28 @@ function Metric({
 }
 
 function KycBadge({ state }: { state: Kyc }) {
+  const { tr } = useLang();
   if (state === "verified")
     return (
       <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/40 bg-primary/10 px-3 py-1 text-[11px] font-bold text-primary">
-        <ShieldCheck className="size-3.5" /> موثق معتمد
+        <ShieldCheck className="size-3.5" /> {tr("موثق معتمد", "Verified Account")}
       </span>
     );
   if (state === "review")
     return (
       <span className="inline-flex animate-pulse items-center gap-1.5 rounded-full border border-amber-500/40 bg-amber-500/10 px-3 py-1 text-[11px] font-bold text-amber-500">
-        <Loader2 className="size-3.5 animate-spin" /> قيد المراجعة
+        <Loader2 className="size-3.5 animate-spin" /> {tr("قيد المراجعة", "Under review")}
       </span>
     );
   if (state === "rejected")
     return (
       <span className="inline-flex items-center gap-1.5 rounded-full border border-rose-500/40 bg-rose-500/10 px-3 py-1 text-[11px] font-bold text-rose-400">
-        <AlertTriangle className="size-3.5" /> مرفوض
+        <AlertTriangle className="size-3.5" /> {tr("مرفوض", "Rejected")}
       </span>
     );
   return (
     <span className="inline-flex items-center gap-1.5 rounded-full border border-destructive/40 bg-destructive/10 px-3 py-1 text-[11px] font-bold text-destructive">
-      <AlertTriangle className="size-3.5" /> حساب غير موثق
+      <AlertTriangle className="size-3.5" /> {tr("حساب غير موثق", "Unverified account")}
     </span>
   );
 }

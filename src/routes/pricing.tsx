@@ -27,54 +27,74 @@ export const Route = createFileRoute("/pricing")({
 
 type TierId = "free" | "pro" | "corporate";
 
+type Bi = [string, string];
+
 const TIERS: Array<{
   id: TierId;
-  name: string;
+  name: Bi;
   price: number;
   featured?: boolean;
   premium?: boolean;
-  cta: string;
-  features: string[];
+  cta: Bi;
+  features: Bi[];
 }> = [
   {
     id: "free",
-    name: "الباقة المجانية",
+    name: ["الباقة المجانية", "Free Tier"],
     price: 0,
-    cta: "باقتك الحالية",
+    cta: ["باقتك الحالية", "Your current plan"],
     features: [
-      "عمولة المنصة: 10% قياسية",
-      "حجز أمان الضمان (Escrow) لمدة 48 ساعة",
-      "حد رفع الملفات 50MB",
-      "رابط إحالة مالي قياسي لمدة 12 شهراً",
-      "أولوية متساوية في محرك البحث تعتمد على الكفاءة",
+      ["عمولة المنصة: 10% قياسية", "Platform commission: standard 10%"],
+      ["حجز أمان الضمان (Escrow) لمدة 48 ساعة", "Escrow hold period: 48 hours"],
+      ["حد رفع الملفات 50MB", "File upload limit: 50MB"],
+      ["رابط إحالة مالي قياسي لمدة 12 شهراً", "Standard referral link valid for 12 months"],
+      [
+        "أولوية متساوية في محرك البحث تعتمد على الكفاءة",
+        "Equal search visibility based purely on performance",
+      ],
     ],
   },
   {
     id: "pro",
-    name: "باقة المحترفين",
+    name: ["باقة المحترفين", "Pro Tier"],
     price: 10,
     featured: true,
-    cta: "ترقية إلى Pro الآن",
+    cta: ["ترقية إلى Pro الآن", "Upgrade to Pro now"],
     features: [
-      "عمولة المنصة: 5% مخفضة فقط",
-      "تقليص حجز الضمان إلى 24 ساعة (مع توثيق KYC)",
-      "رفع ملفات حتى 500MB",
-      "شارة «بائع Pro موثق» (دون التأثير على خوارزمية جدارة البحث)",
-      "دعم فني ذو أولوية",
+      ["عمولة المنصة: 5% مخفضة فقط", "Platform commission: reduced 5%"],
+      [
+        "تقليص حجز الضمان إلى 24 ساعة (مع توثيق KYC)",
+        "Escrow hold reduced to 24 hours (with verified KYC)",
+      ],
+      ["رفع ملفات حتى 500MB", "File uploads up to 500MB"],
+      [
+        "شارة «بائع Pro موثق» (دون التأثير على خوارزمية جدارة البحث)",
+        "“Verified Pro Seller” badge (search ranking stays merit-based)",
+      ],
+      ["دعم فني ذو أولوية", "Priority technical support"],
     ],
   },
   {
     id: "corporate",
-    name: "باقة الشركات",
+    name: ["باقة الشركات", "Corporate Tier"],
     price: 49,
     premium: true,
-    cta: "حجز مقعد الشركات",
+    cta: ["حجز مقعد الشركات", "Reserve a corporate seat"],
     features: [
-      "عمولة المنصة: 2.5% أدنى عمولة في المنصة",
-      "تسريع دورة الضمان إلى 12–16 ساعة (بموافقة المشتري)",
-      "رفع مشاريع وسائط حتى 2GB عبر التخزين السحابي المباشر",
-      "شارة «حساب شركات معتمد»",
-      "مدير حساب مخصص وأدوات إدارة فرق العمل",
+      ["عمولة المنصة: 2.5% أدنى عمولة في المنصة", "Platform commission: lowest at 2.5%"],
+      [
+        "تسريع دورة الضمان إلى 12–16 ساعة (بموافقة المشتري)",
+        "Escrow hold accelerated to 12–16 hours (with buyer approval)",
+      ],
+      [
+        "رفع مشاريع وسائط حتى 2GB عبر التخزين السحابي المباشر",
+        "Media projects up to 2GB via direct cloud storage",
+      ],
+      ["شارة «حساب شركات معتمد»", "“Certified Corporate Account” badge"],
+      [
+        "مدير حساب مخصص وأدوات إدارة فرق العمل",
+        "Dedicated account manager and team management tools",
+      ],
     ],
   },
 ];
@@ -128,13 +148,21 @@ function PricingPage() {
     <div className="overflow-x-hidden">
       <section className="border-b border-border">
         <div className="mx-auto max-w-7xl px-4 py-14 text-center">
-          <h1 className="select-none text-3xl font-black sm:text-5xl">اختر باقتك وانطلق في منظومة «المنجز»</h1>
+          <h1 className="select-none text-3xl font-black sm:text-5xl">
+            {tr("اختر باقتك وانطلق في منظومة المنجز", "Choose your plan and grow with Al-Munjaz")}
+          </h1>
           <p className="mx-auto mt-4 max-w-2xl text-sm text-muted-foreground sm:text-base">
-            محرك البحث والظهور الداخلي يعتمد 100% على الكفاءة والتقييم الحقيقي لجميع المستخدمين بلا تمييز.
+            {tr(
+              "محرك البحث والظهور الداخلي يعتمد 100% على الكفاءة والتقييم الحقيقي لجميع المستخدمين بلا تمييز.",
+              "Search visibility is based 100% on real performance and ratings, equally for every user.",
+            )}
           </p>
           <p className="mx-auto mt-5 inline-flex max-w-2xl items-start gap-2 rounded-full border border-accent/40 bg-accent/10 px-4 py-2 text-xs leading-relaxed text-accent">
             <Sparkles className="mt-0.5 size-3.5 shrink-0" />
-            فعّل باقتك مباشرة من رصيد المحفظة، أو اشحن المبلغ المتبقي بأمان عبر NOWPayments.
+            {tr(
+              "فعّل باقتك مباشرة من رصيد المحفظة، أو اشحن المبلغ المتبقي بأمان عبر NOWPayments.",
+              "Activate your plan straight from your wallet balance, or top up the remainder securely.",
+            )}
           </p>
         </div>
       </section>
@@ -147,21 +175,21 @@ function PricingPage() {
               className={`flex h-full flex-col ${t.featured ? "border-primary/60 glow" : ""} ${t.premium ? "border-accent/50" : ""}`}
             >
               <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
-                <h2 className="min-w-0 truncate text-lg font-black">{t.name}</h2>
+                <h2 className="min-w-0 truncate text-lg font-black">{tr(t.name[0], t.name[1])}</h2>
                 {currentTier === t.id && <span className="shrink-0 rounded-full border border-primary/50 bg-primary/10 px-2.5 py-1 text-[10px] font-bold text-primary">{tr("الحالية", "Current")}</span>}
-                {t.featured && <span className="shrink-0 rounded-full bg-primary/15 px-2.5 py-1 text-[10px] font-bold text-primary">الأكثر طلباً</span>}
+                {t.featured && <span className="shrink-0 rounded-full bg-primary/15 px-2.5 py-1 text-[10px] font-bold text-primary">{tr("الأكثر طلباً", "Most popular")}</span>}
                 {t.premium && <Crown className="size-4 shrink-0 text-accent" />}
               </div>
 
               <p className="mt-4 text-4xl font-black text-primary">
-                {t.price} <span className="text-base font-bold text-muted-foreground">USDT{t.price > 0 ? " / شهرياً" : ""}</span>
+                {t.price} <span className="text-base font-bold text-muted-foreground">USDT{t.price > 0 ? tr(" / شهرياً", " / month") : ""}</span>
               </p>
 
               <ul className="mt-5 grid flex-1 gap-2.5 text-sm">
                 {t.features.map((f) => (
-                  <li key={f} className="flex items-start gap-2 text-muted-foreground">
+                  <li key={f[0]} className="flex items-start gap-2 text-muted-foreground">
                     <Check className="mt-0.5 size-4 shrink-0 text-primary" />
-                    <span className="min-w-0">{f}</span>
+                    <span className="min-w-0">{tr(f[0], f[1])}</span>
                   </li>
                 ))}
               </ul>
@@ -178,7 +206,7 @@ function PricingPage() {
                       : "bg-primary text-primary-foreground hover:opacity-90"
                 }`}
               >
-                {purchase.isPending && t.id !== "free" ? <span className="inline-flex items-center gap-2"><Loader2 className="size-4 animate-spin" />{tr("جارٍ التفعيل...", "Activating...")}</span> : currentTier === t.id ? tr("الباقة الحالية", "Current plan") : t.cta}
+                {purchase.isPending && t.id !== "free" ? <span className="inline-flex items-center gap-2"><Loader2 className="size-4 animate-spin" />{tr("جارٍ التفعيل...", "Activating...")}</span> : currentTier === t.id ? tr("الباقة الحالية", "Current plan") : tr(t.cta[0], t.cta[1])}
               </button>
             </Card>
           ))}

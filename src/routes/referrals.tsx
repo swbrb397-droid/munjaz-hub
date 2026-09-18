@@ -100,7 +100,10 @@ function ReferralHub() {
 
             <p className="mt-3 flex items-start gap-2 rounded-xl border border-primary/30 bg-primary/10 p-3 text-xs leading-relaxed text-primary">
               <Info className="mt-0.5 size-4 shrink-0" />
-              لكل بائع رابط إحالة فريد واحد، ويتم تثبيت المشتري بحسابك بشكل دائم ونهائي فور إتمام التسجيل.
+              {tr(
+                "لكل بائع رابط إحالة فريد واحد، ويتم تثبيت المشتري بحسابك بشكل دائم ونهائي فور إتمام التسجيل.",
+                "Each seller has one unique referral link, and a buyer is permanently attributed to your account as soon as they sign up.",
+              )}
             </p>
           </Card>
 
@@ -207,11 +210,35 @@ function ReferralHub() {
 
 function TermsModal({ onClose }: { onClose: () => void }) {
   const { tr } = useLang();
-  const items = [
-    ["مدة الاستحقاق", "12 شهراً (365 يوماً) فقط من تاريخ تسجيل المشتري، وتسقط بعدها العمولة تلقائياً وتعود للمنصة."],
-    ["حظر الإحالات الذاتية", "يُحظر إنشاء حسابات متعددة من نفس الجهاز أو الشبكة، مع تجميد فوري للرصيد عند المخالفة."],
-    ["أحادية الارتباط", "يتم تثبيت المشتري برابط بائع واحد للأبد دون إمكانية التبديل."],
-    ["فترات الضمان", "تخضع كافة أرباح الإحالة لفترة حجز الضمان (Escrow) والتحقق قبل الإفراج المالي."],
+  const items: Array<[string, string]> = [
+    [
+      tr("مدة الاستحقاق", "Eligibility period"),
+      tr(
+        "12 شهراً (365 يوماً) فقط من تاريخ تسجيل المشتري، وتسقط بعدها العمولة تلقائياً وتعود للمنصة.",
+        "12 months (365 days) from the buyer's sign-up date; afterwards the commission lapses automatically and returns to the platform.",
+      ),
+    ],
+    [
+      tr("حظر الإحالات الذاتية", "No self-referrals"),
+      tr(
+        "يُحظر إنشاء حسابات متعددة من نفس الجهاز أو الشبكة، مع تجميد فوري للرصيد عند المخالفة.",
+        "Creating multiple accounts from the same device or network is prohibited; balances are frozen immediately on violation.",
+      ),
+    ],
+    [
+      tr("أحادية الارتباط", "Single attribution"),
+      tr(
+        "يتم تثبيت المشتري برابط بائع واحد للأبد دون إمكانية التبديل.",
+        "A buyer is permanently attributed to one seller's link and cannot be switched.",
+      ),
+    ],
+    [
+      tr("فترات الضمان", "Escrow periods"),
+      tr(
+        "تخضع كافة أرباح الإحالة لفترة حجز الضمان (Escrow) والتحقق قبل الإفراج المالي.",
+        "All referral earnings are subject to the escrow hold and verification before payout.",
+      ),
+    ],
   ];
   return (
     <div className="fixed inset-0 z-[60] grid place-items-center bg-background/80 p-4 backdrop-blur" role="dialog" aria-modal="true">
