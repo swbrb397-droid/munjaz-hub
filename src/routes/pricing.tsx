@@ -27,54 +27,74 @@ export const Route = createFileRoute("/pricing")({
 
 type TierId = "free" | "pro" | "corporate";
 
+type Bi = [string, string];
+
 const TIERS: Array<{
   id: TierId;
-  name: string;
+  name: Bi;
   price: number;
   featured?: boolean;
   premium?: boolean;
-  cta: string;
-  features: string[];
+  cta: Bi;
+  features: Bi[];
 }> = [
   {
     id: "free",
-    name: "الباقة المجانية",
+    name: ["الباقة المجانية", "Free Tier"],
     price: 0,
-    cta: "باقتك الحالية",
+    cta: ["باقتك الحالية", "Your current plan"],
     features: [
-      "عمولة المنصة: 10% قياسية",
-      "حجز أمان الضمان (Escrow) لمدة 48 ساعة",
-      "حد رفع الملفات 50MB",
-      "رابط إحالة مالي قياسي لمدة 12 شهراً",
-      "أولوية متساوية في محرك البحث تعتمد على الكفاءة",
+      ["عمولة المنصة: 10% قياسية", "Platform commission: standard 10%"],
+      ["حجز أمان الضمان (Escrow) لمدة 48 ساعة", "Escrow hold period: 48 hours"],
+      ["حد رفع الملفات 50MB", "File upload limit: 50MB"],
+      ["رابط إحالة مالي قياسي لمدة 12 شهراً", "Standard referral link valid for 12 months"],
+      [
+        "أولوية متساوية في محرك البحث تعتمد على الكفاءة",
+        "Equal search visibility based purely on performance",
+      ],
     ],
   },
   {
     id: "pro",
-    name: "باقة المحترفين",
+    name: ["باقة المحترفين", "Pro Tier"],
     price: 10,
     featured: true,
-    cta: "ترقية إلى Pro الآن",
+    cta: ["ترقية إلى Pro الآن", "Upgrade to Pro now"],
     features: [
-      "عمولة المنصة: 5% مخفضة فقط",
-      "تقليص حجز الضمان إلى 24 ساعة (مع توثيق KYC)",
-      "رفع ملفات حتى 500MB",
-      "شارة «بائع Pro موثق» (دون التأثير على خوارزمية جدارة البحث)",
-      "دعم فني ذو أولوية",
+      ["عمولة المنصة: 5% مخفضة فقط", "Platform commission: reduced 5%"],
+      [
+        "تقليص حجز الضمان إلى 24 ساعة (مع توثيق KYC)",
+        "Escrow hold reduced to 24 hours (with verified KYC)",
+      ],
+      ["رفع ملفات حتى 500MB", "File uploads up to 500MB"],
+      [
+        "شارة «بائع Pro موثق» (دون التأثير على خوارزمية جدارة البحث)",
+        "“Verified Pro Seller” badge (search ranking stays merit-based)",
+      ],
+      ["دعم فني ذو أولوية", "Priority technical support"],
     ],
   },
   {
     id: "corporate",
-    name: "باقة الشركات",
+    name: ["باقة الشركات", "Corporate Tier"],
     price: 49,
     premium: true,
-    cta: "حجز مقعد الشركات",
+    cta: ["حجز مقعد الشركات", "Reserve a corporate seat"],
     features: [
-      "عمولة المنصة: 2.5% أدنى عمولة في المنصة",
-      "تسريع دورة الضمان إلى 12–16 ساعة (بموافقة المشتري)",
-      "رفع مشاريع وسائط حتى 2GB عبر التخزين السحابي المباشر",
-      "شارة «حساب شركات معتمد»",
-      "مدير حساب مخصص وأدوات إدارة فرق العمل",
+      ["عمولة المنصة: 2.5% أدنى عمولة في المنصة", "Platform commission: lowest at 2.5%"],
+      [
+        "تسريع دورة الضمان إلى 12–16 ساعة (بموافقة المشتري)",
+        "Escrow hold accelerated to 12–16 hours (with buyer approval)",
+      ],
+      [
+        "رفع مشاريع وسائط حتى 2GB عبر التخزين السحابي المباشر",
+        "Media projects up to 2GB via direct cloud storage",
+      ],
+      ["شارة «حساب شركات معتمد»", "“Certified Corporate Account” badge"],
+      [
+        "مدير حساب مخصص وأدوات إدارة فرق العمل",
+        "Dedicated account manager and team management tools",
+      ],
     ],
   },
 ];
