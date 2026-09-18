@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Lock, Pencil, X } from "lucide-react";
 import { supabase } from "@/lib/cloud-client";
 import { useAuth } from "@/hooks/use-auth";
+import { useLang } from "@/lib/lang";
 
 type ProfileLike = { display_name?: string | null; is_verified?: boolean | null; name_changes_count?: number | null } | null;
 
@@ -41,10 +42,10 @@ export function NameChangeControl({ profile }: { profile: ProfileLike }) {
   if (locked)
     return (
       <span
-        title="الاسم مثبت نهائياً ولا يمكن تغييره"
+        title={tr("الاسم مثبت نهائياً ولا يمكن تغييره", "Your name is permanently locked and cannot be changed")}
         className="inline-flex select-none items-center gap-1.5 rounded-full border border-border bg-secondary/60 px-3 py-1 text-[11px] font-bold text-muted-foreground"
       >
-        <Lock className="size-3.5" /> الاسم مثبت نهائياً
+        <Lock className="size-3.5" /> {tr("الاسم مثبت نهائياً", "Name Verified")}
       </span>
     );
 
