@@ -175,21 +175,21 @@ function PricingPage() {
               className={`flex h-full flex-col ${t.featured ? "border-primary/60 glow" : ""} ${t.premium ? "border-accent/50" : ""}`}
             >
               <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
-                <h2 className="min-w-0 truncate text-lg font-black">{t.name}</h2>
+                <h2 className="min-w-0 truncate text-lg font-black">{tr(t.name[0], t.name[1])}</h2>
                 {currentTier === t.id && <span className="shrink-0 rounded-full border border-primary/50 bg-primary/10 px-2.5 py-1 text-[10px] font-bold text-primary">{tr("الحالية", "Current")}</span>}
-                {t.featured && <span className="shrink-0 rounded-full bg-primary/15 px-2.5 py-1 text-[10px] font-bold text-primary">الأكثر طلباً</span>}
+                {t.featured && <span className="shrink-0 rounded-full bg-primary/15 px-2.5 py-1 text-[10px] font-bold text-primary">{tr("الأكثر طلباً", "Most popular")}</span>}
                 {t.premium && <Crown className="size-4 shrink-0 text-accent" />}
               </div>
 
               <p className="mt-4 text-4xl font-black text-primary">
-                {t.price} <span className="text-base font-bold text-muted-foreground">USDT{t.price > 0 ? " / شهرياً" : ""}</span>
+                {t.price} <span className="text-base font-bold text-muted-foreground">USDT{t.price > 0 ? tr(" / شهرياً", " / month") : ""}</span>
               </p>
 
               <ul className="mt-5 grid flex-1 gap-2.5 text-sm">
                 {t.features.map((f) => (
-                  <li key={f} className="flex items-start gap-2 text-muted-foreground">
+                  <li key={f[0]} className="flex items-start gap-2 text-muted-foreground">
                     <Check className="mt-0.5 size-4 shrink-0 text-primary" />
-                    <span className="min-w-0">{f}</span>
+                    <span className="min-w-0">{tr(f[0], f[1])}</span>
                   </li>
                 ))}
               </ul>
