@@ -167,11 +167,11 @@ export function SecurityPanel({ className = "" }: { className?: string }) {
           </span>
         ) : activeFactorId ? (
           <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/40 bg-emerald-500/10 px-3 py-1 text-[11px] font-bold text-emerald-400">
-            <ShieldCheck className="size-3.5" /> 2FA مفعّل ومحمي
+            <ShieldCheck className="size-3.5" /> <bdi>2FA مفعّل ومحمي</bdi>
           </span>
         ) : (
           <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/40 bg-amber-500/10 px-3 py-1 text-[11px] font-bold text-amber-500">
-            <ShieldAlert className="size-3.5" /> 2FA غير مفعل
+            <ShieldAlert className="size-3.5" /> <bdi>2FA غير مفعل</bdi>
           </span>
         )}
       </div>
@@ -190,7 +190,7 @@ export function SecurityPanel({ className = "" }: { className?: string }) {
             onClick={() => void disableMfa()}
             className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-destructive/50 px-4 py-2.5 text-sm font-bold text-destructive"
           >
-            <Lock className="size-4" /> تعطيل 2FA
+            <Lock className="size-4" /> <bdi>تعطيل 2FA</bdi>
           </button>
         ) : (
           <button
@@ -200,7 +200,7 @@ export function SecurityPanel({ className = "" }: { className?: string }) {
             className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-bold text-primary-foreground disabled:opacity-50"
           >
             {enrolling ? <Loader2 className="size-4 animate-spin" /> : <Lock className="size-4" />}{" "}
-            تفعيل 2FA
+            <bdi>تفعيل 2FA</bdi>
           </button>
         )}
       </div>
