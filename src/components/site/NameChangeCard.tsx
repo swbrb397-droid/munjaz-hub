@@ -14,6 +14,7 @@ type ProfileLike = { display_name?: string | null; is_verified?: boolean | null;
  */
 export function NameChangeControl({ profile }: { profile: ProfileLike }) {
   const { user } = useAuth();
+  const { tr } = useLang();
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState(profile?.display_name ?? "");
