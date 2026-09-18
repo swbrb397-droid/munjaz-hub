@@ -206,7 +206,7 @@ function PricingPage() {
                       : "bg-primary text-primary-foreground hover:opacity-90"
                 }`}
               >
-                {purchase.isPending && t.id !== "free" ? <span className="inline-flex items-center gap-2"><Loader2 className="size-4 animate-spin" />{tr("جارٍ التفعيل...", "Activating...")}</span> : currentTier === t.id ? tr("الباقة الحالية", "Current plan") : t.cta}
+                {purchase.isPending && t.id !== "free" ? <span className="inline-flex items-center gap-2"><Loader2 className="size-4 animate-spin" />{tr("جارٍ التفعيل...", "Activating...")}</span> : currentTier === t.id ? tr("الباقة الحالية", "Current plan") : tr(t.cta[0], t.cta[1])}
               </button>
             </Card>
           ))}
