@@ -511,7 +511,7 @@ function WalletPage() {
             </span>
             <button
               onClick={submit}
-              disabled={withdraw.isPending || frozen || lockHours > 0 || !legalAck}
+              disabled={withdraw.isPending || frozen || lockHours > 0 || (!legalAck && !amlExempt)}
               className="inline-flex min-h-[44px] items-center gap-2 rounded-lg bg-primary px-4 py-2 font-bold text-primary-foreground disabled:opacity-60"
             >
               {withdraw.isPending && <Loader2 className="size-4 animate-spin" />}
@@ -521,6 +521,15 @@ function WalletPage() {
             </button>
           </div>
 
+          {amlExempt ? (
+            <p className="mt-3 flex items-start gap-2 rounded-xl border border-primary/40 bg-primary/10 p-3 text-[11px] font-bold leading-relaxed text-primary">
+              <BadgeCheck className="mt-0.5 size-4 shrink-0" />
+              {tr(
+                "أرباح مبيعات الخدمات معفاة 100% من رسوم مكافحة الخلط — الرسوم المطبقة هي رسوم الشبكة فقط (0.80 USDT).",
+                "Service earnings are 100% exempt from anti-mixing fees — only the flat 0.80 USDT network fee applies.",
+              )}
+            </p>
+          ) : (
           <label className="mt-3 flex items-start gap-2 rounded-xl border border-border/70 bg-surface-2/40 p-3 text-[11px] leading-relaxed text-muted-foreground">
             <input
               type="checkbox"
