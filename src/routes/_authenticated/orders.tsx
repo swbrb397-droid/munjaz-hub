@@ -141,7 +141,9 @@ function OrdersPage() {
             o.status === "completed" || o.status === "refunded" || o.status === "cancelled";
           // A settled order holds nothing: the seller received the amount net of the platform fee.
           const paidOut = o.status === "completed" ? Math.max(0, amount - fee) : milestonePaid;
-          const remaining = isSettled ? 0 : Math.max(0, amount - milestonePaid);
+          // Unfunded drafts hold nothing: escrow only exists once the buyer funds it.
+          const escrowActive = o.status === "in_progress" || o.status === "delivered" || o.status === "disputed";
+          const remaining = isSettled || !escrowActive ? 0 : Math.max(0, amount - milestonePaid);
           const isBuyer = o.buyer_id === user?.id;
           const pendingExtension = extensions.data?.[o.id];
           const abandoned = isBuyer && isAbandoned(o.due_at, o.status);
@@ -200,11 +202,16 @@ function OrdersPage() {
                     </dd>
                   )}
                 </div>
-                <div className="rounded-xl border border-primary/40 bg-primary/10 px-3 py-2">
+                <div
+                  className={`rounded-xl border px-3 py-2 ${remaining > 0 ? "border-primary/40 bg-primary/10" : "border-border bg-secondary/40"}`}
+                >
                   <dt className="text-[11px] text-muted-foreground">
                     {tr("المتبقي في الضمان", "Remaining in escrow")}
                   </dt>
-                  <dd className="mt-0.5 text-sm font-black text-primary" dir="ltr">
+                  <dd
+                    className={`mt-0.5 text-sm font-black ${remaining > 0 ? "text-primary" : "text-muted-foreground"}`}
+                    dir="ltr"
+                  >
                     {remaining.toFixed(2)} USDT
                   </dd>
                 </div>
