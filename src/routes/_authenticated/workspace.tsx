@@ -53,7 +53,7 @@ import {
   VAULT_BUCKET,
 } from "@/lib/workspace-data";
 import { supabase } from "@/lib/cloud-client";
-import { sanitizeText } from "@/lib/security";
+import { gibberishError, sanitizeText } from "@/lib/security";
 import { useServerFn } from "@tanstack/react-start";
 import { orderAiAssistant } from "@/lib/order-ai.functions";
 import { translateMessage } from "@/lib/translate.functions";
@@ -321,6 +321,8 @@ function Workspace() {
 
   const [warning, setWarning] = useState(false);
   const [reason, setReason] = useState("");
+  // Anti-gibberish gate for the dispute explanation (50+ real characters).
+  const reasonError = gibberishError(reason, { minLength: 50, maxLength: 2000, minWords: 4 });
   const [evidence, setEvidence] = useState<string[]>([]);
   /** Real File handles for the attached evidence, uploaded on submit. */
   const [evidenceFiles, setEvidenceFiles] = useState<File[]>([]);
@@ -698,7 +700,8 @@ function Workspace() {
         const rejection = checkUpload(file, uploadTier);
         if (rejection) throw new Error(rejection);
         const safeName = file.name.replace(/[^\w.\-]+/g, "_").slice(-80);
-        const path = `disputes/${order.id}/${Date.now()}_${safeName}`;
+        // Storage RLS casts the first folder to uuid, so the order id must lead.
+        const path = `${order.id}/disputes/${Date.now()}_${safeName}`;
         const up = await supabase.storage.from(VAULT_BUCKET).upload(path, file, {
           contentType: file.type || "application/octet-stream",
           upsert: false,
