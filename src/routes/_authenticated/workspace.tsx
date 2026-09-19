@@ -1696,8 +1696,21 @@ function Workspace() {
 
         <div className="grid content-start gap-4">
           <Card>
-            <h3 className="font-bold">{tr("طلباتي", "My orders")}</h3>
-            <div className="mt-3 grid gap-2 text-sm">
+            <button
+              type="button"
+              onClick={() => setOrdersOpen((v) => !v)}
+              aria-expanded={ordersOpen}
+              className="flex w-full items-center justify-between gap-2 text-start lg:pointer-events-none"
+            >
+              <h3 className="font-bold">
+                {tr("طلباتي", "My orders")}{" "}
+                <span className="text-xs font-normal text-muted-foreground">({rows.length})</span>
+              </h3>
+              <ChevronDown
+                className={`size-4 shrink-0 text-muted-foreground transition-transform lg:hidden ${ordersOpen ? "rotate-180" : ""}`}
+              />
+            </button>
+            <div className={`mt-3 grid gap-2 text-sm ${ordersOpen ? "" : "hidden lg:grid"}`}>
               {rows.length === 0 && (
                 <p className="text-xs text-muted-foreground">
                   {tr("لا توجد طلبات بعد.", "No orders yet.")}
