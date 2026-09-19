@@ -8,6 +8,7 @@ import {
   Circle,
   FileCheck2,
   FileUp,
+  ChevronDown,
   History,
   Languages,
   Loader2,
@@ -436,6 +437,9 @@ function Workspace() {
 
   // In-app video room (no popup windows)
   const [callOpen, setCallOpen] = useState(false);
+
+  // Mobile: "My orders" collapses into an accordion instead of stacking under chat.
+  const [ordersOpen, setOrdersOpen] = useState(false);
 
   // Post-completion 2-way review
   const [reviewOpen, setReviewOpen] = useState(false);
