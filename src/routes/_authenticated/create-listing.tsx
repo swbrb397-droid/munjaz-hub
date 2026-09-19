@@ -11,6 +11,7 @@ import { supabase } from "@/lib/cloud-client";
 import { parseUsdt, sanitizeText } from "@/lib/security";
 import { PROHIBITED_CONTENT_MESSAGE, screenCoverImage } from "@/lib/moderation.functions";
 import { type ListingCategory } from "@/lib/catalog";
+import { z } from "zod";
 
 export const Route = createFileRoute("/_authenticated/create-listing")({
   head: () => ({
@@ -27,7 +28,8 @@ export const Route = createFileRoute("/_authenticated/create-listing")({
 });
 
 const MIN_PRICE = 3;
-const MIN_DESC = 40;
+const MIN_DESC = 50;
+const MAX_DESC = 2500;
 const MIN_TITLE = 10;
 const MAX_COVER_BYTES = 5 * 1024 * 1024;
 const COVER_TYPES = ["image/jpeg", "image/png", "image/webp"];
@@ -66,6 +68,16 @@ const INSPECTION_OPTIONS: Record<"free" | "pro" | "corporate", number[]> = {
 const EN_RE = /^[a-zA-Z0-9\s.,!?'"()#@&-]+$/;
 const AR_RE = /^[\u0600-\u06FF0-9\s.,!?'"()#@&-]+$/;
 const REPEAT_RE = /(.)\1{3,}/;
+const descriptionSchema = z
+  .string()
+  .trim()
+  .min(MIN_DESC, `الوصف يجب ألا يقل عن ${MIN_DESC} حرفاً.`)
+  .max(MAX_DESC, `الوصف يجب ألا يزيد على ${MAX_DESC} حرفاً.`)
+  .refine((value) => !REPEAT_RE.test(value), "الوصف يحتوي على تكرار غير مفهوم لنفس الحرف.")
+  .refine(
+    (value) => new Set(value.split(/\s+/).map((word) => word.toLocaleLowerCase()).filter(Boolean)).size >= 4,
+    "الوصف يجب أن يحتوي على أربع كلمات مختلفة على الأقل.",
+  );
 
 /**
  * Validates one language side (title + tag).
@@ -175,8 +187,11 @@ function CreateListing() {
   const priceTouched = form.price_usdt.trim().length > 0;
   const priceInvalid = priceTouched && (!Number.isFinite(price) || price < MIN_PRICE);
   const descLen = form.description_ar.trim().length;
-  const descTouched = descLen > 0;
-  const descInvalid = descTouched && descLen < MIN_DESC;
+  const descriptionResult = descriptionSchema.safeParse(form.description_ar);
+  const descriptionError = descriptionResult.success
+    ? null
+    : (descriptionResult.error.issues[0]?.message ?? "الوصف غير صالح.");
+  const descInvalid = !descriptionResult.success;
   const titleArLen = form.title_ar.trim().length;
   const titleEnLen = form.title_en.trim().length;
 
@@ -201,7 +216,8 @@ function CreateListing() {
     !langInvalid &&
     Number.isFinite(price) &&
     price >= MIN_PRICE &&
-    descLen >= MIN_DESC;
+    descriptionResult.success &&
+    (!!editingId || (!!coverFile && !coverChecking && !coverError));
 
   const mine = useQuery({
     queryKey: ["my-listings", user?.id],
@@ -234,6 +250,9 @@ function CreateListing() {
 
   const create = useMutation({
     mutationFn: async () => {
+      if (!canSubmit) {
+        throw new Error("لا يمكن نشر العرض: يجب تصحيح الأخطاء ورفع غلاف متوافق مع معايير المنصة أولاً");
+      }
       // Edit mode: update the existing listing instead of inserting a new one.
       if (editingId) {
         const { error: updErr } = await supabase
@@ -367,7 +386,11 @@ function CreateListing() {
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!canSubmit || create.isPending) return;
+    if (!canSubmit) {
+      toast.error("لا يمكن نشر العرض: يجب تصحيح الأخطاء ورفع غلاف متوافق مع معايير المنصة أولاً");
+      return;
+    }
+    if (create.isPending) return;
     create.mutate();
   };
 
@@ -543,16 +566,20 @@ function CreateListing() {
                   <span className="text-muted-foreground">{tr("وصف الخدمة (عربي)", "Service description (Arabic)")}</span>
                   <textarea
                     className={`${field} min-h-32 resize-y ${descInvalid ? "border-destructive focus:border-destructive" : ""}`}
-                    maxLength={2000}
+                    maxLength={MAX_DESC}
                     value={form.description_ar}
                     onChange={(e) => setForm({ ...form, description_ar: e.target.value })}
                     placeholder={tr("اشرح تفاصيل خدمتك ومخرجاتها ومدة التسليم...", "Describe your service, deliverables and delivery time...")}
                     aria-invalid={descInvalid}
                   />
                   <span className={`text-xs ${descInvalid ? "font-bold text-destructive" : "text-muted-foreground"}`}>
-                    {descInvalid
-                      ? tr(`الوصف يجب ألا يقل عن ${MIN_DESC} حرفاً (${descLen}/${MIN_DESC})`, `Description must be at least ${MIN_DESC} characters (${descLen}/${MIN_DESC})`)
-                      : `${descLen}/${MIN_DESC}`}
+                    {descriptionError && <span className="block">{descriptionError}</span>}
+                    <span className="block">
+                      {tr(
+                        `${descLen} / ${MAX_DESC} حرف (الحد الأدنى ${MIN_DESC} حرفاً)`,
+                        `${descLen} / ${MAX_DESC} characters (${MIN_DESC} minimum)`,
+                      )}
+                    </span>
                   </span>
                 </label>
 
@@ -615,7 +642,7 @@ function CreateListing() {
                   </button>
                   <button
                     type="submit"
-                    disabled={!canSubmit || create.isPending}
+                    disabled={!canSubmit || coverChecking || create.isPending}
                     className="flex h-11 select-none items-center gap-2 rounded-xl bg-primary px-5 text-sm font-bold text-primary-foreground transition-opacity disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {create.isPending ? <Loader2 className="size-4 animate-spin" /> : <PlusCircle className="size-4" />}

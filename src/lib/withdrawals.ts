@@ -28,6 +28,7 @@ export function withdrawalErrorMessage(raw: string, ar: boolean): string {
     INVALID_ADDRESS: ["عنوان المحفظة غير صالح.", "Invalid wallet address."],
     INSUFFICIENT_FUNDS: ["الرصيد غير كافٍ (شامل الرسوم).", "Insufficient balance (including fees)."],
     ACCOUNT_FROZEN: ["الحساب مجمّد أمنياً — تواصل مع الدعم.", "Account frozen for security — contact support."],
+    MFA_REQUIRED: ["يلزم تأكيد المصادقة الثنائية قبل السحب.", "Two-factor authentication is required before withdrawal."],
     NOT_AUTHENTICATED: ["يجب تسجيل الدخول.", "You must be signed in."],
     FORBIDDEN: ["صلاحيات غير كافية.", "Insufficient permissions."],
   };

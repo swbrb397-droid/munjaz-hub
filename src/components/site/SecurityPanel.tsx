@@ -91,8 +91,8 @@ export function SecurityPanel({ className = "" }: { className?: string }) {
       setEnrollment(null);
       setCode("");
       await refreshFactors();
-    } catch (e) {
-      toast.error((e as Error).message || "رمز التحقق غير صحيح");
+    } catch {
+      toast.error("رمز التحقق غير صحيح أو انتهت صلاحيته. يرجى إدخال الرمز اللحظي من تطبيق المصادقة.");
     } finally {
       setVerifying(false);
     }
@@ -225,8 +225,8 @@ export function SecurityPanel({ className = "" }: { className?: string }) {
             </div>
 
             <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
-              امسح رمز QR بتطبيق المصادقة (Google Authenticator / Authy) أو أدخل المفتاح السري
-              يدوياً، ثم أدخل الرمز المكوّن من 6 أرقام لتأكيد التفعيل.
+              قم بمسح رمز QR أو إدخال المفتاح السري داخل تطبيق المصادقة (مثل Google Authenticator أو
+              Authy)، ثم اكتب الرمز المكوّن من 6 أرقام لتأكيد الربط.
             </p>
 
             <div className="mt-4 grid place-items-center">

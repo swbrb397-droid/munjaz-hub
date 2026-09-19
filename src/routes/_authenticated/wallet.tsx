@@ -35,7 +35,7 @@ import { toast } from "sonner";
 import { useLockedEscrow } from "@/lib/escrow";
 import { TopUpDialog } from "@/components/site/TopUpDialog";
 import { ReferralWidget } from "@/components/site/ReferralWidget";
-import { RedeemPassCard } from "@/components/site/RedeemPassCard";
+import { MfaChallengeDialog } from "@/components/site/MfaChallengeDialog";
 
 export const Route = createFileRoute("/_authenticated/wallet")({
   head: () => ({
@@ -160,8 +160,22 @@ function WalletPage() {
   const [feedback, setFeedback] = useState<string | null>(null);
   const [receipt, setReceipt] = useState<ReceiptData | null>(null);
   const [payoutAddress, setPayoutAddress] = useState("");
+  const [mfaFactorId, setMfaFactorId] = useState<string | null>(null);
+  const [mfaAction, setMfaAction] = useState<"save-payout" | "withdraw" | null>(null);
   const { user } = useAuth();
   const qc = useQueryClient();
+
+  useEffect(() => {
+    let active = true;
+    void supabase.auth.mfa.listFactors().then(({ data }) => {
+      if (!active) return;
+      const verified = (data?.totp ?? []).find((factor) => factor.status === "verified");
+      setMfaFactorId(verified?.id ?? null);
+    });
+    return () => {
+      active = false;
+    };
+  }, [user?.id]);
 
   // Payout address is the only wallet column the client may write; balances are
   // mutated exclusively by secure database routines.
@@ -293,6 +307,15 @@ function WalletPage() {
     });
   };
 
+  const protectWithMfa = (action: "save-payout" | "withdraw") => {
+    if (mfaFactorId) {
+      setMfaAction(action);
+      return;
+    }
+    if (action === "save-payout") savePayout.mutate(payoutAddress.trim());
+    else submit();
+  };
+
   return (
     <Section
       title={tr("المحفظة الداخلية", "Internal wallet")}
@@ -405,7 +428,7 @@ function WalletPage() {
             </label>
             <button
               type="button"
-              onClick={() => savePayout.mutate(payoutAddress.trim())}
+              onClick={() => protectWithMfa("save-payout")}
               disabled={savePayout.isPending || !user || !payoutAddress.trim()}
               className="mt-2 w-full rounded-lg border border-primary/50 bg-primary/10 px-3 py-2 text-xs font-bold text-primary disabled:opacity-50"
             >
@@ -541,7 +564,7 @@ function WalletPage() {
               </span>
             </span>
             <button
-              onClick={submit}
+               onClick={() => protectWithMfa("withdraw")}
               disabled={withdraw.isPending || frozen || lockHours > 0 || (!legalAck && !amlExempt)}
               className="inline-flex min-h-[44px] items-center gap-2 rounded-lg bg-primary px-4 py-2 font-bold text-primary-foreground disabled:opacity-60"
             >
@@ -593,10 +616,24 @@ function WalletPage() {
         </Card>
       </div>
 
-      <div className="mt-6 grid gap-4 lg:grid-cols-2">
-        <RedeemPassCard />
+      <div className="mt-6 grid gap-4">
         <ReferralWidget />
       </div>
+
+      {mfaAction && mfaFactorId && (
+        <MfaChallengeDialog
+          factorId={mfaFactorId}
+          title={tr(
+            mfaAction === "withdraw" ? "تأكيد السحب بالمصادقة الثنائية" : "تأكيد عنوان السحب بالمصادقة الثنائية",
+            mfaAction === "withdraw" ? "Confirm withdrawal with two-factor authentication" : "Confirm payout address with two-factor authentication",
+          )}
+          onClose={() => setMfaAction(null)}
+          onVerified={async () => {
+            if (mfaAction === "save-payout") await savePayout.mutateAsync(payoutAddress.trim());
+            else await withdraw.mutateAsync();
+          }}
+        />
+      )}
 
       <Card className="mt-6">
         <h3 className="flex items-center gap-2 font-bold">
