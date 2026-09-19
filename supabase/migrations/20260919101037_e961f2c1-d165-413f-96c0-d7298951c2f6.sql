@@ -1,0 +1,1 @@
+ALTER TYPE public.incident_kind ADD VALUE IF NOT EXISTS 'prohibited_content_blocked';

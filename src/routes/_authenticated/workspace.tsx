@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   AlertTriangle,
   CalendarClock,
@@ -8,6 +8,7 @@ import {
   Circle,
   FileCheck2,
   FileUp,
+  ChevronDown,
   History,
   Languages,
   Loader2,
@@ -410,10 +411,35 @@ function Workspace() {
   const isSeller = !!order && !!user && order.seller_id === user.id;
   /** Rating is only possible on a completed order, and never after arbitration. */
   const arbitrated = !!order && (order.status === "disputed" || order.status === "refunded");
-  const canReview = !!order && order.status === "completed" && !arbitrated;
+
+  /** A reviewer may rate an order exactly once. */
+  const myReview = useQuery({
+    queryKey: ["my-review", order?.id, user?.id],
+    enabled: !!order?.id && !!user?.id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("reviews")
+        .select("id")
+        .eq("order_id", order!.id)
+        .eq("reviewer_id", user!.id)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
+  const alreadyReviewed = !!myReview.data;
+  const canReview = !!order && order.status === "completed" && !arbitrated && !alreadyReviewed;
+
+  /** Status gates for the order action bar. */
+  const isAwaitingFunding = order?.status === "pending";
+  const canExtend = order?.status === "in_progress";
+  const canCallOrDispute = order?.status === "in_progress" || order?.status === "delivered";
 
   // In-app video room (no popup windows)
   const [callOpen, setCallOpen] = useState(false);
+
+  // Mobile: "My orders" collapses into an accordion instead of stacking under chat.
+  const [ordersOpen, setOrdersOpen] = useState(false);
 
   // Post-completion 2-way review
   const [reviewOpen, setReviewOpen] = useState(false);
@@ -757,6 +783,27 @@ function Workspace() {
       }
       action={
         <div className="flex flex-wrap gap-2">
+          {isAwaitingFunding && isBuyer && (
+            <>
+              <button
+                type="button"
+                disabled={transition.isPending}
+                onClick={() => transition.mutate({ id: order!.id, status: "in_progress" })}
+                className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-bold text-primary-foreground disabled:opacity-50"
+              >
+                {tr("تمويل الضمان الآن", "Fund escrow now")}
+              </button>
+              <button
+                type="button"
+                disabled={transition.isPending}
+                onClick={() => transition.mutate({ id: order!.id, status: "cancelled" })}
+                className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-destructive/50 bg-destructive/10 px-4 py-2 text-sm font-semibold text-destructive disabled:opacity-50"
+              >
+                {tr("إلغاء الطلب", "Cancel order")}
+              </button>
+            </>
+          )}
+          {canCallOrDispute && (
           <button
             type="button"
             disabled={!order}
@@ -765,7 +812,8 @@ function Workspace() {
           >
             <Video className="size-4" /> {tr("بدء مكالمة فيديو", "Start video call")}
           </button>
-          {isSeller && (
+          )}
+          {isSeller && canExtend && (
           <button
             type="button"
             onClick={() => setExtOpen(true)}
@@ -796,7 +844,7 @@ function Workspace() {
             </button>
           )}
 
-          {order && !["completed", "refunded", "cancelled"].includes(order.status) && (
+          {order && canCallOrDispute && (
             <button
               type="button"
               onClick={() => setTab("dispute")}
@@ -810,7 +858,7 @@ function Workspace() {
       }
     >
       <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
-        <Card className="flex min-h-[560px] flex-col">
+        <Card className="flex min-h-[560px] flex-col pb-28 sm:pb-5">
           <div className="flex flex-wrap items-center gap-2 border-b border-border pb-3">
             <div className="scrollbar-none -mx-1 flex max-w-full flex-1 touch-pan-x items-center gap-2 overflow-x-auto whitespace-nowrap p-1">
               {tabs.map((t) => (
@@ -867,7 +915,7 @@ function Workspace() {
                   </div>
                 )}
               </div>
-              <div className="flex-1 space-y-3 overflow-y-auto py-4">
+              <div className="flex h-[55dvh] flex-1 flex-col space-y-3 overflow-y-auto py-4 sm:h-[600px]">
                 {messages.length === 0 && (
                   <p className="py-10 text-center text-sm text-muted-foreground">
                     {tr(
@@ -1652,8 +1700,21 @@ function Workspace() {
 
         <div className="grid content-start gap-4">
           <Card>
-            <h3 className="font-bold">{tr("طلباتي", "My orders")}</h3>
-            <div className="mt-3 grid gap-2 text-sm">
+            <button
+              type="button"
+              onClick={() => setOrdersOpen((v) => !v)}
+              aria-expanded={ordersOpen}
+              className="flex w-full items-center justify-between gap-2 text-start lg:pointer-events-none"
+            >
+              <h3 className="font-bold">
+                {tr("طلباتي", "My orders")}{" "}
+                <span className="text-xs font-normal text-muted-foreground">({rows.length})</span>
+              </h3>
+              <ChevronDown
+                className={`size-4 shrink-0 text-muted-foreground transition-transform lg:hidden ${ordersOpen ? "rotate-180" : ""}`}
+              />
+            </button>
+            <div className={`mt-3 grid gap-2 text-sm ${ordersOpen ? "" : "hidden lg:grid"}`}>
               {rows.length === 0 && (
                 <p className="text-xs text-muted-foreground">
                   {tr("لا توجد طلبات بعد.", "No orders yet.")}
@@ -1694,11 +1755,25 @@ function Workspace() {
                       ) : (
                         <Circle className="size-3.5" />
                       )}{" "}
-                      {statusLabel(s, tr)}
+                      {s === "pending" && isAwaitingFunding
+                        ? tr("بانتظار التمويل", "Awaiting funding")
+                        : statusLabel(s, tr)}
                     </li>
                   );
                 })}
               </ol>
+
+              {isAwaitingFunding && isBuyer && (
+                <button
+                  type="button"
+                  disabled={transition.isPending}
+                  onClick={() => transition.mutate({ id: order.id, status: "cancelled" })}
+                  className="mt-3 w-full rounded-xl border border-destructive/50 bg-destructive/10 px-4 py-2.5 text-xs font-bold text-destructive disabled:opacity-50"
+                >
+                  {tr("إلغاء هذا الطلب غير الممول", "Cancel this unfunded order")}
+                </button>
+              )}
+
 
               <div className="mt-4 grid gap-2">
                 {nextActions(order, user?.id).map((a) => (
@@ -1754,27 +1829,39 @@ function Workspace() {
           )}
           <Card>
             <h3 className="font-bold">{tr("حالة الضمان", "Escrow status")}</h3>
-            <p className="mt-2 text-sm text-muted-foreground">
-              {order?.escrow_locked
-                ? tr(
-                    "المبلغ محجوز في الضمان حتى اعتماد التسليم.",
-                    "Funds are held in escrow until delivery is approved.",
-                  )
-                : tr(
-                    "لا توجد مبالغ محجوزة على هذا الطلب.",
-                    "No funds are currently held for this order.",
-                  )}
-            </p>
-            {order?.due_at && (
-              <p className="mt-2 text-xs text-muted-foreground">
-                {tr("موعد التسليم", "Delivery due")}: {new Date(order.due_at).toLocaleString()}
+            {order?.status === "completed" ? (
+              <p className="mt-2 inline-flex items-center gap-2 rounded-xl border border-primary/50 bg-primary/10 px-3 py-2 text-xs font-bold text-primary">
+                <CheckCircle2 className="size-4 shrink-0" />
+                {tr(
+                  "تم تحرير مبالغ الضمان بنجاح وإغلاق الدورة المالية",
+                  "Escrow funds released successfully and the financial cycle is closed",
+                )}
               </p>
-            )}
-            {order?.auto_release_at && (
-              <p className="mt-2 text-xs text-primary">
-                {tr("إطلاق تلقائي في", "Auto-release at")}:{" "}
-                {new Date(order.auto_release_at).toLocaleString()}
-              </p>
+            ) : (
+              <>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  {order?.escrow_locked
+                    ? tr(
+                        "المبلغ محجوز في الضمان حتى اعتماد التسليم.",
+                        "Funds are held in escrow until delivery is approved.",
+                      )
+                    : tr(
+                        "لا توجد مبالغ محجوزة على هذا الطلب.",
+                        "No funds are currently held for this order.",
+                      )}
+                </p>
+                {order?.due_at && (
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    {tr("موعد التسليم", "Delivery due")}: {new Date(order.due_at).toLocaleString()}
+                  </p>
+                )}
+                {order?.auto_release_at && order.status === "delivered" && (
+                  <p className="mt-2 text-xs text-primary">
+                    {tr("إطلاق تلقائي في", "Auto-release at")}:{" "}
+                    {new Date(order.auto_release_at).toLocaleString()}
+                  </p>
+                )}
+              </>
             )}
           </Card>
 
@@ -2039,7 +2126,7 @@ function Workspace() {
           role="dialog"
           aria-modal="true"
         >
-          <Card className="w-full max-w-md">
+          <Card className="max-h-[85dvh] w-full max-w-md overflow-y-auto pb-8">
             <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
               <h2 className="min-w-0 truncate text-lg font-black">
                 {tr("طلب تمديد مهلة التسليم", "Request deadline extension")}
@@ -2117,7 +2204,7 @@ function Workspace() {
           role="dialog"
           aria-modal="true"
         >
-          <Card className="w-full max-w-md">
+          <Card className="max-h-[85dvh] w-full max-w-md overflow-y-auto pb-8">
             <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
               <h2 className="min-w-0 truncate text-lg font-black">
                 {tr("تقييم متبادل بعد الإنجاز", "Two-way review after completion")}

@@ -9,7 +9,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useProfile } from "@/lib/queries";
 import { supabase } from "@/lib/cloud-client";
 import { parseUsdt, sanitizeText } from "@/lib/security";
-import { screenCoverImage } from "@/lib/moderation.functions";
+import { PROHIBITED_CONTENT_MESSAGE, screenCoverImage } from "@/lib/moderation.functions";
 import { type ListingCategory } from "@/lib/catalog";
 
 export const Route = createFileRoute("/_authenticated/create-listing")({
@@ -63,6 +63,40 @@ const INSPECTION_OPTIONS: Record<"free" | "pro" | "corporate", number[]> = {
   corporate: [16, 24, 48, 72],
 };
 
+const EN_RE = /^[a-zA-Z0-9\s.,!?'"()#@&-]+$/;
+const AR_RE = /^[\u0600-\u06FF0-9\s.,!?'"()#@&-]+$/;
+const REPEAT_RE = /(.)\1{3,}/;
+
+/**
+ * Validates one language side (title + tag).
+ * Returns an Arabic inline error, or null when the side is empty or valid.
+ */
+function sideError(rawTitle: string, rawTag: string, side: "ar" | "en"): string | null {
+  const title = rawTitle.trim();
+  const tag = rawTag.trim();
+  if (!title && !tag) return null;
+
+  const re = side === "ar" ? AR_RE : EN_RE;
+  const langMsg =
+    side === "ar"
+      ? "يجب كتابة العنوان العربي بالحروف العربية فقط"
+      : "يجب كتابة العنوان الإنجليزي بالحروف الإنجليزية (A-Z) فقط";
+
+  if (title && !re.test(title)) return langMsg;
+  if (tag && !re.test(tag)) return langMsg;
+  if (REPEAT_RE.test(title) || REPEAT_RE.test(tag)) {
+    return "النص يحتوي على تكرار غير مفهوم لنفس الحرف — اكتب عنواناً واضحاً.";
+  }
+  if (title) {
+    const words = title.split(/\s+/).filter((w) => w.length > 0);
+    if (words.length < 2) return "اكتب عنواناً من كلمتين على الأقل.";
+    if (title.replace(/\s+/g, "").length < 10) return "العنوان قصير جداً — 10 أحرف فعلية على الأقل.";
+  }
+  if (title && tag.length < 2) return "أضف وسماً (Tag) لا يقل عن حرفين لنفس اللغة.";
+  if (tag && title.length < 10) return "أكمل العنوان بنفس اللغة (10 أحرف على الأقل).";
+  return null;
+}
+
 function CreateListing() {
   const { tr, lang } = useLang();
   const { user } = useAuth();
@@ -115,25 +149,23 @@ function CreateListing() {
         reader.onerror = () => reject(new Error("COVER_READ_FAILED"));
         reader.readAsDataURL(file);
       });
-      // Fail-open after 3s so sellers are never stuck on a slow check.
-      const verdict = await Promise.race([
-        screenCoverImage({ data: { dataUrl } }),
-        new Promise<null>((resolve) => setTimeout(() => resolve(null), 3000)),
-      ]);
-      if (verdict && !verdict.allowed) {
+      // Fail-closed: the verdict must arrive and be positive before the image
+      // is ever staged for upload or written to the listing record.
+      const verdict = await screenCoverImage({ data: { dataUrl } });
+      if (!verdict?.allowed) {
         if (fileInput.current) fileInput.current.value = "";
         setCoverFile(null);
-        toast.error(
-          tr(
-            "يرجى اختيار صورة غلاف لا تحتوي على أرقام هواتف أو وسائل تواصل خارجية",
-            "Please choose a cover image without phone numbers or external contact details",
-          ),
-        );
+        const msg = verdict?.reason?.trim() || PROHIBITED_CONTENT_MESSAGE;
+        setCoverError(msg);
+        toast.error(msg);
         return;
       }
       setCoverFile(file);
     } catch {
-      setCoverFile(file); // any unexpected error approves the image (fail-open)
+      if (fileInput.current) fileInput.current.value = "";
+      setCoverFile(null);
+      setCoverError(PROHIBITED_CONTENT_MESSAGE);
+      toast.error(PROHIBITED_CONTENT_MESSAGE);
     } finally {
       setCoverChecking(false);
     }
@@ -147,10 +179,29 @@ function CreateListing() {
   const descInvalid = descTouched && descLen < MIN_DESC;
   const titleArLen = form.title_ar.trim().length;
   const titleEnLen = form.title_en.trim().length;
-  const titleMissing = titleArLen < MIN_TITLE && titleEnLen < MIN_TITLE;
+
+  // ---- Language & anti-gibberish validation -------------------------------
+  const arSide = {
+    title: form.title_ar.trim(),
+    tag: form.tag_ar.trim(),
+    error: sideError(form.title_ar, form.tag_ar, "ar"),
+    complete: form.title_ar.trim().length >= MIN_TITLE && form.tag_ar.trim().length >= 2,
+  };
+  const enSide = {
+    title: form.title_en.trim(),
+    tag: form.tag_en.trim(),
+    error: sideError(form.title_en, form.tag_en, "en"),
+    complete: form.title_en.trim().length >= MIN_TITLE && form.tag_en.trim().length >= 2,
+  };
+  const titleMissing = !arSide.complete && !enSide.complete;
+  const langInvalid = !!arSide.error || !!enSide.error;
 
   const canSubmit =
-    !titleMissing && Number.isFinite(price) && price >= MIN_PRICE && descLen >= MIN_DESC;
+    !titleMissing &&
+    !langInvalid &&
+    Number.isFinite(price) &&
+    price >= MIN_PRICE &&
+    descLen >= MIN_DESC;
 
   const mine = useQuery({
     queryKey: ["my-listings", user?.id],
@@ -329,7 +380,7 @@ function CreateListing() {
 
   const field = "w-full rounded-lg border border-input bg-surface px-3 py-2 text-sm outline-none focus:border-primary";
 
-  const step1Valid = !titleMissing && Number.isFinite(price) && price >= MIN_PRICE;
+  const step1Valid = !titleMissing && !langInvalid && Number.isFinite(price) && price >= MIN_PRICE;
 
   return (
     <>
@@ -365,15 +416,20 @@ function CreateListing() {
                 <label className="grid gap-1.5 text-sm sm:col-span-2">
                   <span className="text-muted-foreground">{tr("العنوان (عربي)", "Title (Arabic)")}</span>
                   <input className={field} maxLength={120} value={form.title_ar} onChange={(e) => setForm({ ...form, title_ar: e.target.value })} />
-                  <span className={`text-xs ${titleMissing && (titleArLen > 0 || titleEnLen > 0) ? "font-bold text-destructive" : "text-muted-foreground"}`}>
-                    {titleMissing && (titleArLen > 0 || titleEnLen > 0)
-                      ? tr(`العنوان يجب ألا يقل عن ${MIN_TITLE} أحرف`, `Title must be at least ${MIN_TITLE} characters`)
-                      : tr(`على الأقل ${MIN_TITLE} أحرف بإحدى اللغتين`, `At least ${MIN_TITLE} characters in either language`)}
-                  </span>
+                  {arSide.error ? (
+                    <span className="text-xs font-bold text-destructive">{arSide.error}</span>
+                  ) : (
+                    <span className={`text-xs ${titleMissing && (titleArLen > 0 || titleEnLen > 0) ? "font-bold text-destructive" : "text-muted-foreground"}`}>
+                      {titleMissing && (titleArLen > 0 || titleEnLen > 0)
+                        ? tr(`أكمل لغة واحدة كاملة: عنوان ${MIN_TITLE} أحرف + وسم`, `Complete one language: ${MIN_TITLE}-char title + tag`)
+                        : tr(`على الأقل ${MIN_TITLE} أحرف بإحدى اللغتين مع وسم لنفس اللغة`, `At least ${MIN_TITLE} characters in one language, with its tag`)}
+                    </span>
+                  )}
                 </label>
                 <label className="grid gap-1.5 text-sm sm:col-span-2">
                   <span className="text-muted-foreground">{tr("العنوان (إنجليزي)", "Title (English)")}</span>
                   <input className={field} maxLength={120} value={form.title_en} onChange={(e) => setForm({ ...form, title_en: e.target.value })} />
+                  {enSide.error && <span className="text-xs font-bold text-destructive">{enSide.error}</span>}
                 </label>
 
                 <label className="grid gap-1.5 text-sm">

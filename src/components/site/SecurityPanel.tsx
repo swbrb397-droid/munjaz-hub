@@ -211,7 +211,7 @@ export function SecurityPanel({ className = "" }: { className?: string }) {
           role="dialog"
           aria-modal="true"
         >
-          <div className="max-h-[85vh] w-full max-w-md overflow-y-auto rounded-2xl border border-border bg-card p-5">
+          <div className="max-h-[85dvh] w-full max-w-md overflow-y-auto rounded-2xl border border-border bg-card p-5">
             <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
               <h2 className="min-w-0 truncate text-lg font-black">تفعيل المصادقة الثنائية</h2>
               <button
@@ -292,7 +292,7 @@ export function SecurityPanel({ className = "" }: { className?: string }) {
           role="dialog"
           aria-modal="true"
         >
-          <div className="max-h-[85vh] w-full max-w-md overflow-y-auto rounded-2xl border border-border bg-card p-5">
+          <div className="max-h-[85dvh] w-full max-w-md overflow-y-auto rounded-2xl border border-border bg-card p-5">
             <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
               <h2 className="min-w-0 truncate text-lg font-black">تغيير كلمة المرور</h2>
               <button

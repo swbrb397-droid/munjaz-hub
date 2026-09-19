@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/cloud-client";
 import { useAuth } from "@/hooks/use-auth";
 import { gasEstimates } from "@/lib/gas";
@@ -73,6 +73,37 @@ const RATE_HINT: Record<string, [string, string]> = {
 
 const COOLING_LOCK_HOURS = 24;
 
+/** Human labels for raw wallet transaction types. */
+const TX_TYPE_LABELS: Record<string, [string, string]> = {
+  deposit: ["إيداع محفظة", "Wallet deposit"],
+  withdrawal: ["سحب إلى محفظة خارجية", "External withdrawal"],
+  escrow_lock: ["حجز ضمان لطلب", "Escrow lock for an order"],
+  escrow_release: ["أرباح مبيعات مستلمة", "Sales earnings received"],
+  order_release: ["أرباح مبيعات مستلمة", "Sales earnings received"],
+  escrow_refund: ["استرجاع مبلغ الضمان", "Escrow refund"],
+  commission: ["عمولة المنصة", "Platform commission"],
+  referral_payout: ["أرباح إحالة", "Referral payout"],
+  subscription_fee: ["اشتراك باقة المحترفين", "Pro plan subscription"],
+  adjustment: ["تسوية إدارية", "Administrative adjustment"],
+};
+
+const TX_STATUS_LABELS: Record<string, [string, string]> = {
+  pending: ["قيد التنفيذ", "Pending"],
+  confirmed: ["مؤكدة", "Confirmed"],
+  failed: ["فاشلة", "Failed"],
+  cancelled: ["ملغاة", "Cancelled"],
+};
+
+function txTypeLabel(type: string, tr: (ar: string, en: string) => string): string {
+  const entry = TX_TYPE_LABELS[type];
+  return entry ? tr(entry[0], entry[1]) : type;
+}
+
+function txStatusLabel(status: string, tr: (ar: string, en: string) => string): string {
+  const entry = TX_STATUS_LABELS[status];
+  return entry ? tr(entry[0], entry[1]) : status;
+}
+
 /** Always render money with exactly two decimals. */
 function usdt2(value: number | string | null | undefined): string {
   const n = Number(value ?? 0);
@@ -92,6 +123,23 @@ function coolingHoursLeft(stamps: Array<string | null | undefined>): number {
   return left > 0 ? Math.ceil(left / 3600_000) : 0;
 }
 
+/**
+ * Crypto-deposit funds that never passed through an escrow order.
+ * Only this portion is subject to the 5% anti-mixing surcharge.
+ */
+function useUnspentDeposits() {
+  const { user } = useAuth();
+  return useQuery({
+    queryKey: ["unspent-deposits", user?.id],
+    enabled: !!user,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("unspent_deposit_balance", { _user_id: user!.id });
+      if (error) throw error;
+      return Number(data ?? 0);
+    },
+  });
+}
+
 function WalletPage() {
   const { tr, lang } = useLang();
   const wallet = useWallet();
@@ -101,6 +149,7 @@ function WalletPage() {
   const txs = useTransactions();
   const requests = useMyWithdrawals();
   const lockedEscrow = useLockedEscrow();
+  const unspentDeposits = useUnspentDeposits();
   useWalletRealtime();
   const [topUp, setTopUp] = useState(false);
   const [network, setNetwork] = useState<WithdrawalNetwork>("polygon");
@@ -175,6 +224,13 @@ function WalletPage() {
   const frozen = Boolean((profile.data as { is_frozen?: boolean } | null)?.is_frozen);
   const sla = slaHoursForTier(tier);
   const parsed = parseUsdt(amount) ?? 0;
+
+  // Smart AML: service earnings are 100% exempt from the anti-mixing surcharge.
+  // Only unspent crypto deposits that never entered escrow require the consent.
+  const availableNow = Number(wallet.data?.available_usdt ?? 0);
+  const unspent = Math.max(0, Number(unspentDeposits.data ?? 0));
+  const earnedAvailable = Math.max(0, availableNow - unspent);
+  const amlExempt = parsed > 0 && parsed <= earnedAvailable;
 
   // Triple trigger: password change, MFA change, or payout-address change.
   const rawLockHours = coolingHoursLeft([
@@ -486,7 +542,7 @@ function WalletPage() {
             </span>
             <button
               onClick={submit}
-              disabled={withdraw.isPending || frozen || lockHours > 0 || !legalAck}
+              disabled={withdraw.isPending || frozen || lockHours > 0 || (!legalAck && !amlExempt)}
               className="inline-flex min-h-[44px] items-center gap-2 rounded-lg bg-primary px-4 py-2 font-bold text-primary-foreground disabled:opacity-60"
             >
               {withdraw.isPending && <Loader2 className="size-4 animate-spin" />}
@@ -496,6 +552,15 @@ function WalletPage() {
             </button>
           </div>
 
+          {amlExempt ? (
+            <p className="mt-3 flex items-start gap-2 rounded-xl border border-primary/40 bg-primary/10 p-3 text-[11px] font-bold leading-relaxed text-primary">
+              <BadgeCheck className="mt-0.5 size-4 shrink-0" />
+              {tr(
+                "أرباح مبيعات الخدمات معفاة 100% من رسوم مكافحة الخلط — الرسوم المطبقة هي رسوم الشبكة فقط (0.80 USDT).",
+                "Service earnings are 100% exempt from anti-mixing fees — only the flat 0.80 USDT network fee applies.",
+              )}
+            </p>
+          ) : (
           <label className="mt-3 flex items-start gap-2 rounded-xl border border-border/70 bg-surface-2/40 p-3 text-[11px] leading-relaxed text-muted-foreground">
             <input
               type="checkbox"
@@ -510,6 +575,7 @@ function WalletPage() {
               )}
             </span>
           </label>
+          )}
           {feedback && <p className="mt-3 text-xs text-primary">{feedback}</p>}
           <p className="mt-3 text-xs text-muted-foreground">
             {tr(
@@ -594,19 +660,21 @@ function WalletPage() {
             <tbody>
               {(txs.data ?? []).map((t) => (
                 <tr key={t.id} className="border-b border-border/60 last:border-0">
-                  <td className="py-3">{t.type}</td>
+                  <td className="py-3">{txTypeLabel(String(t.type), tr)}</td>
                   <td className="text-muted-foreground">{t.network ?? tr("داخلي", "Internal")}</td>
                   <td
                     className={
                       Number(t.amount) >= 0
-                        ? "font-semibold text-primary"
-                        : "font-semibold text-destructive"
+                        ? "whitespace-nowrap font-semibold text-primary"
+                        : "whitespace-nowrap font-semibold text-destructive"
                     }
                   >
-                    {Number(t.amount) > 0 ? "+" : ""}
-                    {usdt2(t.amount)} USDT
+                    <bdi dir="ltr">
+                      {Number(t.amount) > 0 ? "+" : ""}
+                      {usdt2(t.amount)} USDT
+                    </bdi>
                   </td>
-                  <td className="text-muted-foreground">{t.status}</td>
+                  <td className="text-muted-foreground">{txStatusLabel(String(t.status), tr)}</td>
                   <td className="text-muted-foreground">
                     {new Date(t.created_at).toLocaleDateString()}
                   </td>
@@ -616,11 +684,11 @@ function WalletPage() {
                       onClick={() =>
                         setReceipt({
                           txId: t.id,
-                          type: String(t.type),
+                          type: txTypeLabel(String(t.type), tr),
                           network: t.network ?? tr("داخلي", "Internal"),
                           gateway: t.network ? `USDT · ${t.network}` : "USDT",
                           amount: `${usdt2(t.amount)} USDT`,
-                          status: String(t.status),
+                          status: txStatusLabel(String(t.status), tr),
                           date: new Date(t.created_at).toLocaleString(),
                         })
                       }

@@ -101,7 +101,7 @@ export function TopUpDialog({ onClose, defaultAmount }: { onClose: () => void; d
 
   return (
     <div className="fixed inset-0 z-50 grid place-items-start justify-center overflow-y-auto bg-background/80 p-4 backdrop-blur">
-      <Card className="my-4 w-full max-w-md px-4 sm:px-5">
+      <Card className="my-4 max-h-[85dvh] w-full max-w-md overflow-y-auto px-4 pb-8 sm:px-5">
         <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
           <h3 className="min-w-0 truncate font-black">{tr("شحن المحفظة (USDT)", "Top up wallet (USDT)")}</h3>
           <button onClick={onClose} aria-label={tr("إغلاق", "Close")} className="grid size-8 shrink-0 place-items-center rounded-lg border border-border">

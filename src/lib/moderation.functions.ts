@@ -27,6 +27,12 @@ Respond with STRICT JSON only, no markdown: {"allowed": boolean, "reason": strin
 
 type Verdict = { allowed: boolean; reason: string };
 
+export const PROHIBITED_CONTENT_MESSAGE =
+  "تم رفض الصورة: تم اكتشاف محتوى مخالف لسياسة المنصة (مواد محظورة أو غير ملائمة)";
+
+/** Fail-closed thresholds mandated by platform policy. */
+const T = { drugs: 0.4, pills: 0.4, weapons: 0.5, nudityRaw: 0.5, offensive: 0.7, scam: 0.8 };
+
 async function screenViaSightengine(dataUrl: string, apiUser: string, apiSecret: string): Promise<Verdict | null> {
   try {
     const match = /^data:(image\/[a-z0-9.+-]+);base64,(.+)$/i.exec(dataUrl);
@@ -35,30 +41,44 @@ async function screenViaSightengine(dataUrl: string, apiUser: string, apiSecret:
     const bin = Uint8Array.from(atob(b64!), (c) => c.charCodeAt(0));
     const form = new FormData();
     form.append("media", new Blob([bin], { type: mime! }), "cover");
-    form.append("models", "nudity-2.1,offensive,weapon,recreational_drug,gore");
+    form.append("models", "nudity-2.0,wad,offensive,scam");
     form.append("api_user", apiUser);
     form.append("api_secret", apiSecret);
     const res = await fetch("https://api.sightengine.com/1.0/check.json", { method: "POST", body: form });
     if (!res.ok) return null;
     const p = (await res.json()) as {
       status?: string;
-      nudity?: { sexual_activity?: number; sexual_display?: number; erotica?: number };
+      nudity?: { raw?: number; partial?: number; sexual_activity?: number; sexual_display?: number; erotica?: number };
       offensive?: { prob?: number };
       weapon?: number | { classes?: Record<string, number> };
+      drugs?: number;
       recreational_drug?: { prob?: number };
-      gore?: { prob?: number };
+      medical?: number | { prob?: number };
+      scam?: { prob?: number };
     };
     if (p.status !== "success") return null;
-    const nud = Math.max(p.nudity?.sexual_activity ?? 0, p.nudity?.sexual_display ?? 0, p.nudity?.erotica ?? 0);
-    const off = p.offensive?.prob ?? 0;
-    const weap = typeof p.weapon === "number" ? p.weapon : Math.max(0, ...Object.values(p.weapon?.classes ?? {}));
-    const drug = p.recreational_drug?.prob ?? 0;
-    const gore = p.gore?.prob ?? 0;
-    if (nud >= 0.6) return { allowed: false, reason: "الصورة تحتوي على محتوى بالغ صريح" };
-    if (gore >= 0.6) return { allowed: false, reason: "الصورة تحتوي على محتوى دموي عنيف" };
-    if (off >= 0.7) return { allowed: false, reason: "الصورة تحتوي على محتوى مسيء" };
-    if (weap >= 0.7) return { allowed: false, reason: "الصورة تحتوي على أسلحة بارزة" };
-    if (drug >= 0.7) return { allowed: false, reason: "الصورة تحتوي على مواد مخدرة" };
+
+    const nudityRaw = Math.max(
+      p.nudity?.raw ?? 0,
+      p.nudity?.sexual_activity ?? 0,
+      p.nudity?.sexual_display ?? 0,
+    );
+    const weapons = typeof p.weapon === "number" ? p.weapon : Math.max(0, ...Object.values(p.weapon?.classes ?? {}));
+    const drugs = Math.max(p.drugs ?? 0, p.recreational_drug?.prob ?? 0);
+    const pills = typeof p.medical === "number" ? p.medical : (p.medical?.prob ?? 0);
+    const offensive = p.offensive?.prob ?? 0;
+    const scam = p.scam?.prob ?? 0;
+
+    if (
+      drugs > T.drugs ||
+      pills > T.pills ||
+      weapons > T.weapons ||
+      nudityRaw > T.nudityRaw ||
+      offensive > T.offensive ||
+      scam > T.scam
+    ) {
+      return { allowed: false, reason: PROHIBITED_CONTENT_MESSAGE };
+    }
     return { allowed: true, reason: "" };
   } catch (e) {
     console.error("sightengine error", e);
@@ -107,7 +127,22 @@ export const screenCoverImage = createServerFn({ method: "POST" })
     }
     return { dataUrl };
   })
-  .handler(async ({ data }): Promise<Verdict> => {
+  .handler(async ({ data, context }): Promise<Verdict> => {
+    const logBlocked = async (reason: string) => {
+      try {
+        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+        await supabaseAdmin.from("security_incidents").insert({
+          user_id: context.userId,
+          kind: "prohibited_content_blocked",
+          severity: "high",
+          detail: reason,
+          meta: { surface: "listing_cover" },
+        });
+      } catch (e) {
+        console.error("incident log failed", e);
+      }
+    };
+
     // Sightengine keys can arrive either as a combined secret ("user:secret")
     // in IMAGE_MODERATION_API_KEY, or as split SIGHTENGINE_API_USER + SIGHTENGINE_API_SECRET.
     const combined = process.env["IMAGE_MODERATION_API_KEY"] ?? "";
@@ -121,14 +156,20 @@ export const screenCoverImage = createServerFn({ method: "POST" })
 
     if (seUser && seSecret) {
       const v = await screenViaSightengine(data.dataUrl, seUser, seSecret);
-      if (v) return v;
+      if (v) {
+        if (!v.allowed) await logBlocked(v.reason);
+        return v;
+      }
     }
 
     const lovableKey = process.env["LOVABLE_API_KEY"];
     if (lovableKey) {
       const v = await screenViaGemini(data.dataUrl, lovableKey);
-      if (v) return v;
+      if (v) {
+        if (!v.allowed) await logBlocked(v.reason);
+        return v;
+      }
     }
 
-    return { allowed: true, reason: "" }; // fail open when no provider is configured
+    return { allowed: true, reason: "" }; // no provider configured / reachable
   });
