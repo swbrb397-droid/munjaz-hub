@@ -840,7 +840,7 @@ function Workspace() {
             </button>
           )}
 
-          {order && !["completed", "refunded", "cancelled"].includes(order.status) && (
+          {order && canCallOrDispute && (
             <button
               type="button"
               onClick={() => setTab("dispute")}
