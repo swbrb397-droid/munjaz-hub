@@ -380,7 +380,7 @@ function CreateListing() {
 
   const field = "w-full rounded-lg border border-input bg-surface px-3 py-2 text-sm outline-none focus:border-primary";
 
-  const step1Valid = !titleMissing && Number.isFinite(price) && price >= MIN_PRICE;
+  const step1Valid = !titleMissing && !langInvalid && Number.isFinite(price) && price >= MIN_PRICE;
 
   return (
     <>
@@ -416,15 +416,20 @@ function CreateListing() {
                 <label className="grid gap-1.5 text-sm sm:col-span-2">
                   <span className="text-muted-foreground">{tr("العنوان (عربي)", "Title (Arabic)")}</span>
                   <input className={field} maxLength={120} value={form.title_ar} onChange={(e) => setForm({ ...form, title_ar: e.target.value })} />
-                  <span className={`text-xs ${titleMissing && (titleArLen > 0 || titleEnLen > 0) ? "font-bold text-destructive" : "text-muted-foreground"}`}>
-                    {titleMissing && (titleArLen > 0 || titleEnLen > 0)
-                      ? tr(`العنوان يجب ألا يقل عن ${MIN_TITLE} أحرف`, `Title must be at least ${MIN_TITLE} characters`)
-                      : tr(`على الأقل ${MIN_TITLE} أحرف بإحدى اللغتين`, `At least ${MIN_TITLE} characters in either language`)}
-                  </span>
+                  {arSide.error ? (
+                    <span className="text-xs font-bold text-destructive">{arSide.error}</span>
+                  ) : (
+                    <span className={`text-xs ${titleMissing && (titleArLen > 0 || titleEnLen > 0) ? "font-bold text-destructive" : "text-muted-foreground"}`}>
+                      {titleMissing && (titleArLen > 0 || titleEnLen > 0)
+                        ? tr(`أكمل لغة واحدة كاملة: عنوان ${MIN_TITLE} أحرف + وسم`, `Complete one language: ${MIN_TITLE}-char title + tag`)
+                        : tr(`على الأقل ${MIN_TITLE} أحرف بإحدى اللغتين مع وسم لنفس اللغة`, `At least ${MIN_TITLE} characters in one language, with its tag`)}
+                    </span>
+                  )}
                 </label>
                 <label className="grid gap-1.5 text-sm sm:col-span-2">
                   <span className="text-muted-foreground">{tr("العنوان (إنجليزي)", "Title (English)")}</span>
                   <input className={field} maxLength={120} value={form.title_en} onChange={(e) => setForm({ ...form, title_en: e.target.value })} />
+                  {enSide.error && <span className="text-xs font-bold text-destructive">{enSide.error}</span>}
                 </label>
 
                 <label className="grid gap-1.5 text-sm">
