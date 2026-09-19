@@ -1755,11 +1755,25 @@ function Workspace() {
                       ) : (
                         <Circle className="size-3.5" />
                       )}{" "}
-                      {statusLabel(s, tr)}
+                      {s === "pending" && isAwaitingFunding
+                        ? tr("بانتظار التمويل", "Awaiting funding")
+                        : statusLabel(s, tr)}
                     </li>
                   );
                 })}
               </ol>
+
+              {isAwaitingFunding && isBuyer && (
+                <button
+                  type="button"
+                  disabled={transition.isPending}
+                  onClick={() => transition.mutate({ id: order.id, status: "cancelled" })}
+                  className="mt-3 w-full rounded-xl border border-destructive/50 bg-destructive/10 px-4 py-2.5 text-xs font-bold text-destructive disabled:opacity-50"
+                >
+                  {tr("إلغاء هذا الطلب غير الممول", "Cancel this unfunded order")}
+                </button>
+              )}
+
 
               <div className="mt-4 grid gap-2">
                 {nextActions(order, user?.id).map((a) => (
