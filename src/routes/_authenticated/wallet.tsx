@@ -544,6 +544,7 @@ function WalletPage() {
               )}
             </span>
           </label>
+          )}
           {feedback && <p className="mt-3 text-xs text-primary">{feedback}</p>}
           <p className="mt-3 text-xs text-muted-foreground">
             {tr(
