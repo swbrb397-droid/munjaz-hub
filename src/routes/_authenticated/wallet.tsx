@@ -629,19 +629,21 @@ function WalletPage() {
             <tbody>
               {(txs.data ?? []).map((t) => (
                 <tr key={t.id} className="border-b border-border/60 last:border-0">
-                  <td className="py-3">{t.type}</td>
+                  <td className="py-3">{txTypeLabel(String(t.type), tr)}</td>
                   <td className="text-muted-foreground">{t.network ?? tr("داخلي", "Internal")}</td>
                   <td
                     className={
                       Number(t.amount) >= 0
-                        ? "font-semibold text-primary"
-                        : "font-semibold text-destructive"
+                        ? "whitespace-nowrap font-semibold text-primary"
+                        : "whitespace-nowrap font-semibold text-destructive"
                     }
                   >
-                    {Number(t.amount) > 0 ? "+" : ""}
-                    {usdt2(t.amount)} USDT
+                    <bdi dir="ltr">
+                      {Number(t.amount) > 0 ? "+" : ""}
+                      {usdt2(t.amount)} USDT
+                    </bdi>
                   </td>
-                  <td className="text-muted-foreground">{t.status}</td>
+                  <td className="text-muted-foreground">{txStatusLabel(String(t.status), tr)}</td>
                   <td className="text-muted-foreground">
                     {new Date(t.created_at).toLocaleDateString()}
                   </td>
