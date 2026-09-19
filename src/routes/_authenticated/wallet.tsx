@@ -73,6 +73,37 @@ const RATE_HINT: Record<string, [string, string]> = {
 
 const COOLING_LOCK_HOURS = 24;
 
+/** Human labels for raw wallet transaction types. */
+const TX_TYPE_LABELS: Record<string, [string, string]> = {
+  deposit: ["إيداع محفظة", "Wallet deposit"],
+  withdrawal: ["سحب إلى محفظة خارجية", "External withdrawal"],
+  escrow_lock: ["حجز ضمان لطلب", "Escrow lock for an order"],
+  escrow_release: ["أرباح مبيعات مستلمة", "Sales earnings received"],
+  order_release: ["أرباح مبيعات مستلمة", "Sales earnings received"],
+  escrow_refund: ["استرجاع مبلغ الضمان", "Escrow refund"],
+  commission: ["عمولة المنصة", "Platform commission"],
+  referral_payout: ["أرباح إحالة", "Referral payout"],
+  subscription_fee: ["اشتراك باقة المحترفين", "Pro plan subscription"],
+  adjustment: ["تسوية إدارية", "Administrative adjustment"],
+};
+
+const TX_STATUS_LABELS: Record<string, [string, string]> = {
+  pending: ["قيد التنفيذ", "Pending"],
+  confirmed: ["مؤكدة", "Confirmed"],
+  failed: ["فاشلة", "Failed"],
+  cancelled: ["ملغاة", "Cancelled"],
+};
+
+function txTypeLabel(type: string, tr: (ar: string, en: string) => string): string {
+  const entry = TX_TYPE_LABELS[type];
+  return entry ? tr(entry[0], entry[1]) : type;
+}
+
+function txStatusLabel(status: string, tr: (ar: string, en: string) => string): string {
+  const entry = TX_STATUS_LABELS[status];
+  return entry ? tr(entry[0], entry[1]) : status;
+}
+
 /** Always render money with exactly two decimals. */
 function usdt2(value: number | string | null | undefined): string {
   const n = Number(value ?? 0);
