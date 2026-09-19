@@ -111,31 +111,12 @@ export function TopUpDialog({ onClose, defaultAmount }: { onClose: () => void; d
 
         {!invoice ? (
           <>
-            <div className="mt-4 grid grid-cols-2 gap-1 rounded-xl border border-border p-1">
-              {([
-                ["crypto", tr("USDT كريبتو", "USDT crypto"), false],
-                ["card", tr("بطاقة ودفع سريع", "Card & fast pay"), true],
-              ] as const).map(([k, label, suspended]) => (
-                <button
-                  key={k}
-                  type="button"
-                  disabled={suspended}
-                  onClick={() => !suspended && setMethod(k)}
-                  aria-pressed={method === k}
-                  aria-disabled={suspended}
-                  className={`flex flex-col items-center justify-center gap-0.5 rounded-lg px-2 py-2 text-[11px] font-bold ${
-                    method === k ? "bg-primary text-primary-foreground" : "text-muted-foreground"
-                  } ${suspended ? "cursor-not-allowed opacity-50" : ""}`}
-                >
-                  <span>{label}</span>
-                  {suspended && (
-                    <span className="rounded-full border border-amber-500/50 bg-amber-500/10 px-2 py-0.5 text-[9px] font-black text-amber-500">
-                      {tr("قيد الصيانة", "Under maintenance")}
-                    </span>
-                  )}
-                </button>
-              ))}
-            </div>
+            {/* Card gateway is under maintenance: only the crypto rail is offered. */}
+            <p className="mt-4 flex gap-2 rounded-xl border border-border bg-surface/60 p-3 text-[11px] leading-relaxed text-muted-foreground">
+              <ShieldAlert className="mt-0.5 size-3.5 shrink-0 text-amber-500" />
+              الدفع بالبطاقات المصرفية قيد التطوير والصيانة حالياً — التحويل المتاح: USDT كريبتو
+              فوري وآمن
+            </p>
 
             <label className="mt-4 grid gap-1.5 text-sm">
               <span className="text-xs text-muted-foreground">{tr("المبلغ المطلوب (USDT)", "Amount (USDT)")}</span>
