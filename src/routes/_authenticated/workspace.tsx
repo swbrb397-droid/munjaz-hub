@@ -685,13 +685,7 @@ function Workspace() {
         throw new Error(
           tr("معرّف الطلب غير صالح — أعد فتح الطلب من قائمة الطلبات.", "Invalid order reference — reopen the order from your orders list."),
         );
-      if (reason.trim().length < 50)
-        throw new Error(
-          tr(
-            "اكتب سبب النزاع بما لا يقل عن 50 حرفاً",
-            "Describe the dispute in at least 50 characters",
-          ),
-        );
+      if (reasonError) throw new Error(reasonError);
       if (evidence.length === 0)
         throw new Error(
           tr("أرفق دليلاً واحداً على الأقل", "Attach at least one piece of evidence"),
