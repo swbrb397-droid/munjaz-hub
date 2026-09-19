@@ -684,11 +684,11 @@ function WalletPage() {
                       onClick={() =>
                         setReceipt({
                           txId: t.id,
-                          type: String(t.type),
+                          type: txTypeLabel(String(t.type), tr),
                           network: t.network ?? tr("داخلي", "Internal"),
                           gateway: t.network ? `USDT · ${t.network}` : "USDT",
                           amount: `${usdt2(t.amount)} USDT`,
-                          status: String(t.status),
+                          status: txStatusLabel(String(t.status), tr),
                           date: new Date(t.created_at).toLocaleString(),
                         })
                       }
