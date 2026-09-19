@@ -95,7 +95,12 @@ function ListingDetail() {
       });
       navigate({ to: "/workspace" });
     } catch (e) {
-      setError((e as Error).message);
+      const message = (e as Error).message;
+      if (message === "INSUFFICIENT_BALANCE") {
+        toast.error(tr("رصيدك غير كافٍ لإتمام الطلب. يرجى شحن المحفظة أولاً", "Insufficient balance. Please top up your wallet first"));
+        setTopUp(true);
+      }
+      setError(message);
     }
   }
 
