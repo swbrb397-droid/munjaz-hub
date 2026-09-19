@@ -36,7 +36,11 @@ export function useUpdateGovernance() {
         .eq("id", 1);
       if (error) throw error;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["governance"] }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["governance"] });
+      // Live fee rates are read from the same row by the storefront/checkout.
+      void qc.invalidateQueries({ queryKey: ["fee-rates"] });
+    },
   });
 }
 
