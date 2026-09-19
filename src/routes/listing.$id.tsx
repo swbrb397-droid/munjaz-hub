@@ -11,6 +11,8 @@ import { useLang } from "@/lib/lang";
 import { useAuth } from "@/hooks/use-auth";
 import { useWallet } from "@/lib/queries";
 import { useCreateOrder, useListing } from "@/lib/orders";
+import { TopUpDialog } from "@/components/site/TopUpDialog";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/listing/$id")({
   head: () => ({
@@ -35,9 +37,9 @@ function ListingDetail() {
   const wallet = useWallet();
   const createOrder = useCreateOrder();
 
-  const [days, setDays] = useState(3);
   const [sow, setSow] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [topUp, setTopUp] = useState(false);
 
   if (listing.isLoading) {
     return (
