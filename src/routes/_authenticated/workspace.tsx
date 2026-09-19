@@ -779,6 +779,27 @@ function Workspace() {
       }
       action={
         <div className="flex flex-wrap gap-2">
+          {isAwaitingFunding && isBuyer && (
+            <>
+              <button
+                type="button"
+                disabled={transition.isPending}
+                onClick={() => transition.mutate({ id: order!.id, status: "in_progress" })}
+                className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-bold text-primary-foreground disabled:opacity-50"
+              >
+                {tr("تمويل الضمان الآن", "Fund escrow now")}
+              </button>
+              <button
+                type="button"
+                disabled={transition.isPending}
+                onClick={() => transition.mutate({ id: order!.id, status: "cancelled" })}
+                className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-destructive/50 bg-destructive/10 px-4 py-2 text-sm font-semibold text-destructive disabled:opacity-50"
+              >
+                {tr("إلغاء الطلب", "Cancel order")}
+              </button>
+            </>
+          )}
+          {canCallOrDispute && (
           <button
             type="button"
             disabled={!order}
@@ -787,7 +808,8 @@ function Workspace() {
           >
             <Video className="size-4" /> {tr("بدء مكالمة فيديو", "Start video call")}
           </button>
-          {isSeller && (
+          )}
+          {isSeller && canExtend && (
           <button
             type="button"
             onClick={() => setExtOpen(true)}
