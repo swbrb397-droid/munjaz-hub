@@ -410,7 +410,29 @@ function Workspace() {
   const isSeller = !!order && !!user && order.seller_id === user.id;
   /** Rating is only possible on a completed order, and never after arbitration. */
   const arbitrated = !!order && (order.status === "disputed" || order.status === "refunded");
-  const canReview = !!order && order.status === "completed" && !arbitrated;
+
+  /** A reviewer may rate an order exactly once. */
+  const myReview = useQuery({
+    queryKey: ["my-review", order?.id, user?.id],
+    enabled: !!order?.id && !!user?.id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("reviews")
+        .select("id")
+        .eq("order_id", order!.id)
+        .eq("reviewer_id", user!.id)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
+  const alreadyReviewed = !!myReview.data;
+  const canReview = !!order && order.status === "completed" && !arbitrated && !alreadyReviewed;
+
+  /** Status gates for the order action bar. */
+  const isAwaitingFunding = order?.status === "pending";
+  const canExtend = order?.status === "in_progress";
+  const canCallOrDispute = order?.status === "in_progress" || order?.status === "delivered";
 
   // In-app video room (no popup windows)
   const [callOpen, setCallOpen] = useState(false);
