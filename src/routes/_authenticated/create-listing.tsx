@@ -8,7 +8,14 @@ import { useLang } from "@/lib/lang";
 import { useAuth } from "@/hooks/use-auth";
 import { useProfile } from "@/lib/queries";
 import { supabase } from "@/lib/cloud-client";
-import { parseUsdt, sanitizeText } from "@/lib/security";
+import {
+  LONG_WORD_RE,
+  REPEAT_CHAR_RE,
+  SYLLABLE_LOOP_RE,
+  gibberishError,
+  parseUsdt,
+  sanitizeText,
+} from "@/lib/security";
 import { PROHIBITED_CONTENT_MESSAGE, screenCoverImage } from "@/lib/moderation.functions";
 import { type ListingCategory } from "@/lib/catalog";
 import { z } from "zod";
@@ -67,17 +74,14 @@ const INSPECTION_OPTIONS: Record<"free" | "pro" | "corporate", number[]> = {
 
 const EN_RE = /^[a-zA-Z0-9\s.,!?'"()#@&-]+$/;
 const AR_RE = /^[\u0600-\u06FF0-9\s.,!?'"()#@&-]+$/;
-const REPEAT_RE = /(.)\1{3,}/;
+const REPEAT_RE = REPEAT_CHAR_RE;
 const descriptionSchema = z
   .string()
   .trim()
-  .min(MIN_DESC, `الوصف يجب ألا يقل عن ${MIN_DESC} حرفاً.`)
-  .max(MAX_DESC, `الوصف يجب ألا يزيد على ${MAX_DESC} حرفاً.`)
-  .refine((value) => !REPEAT_RE.test(value), "الوصف يحتوي على تكرار غير مفهوم لنفس الحرف.")
-  .refine(
-    (value) => new Set(value.split(/\s+/).map((word) => word.toLocaleLowerCase()).filter(Boolean)).size >= 4,
-    "الوصف يجب أن يحتوي على أربع كلمات مختلفة على الأقل.",
-  );
+  .superRefine((value, ctx) => {
+    const message = gibberishError(value, { minLength: MIN_DESC, maxLength: MAX_DESC, minWords: 4 });
+    if (message) ctx.addIssue({ code: "custom", message });
+  });
 
 /**
  * Validates one language side (title + tag).
