@@ -272,7 +272,7 @@ function CreateListing() {
       }
       let coverUrl: string | null = null;
       if (coverFile) {
-        // Cover was already screened at pick time (permissive profile, fail-open).
+        // Only a file that received a positive fail-closed verdict reaches this state.
         const safeName = coverFile.name.replace(/[^\w.\-]+/g, "_").slice(-80);
         const filePath = `${user!.id}/${Date.now()}-${safeName}`;
         console.info("Uploading cover to bucket:", COVER_BUCKET, "path:", filePath);
@@ -605,7 +605,11 @@ function CreateListing() {
                         </button>
                         <button
                           type="button"
-                          onClick={() => setCoverFile(null)}
+                          onClick={() => {
+                            setCoverFile(null);
+                            setCoverError(null);
+                            if (fileInput.current) fileInput.current.value = "";
+                          }}
                           aria-label={tr("إزالة الصورة", "Remove image")}
                           className="grid size-8 place-items-center rounded-lg border border-border bg-background/80 text-muted-foreground backdrop-blur hover:text-destructive"
                         >

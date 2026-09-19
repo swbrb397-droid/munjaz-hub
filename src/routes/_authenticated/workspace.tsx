@@ -768,7 +768,7 @@ function Workspace() {
 
   return (
     <div className="relative z-10 px-3 pt-4 sm:px-6 sm:pt-6">
-    <Section
+      <Section
       title={
         order
           ? tr(
@@ -2286,7 +2286,7 @@ function Workspace() {
           {extDone ?? reviewDone}
         </p>
       )}
-    </Section>
+      </Section>
     </div>
   );
 }
