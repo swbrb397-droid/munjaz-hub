@@ -360,7 +360,7 @@ export function Shell({ children }: { children: ReactNode }) {
       </header>
 
 
-      <main>
+      <main className="pb-28 sm:pb-12">
         <ErrorBoundary label="page">{children}</ErrorBoundary>
       </main>
 
