@@ -149,25 +149,23 @@ function CreateListing() {
         reader.onerror = () => reject(new Error("COVER_READ_FAILED"));
         reader.readAsDataURL(file);
       });
-      // Fail-open after 3s so sellers are never stuck on a slow check.
-      const verdict = await Promise.race([
-        screenCoverImage({ data: { dataUrl } }),
-        new Promise<null>((resolve) => setTimeout(() => resolve(null), 3000)),
-      ]);
-      if (verdict && !verdict.allowed) {
+      // Fail-closed: the verdict must arrive and be positive before the image
+      // is ever staged for upload or written to the listing record.
+      const verdict = await screenCoverImage({ data: { dataUrl } });
+      if (!verdict?.allowed) {
         if (fileInput.current) fileInput.current.value = "";
         setCoverFile(null);
-        toast.error(
-          tr(
-            "يرجى اختيار صورة غلاف لا تحتوي على أرقام هواتف أو وسائل تواصل خارجية",
-            "Please choose a cover image without phone numbers or external contact details",
-          ),
-        );
+        const msg = verdict?.reason?.trim() || PROHIBITED_CONTENT_MESSAGE;
+        setCoverError(msg);
+        toast.error(msg);
         return;
       }
       setCoverFile(file);
     } catch {
-      setCoverFile(file); // any unexpected error approves the image (fail-open)
+      if (fileInput.current) fileInput.current.value = "";
+      setCoverFile(null);
+      setCoverError(PROHIBITED_CONTENT_MESSAGE);
+      toast.error(PROHIBITED_CONTENT_MESSAGE);
     } finally {
       setCoverChecking(false);
     }
