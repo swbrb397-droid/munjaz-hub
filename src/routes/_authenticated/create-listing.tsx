@@ -147,10 +147,29 @@ function CreateListing() {
   const descInvalid = descTouched && descLen < MIN_DESC;
   const titleArLen = form.title_ar.trim().length;
   const titleEnLen = form.title_en.trim().length;
-  const titleMissing = titleArLen < MIN_TITLE && titleEnLen < MIN_TITLE;
+
+  // ---- Language & anti-gibberish validation -------------------------------
+  const arSide = {
+    title: form.title_ar.trim(),
+    tag: form.tag_ar.trim(),
+    error: sideError(form.title_ar, form.tag_ar, "ar"),
+    complete: form.title_ar.trim().length >= MIN_TITLE && form.tag_ar.trim().length >= 2,
+  };
+  const enSide = {
+    title: form.title_en.trim(),
+    tag: form.tag_en.trim(),
+    error: sideError(form.title_en, form.tag_en, "en"),
+    complete: form.title_en.trim().length >= MIN_TITLE && form.tag_en.trim().length >= 2,
+  };
+  const titleMissing = !arSide.complete && !enSide.complete;
+  const langInvalid = !!arSide.error || !!enSide.error;
 
   const canSubmit =
-    !titleMissing && Number.isFinite(price) && price >= MIN_PRICE && descLen >= MIN_DESC;
+    !titleMissing &&
+    !langInvalid &&
+    Number.isFinite(price) &&
+    price >= MIN_PRICE &&
+    descLen >= MIN_DESC;
 
   const mine = useQuery({
     queryKey: ["my-listings", user?.id],
