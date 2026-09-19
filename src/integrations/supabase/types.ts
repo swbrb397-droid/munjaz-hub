@@ -263,6 +263,9 @@ export type Database = {
           created_at: string
           daily_deposit_limit: number
           escrow_stability_fee: number
+          fee_corporate_pct: number
+          fee_free_pct: number
+          fee_pro_pct: number
           id: number
           sla_free_hours: number
           sla_pro_hours: number
@@ -276,6 +279,9 @@ export type Database = {
           created_at?: string
           daily_deposit_limit?: number
           escrow_stability_fee?: number
+          fee_corporate_pct?: number
+          fee_free_pct?: number
+          fee_pro_pct?: number
           id?: number
           sla_free_hours?: number
           sla_pro_hours?: number
@@ -289,6 +295,9 @@ export type Database = {
           created_at?: string
           daily_deposit_limit?: number
           escrow_stability_fee?: number
+          fee_corporate_pct?: number
+          fee_free_pct?: number
+          fee_pro_pct?: number
           id?: number
           sla_free_hours?: number
           sla_pro_hours?: number
@@ -1427,6 +1436,8 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      fee_rates: { Args: never; Returns: Json }
+      get_admin_dashboard_metrics: { Args: never; Returns: Json }
       get_leaderboard: {
         Args: { p_filter?: string; p_limit?: number }
         Returns: {
