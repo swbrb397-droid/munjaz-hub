@@ -3,13 +3,13 @@ import { supabase } from "@/lib/cloud-client";
 import { sanitizeText } from "@/lib/security";
 import { useAuth } from "@/hooks/use-auth";
 import { useLang } from "@/lib/lang";
-import { COVERS } from "@/lib/catalog";
+import { fetchFeeRates, rateForTier } from "@/lib/fees";
 import type { Tables } from "@/integrations/supabase/types";
 
 export type Order = Tables<"orders">;
 export type OrderStatus = Order["status"];
 
-/** Platform commission rate keyed to the seller's active tier. */
+/** Static fallback only — live rates come from governance_settings via fetchFeeRates(). */
 export function feeRateForTier(tier: string | null | undefined): number {
   if (tier === "pro") return 0.05;
   if (tier === "corporate") return 0.025;
@@ -42,6 +42,8 @@ export function useListing(id: string) {
         sellerTier = (prof.data as { account_tier?: string } | null)?.account_tier ?? null;
       }
 
+      const rates = await fetchFeeRates();
+
       return {
         raw: data,
         id: data.id,
@@ -55,8 +57,9 @@ export function useListing(id: string) {
         verified: data.verified,
         ownerId: data.owner_id,
         cover: (data.cover_url ?? "").trim(),
+        deliveryDays: Number(data.delivery_days ?? 3),
         sellerTier,
-        feeRate: feeRateForTier(sellerTier),
+        feeRate: rateForTier(rates, sellerTier),
       };
     },
   });
