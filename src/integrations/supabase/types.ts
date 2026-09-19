@@ -1736,6 +1736,7 @@ export type Database = {
         | "admin_access_attempt"
         | "rate_limit"
         | "frozen_account_attempt"
+        | "prohibited_content_blocked"
       kyc_tier: "tier0" | "tier1" | "tier2" | "tier3"
       listing_category: "freelance" | "course" | "product" | "gaming"
       order_status:
@@ -1901,6 +1902,7 @@ export const Constants = {
         "admin_access_attempt",
         "rate_limit",
         "frozen_account_attempt",
+        "prohibited_content_blocked",
       ],
       kyc_tier: ["tier0", "tier1", "tier2", "tier3"],
       listing_category: ["freelance", "course", "product", "gaming"],
