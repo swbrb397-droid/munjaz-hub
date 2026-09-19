@@ -1462,7 +1462,6 @@ export type Database = {
         }
         Returns: boolean
       }
-      has_verified_totp: { Args: { _user_id: string }; Returns: boolean }
       is_order_party: {
         Args: { _order_id: string; _user_id: string }
         Returns: boolean
