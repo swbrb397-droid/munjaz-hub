@@ -63,6 +63,40 @@ const INSPECTION_OPTIONS: Record<"free" | "pro" | "corporate", number[]> = {
   corporate: [16, 24, 48, 72],
 };
 
+const EN_RE = /^[a-zA-Z0-9\s.,!?'"()#@&-]+$/;
+const AR_RE = /^[\u0600-\u06FF0-9\s.,!?'"()#@&-]+$/;
+const REPEAT_RE = /(.)\1{3,}/;
+
+/**
+ * Validates one language side (title + tag).
+ * Returns an Arabic inline error, or null when the side is empty or valid.
+ */
+function sideError(rawTitle: string, rawTag: string, side: "ar" | "en"): string | null {
+  const title = rawTitle.trim();
+  const tag = rawTag.trim();
+  if (!title && !tag) return null;
+
+  const re = side === "ar" ? AR_RE : EN_RE;
+  const langMsg =
+    side === "ar"
+      ? "يجب كتابة العنوان العربي بالحروف العربية فقط"
+      : "يجب كتابة العنوان الإنجليزي بالحروف الإنجليزية (A-Z) فقط";
+
+  if (title && !re.test(title)) return langMsg;
+  if (tag && !re.test(tag)) return langMsg;
+  if (REPEAT_RE.test(title) || REPEAT_RE.test(tag)) {
+    return "النص يحتوي على تكرار غير مفهوم لنفس الحرف — اكتب عنواناً واضحاً.";
+  }
+  if (title) {
+    const words = title.split(/\s+/).filter((w) => w.length > 0);
+    if (words.length < 2) return "اكتب عنواناً من كلمتين على الأقل.";
+    if (title.replace(/\s+/g, "").length < 10) return "العنوان قصير جداً — 10 أحرف فعلية على الأقل.";
+  }
+  if (title && tag.length < 2) return "أضف وسماً (Tag) لا يقل عن حرفين لنفس اللغة.";
+  if (tag && title.length < 10) return "أكمل العنوان بنفس اللغة (10 أحرف على الأقل).";
+  return null;
+}
+
 function CreateListing() {
   const { tr, lang } = useLang();
   const { user } = useAuth();
