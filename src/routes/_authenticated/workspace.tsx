@@ -1108,7 +1108,7 @@ function Workspace() {
                 </p>
               )}
 
-              <div className="flex items-center gap-2 border-t border-border pt-3">
+              <div className="w-full max-w-full flex items-center gap-2 px-3 py-2 bg-card border border-border/50 rounded-xl">
                 <input
                   ref={chatFileRef}
                   type="file"
@@ -1119,7 +1119,7 @@ function Workspace() {
                   type="button"
                   disabled={sendAttachment.isPending || !selected}
                   onClick={() => chatFileRef.current?.click()}
-                  className="grid size-9 shrink-0 place-items-center rounded-lg border border-border text-muted-foreground disabled:opacity-50"
+                  className="grid size-9 flex-shrink-0 place-items-center rounded-lg border border-border text-muted-foreground hover:text-foreground disabled:opacity-50"
                   aria-label={tr("إرفاق ملف", "Attach file")}
                 >
                   {sendAttachment.isPending ? (
@@ -1136,12 +1136,11 @@ function Workspace() {
                     "🛡️ حماية الضمان: يمنع مشاركة وسائل التواصل الخارجية لضمان حقوقك المالية وسريان نظام الـ Escrow.",
                     "🛡️ Escrow protection: sharing external contact details is prohibited to protect your funds and keep escrow valid.",
                   )}
-
-                  className="flex-1 rounded-lg border border-input bg-surface px-3 py-2 text-sm outline-none focus:border-primary"
+                  className="min-w-0 flex-1 bg-transparent border-0 outline-none px-0 py-1 text-sm text-foreground placeholder:text-muted-foreground"
                 />
                 <button
                   onClick={send}
-                  className="grid size-9 place-items-center rounded-lg bg-primary text-primary-foreground"
+                  className="flex-shrink-0 h-9 w-9 inline-flex items-center justify-center rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white"
                   aria-label={tr("إرسال", "Send")}
                 >
                   <Send className="size-4" />
@@ -1866,11 +1865,13 @@ function Workspace() {
             )}
           </Card>
 
-          <Card>
-            <div className="flex items-center justify-between gap-3">
-              <h3 className="min-w-0 text-sm font-bold">
-                {tr("المعالم المرحلية للطلب", "Order milestones")}
-              </h3>
+          <Card className="overflow-visible">
+            <div className="flex items-center justify-between w-full px-4 py-3 gap-3">
+              <div className="flex flex-col items-start min-w-0 flex-1">
+                <h3 className="text-sm font-bold">
+                  {tr("المعالم المرحلية للطلب", "Order milestones")}
+                </h3>
+              </div>
               <button
                 type="button"
                 role="switch"
@@ -1878,7 +1879,7 @@ function Workspace() {
                 aria-label={tr("تفعيل المعالم المرحلية للطلب", "Enable order milestones")}
                 disabled={milestonesOn || createMilestones.isPending}
                 onClick={() => setBuilderOn((v) => !v)}
-                className={`relative inline-flex h-7 w-12 shrink-0 cursor-pointer touch-manipulation items-center rounded-full border transition-colors disabled:cursor-default disabled:opacity-70 ${
+                className={`relative inline-flex h-7 w-12 flex-shrink-0 ml-1 mr-0 cursor-pointer touch-manipulation items-center rounded-full border transition-colors disabled:cursor-default disabled:opacity-70 z-10 ${
                   milestonesOn || builderOn
                     ? "border-primary bg-primary/80"
                     : "border-border bg-secondary"
