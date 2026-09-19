@@ -1829,27 +1829,39 @@ function Workspace() {
           )}
           <Card>
             <h3 className="font-bold">{tr("حالة الضمان", "Escrow status")}</h3>
-            <p className="mt-2 text-sm text-muted-foreground">
-              {order?.escrow_locked
-                ? tr(
-                    "المبلغ محجوز في الضمان حتى اعتماد التسليم.",
-                    "Funds are held in escrow until delivery is approved.",
-                  )
-                : tr(
-                    "لا توجد مبالغ محجوزة على هذا الطلب.",
-                    "No funds are currently held for this order.",
-                  )}
-            </p>
-            {order?.due_at && (
-              <p className="mt-2 text-xs text-muted-foreground">
-                {tr("موعد التسليم", "Delivery due")}: {new Date(order.due_at).toLocaleString()}
+            {order?.status === "completed" ? (
+              <p className="mt-2 inline-flex items-center gap-2 rounded-xl border border-primary/50 bg-primary/10 px-3 py-2 text-xs font-bold text-primary">
+                <CheckCircle2 className="size-4 shrink-0" />
+                {tr(
+                  "تم تحرير مبالغ الضمان بنجاح وإغلاق الدورة المالية",
+                  "Escrow funds released successfully and the financial cycle is closed",
+                )}
               </p>
-            )}
-            {order?.auto_release_at && (
-              <p className="mt-2 text-xs text-primary">
-                {tr("إطلاق تلقائي في", "Auto-release at")}:{" "}
-                {new Date(order.auto_release_at).toLocaleString()}
-              </p>
+            ) : (
+              <>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  {order?.escrow_locked
+                    ? tr(
+                        "المبلغ محجوز في الضمان حتى اعتماد التسليم.",
+                        "Funds are held in escrow until delivery is approved.",
+                      )
+                    : tr(
+                        "لا توجد مبالغ محجوزة على هذا الطلب.",
+                        "No funds are currently held for this order.",
+                      )}
+                </p>
+                {order?.due_at && (
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    {tr("موعد التسليم", "Delivery due")}: {new Date(order.due_at).toLocaleString()}
+                  </p>
+                )}
+                {order?.auto_release_at && order.status === "delivered" && (
+                  <p className="mt-2 text-xs text-primary">
+                    {tr("إطلاق تلقائي في", "Auto-release at")}:{" "}
+                    {new Date(order.auto_release_at).toLocaleString()}
+                  </p>
+                )}
+              </>
             )}
           </Card>
 
