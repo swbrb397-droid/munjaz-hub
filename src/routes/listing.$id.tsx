@@ -65,6 +65,7 @@ function ListingDetail() {
   const sellerNet = Number((price - fee).toFixed(2));
   const balance = Number(wallet.data?.available_usdt ?? 0);
   const isOwner = !!user && item.ownerId === user.id;
+  const deliveryDays = Number(item.deliveryDays ?? 3);
 
   async function buy() {
     setError(null);
@@ -76,6 +77,12 @@ function ListingDetail() {
       setError(tr("هذا العرض بدون بائع مرتبط ولا يمكن شراؤه.", "This listing has no linked seller and cannot be purchased."));
       return;
     }
+    // Wallet gate: block unfunded orders before touching the orders table.
+    if (balance < price) {
+      toast.error(tr("رصيدك غير كافٍ لإتمام الطلب. يرجى شحن المحفظة أولاً", "Insufficient balance. Please top up your wallet first"));
+      setTopUp(true);
+      return;
+    }
     try {
       await createOrder.mutateAsync({
         listingId: item!.id,
@@ -83,7 +90,7 @@ function ListingDetail() {
         title: item!.title,
         category: item!.category,
         amount: item!.price,
-        deliveryDays: days,
+        deliveryDays: deliveryDays,
         sowTerms: sow.trim(),
       });
       navigate({ to: "/workspace" });
