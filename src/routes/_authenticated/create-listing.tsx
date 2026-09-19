@@ -9,7 +9,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useProfile } from "@/lib/queries";
 import { supabase } from "@/lib/cloud-client";
 import { parseUsdt, sanitizeText } from "@/lib/security";
-import { screenCoverImage } from "@/lib/moderation.functions";
+import { PROHIBITED_CONTENT_MESSAGE, screenCoverImage } from "@/lib/moderation.functions";
 import { type ListingCategory } from "@/lib/catalog";
 
 export const Route = createFileRoute("/_authenticated/create-listing")({
