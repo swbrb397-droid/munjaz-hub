@@ -113,17 +113,26 @@ export function TopUpDialog({ onClose, defaultAmount }: { onClose: () => void; d
           <>
             <div className="mt-4 grid grid-cols-2 gap-1 rounded-xl border border-border p-1">
               {([
-                ["crypto", tr("USDT كريبتو", "USDT crypto")],
-                ["card", tr("بطاقة ودفع سريع", "Card & fast pay")],
-              ] as const).map(([k, label]) => (
+                ["crypto", tr("USDT كريبتو", "USDT crypto"), false],
+                ["card", tr("بطاقة ودفع سريع", "Card & fast pay"), true],
+              ] as const).map(([k, label, suspended]) => (
                 <button
                   key={k}
                   type="button"
-                  onClick={() => setMethod(k)}
+                  disabled={suspended}
+                  onClick={() => !suspended && setMethod(k)}
                   aria-pressed={method === k}
-                  className={`rounded-lg px-2 py-2 text-[11px] font-bold ${method === k ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}
+                  aria-disabled={suspended}
+                  className={`flex flex-col items-center justify-center gap-0.5 rounded-lg px-2 py-2 text-[11px] font-bold ${
+                    method === k ? "bg-primary text-primary-foreground" : "text-muted-foreground"
+                  } ${suspended ? "cursor-not-allowed opacity-50" : ""}`}
                 >
-                  {label}
+                  <span>{label}</span>
+                  {suspended && (
+                    <span className="rounded-full border border-amber-500/50 bg-amber-500/10 px-2 py-0.5 text-[9px] font-black text-amber-500">
+                      {tr("قيد الصيانة", "Under maintenance")}
+                    </span>
+                  )}
                 </button>
               ))}
             </div>
@@ -177,13 +186,11 @@ export function TopUpDialog({ onClose, defaultAmount }: { onClose: () => void; d
               </div>
             </div>
 
-            {method === "card" && (
-              <p className="mt-3 flex gap-2 rounded-xl border border-amber-500/40 bg-amber-500/10 p-3 text-[11px] font-bold leading-relaxed text-amber-500">
-                <ShieldAlert className="mt-0.5 size-3.5 shrink-0" />
-                الحد الأدنى للشحن بالبطاقة: 15 USD — البوابة تخضع للصيانة المؤقتة، يرجى استخدام
-                التحويل المباشر عبر USDT كريبتو
-              </p>
-            )}
+            <p className="mt-3 flex gap-2 rounded-xl border border-amber-500/40 bg-amber-500/10 p-3 text-[11px] font-bold leading-relaxed text-amber-500">
+              <ShieldAlert className="mt-0.5 size-3.5 shrink-0" />
+              ⚠️ بوابة الدفع بالبطاقات المصرفية متوقفة مؤقتاً لأعمال الصيانة والتطوير. يرجى استخدام
+              التحويل المباشر والآمن عبر USDT كريبتو (Polygon / BEP-20 / TRC-20).
+            </p>
 
             {method === "card" && (
               <p className="mt-3 flex gap-2 rounded-xl border border-accent/40 bg-accent/10 p-3 text-[11px] leading-relaxed text-muted-foreground">
@@ -198,8 +205,8 @@ export function TopUpDialog({ onClose, defaultAmount }: { onClose: () => void; d
             <button
               type="button"
               onClick={submit}
-              disabled={createInvoice.isPending || !(parseUsdt(amount) ?? 0)}
-              className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 font-bold text-primary-foreground disabled:opacity-50"
+              disabled={method === "card" || createInvoice.isPending || !(parseUsdt(amount) ?? 0)}
+              className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 font-bold text-primary-foreground disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground disabled:opacity-50"
             >
               {createInvoice.isPending ? <Loader2 className="size-4 animate-spin" /> : method === "card" ? <CreditCard className="size-4" /> : <Sparkles className="size-4" />}
               {method === "card" ? tr("متابعة إلى الدفع الآمن", "Continue to secure checkout") : tr("إنشاء فاتورة الدفع", "Generate payment invoice")}

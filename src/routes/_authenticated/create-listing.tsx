@@ -8,7 +8,14 @@ import { useLang } from "@/lib/lang";
 import { useAuth } from "@/hooks/use-auth";
 import { useProfile } from "@/lib/queries";
 import { supabase } from "@/lib/cloud-client";
-import { parseUsdt, sanitizeText } from "@/lib/security";
+import {
+  LONG_WORD_RE,
+  REPEAT_CHAR_RE,
+  SYLLABLE_LOOP_RE,
+  gibberishError,
+  parseUsdt,
+  sanitizeText,
+} from "@/lib/security";
 import { PROHIBITED_CONTENT_MESSAGE, screenCoverImage } from "@/lib/moderation.functions";
 import { type ListingCategory } from "@/lib/catalog";
 import { z } from "zod";
@@ -67,17 +74,14 @@ const INSPECTION_OPTIONS: Record<"free" | "pro" | "corporate", number[]> = {
 
 const EN_RE = /^[a-zA-Z0-9\s.,!?'"()#@&-]+$/;
 const AR_RE = /^[\u0600-\u06FF0-9\s.,!?'"()#@&-]+$/;
-const REPEAT_RE = /(.)\1{3,}/;
+const REPEAT_RE = REPEAT_CHAR_RE;
 const descriptionSchema = z
   .string()
   .trim()
-  .min(MIN_DESC, `الوصف يجب ألا يقل عن ${MIN_DESC} حرفاً.`)
-  .max(MAX_DESC, `الوصف يجب ألا يزيد على ${MAX_DESC} حرفاً.`)
-  .refine((value) => !REPEAT_RE.test(value), "الوصف يحتوي على تكرار غير مفهوم لنفس الحرف.")
-  .refine(
-    (value) => new Set(value.split(/\s+/).map((word) => word.toLocaleLowerCase()).filter(Boolean)).size >= 4,
-    "الوصف يجب أن يحتوي على أربع كلمات مختلفة على الأقل.",
-  );
+  .superRefine((value, ctx) => {
+    const message = gibberishError(value, { minLength: MIN_DESC, maxLength: MAX_DESC, minWords: 4 });
+    if (message) ctx.addIssue({ code: "custom", message });
+  });
 
 /**
  * Validates one language side (title + tag).
@@ -99,10 +103,17 @@ function sideError(rawTitle: string, rawTag: string, side: "ar" | "en"): string 
   if (REPEAT_RE.test(title) || REPEAT_RE.test(tag)) {
     return "النص يحتوي على تكرار غير مفهوم لنفس الحرف — اكتب عنواناً واضحاً.";
   }
+  if (SYLLABLE_LOOP_RE.test(title) || SYLLABLE_LOOP_RE.test(tag)) {
+    return "النص يحتوي على مقاطع مكرّرة غير مفهومة — اكتب عنواناً حقيقياً.";
+  }
+  if (LONG_WORD_RE.test(title) || LONG_WORD_RE.test(tag)) {
+    return "لا يمكن أن تتجاوز الكلمة الواحدة 25 حرفاً متصلاً بدون مسافة.";
+  }
   if (title) {
     const words = title.split(/\s+/).filter((w) => w.length > 0);
     if (words.length < 2) return "اكتب عنواناً من كلمتين على الأقل.";
-    if (title.replace(/\s+/g, "").length < 10) return "العنوان قصير جداً — 10 أحرف فعلية على الأقل.";
+    if (title.replace(/\s+/g, "").length < MIN_TITLE)
+      return `العنوان قصير جداً — ${MIN_TITLE} أحرف فعلية على الأقل.`;
   }
   if (title && tag.length < 2) return "أضف وسماً (Tag) لا يقل عن حرفين لنفس اللغة.";
   if (tag && title.length < 10) return "أكمل العنوان بنفس اللغة (10 أحرف على الأقل).";
@@ -647,7 +658,7 @@ function CreateListing() {
                   <button
                     type="submit"
                     disabled={!canSubmit || coverChecking || create.isPending}
-                    className="flex h-11 select-none items-center gap-2 rounded-xl bg-primary px-5 text-sm font-bold text-primary-foreground transition-opacity disabled:cursor-not-allowed disabled:opacity-50"
+                    className="flex h-11 select-none items-center gap-2 rounded-xl bg-primary px-5 text-sm font-bold text-primary-foreground transition-opacity disabled:pointer-events-none disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground disabled:opacity-50"
                   >
                     {create.isPending ? <Loader2 className="size-4 animate-spin" /> : <PlusCircle className="size-4" />}
                     {editingId ? tr("حفظ التعديلات", "Save changes") : tr("نشر العرض", "Publish listing")}

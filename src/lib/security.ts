@@ -54,3 +54,34 @@ export function throttle(action: string, max: number, windowMs: number): boolean
   hits.set(action, list);
   return true;
 }
+
+// ---- Anti-gibberish free-text validation ---------------------------------
+/** Same character repeated 4+ times in a row ("aaaa", "ننننن"). */
+export const REPEAT_CHAR_RE = /(.)\1{3,}/;
+/** Repeated 2-3 character syllable loops ("djdjdjdj", "نينينيني"). */
+export const SYLLABLE_LOOP_RE = /(.{2,3})\1{3,}/;
+/** One uninterrupted word longer than 25 characters. */
+export const LONG_WORD_RE = /\S{26,}/;
+
+/**
+ * Validates that free text reads like real, descriptive language.
+ * Returns an Arabic error message, or null when the text is acceptable.
+ */
+export function gibberishError(
+  value: string,
+  opts: { minLength: number; maxLength?: number; minWords?: number },
+): string | null {
+  const text = value.trim();
+  const minWords = opts.minWords ?? 4;
+  if (text.length < opts.minLength) return `النص يجب ألا يقل عن ${opts.minLength} حرفاً.`;
+  if (opts.maxLength && text.length > opts.maxLength)
+    return `النص يجب ألا يزيد على ${opts.maxLength} حرفاً.`;
+  if (REPEAT_CHAR_RE.test(text)) return "النص يحتوي على تكرار غير مفهوم لنفس الحرف.";
+  if (SYLLABLE_LOOP_RE.test(text)) return "النص يحتوي على مقاطع مكرّرة غير مفهومة — اكتب وصفاً حقيقياً.";
+  if (LONG_WORD_RE.test(text)) return "لا يمكن أن تتجاوز الكلمة الواحدة 25 حرفاً متصلاً بدون مسافة.";
+  const words = text.split(/\s+/).filter(Boolean);
+  const distinct = new Set(words.map((w) => w.toLocaleLowerCase()));
+  if (words.length < minWords || distinct.size < minWords)
+    return `اكتب ${minWords} كلمات مختلفة على الأقل تصف الحالة بوضوح.`;
+  return null;
+}
