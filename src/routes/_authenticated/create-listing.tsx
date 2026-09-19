@@ -658,7 +658,7 @@ function CreateListing() {
                   <button
                     type="submit"
                     disabled={!canSubmit || coverChecking || create.isPending}
-                    className="flex h-11 select-none items-center gap-2 rounded-xl bg-primary px-5 text-sm font-bold text-primary-foreground transition-opacity disabled:cursor-not-allowed disabled:opacity-50"
+                    className="flex h-11 select-none items-center gap-2 rounded-xl bg-primary px-5 text-sm font-bold text-primary-foreground transition-opacity disabled:pointer-events-none disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground disabled:opacity-50"
                   >
                     {create.isPending ? <Loader2 className="size-4 animate-spin" /> : <PlusCircle className="size-4" />}
                     {editingId ? tr("حفظ التعديلات", "Save changes") : tr("نشر العرض", "Publish listing")}
