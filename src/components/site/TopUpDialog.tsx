@@ -113,17 +113,26 @@ export function TopUpDialog({ onClose, defaultAmount }: { onClose: () => void; d
           <>
             <div className="mt-4 grid grid-cols-2 gap-1 rounded-xl border border-border p-1">
               {([
-                ["crypto", tr("USDT كريبتو", "USDT crypto")],
-                ["card", tr("بطاقة ودفع سريع", "Card & fast pay")],
-              ] as const).map(([k, label]) => (
+                ["crypto", tr("USDT كريبتو", "USDT crypto"), false],
+                ["card", tr("بطاقة ودفع سريع", "Card & fast pay"), true],
+              ] as const).map(([k, label, suspended]) => (
                 <button
                   key={k}
                   type="button"
-                  onClick={() => setMethod(k)}
+                  disabled={suspended}
+                  onClick={() => !suspended && setMethod(k)}
                   aria-pressed={method === k}
-                  className={`rounded-lg px-2 py-2 text-[11px] font-bold ${method === k ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}
+                  aria-disabled={suspended}
+                  className={`flex flex-col items-center justify-center gap-0.5 rounded-lg px-2 py-2 text-[11px] font-bold ${
+                    method === k ? "bg-primary text-primary-foreground" : "text-muted-foreground"
+                  } ${suspended ? "cursor-not-allowed opacity-50" : ""}`}
                 >
-                  {label}
+                  <span>{label}</span>
+                  {suspended && (
+                    <span className="rounded-full border border-amber-500/50 bg-amber-500/10 px-2 py-0.5 text-[9px] font-black text-amber-500">
+                      {tr("قيد الصيانة", "Under maintenance")}
+                    </span>
+                  )}
                 </button>
               ))}
             </div>
