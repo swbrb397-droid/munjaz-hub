@@ -913,7 +913,7 @@ function Workspace() {
                   </div>
                 )}
               </div>
-              <div className="flex h-[55dvh] flex-1 flex-col space-y-3 overflow-y-auto py-4 sm:h-[600px]">
+              <div className="flex h-[55dvh] min-h-0 flex-1 flex-col space-y-3 overflow-y-auto py-4 sm:h-[600px]">
                 {messages.length === 0 && (
                   <p className="py-10 text-center text-sm text-muted-foreground">
                     {tr(
@@ -1544,10 +1544,13 @@ function Workspace() {
                 className="mt-4 w-full rounded-xl border border-input bg-surface p-3 text-sm outline-none focus:border-primary"
               />
               <p
-                className={`mt-1 text-[11px] ${reason.trim().length >= 50 ? "text-primary" : "text-muted-foreground"}`}
+                className={`mt-1 text-[11px] ${!reasonError ? "text-primary" : "text-muted-foreground"}`}
               >
                 {reason.trim().length}/50 {tr("حرفاً", "characters")}
               </p>
+              {reason.trim().length > 0 && reasonError && (
+                <p className="mt-1 text-[11px] font-bold text-destructive">{reasonError}</p>
+              )}
 
               <div className="mt-3 grid gap-2">
                 <label className="inline-flex w-fit cursor-pointer items-center gap-2 rounded-lg border border-border px-3 py-2 text-xs font-bold">
@@ -1639,10 +1642,10 @@ function Workspace() {
                 <ul className="grid gap-1.5 rounded-xl border border-border bg-surface/50 p-3 text-[11px]">
                   {[
                     {
-                      ok: reason.trim().length >= 50,
+                      ok: !reasonError,
                       label: tr(
-                        `شرح مفصّل لا يقل عن 50 حرفاً (${reason.trim().length}/50)`,
-                        `Detailed explanation of 50+ characters (${reason.trim().length}/50)`,
+                        `شرح مفصّل بكلمات حقيقية لا يقل عن 50 حرفاً (${reason.trim().length}/50)`,
+                        `Detailed, real-word explanation of 50+ characters (${reason.trim().length}/50)`,
                       ),
                     },
                     {
@@ -1683,11 +1686,11 @@ function Workspace() {
                 onClick={() => openDispute.mutate()}
                 disabled={
                   openDispute.isPending ||
-                  reason.trim().length < 50 ||
+                  !!reasonError ||
                   evidence.length === 0 ||
                   !evidenceUploaded
                 }
-                className="mt-3 rounded-xl bg-destructive px-4 py-2 font-bold text-destructive-foreground disabled:opacity-50"
+                className="mt-3 rounded-xl bg-destructive px-4 py-2 font-bold text-destructive-foreground disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground disabled:opacity-50"
               >
                 {tr("فتح نزاع رسمي للتحكيم ⚖️", "Open formal arbitration ⚖️")}
               </button>
