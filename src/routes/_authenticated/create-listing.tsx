@@ -103,10 +103,17 @@ function sideError(rawTitle: string, rawTag: string, side: "ar" | "en"): string 
   if (REPEAT_RE.test(title) || REPEAT_RE.test(tag)) {
     return "النص يحتوي على تكرار غير مفهوم لنفس الحرف — اكتب عنواناً واضحاً.";
   }
+  if (SYLLABLE_LOOP_RE.test(title) || SYLLABLE_LOOP_RE.test(tag)) {
+    return "النص يحتوي على مقاطع مكرّرة غير مفهومة — اكتب عنواناً حقيقياً.";
+  }
+  if (LONG_WORD_RE.test(title) || LONG_WORD_RE.test(tag)) {
+    return "لا يمكن أن تتجاوز الكلمة الواحدة 25 حرفاً متصلاً بدون مسافة.";
+  }
   if (title) {
     const words = title.split(/\s+/).filter((w) => w.length > 0);
     if (words.length < 2) return "اكتب عنواناً من كلمتين على الأقل.";
-    if (title.replace(/\s+/g, "").length < 10) return "العنوان قصير جداً — 10 أحرف فعلية على الأقل.";
+    if (title.replace(/\s+/g, "").length < MIN_TITLE)
+      return `العنوان قصير جداً — ${MIN_TITLE} أحرف فعلية على الأقل.`;
   }
   if (title && tag.length < 2) return "أضف وسماً (Tag) لا يقل عن حرفين لنفس اللغة.";
   if (tag && title.length < 10) return "أكمل العنوان بنفس اللغة (10 أحرف على الأقل).";
