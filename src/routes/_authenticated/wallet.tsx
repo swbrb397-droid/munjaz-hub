@@ -194,6 +194,13 @@ function WalletPage() {
   const sla = slaHoursForTier(tier);
   const parsed = parseUsdt(amount) ?? 0;
 
+  // Smart AML: service earnings are 100% exempt from the anti-mixing surcharge.
+  // Only unspent crypto deposits that never entered escrow require the consent.
+  const availableNow = Number(wallet.data?.available_usdt ?? 0);
+  const unspent = Math.max(0, Number(unspentDeposits.data ?? 0));
+  const earnedAvailable = Math.max(0, availableNow - unspent);
+  const amlExempt = parsed > 0 && parsed <= earnedAvailable;
+
   // Triple trigger: password change, MFA change, or payout-address change.
   const rawLockHours = coolingHoursLeft([
     (profile.data as { password_last_changed_at?: string | null } | null)?.password_last_changed_at,
