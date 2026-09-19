@@ -191,7 +191,7 @@ function CreateListing() {
   const descriptionError = descriptionResult.success
     ? null
     : (descriptionResult.error.issues[0]?.message ?? "الوصف غير صالح.");
-  const descInvalid = !descriptionResult.success;
+  const descInvalid = !editingId && !descriptionResult.success;
   const titleArLen = form.title_ar.trim().length;
   const titleEnLen = form.title_en.trim().length;
 
@@ -216,7 +216,7 @@ function CreateListing() {
     !langInvalid &&
     Number.isFinite(price) &&
     price >= MIN_PRICE &&
-    descriptionResult.success &&
+    (!!editingId || descriptionResult.success) &&
     (!!editingId || (!!coverFile && !coverChecking && !coverError));
 
   const mine = useQuery({
@@ -573,7 +573,7 @@ function CreateListing() {
                     aria-invalid={descInvalid}
                   />
                   <span className={`text-xs ${descInvalid ? "font-bold text-destructive" : "text-muted-foreground"}`}>
-                    {descriptionError && <span className="block">{descriptionError}</span>}
+                    {!editingId && descriptionError && <span className="block">{descriptionError}</span>}
                     <span className="block">
                       {tr(
                         `${descLen} / ${MAX_DESC} حرف (الحد الأدنى ${MIN_DESC} حرفاً)`,

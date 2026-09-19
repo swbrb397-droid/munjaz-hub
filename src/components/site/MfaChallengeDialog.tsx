@@ -31,8 +31,6 @@ export function MfaChallengeDialog({
     try {
       const { error } = await supabase.auth.mfa.challengeAndVerify({ factorId, code });
       if (error) throw error;
-      await onVerified();
-      onClose();
     } catch {
       toast.error(
         tr(
@@ -40,6 +38,14 @@ export function MfaChallengeDialog({
           "The verification code is invalid or expired. Enter the current code from your authenticator app.",
         ),
       );
+      setVerifying(false);
+      return;
+    }
+    try {
+      await onVerified();
+      onClose();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : tr("تعذّر إتمام الإجراء.", "Unable to complete the action."));
     } finally {
       setVerifying(false);
     }

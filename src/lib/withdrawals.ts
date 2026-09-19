@@ -67,6 +67,13 @@ export function useRequestWithdrawal() {
       const address = sanitizeAddress(input.address);
       if (!isValidAddress(address)) throw new Error("INVALID_ADDRESS");
 
+      const { data: assurance, error: assuranceError } =
+        await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+      if (assuranceError) throw assuranceError;
+      if (assurance.nextLevel === "aal2" && assurance.currentLevel !== "aal2") {
+        throw new Error("MFA_REQUIRED");
+      }
+
       const { data, error } = await supabase.rpc("request_withdrawal", {
         _amount: amount,
         _network: input.network,

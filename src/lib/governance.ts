@@ -92,20 +92,3 @@ export function useCreatePass() {
   });
 }
 
-/** One-time redemption performed by the security-definer RPC. */
-export function useRedeemPass() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async (code: string) => {
-      const { data, error } = await supabase.rpc("redeem_subscription_code", { p_code: code.trim().toUpperCase() });
-      if (error) throw error;
-      const result = data as { success?: boolean; message?: string } | null;
-      if (!result?.success) throw new Error(result?.message ?? "REDEMPTION_FAILED");
-      return result;
-    },
-    onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: ["profile"] });
-      void qc.invalidateQueries({ queryKey: ["subscription-passes"] });
-    },
-  });
-}
