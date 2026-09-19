@@ -136,7 +136,8 @@ function AuthPage() {
   const [displayName, setDisplayName] = useState("");
   const [role, setRole] = useState<SignupRole>("hybrid");
   const [acceptedTerms, setAcceptedTerms] = useState(false);
-  const [referral, setReferral] = useState("");
+  // Pre-filled from the `?ref=` link captured on first visit.
+  const [referral, setReferral] = useState(() => storedReferralCode());
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
