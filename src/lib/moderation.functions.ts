@@ -156,14 +156,20 @@ export const screenCoverImage = createServerFn({ method: "POST" })
 
     if (seUser && seSecret) {
       const v = await screenViaSightengine(data.dataUrl, seUser, seSecret);
-      if (v) return v;
+      if (v) {
+        if (!v.allowed) await logBlocked(v.reason);
+        return v;
+      }
     }
 
     const lovableKey = process.env["LOVABLE_API_KEY"];
     if (lovableKey) {
       const v = await screenViaGemini(data.dataUrl, lovableKey);
-      if (v) return v;
+      if (v) {
+        if (!v.allowed) await logBlocked(v.reason);
+        return v;
+      }
     }
 
-    return { allowed: true, reason: "" }; // fail open when no provider is configured
+    return { allowed: true, reason: "" }; // no provider configured / reachable
   });
