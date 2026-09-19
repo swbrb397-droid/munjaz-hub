@@ -1451,6 +1451,10 @@ export type Database = {
           xp_points: number
         }[]
       }
+      has_recent_mfa_verification: {
+        Args: { _user_id: string }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -1458,6 +1462,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      has_verified_totp: { Args: { _user_id: string }; Returns: boolean }
       is_order_party: {
         Args: { _order_id: string; _user_id: string }
         Returns: boolean
