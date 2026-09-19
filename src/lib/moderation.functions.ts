@@ -127,7 +127,22 @@ export const screenCoverImage = createServerFn({ method: "POST" })
     }
     return { dataUrl };
   })
-  .handler(async ({ data }): Promise<Verdict> => {
+  .handler(async ({ data, context }): Promise<Verdict> => {
+    const logBlocked = async (reason: string) => {
+      try {
+        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+        await supabaseAdmin.from("security_incidents").insert({
+          user_id: context.userId,
+          kind: "prohibited_content_blocked",
+          severity: "high",
+          detail: reason,
+          meta: { surface: "listing_cover" },
+        });
+      } catch (e) {
+        console.error("incident log failed", e);
+      }
+    };
+
     // Sightengine keys can arrive either as a combined secret ("user:secret")
     // in IMAGE_MODERATION_API_KEY, or as split SIGHTENGINE_API_USER + SIGHTENGINE_API_SECRET.
     const combined = process.env["IMAGE_MODERATION_API_KEY"] ?? "";
