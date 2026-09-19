@@ -9,26 +9,28 @@ export type PlatformOverview = {
   depositsCount: number;
   openDisputes: number;
   pendingWithdrawals: number;
+  frozenAccounts: number;
 };
 
-/** Live super-admin counters straight from the database (admin-only RPC). */
+/** Live super-admin counters from a single SECURITY DEFINER RPC (bypasses RLS safely). */
 export function useAdminOverview(enabled: boolean) {
   return useQuery({
     queryKey: ["admin-overview"],
     enabled,
     staleTime: 30_000,
     queryFn: async (): Promise<PlatformOverview> => {
-      const { data, error } = await supabase.rpc("admin_platform_overview");
+      const { data, error } = await supabase.rpc("get_admin_dashboard_metrics");
       if (error) throw error;
-      const row = (data ?? [])[0];
+      const row = (data ?? {}) as Record<string, unknown>;
       return {
-        totalUsers: Number(row?.total_users ?? 0),
-        pendingKyc: Number(row?.pending_kyc ?? 0),
-        escrowLocked: Number(row?.escrow_locked ?? 0),
-        depositsTotal: Number(row?.deposits_total ?? 0),
-        depositsCount: Number(row?.deposits_count ?? 0),
-        openDisputes: Number(row?.open_disputes ?? 0),
-        pendingWithdrawals: Number(row?.pending_withdrawals ?? 0),
+        totalUsers: Number(row["total_users"] ?? 0),
+        pendingKyc: Number(row["pending_kyc"] ?? 0),
+        escrowLocked: Number(row["locked_escrow"] ?? 0),
+        depositsTotal: Number(row["deposits_total"] ?? 0),
+        depositsCount: Number(row["completed_deposits"] ?? 0),
+        openDisputes: Number(row["open_disputes"] ?? 0),
+        pendingWithdrawals: Number(row["pending_withdrawals"] ?? 0),
+        frozenAccounts: Number(row["frozen_accounts"] ?? 0),
       };
     },
   });

@@ -11,6 +11,8 @@ import { useLang } from "@/lib/lang";
 import { useAuth } from "@/hooks/use-auth";
 import { useWallet } from "@/lib/queries";
 import { useCreateOrder, useListing } from "@/lib/orders";
+import { TopUpDialog } from "@/components/site/TopUpDialog";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/listing/$id")({
   head: () => ({
@@ -35,9 +37,9 @@ function ListingDetail() {
   const wallet = useWallet();
   const createOrder = useCreateOrder();
 
-  const [days, setDays] = useState(3);
   const [sow, setSow] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [topUp, setTopUp] = useState(false);
 
   if (listing.isLoading) {
     return (
@@ -63,6 +65,7 @@ function ListingDetail() {
   const sellerNet = Number((price - fee).toFixed(2));
   const balance = Number(wallet.data?.available_usdt ?? 0);
   const isOwner = !!user && item.ownerId === user.id;
+  const deliveryDays = Number(item.deliveryDays ?? 3);
 
   async function buy() {
     setError(null);
@@ -74,6 +77,12 @@ function ListingDetail() {
       setError(tr("هذا العرض بدون بائع مرتبط ولا يمكن شراؤه.", "This listing has no linked seller and cannot be purchased."));
       return;
     }
+    // Wallet gate: block unfunded orders before touching the orders table.
+    if (balance < price) {
+      toast.error(tr("رصيدك غير كافٍ لإتمام الطلب. يرجى شحن المحفظة أولاً", "Insufficient balance. Please top up your wallet first"));
+      setTopUp(true);
+      return;
+    }
     try {
       await createOrder.mutateAsync({
         listingId: item!.id,
@@ -81,12 +90,17 @@ function ListingDetail() {
         title: item!.title,
         category: item!.category,
         amount: item!.price,
-        deliveryDays: days,
+        deliveryDays: deliveryDays,
         sowTerms: sow.trim(),
       });
       navigate({ to: "/workspace" });
     } catch (e) {
-      setError((e as Error).message);
+      const message = (e as Error).message;
+      if (message === "INSUFFICIENT_BALANCE") {
+        toast.error(tr("رصيدك غير كافٍ لإتمام الطلب. يرجى شحن المحفظة أولاً", "Insufficient balance. Please top up your wallet first"));
+        setTopUp(true);
+      }
+      setError(message);
     }
   }
 
@@ -140,17 +154,12 @@ function ListingDetail() {
         <div className="grid content-start gap-4">
           <Card>
             <p className="text-3xl font-black text-primary">{price.toFixed(2)} USDT</p>
-            <div className="mt-4 grid gap-2 text-sm">
-              <label className="text-xs text-muted-foreground" htmlFor="days">{tr("مدة التسليم (أيام)", "Delivery time (days)")}</label>
-              <input
-                id="days"
-                type="number"
-                min={1}
-                max={60}
-                value={days}
-                onChange={(e) => setDays(Math.max(1, Math.min(60, Number(e.target.value) || 1)))}
-                className="rounded-lg border border-input bg-surface px-3 py-2 outline-none focus:border-primary"
-              />
+            {/* Delivery time is fixed by the seller — read-only, never focusable. */}
+            <div className="mt-4 flex items-center justify-between rounded-lg border border-border/40 bg-card/50 p-3 text-sm">
+              <span className="text-muted-foreground">{tr("مدة التسليم المحددة", "Set delivery time")}</span>
+              <span className="font-semibold text-foreground">
+                <bdi>{deliveryDays} {tr("أيام", "days")}</bdi>
+              </span>
             </div>
 
             <dl className="mt-4 grid gap-1 border-t border-border pt-4 text-sm">
@@ -178,9 +187,15 @@ function ListingDetail() {
                     ? tr("اطلب الآن بضمان الوساطة", "Order now with escrow")
                     : tr("سجّل الدخول للطلب", "Sign in to order")}
             </button>
-            {error && <p className="mt-3 text-xs text-destructive">{error}</p>}
+            {error && (
+              <p className="mt-3 text-xs text-destructive">
+                {error === "INSUFFICIENT_BALANCE"
+                  ? tr("رصيدك غير كافٍ لإتمام الطلب. يرجى شحن المحفظة أولاً", "Insufficient balance. Please top up your wallet first")
+                  : error}
+              </p>
+            )}
             <p className="mt-3 text-[11px] text-muted-foreground">
-              {tr("يُنشأ الطلب بحالة (قيد الانتظار)، ثم تموّله من مساحة الطلب لتجميد المبلغ في الضمان.", "The order is created as pending; fund it from the workspace to lock the amount in escrow.")}
+              {tr("عند الطلب يُخصم المبلغ من رصيدك ويُجمَّد في الضمان فوراً حتى اعتماد التسليم.", "On order the amount is deducted from your balance and locked in escrow until delivery is approved.")}
             </p>
             <div className="mt-3">
               <DmcaTrigger />
@@ -188,6 +203,7 @@ function ListingDetail() {
           </Card>
         </div>
       </div>
+      {topUp && <TopUpDialog onClose={() => setTopUp(false)} defaultAmount={Math.max(0, Number((price - balance).toFixed(2)))} />}
     </Section>
   );
 }

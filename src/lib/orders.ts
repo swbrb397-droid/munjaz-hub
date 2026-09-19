@@ -3,13 +3,13 @@ import { supabase } from "@/lib/cloud-client";
 import { sanitizeText } from "@/lib/security";
 import { useAuth } from "@/hooks/use-auth";
 import { useLang } from "@/lib/lang";
-import { COVERS } from "@/lib/catalog";
+import { fetchFeeRates, rateForTier } from "@/lib/fees";
 import type { Tables } from "@/integrations/supabase/types";
 
 export type Order = Tables<"orders">;
 export type OrderStatus = Order["status"];
 
-/** Platform commission rate keyed to the seller's active tier. */
+/** Static fallback only — live rates come from governance_settings via fetchFeeRates(). */
 export function feeRateForTier(tier: string | null | undefined): number {
   if (tier === "pro") return 0.05;
   if (tier === "corporate") return 0.025;
@@ -42,6 +42,8 @@ export function useListing(id: string) {
         sellerTier = (prof.data as { account_tier?: string } | null)?.account_tier ?? null;
       }
 
+      const rates = await fetchFeeRates();
+
       return {
         raw: data,
         id: data.id,
@@ -55,8 +57,9 @@ export function useListing(id: string) {
         verified: data.verified,
         ownerId: data.owner_id,
         cover: (data.cover_url ?? "").trim(),
+        deliveryDays: Number(data.delivery_days ?? 3),
         sellerTier,
-        feeRate: feeRateForTier(sellerTier),
+        feeRate: rateForTier(rates, sellerTier),
       };
     },
   });
@@ -83,13 +86,21 @@ export function useCreateOrder() {
       if (input.sellerId === user.id) throw new Error(tr("لا يمكنك شراء عرضك الخاص", "You cannot buy your own listing"));
       if (!(input.amount >= 3)) throw new Error(tr("الحد الأدنى 3 USDT", "Minimum amount is 3 USDT"));
 
-      // Dynamic platform fee keyed to the seller's tier (Free 10% / Pro 5% / Corp 2.5%).
-      const sellerProfile = await supabase
-        .from("profiles")
-        .select("account_tier")
-        .eq("id", input.sellerId)
+      // Wallet gate: never create an unfunded draft order.
+      const walletRow = await supabase
+        .from("wallets")
+        .select("available_usdt")
+        .eq("user_id", user.id)
         .maybeSingle();
-      const rate = feeRateForTier((sellerProfile.data as { account_tier?: string } | null)?.account_tier);
+      const available = Number(walletRow.data?.available_usdt ?? 0);
+      if (available < input.amount) throw new Error("INSUFFICIENT_BALANCE");
+
+      // Dynamic platform fee keyed to the seller's tier, read from live governance.
+      const [sellerProfile, rates] = await Promise.all([
+        supabase.from("profiles").select("account_tier").eq("id", input.sellerId).maybeSingle(),
+        fetchFeeRates(),
+      ]);
+      const rate = rateForTier(rates, (sellerProfile.data as { account_tier?: string } | null)?.account_tier);
 
       const { data, error } = await supabase
         .from("orders")
@@ -108,10 +119,20 @@ export function useCreateOrder() {
         .select("id")
         .single();
       if (error) throw error;
+
+      // Fund immediately: the escrow trigger atomically moves the amount
+      // from available to locked and stamps the delivery deadline.
+      const funded = await supabase.from("orders").update({ status: "in_progress" }).eq("id", data.id);
+      if (funded.error) {
+        if (funded.error.message.includes("INSUFFICIENT_FUNDS")) throw new Error("INSUFFICIENT_BALANCE");
+        throw new Error(funded.error.message);
+      }
       return data;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["orders"] });
+      qc.invalidateQueries({ queryKey: ["wallet"] });
+      qc.invalidateQueries({ queryKey: ["transactions"] });
     },
   });
 }

@@ -32,6 +32,7 @@ import {
 import { useAdminOverview, useSandboxAction, type SandboxKind } from "@/lib/admin-ops";
 import { useKycSubmissions, useReviewKyc } from "@/lib/kyc";
 import { logAdminAction } from "@/lib/admin-audit";
+import { useFrozenAccounts } from "@/lib/frozen-accounts";
 
 export const Route = createFileRoute("/_authenticated/admin/")({
   head: () => ({
@@ -109,6 +110,8 @@ function Admin() {
   ] as const;
 
   const [tab, setTab] = useState<(typeof tabs)[number]["key"]>("disputes");
+  const [securityView, setSecurityView] = useState<"incidents" | "frozen">("incidents");
+  const frozen = useFrozenAccounts(isAdmin && tab === "security");
 
   const resolveCase = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: "resolved" | "rejected" }) => {
@@ -192,8 +195,8 @@ function Admin() {
           <h3 className="font-bold">{tr("قائمة معالجة السحوبات", "Withdrawal processing queue")}</h3>
           <p className="mt-1 text-xs text-muted-foreground">
             {tr(
-              "الوكيل الآلي يعتمد طلبات Pro/Corporate خلال 12 ساعة، والمجاني خلال 48 ساعة، ويحوّل الطلبات المشبوهة للمراجعة البشرية.",
-              "The AI agent auto-approves Pro/Corporate within 12h, free tier within 48h, and routes suspicious requests to human review.",
+              "الوكيل الآلي يعتمد طلبات Pro/Corporate خلال 24 ساعة، والمجاني خلال 48 ساعة، ويحوّل الطلبات المشبوهة للمراجعة البشرية.",
+              "The AI agent auto-approves Pro/Corporate within 24h, free tier within 48h, and routes suspicious requests to human review.",
             )}
           </p>
           <div className="mt-4 grid gap-3">
@@ -308,6 +311,84 @@ function Admin() {
       )}
 
       {tab === "security" && (
+        <Card className="mb-4 flex flex-wrap gap-2">
+          {([
+            ["incidents", tr("سجل الحوادث", "Incident log")],
+            ["frozen", `${tr("الحسابات المجمّدة", "Frozen accounts")} (${overview.data?.frozenAccounts ?? 0})`],
+          ] as const).map(([key, label]) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => setSecurityView(key)}
+              className={`rounded-lg px-4 py-2 text-sm ${securityView === key ? "bg-primary font-bold text-primary-foreground" : "border border-border text-muted-foreground"}`}
+            >
+              {label}
+            </button>
+          ))}
+        </Card>
+      )}
+
+      {tab === "security" && securityView === "frozen" && (
+        <Card>
+          <h3 className="font-bold">{tr("الحسابات المجمّدة", "Frozen accounts")}</h3>
+          <div className="mt-4 grid gap-3">
+            {frozen.isLoading && (
+              <p className="text-sm text-muted-foreground">{tr("جارٍ التحميل…", "Loading…")}</p>
+            )}
+            {!frozen.isLoading && (frozen.data ?? []).length === 0 && (
+              <p className="rounded-xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
+                {tr("لا توجد حسابات مجمّدة.", "No frozen accounts.")}
+              </p>
+            )}
+            {(frozen.data ?? []).map((f) => (
+              <div key={f.id} className="flex flex-wrap items-center gap-3 rounded-xl border border-border p-4 text-sm">
+                <div className="grid size-10 shrink-0 place-items-center overflow-hidden rounded-full border border-border bg-surface text-xs font-bold">
+                  {f.avatarUrl ? (
+                    <img src={f.avatarUrl} alt={f.displayName} className="size-full object-cover" />
+                  ) : (
+                    f.displayName.slice(0, 2).toUpperCase()
+                  )}
+                </div>
+                <div className="min-w-52">
+                  <p className="font-semibold">{f.displayName}</p>
+                  <p className="text-xs text-muted-foreground" dir="ltr">{f.id.slice(0, 8)}…</p>
+                  <p className="text-xs text-muted-foreground">
+                    {tr("تاريخ التجميد", "Frozen at")}: {f.frozenAt ? new Date(f.frozenAt).toLocaleString() : "—"}
+                  </p>
+                  {f.frozenReason && <p className="text-xs text-destructive">{f.frozenReason}</p>}
+                </div>
+                <div className="grid gap-0.5 text-xs text-muted-foreground">
+                  <span>{tr("الطلبات", "Orders")}: <bdi>{f.orders}</bdi></span>
+                  <span>{tr("النزاعات", "Disputes")}: <bdi>{f.disputes}</bdi></span>
+                  <span>{tr("الرصيد", "Balance")}: <bdi>{formatUsdt(f.balance)} USDT</bdi> · {tr("محجوز", "Locked")}: <bdi>{formatUsdt(f.locked)} USDT</bdi></span>
+                </div>
+                <button
+                  disabled={setFrozen.isPending}
+                  onClick={() =>
+                    setFrozen.mutate(
+                      { userId: f.id, frozen: false },
+                      {
+                        onSuccess: async () => {
+                          await logAdminAction("account_unfrozen", "profiles", f.id, { source: "frozen_desk" });
+                          void qc.invalidateQueries({ queryKey: ["frozen-accounts"] });
+                          void qc.invalidateQueries({ queryKey: ["admin-overview"] });
+                          toast.success(tr("تم رفع التجميد بنجاح", "Account unfrozen successfully"));
+                        },
+                        onError: (e: Error) => toast.error(e.message),
+                      },
+                    )
+                  }
+                  className="ms-auto rounded-lg bg-primary px-4 py-2 text-xs font-bold text-primary-foreground disabled:opacity-50"
+                >
+                  {tr("رفع التجميد", "Unfreeze")}
+                </button>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
+
+      {tab === "security" && securityView === "incidents" && (
         <Card>
           <h3 className="font-bold">{tr("حارس الأمن — سجل الحوادث", "Security sentinel — incident log")}</h3>
           <div className="mt-4 grid gap-3">

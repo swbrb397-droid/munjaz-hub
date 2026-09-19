@@ -20,6 +20,7 @@ import { Toaster } from "@/components/ui/sonner";
 
 import { supabase } from "@/lib/cloud-client";
 import { cleanupLegacyStorage } from "@/lib/storage-cleanup";
+import { captureReferralFromUrl } from "@/lib/referral-capture";
 
 
 
@@ -130,6 +131,8 @@ function RootComponent() {
   // Purge legacy/demo client storage on mount; Supabase auth tokens are preserved.
   useEffect(() => {
     cleanupLegacyStorage();
+    // Capture ?ref=CODE so the referral survives until the visitor signs up.
+    captureReferralFromUrl();
   }, []);
 
   useEffect(() => {

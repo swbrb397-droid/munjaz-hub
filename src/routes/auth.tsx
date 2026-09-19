@@ -8,6 +8,7 @@ import { useLang } from "@/lib/lang";
 import { useAuth } from "@/hooks/use-auth";
 
 import { supabase } from "@/lib/cloud-client";
+import { clearStoredReferralCode, storedReferralCode } from "@/lib/referral-capture";
 
 // CRITICAL — AUTH CONFIG LOCK: this route uses the live Almunjaz-hub Supabase
 // project via src/lib/cloud-client. Do NOT replace this with the generated
@@ -136,7 +137,8 @@ function AuthPage() {
   const [displayName, setDisplayName] = useState("");
   const [role, setRole] = useState<SignupRole>("hybrid");
   const [acceptedTerms, setAcceptedTerms] = useState(false);
-  const [referral, setReferral] = useState("");
+  // Pre-filled from the `?ref=` link captured on first visit.
+  const [referral, setReferral] = useState(() => storedReferralCode());
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -309,6 +311,7 @@ function AuthPage() {
             ),
           );
         }
+        const refCode = (referral || storedReferralCode()).trim().toUpperCase();
         const { data, error } = await supabase.auth.signUp({
           email: normalizedEmail,
           password: normalizedPassword,
@@ -318,12 +321,14 @@ function AuthPage() {
               display_name: displayName,
               role,
               terms_accepted: "true",
-              referral_code: referral || undefined,
+              referral_code: refCode || undefined,
             },
           },
         });
 
         if (error) throw error;
+        // Attribution is stored on the profile by the account-creation trigger.
+        clearStoredReferralCode();
         // Supabase obfuscates existing accounts: an empty identities array means the email is taken.
         if (data.user && (data.user.identities?.length ?? 0) === 0) {
           throw new Error("__EMAIL_TAKEN__");

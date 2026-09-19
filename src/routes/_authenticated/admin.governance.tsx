@@ -64,6 +64,9 @@ function AdminGovernance() {
               </label>
               {([
                 ["ai_confidence_threshold", tr("حد ثقة الذكاء الاصطناعي (%)", "AI confidence threshold (%)"), Number(g.ai_confidence_threshold)],
+                ["fee_free_pct", tr("عمولة الباقة المجانية (%)", "Free tier commission (%)"), Number(g.fee_free_pct)],
+                ["fee_pro_pct", tr("عمولة باقة Pro (%)", "Pro tier commission (%)"), Number(g.fee_pro_pct)],
+                ["fee_corporate_pct", tr("عمولة باقة الشركات (%)", "Corporate tier commission (%)"), Number(g.fee_corporate_pct)],
                 ["sla_free_hours", tr("SLA للحساب المجاني (ساعة)", "Free tier SLA (hours)"), g.sla_free_hours],
                 ["sla_pro_hours", tr("SLA لحساب Pro (ساعة)", "Pro tier SLA (hours)"), g.sla_pro_hours],
                 ["daily_deposit_limit", tr("حد التعبئة اليومي (USDT)", "Daily deposit limit (USDT)"), Number(g.daily_deposit_limit)],
