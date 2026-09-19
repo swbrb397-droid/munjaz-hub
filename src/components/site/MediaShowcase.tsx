@@ -102,7 +102,7 @@ export function MediaShowcase({ items, title }: { items: MediaItem[]; title?: st
               src={active.src}
               alt={active.title ?? ""}
               category={active.category}
-              className="max-h-[70vh] min-h-60 w-full rounded-2xl border border-border !object-contain"
+              className="max-h-[70dvh] min-h-60 w-full rounded-2xl border border-border !object-contain"
               iconClassName="size-16"
             />
             <div className="mt-3 flex items-center justify-between gap-3">

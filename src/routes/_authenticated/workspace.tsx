@@ -2126,7 +2126,7 @@ function Workspace() {
           role="dialog"
           aria-modal="true"
         >
-          <Card className="w-full max-w-md">
+          <Card className="max-h-[85dvh] w-full max-w-md overflow-y-auto pb-8">
             <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
               <h2 className="min-w-0 truncate text-lg font-black">
                 {tr("طلب تمديد مهلة التسليم", "Request deadline extension")}
@@ -2204,7 +2204,7 @@ function Workspace() {
           role="dialog"
           aria-modal="true"
         >
-          <Card className="w-full max-w-md">
+          <Card className="max-h-[85dvh] w-full max-w-md overflow-y-auto pb-8">
             <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
               <h2 className="min-w-0 truncate text-lg font-black">
                 {tr("تقييم متبادل بعد الإنجاز", "Two-way review after completion")}

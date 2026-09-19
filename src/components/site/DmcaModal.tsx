@@ -61,7 +61,7 @@ export function DmcaModal({ listingRef, onClose }: { listingRef?: string; onClos
       role="dialog"
       aria-modal="true"
     >
-      <div className="max-h-[85vh] w-full max-w-md overflow-y-auto rounded-2xl border border-border bg-card p-5">
+      <div className="max-h-[85dvh] w-full max-w-md overflow-y-auto rounded-2xl border border-border bg-card p-5">
         <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
           <h2 className="flex min-w-0 items-center gap-2 truncate text-base font-black">
             <Scale className="size-4 shrink-0 text-accent" />
