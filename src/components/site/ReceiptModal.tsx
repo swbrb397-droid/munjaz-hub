@@ -73,7 +73,7 @@ export function ReceiptModal({ receipt, onClose }: { receipt: ReceiptData; onClo
             {rows.map(([k, v]) => (
               <div key={k} className="flex items-start justify-between gap-3 print:border-b print:border-dotted print:border-black/40 print:pb-1">
                 <dt className="shrink-0 text-muted-foreground print:text-black">{k}</dt>
-                <dd className="min-w-0 break-all text-end font-mono font-bold print:text-black">{v}</dd>
+                <dd className="min-w-0 break-words text-end font-mono font-bold print:text-black">{v}</dd>
               </div>
             ))}
           </dl>
@@ -90,7 +90,7 @@ export function ReceiptModal({ receipt, onClose }: { receipt: ReceiptData; onClo
 
         {stampHash && (
           <p className="mt-3 break-all rounded-xl border border-primary/40 bg-primary/10 px-3 py-2 text-[10px] font-bold text-primary print:hidden">
-            ✅ تم ختم الملف رقمياً · بصمة التحقق: <span dir="ltr" className="font-mono">{stampHash}</span> · سُجّل الحدث في سجل التدقيق (PDF_DOWNLOAD_EVENT).
+            تم توثيق الإيصال وبصمة التحقق في سجلات البلوكتشين بنجاح · بصمة التحقق: <span dir="ltr" className="font-mono">{stampHash}</span>
           </p>
         )}
 

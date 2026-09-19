@@ -1451,6 +1451,10 @@ export type Database = {
           xp_points: number
         }[]
       }
+      has_recent_mfa_verification: {
+        Args: { _user_id: string }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

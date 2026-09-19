@@ -45,20 +45,20 @@ export function ReferralWidget({ className = "" }: { className?: string }) {
         {tr("شارك رابطك واكسب عمولة من صافي أرباح المنصة لمدة 12 شهراً.", "Share your link and earn commission from net platform profit for 12 months.")}
       </p>
 
-      <div className="mt-4 grid grid-cols-[minmax(0,1fr)_auto] gap-2">
+      <div className="mt-4 grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
         <input
           readOnly
           dir="ltr"
           value={link || tr("جارٍ إنشاء الرابط...", "Generating link...")}
           onFocus={(e) => e.currentTarget.select()}
           aria-label={tr("رابط الإحالة", "Referral link")}
-          className="field-lux min-w-0 px-3 py-2.5 font-mono text-[11px] text-accent sm:text-xs"
+          className="field-lux w-full min-w-0 overflow-x-auto px-3 py-2.5 font-mono text-xs text-accent"
         />
         <button
           type="button"
           onClick={copy}
           disabled={!link}
-          className="chip chip-hover shrink-0 !text-primary disabled:opacity-50"
+          className="chip chip-hover w-full shrink-0 justify-center !text-primary disabled:opacity-50 sm:w-auto"
         >
           <Copy className="size-4" /> {copied ? tr("تم النسخ", "Copied") : tr("نسخ الرابط", "Copy link")}
         </button>

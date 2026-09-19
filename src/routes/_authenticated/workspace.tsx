@@ -767,7 +767,8 @@ function Workspace() {
   });
 
   return (
-    <Section
+    <div className="relative z-10 px-3 pt-4 sm:px-6 sm:pt-6">
+      <Section
       title={
         order
           ? tr(
@@ -782,7 +783,7 @@ function Workspace() {
           : tr("لا توجد طلبات بعد", "No orders yet")
       }
       action={
-        <div className="flex flex-wrap gap-2">
+        <div className="relative z-10 flex flex-wrap items-center gap-2">
           {isAwaitingFunding && isBuyer && (
             <>
               <button
@@ -859,7 +860,7 @@ function Workspace() {
     >
       <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
         <Card className="flex min-h-[560px] flex-col pb-28 sm:pb-5">
-          <div className="flex flex-wrap items-center gap-2 border-b border-border pb-3">
+          <div className="relative z-10 flex flex-wrap items-center gap-2 border-b border-border pb-3">
             <div className="scrollbar-none -mx-1 flex max-w-full flex-1 touch-pan-x items-center gap-2 overflow-x-auto whitespace-nowrap p-1">
               {tabs.map((t) => (
                 <button
@@ -2285,6 +2286,7 @@ function Workspace() {
           {extDone ?? reviewDone}
         </p>
       )}
-    </Section>
+      </Section>
+    </div>
   );
 }

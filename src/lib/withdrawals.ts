@@ -28,6 +28,7 @@ export function withdrawalErrorMessage(raw: string, ar: boolean): string {
     INVALID_ADDRESS: ["عنوان المحفظة غير صالح.", "Invalid wallet address."],
     INSUFFICIENT_FUNDS: ["الرصيد غير كافٍ (شامل الرسوم).", "Insufficient balance (including fees)."],
     ACCOUNT_FROZEN: ["الحساب مجمّد أمنياً — تواصل مع الدعم.", "Account frozen for security — contact support."],
+    MFA_REQUIRED: ["يلزم تأكيد المصادقة الثنائية قبل السحب.", "Two-factor authentication is required before withdrawal."],
     NOT_AUTHENTICATED: ["يجب تسجيل الدخول.", "You must be signed in."],
     FORBIDDEN: ["صلاحيات غير كافية.", "Insufficient permissions."],
   };
@@ -65,6 +66,13 @@ export function useRequestWithdrawal() {
       if (amount < MIN_WITHDRAWAL) throw new Error("MIN_WITHDRAWAL_10");
       const address = sanitizeAddress(input.address);
       if (!isValidAddress(address)) throw new Error("INVALID_ADDRESS");
+
+      const { data: assurance, error: assuranceError } =
+        await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+      if (assuranceError) throw assuranceError;
+      if (assurance.nextLevel === "aal2" && assurance.currentLevel !== "aal2") {
+        throw new Error("MFA_REQUIRED");
+      }
 
       const { data, error } = await supabase.rpc("request_withdrawal", {
         _amount: amount,
