@@ -858,7 +858,7 @@ function Workspace() {
       }
     >
       <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
-        <Card className="flex min-h-[560px] flex-col">
+        <Card className="flex min-h-[560px] flex-col pb-28 sm:pb-5">
           <div className="flex flex-wrap items-center gap-2 border-b border-border pb-3">
             <div className="scrollbar-none -mx-1 flex max-w-full flex-1 touch-pan-x items-center gap-2 overflow-x-auto whitespace-nowrap p-1">
               {tabs.map((t) => (
@@ -915,7 +915,7 @@ function Workspace() {
                   </div>
                 )}
               </div>
-              <div className="flex-1 space-y-3 overflow-y-auto py-4">
+              <div className="flex h-[55dvh] flex-1 flex-col space-y-3 overflow-y-auto py-4 sm:h-[600px]">
                 {messages.length === 0 && (
                   <p className="py-10 text-center text-sm text-muted-foreground">
                     {tr(
