@@ -194,20 +194,38 @@ function PricingPage() {
                 ))}
               </ul>
 
-              <button
-                type="button"
-                disabled={currentTier === t.id || purchase.isPending}
-                onClick={() => upgrade(t.id, t.price)}
-                className={`mt-6 w-full rounded-xl py-3 text-sm font-bold transition-colors ${
-                  currentTier === t.id
-                    ? "cursor-not-allowed border border-border text-muted-foreground"
-                    : t.premium
-                      ? "bg-accent text-background hover:opacity-90"
-                      : "bg-primary text-primary-foreground hover:opacity-90"
-                }`}
-              >
-                {purchase.isPending && t.id !== "free" ? <span className="inline-flex items-center gap-2"><Loader2 className="size-4 animate-spin" />{tr("جارٍ التفعيل...", "Activating...")}</span> : currentTier === t.id ? tr("الباقة الحالية", "Current plan") : tr(t.cta[0], t.cta[1])}
-              </button>
+              {/* Only the active tier may show "current plan"; the free card becomes a muted downgrade notice. */}
+              {(() => {
+                const isCurrent = currentTier === t.id;
+                const isDowngrade = t.id === "free" && !isCurrent;
+                return (
+                  <button
+                    type="button"
+                    disabled={isCurrent || isDowngrade || purchase.isPending}
+                    onClick={() => upgrade(t.id, t.price)}
+                    className={`mt-6 w-full rounded-xl py-3 text-sm font-bold transition-colors ${
+                      isCurrent || isDowngrade
+                        ? "cursor-not-allowed border border-border text-muted-foreground"
+                        : t.premium
+                          ? "bg-accent text-background hover:opacity-90"
+                          : "bg-primary text-primary-foreground hover:opacity-90"
+                    }`}
+                  >
+                    {purchase.isPending && t.id !== "free" ? (
+                      <span className="inline-flex items-center gap-2">
+                        <Loader2 className="size-4 animate-spin" />
+                        {tr("جارٍ التفعيل...", "Activating...")}
+                      </span>
+                    ) : isCurrent ? (
+                      tr("باقتك الحالية", "Your current plan")
+                    ) : isDowngrade ? (
+                      tr("الرجوع للباقة المجانية عند انتهاء اشتراكك", "Reverts to Free when your plan expires")
+                    ) : (
+                      tr(t.cta[0], t.cta[1])
+                    )}
+                  </button>
+                );
+              })()}
             </Card>
           ))}
         </div>
