@@ -470,7 +470,14 @@ function Workspace() {
   const [extHours, setExtHours] = useState<24 | 48>(24);
   const [extReason, setExtReason] = useState("");
   const [extDone, setExtDone] = useState<string | null>(null);
-  const [extStatus, setExtStatus] = useState<"none" | "pending" | "approved">("none");
+
+  /** Live extension requests for this order (anti-spam + in-chat action card). */
+  const extensionOrderIds = useMemo(() => (selected ? [selected] : []), [selected]);
+  const pendingExtensions = usePendingExtensions(extensionOrderIds);
+  const requestExtension = useRequestExtension();
+  const resolveExtension = useResolveExtension();
+  const pendingExtension = selected ? (pendingExtensions.data?.[selected] ?? null) : null;
+  const extStatus: "none" | "pending" = pendingExtension ? "pending" : "none";
 
   /** Role isolation — each party only ever sees its own controls. */
   const isBuyer = !!order && !!user && order.buyer_id === user.id;
