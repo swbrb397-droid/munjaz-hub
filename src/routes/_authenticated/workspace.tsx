@@ -47,6 +47,7 @@ import {
   useReleaseMilestone,
   useSendAttachment,
   useSendMessage,
+  useCacheTranslation,
   useSetDeliverableApproval,
   useUploadDeliverable,
   vaultUrl,
@@ -55,8 +56,13 @@ import {
 import { supabase } from "@/lib/cloud-client";
 import { gibberishError, sanitizeText } from "@/lib/security";
 import { useServerFn } from "@tanstack/react-start";
-import { orderAiAssistant } from "@/lib/order-ai.functions";
 import { translateMessage } from "@/lib/translate.functions";
+import {
+  CONTACT_BLOCK_MESSAGE,
+  isArabicOnly,
+  isWithinEditWindow,
+  moderateChatText,
+} from "@/lib/chat-moderation";
 
 type Tr = (ar: string, en: string) => string;
 
@@ -143,6 +149,8 @@ type Msg = {
   time: string;
   /** Language the message was written in. */
   srcLang?: "ar" | "en";
+  /** ISO creation timestamp — drives the 5-minute edit window. */
+  createdAt: string;
   /** Stored machine translation of `text` into the other language. */
   translation?: string;
   /** Bumped when the message is edited so cached translations are invalidated. */
@@ -152,16 +160,14 @@ type Msg = {
   attachmentPath?: string;
 };
 
-/** Blocks phone numbers, emails and external messaging links inside order chat. */
-const CONTACT_PATTERNS: RegExp[] = [
-  /[\w.+-]+\s*(@|\[at\]|\(at\))\s*[\w-]+\s*\.\s*[a-z]{2,}/i,
-  /(\+|00)\s*\d[\d\s\-().]{6,}/,
-  /\b\d[\d\s\-().]{8,}\d\b/,
-  /(wa\.me|whats\s*app|واتس|t\.me|telegram|تلجرام|تليجرام|discord|instagram|snapchat|سناب|انستغرام|فيسبوك|facebook|skype|imo)/i,
-];
-
-function hasExternalContact(text: string) {
-  return CONTACT_PATTERNS.some((re) => re.test(text));
+/**
+ * Single moderation gate for the order chat — enforced identically on new
+ * messages and on edits. Returns the Arabic block reason, or null when clean.
+ */
+function moderationFailure(text: string): string | null {
+  const verdict = moderateChatText(text);
+  if (!verdict.blocked) return null;
+  return verdict.reason ?? CONTACT_BLOCK_MESSAGE;
 }
 
 const TRANSLATE_PREF_KEY = "munjaz-auto-translate";
@@ -245,8 +251,7 @@ function Workspace() {
   const tabs = [
     { key: "chat", label: tr("المحادثة", "Chat") },
     { key: "files", label: tr("التسليمات", "Deliverables") },
-    { key: "timeline", label: tr("السجل الزمني", "Timeline") },
-    { key: "dispute", label: tr("النزاع", "Dispute") },
+    { key: "log", label: tr("السجل والنزاع", "Log & dispute") },
   ] as const;
 
   const [tab, setTab] = useState<(typeof tabs)[number]["key"]>("chat");
@@ -264,10 +269,8 @@ function Workspace() {
   const [showOriginal, setShowOriginal] = useState<string[]>([]);
   const [draft, setDraft] = useState("");
 
-  // Secure Gemini-backed order assistant (key stays server-side).
-  const askAssistant = useServerFn(orderAiAssistant);
-  const [aiReplies, setAiReplies] = useState<{ id: string; text: string }[]>([]);
-  const [aiBusy, setAiBusy] = useState(false);
+  // The order room is strictly private between buyer and seller — no AI bot
+  // ever posts into it. Policy violations surface as a client-side banner only.
 
   // Live chat backed by order_messages (realtime).
   const messagesQuery = useOrderMessages(selected);
@@ -307,10 +310,13 @@ function Workspace() {
         name: m.sender_id === user?.id ? tr("أنا", "Me") : tr("الطرف الآخر", "Counterparty"),
         text: m.body,
         time: new Date(m.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+        createdAt: m.created_at,
         srcLang,
         rev: m.version,
       };
-      if (srcLang !== lang) base.translation = stored[lang] ?? m.body;
+      // Permanent cache: only a real stored translation counts as a hit.
+      if (srcLang !== lang && typeof stored[lang] === "string" && stored[lang]!.trim())
+        base.translation = stored[lang];
       if (m.attachment_path) {
         base.attachmentPath = m.attachment_path;
         base.attachmentName = m.attachment_name ?? m.body;
@@ -319,7 +325,7 @@ function Workspace() {
     });
   }, [messagesQuery.data, user?.id, lang, tr]);
 
-  const [warning, setWarning] = useState(false);
+  const [warning, setWarning] = useState<string | null>(null);
   const [reason, setReason] = useState("");
   // Anti-gibberish gate for the dispute explanation (50+ real characters).
   const reasonError = gibberishError(reason, { minLength: 50, maxLength: 2000, minWords: 4 });
@@ -339,6 +345,8 @@ function Workspace() {
   const [msgRev, setMsgRev] = useState<Record<string, number>>({});
   const [editing, setEditing] = useState<{ id: string; text: string } | null>(null);
   const runTranslate = useServerFn(translateMessage);
+  const cacheTranslation = useCacheTranslation(selected);
+  const cacheTx = cacheTranslation.mutate;
   const [txState, setTxState] = useState<
     Record<string, { text?: string; loading?: boolean; error?: boolean; cached?: boolean }>
   >({});
@@ -350,22 +358,39 @@ function Workspace() {
     if (!translate) return;
     for (const m of messages) {
       if (m.srcLang === lang || m.attachmentPath || !m.text.trim()) continue;
+      // Cost guard: Arabic-only text never needs an Arabic translation.
+      if (lang === "ar" && isArabicOnly(m.text)) continue;
       const key = txKey(m.id, lang, msgRev[m.id] ?? m.rev ?? 0);
       if (txState[key]) continue;
+      // 1) Permanent database cache (order_messages.translations / translated_content).
+      const stored = m.translation;
+      if (stored) {
+        txCacheSet(key, stored);
+        setTxState((s) => ({ ...s, [key]: { text: stored, cached: true } }));
+        continue;
+      }
       const hit = txCacheGet(key);
       if (hit !== undefined) {
         setTxState((s) => ({ ...s, [key]: { text: hit, cached: true } }));
         continue;
       }
       setTxState((s) => ({ ...s, [key]: { loading: true } }));
-      void runTranslate({ data: { text: m.text, target: lang } })
+      // 2) Bounded context: up to the previous 5 real messages, 120 chars each.
+      const idx = messages.findIndex((x) => x.id === m.id);
+      const context = messages
+        .slice(Math.max(0, idx - 5), idx)
+        .filter((x) => !x.attachmentPath && x.text.trim())
+        .map((x) => x.text.slice(0, 120));
+      void runTranslate({ data: { text: m.text, target: lang, context } })
         .then((r: { text: string }) => {
           txCacheSet(key, r.text);
           setTxState((s) => ({ ...s, [key]: { text: r.text } }));
+          // 3) Persist permanently so it is never re-generated.
+          cacheTx({ id: m.id, translations: { [lang]: r.text }, translatedContent: r.text });
         })
         .catch(() => setTxState((s) => ({ ...s, [key]: { error: true } })));
     }
-  }, [translate, messages, lang, msgRev, txState, runTranslate]);
+  }, [translate, messages, lang, msgRev, txState, runTranslate, cacheTx]);
 
   // Instant digital asset anti-piracy shield
   const [assetLocked, setAssetLocked] = useState(false);
