@@ -265,6 +265,12 @@ function Admin() {
                 </div>
                 <div className="flex flex-wrap items-start gap-2">
                   <button
+                    onClick={() => setAuditUser(w.user_id)}
+                    className="rounded-lg border border-accent/50 px-3 py-1.5 text-xs font-bold text-accent"
+                  >
+                    {tr("فحص سجل المستخدم 🔍", "Inspect user record 🔍")}
+                  </button>
+                  <button
                     disabled={resolvePayout.isPending || w.status === "paid" || w.status === "rejected"}
                     onClick={() => resolvePayout.mutate({ id: w.id, action: "approve" })}
                     className="rounded-lg border border-border px-3 py-1.5 text-xs disabled:opacity-50"
@@ -272,11 +278,22 @@ function Admin() {
                     {tr("اعتماد", "Approve")}
                   </button>
                   <button
+                    disabled={
+                      payoutBusy !== null || w.status === "paid" || w.status === "rejected"
+                    }
+                    onClick={() => void oneClickPayout(w.id)}
+                    className="rounded-lg bg-emerald-500 px-3 py-1.5 text-xs font-bold text-white disabled:opacity-50"
+                  >
+                    {payoutBusy === w.id
+                      ? tr("جارٍ التحويل…", "Sending…")
+                      : tr("اعتماد وإرسال السحب", "Approve & send payout")}
+                  </button>
+                  <button
                     disabled={resolvePayout.isPending || w.status === "paid" || w.status === "rejected"}
                     onClick={() => setPayoutAction({ id: w.id, mode: "pay" })}
                     className="rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground disabled:opacity-50"
                   >
-                    {tr("اعتماد وإتمام التحويل", "Approve & complete transfer")}
+                    {tr("تسجيل هاش يدوي", "Record hash manually")}
                   </button>
                   <button
                     disabled={resolvePayout.isPending || w.status === "paid" || w.status === "rejected"}
