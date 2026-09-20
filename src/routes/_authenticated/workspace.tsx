@@ -393,6 +393,25 @@ function Workspace() {
   /** Live translation entry for a message in the active UI language. */
   const txFor = (m: Msg) => txState[txKey(m.id, lang, msgRev[m.id] ?? m.rev ?? 0)];
 
+  /** On-demand translation for a single message bubble (button click). */
+  const translateNow = (m: Msg) => {
+    const key = txKey(m.id, lang, msgRev[m.id] ?? m.rev ?? 0);
+    if (txState[key]?.loading || txState[key]?.text) return;
+    setTxState((s) => ({ ...s, [key]: { loading: true } }));
+    const idx = messages.findIndex((x) => x.id === m.id);
+    const context = messages
+      .slice(Math.max(0, idx - 5), idx)
+      .filter((x) => !x.attachmentPath && x.text.trim())
+      .map((x) => x.text.slice(0, 120));
+    void runTranslate({ data: { text: m.text, target: lang, context } })
+      .then((r: { text: string }) => {
+        txCacheSet(key, r.text);
+        setTxState((s) => ({ ...s, [key]: { text: r.text } }));
+        cacheTx({ id: m.id, translations: { [lang]: r.text }, translatedContent: r.text });
+      })
+      .catch(() => setTxState((s) => ({ ...s, [key]: { error: true } })));
+  };
+
   useEffect(() => {
     if (!translate) return;
     for (const m of messages) {
@@ -1076,6 +1095,44 @@ function Workspace() {
                             {tr("تعديل الرسالة", "Edit message")}
                           </button>
                         )}
+                        {!translate &&
+                          !isEditing &&
+                          !m.attachmentPath &&
+                          /[a-zA-Z]{3,}/.test(m.text) &&
+                          (() => {
+                            const stored = m.translation || cachedTx?.text;
+                            if (stored)
+                              return (
+                                <div
+                                  className="mt-1 flex items-start gap-1 border-t border-emerald-500/20 pt-1 text-xs font-medium text-emerald-400"
+                                  dir={lang === "ar" ? "rtl" : "ltr"}
+                                >
+                                  <span>🌐</span>
+                                  <span className="break-words">{stored}</span>
+                                </div>
+                              );
+                            if (cachedTx?.loading)
+                              return (
+                                <span className="mt-1 inline-flex items-center gap-1 text-[11px] text-emerald-400/80">
+                                  <Loader2 className="size-3 animate-spin" />
+                                  {tr("جارٍ الترجمة…", "Translating…")}
+                                </span>
+                              );
+                            return (
+                              <button
+                                type="button"
+                                onClick={() => translateNow(m)}
+                                className="mt-1 flex items-center gap-1 text-[11px] text-emerald-400/80 underline hover:text-emerald-300"
+                              >
+                                <span>
+                                  🌐{" "}
+                                  {cachedTx?.error
+                                    ? tr("إعادة المحاولة", "Retry translation")
+                                    : tr("ترجمة إلى العربية", "Translate to Arabic")}
+                                </span>
+                              </button>
+                            );
+                          })()}
                         {translate && foreign && !isEditing && (
                           <div className="mt-2 grid gap-1 border-t border-current/15 pt-2">
                             {!original && (
