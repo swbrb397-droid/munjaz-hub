@@ -8,6 +8,7 @@ import { DmcaTrigger } from "@/components/site/DmcaModal";
 import { CoverImage } from "@/components/site/CoverImage";
 
 import { useLang } from "@/lib/lang";
+import { sanitizeText } from "@/lib/security";
 import { useAuth } from "@/hooks/use-auth";
 import { useWallet } from "@/lib/queries";
 import { useCreateOrder, useListing } from "@/lib/orders";
