@@ -797,7 +797,7 @@ function Workspace() {
   });
 
   return (
-    <div className="relative z-10 box-border w-full max-w-full overflow-x-hidden px-3 pt-4 sm:px-6 sm:pt-6">
+    <div className="relative z-10 box-border min-h-[100dvh] w-full max-w-full overflow-x-hidden px-3 pt-4 sm:px-6 sm:pt-6">
       <Section
       title={
         order
@@ -900,19 +900,21 @@ function Workspace() {
     >
       <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
         <Card className="flex min-h-[560px] flex-col pb-28 sm:pb-5">
-          <div className="relative z-10 flex flex-wrap items-center gap-2 border-b border-border pb-3">
-            <div className="scrollbar-none -mx-1 flex max-w-full flex-1 touch-pan-x items-center gap-2 overflow-x-auto whitespace-nowrap p-1">
-              {tabs.map((t) => (
-                <button
-                  key={t.key}
-                  type="button"
-                  onClick={() => setTab(t.key)}
-                  aria-pressed={tab === t.key}
-                  className={`min-h-[40px] shrink-0 rounded-lg px-3 py-1.5 text-sm ${tab === t.key ? "bg-secondary font-bold text-primary" : "text-muted-foreground"}`}
-                >
-                  {t.label}
-                </button>
-              ))}
+          <div className="relative z-10 flex flex-wrap items-center gap-2 overflow-hidden border-b border-border pb-3">
+            <div className="w-full max-w-full box-border overflow-hidden my-2">
+              <div className="flex items-center gap-2 overflow-x-auto scrollbar-none scroll-smooth w-full max-w-full px-1 py-1">
+                {tabs.map((t) => (
+                  <button
+                    key={t.key}
+                    type="button"
+                    onClick={() => setTab(t.key)}
+                    aria-pressed={tab === t.key}
+                    className={`min-h-[40px] shrink-0 rounded-lg px-3 py-1.5 text-sm ${tab === t.key ? "bg-secondary font-bold text-primary" : "text-muted-foreground"}`}
+                  >
+                    {t.label}
+                  </button>
+                ))}
+              </div>
             </div>
             <button
               type="button"
@@ -1151,45 +1153,56 @@ function Workspace() {
                 </p>
               )}
 
-              <div className="sticky bottom-0 z-20 w-full max-w-full bg-background/95 pb-[env(safe-area-inset-bottom)] backdrop-blur">
-              <div className="w-full max-w-full flex items-center gap-2 p-2 bg-card border border-border/60 rounded-xl shadow-sm">
-                <input
-                  ref={chatFileRef}
-                  type="file"
-                  className="hidden"
-                  onChange={handleFileSelected}
-                />
-                <button
-                  type="button"
-                  disabled={sendAttachment.isPending || !selected}
-                  onClick={() => chatFileRef.current?.click()}
-                  className="grid size-9 flex-shrink-0 place-items-center rounded-lg border border-border text-muted-foreground hover:text-foreground disabled:opacity-50"
-                  aria-label={tr("إرفاق ملف", "Attach file")}
+              <div className="sticky bottom-0 z-30 w-full max-w-full box-border border-t border-border/50 bg-background/95 px-3 py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] backdrop-blur">
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    send();
+                  }}
+                  className="w-full max-w-full box-border flex items-center gap-2 overflow-hidden rounded-2xl border border-border/80 bg-card p-1.5 shadow-sm sm:p-2"
                 >
-                  {sendAttachment.isPending ? (
-                    <Loader2 className="size-4 animate-spin" />
-                  ) : (
-                    <Paperclip className="size-4" />
-                  )}
-                </button>
-                <input
-                  value={draft}
-                  onChange={(e) => setDraft(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && send()}
-                  placeholder={tr(
-                    "🛡️ حماية الضمان: يمنع مشاركة وسائل التواصل الخارجية لضمان حقوقك المالية وسريان نظام الـ Escrow.",
-                    "🛡️ Escrow protection: sharing external contact details is prohibited to protect your funds and keep escrow valid.",
-                  )}
-                  className="min-w-0 flex-1 bg-transparent border-0 outline-none px-0 py-1 text-sm text-foreground placeholder:text-muted-foreground"
-                />
-                <button
-                  onClick={send}
-                  className="flex-shrink-0 h-9 w-9 inline-flex items-center justify-center rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white shadow-sm active:scale-95"
-                  aria-label={tr("إرسال", "Send")}
-                >
-                  <Send className="size-4 rtl:rotate-180" />
-                </button>
-              </div>
+                  <input
+                    ref={chatFileRef}
+                    type="file"
+                    className="hidden"
+                    onChange={handleFileSelected}
+                  />
+                  <input
+                    value={draft}
+                    onChange={(e) => setDraft(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && send()}
+                    placeholder={tr(
+                      "🛡️ حماية الضمان: يمنع مشاركة وسائل التواصل الخارجية لضمان حقوقك المالية وسريان نظام الـ Escrow.",
+                      "🛡️ Escrow protection: sharing external contact details is prohibited to protect your funds and keep escrow valid.",
+                    )}
+                    className="flex-1 min-w-0 w-full flex-1 bg-transparent border-0 px-2 py-1 text-right text-sm text-foreground outline-none placeholder:text-muted-foreground focus:ring-0 sm:text-base"
+                  />
+                  <div className="flex flex-shrink-0 items-center gap-1.5 pl-1">
+                    <button
+                      type="button"
+                      disabled={sendAttachment.isPending || !selected}
+                      onClick={() => chatFileRef.current?.click()}
+                      className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl p-2 text-muted-foreground transition-colors hover:text-foreground disabled:opacity-50"
+                      title={tr("إرفاق ملف", "Attach file")}
+                      aria-label={tr("إرفاق ملف", "Attach file")}
+                    >
+                      {sendAttachment.isPending ? (
+                        <Loader2 className="size-4 animate-spin" />
+                      ) : (
+                        <Paperclip className="size-4" />
+                      )}
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={!draft.trim()}
+                      className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-emerald-500 text-white shadow-sm transition-all hover:bg-emerald-600 active:scale-95 disabled:opacity-40 sm:h-10 sm:w-10"
+                      title={tr("إرسال", "Send")}
+                      aria-label={tr("إرسال", "Send")}
+                    >
+                      <Send className="size-4 rtl:rotate-180" />
+                    </button>
+                  </div>
+                </form>
               </div>
             </>
           )}
