@@ -1,0 +1,1 @@
+ALTER TABLE public.order_messages ADD COLUMN IF NOT EXISTS translated_content TEXT;

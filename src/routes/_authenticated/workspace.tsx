@@ -35,7 +35,7 @@ import { useLang } from "@/lib/lang";
 import { useAuth } from "@/hooks/use-auth";
 import { VideoCallPanel } from "@/components/site/VideoCallPanel";
 import { useOrders, useProfile } from "@/lib/queries";
-import { checkUpload } from "@/lib/file-guard";
+import { checkUpload, tierFileLimitMb } from "@/lib/file-guard";
 import { nextActions, useOrderTransition, type OrderStatus } from "@/lib/orders";
 import {
   useCreateMilestones,
@@ -47,6 +47,7 @@ import {
   useReleaseMilestone,
   useSendAttachment,
   useSendMessage,
+  useCacheTranslation,
   useSetDeliverableApproval,
   useUploadDeliverable,
   vaultUrl,
@@ -55,8 +56,13 @@ import {
 import { supabase } from "@/lib/cloud-client";
 import { gibberishError, sanitizeText } from "@/lib/security";
 import { useServerFn } from "@tanstack/react-start";
-import { orderAiAssistant } from "@/lib/order-ai.functions";
 import { translateMessage } from "@/lib/translate.functions";
+import {
+  CONTACT_BLOCK_MESSAGE,
+  isArabicOnly,
+  isWithinEditWindow,
+  moderateChatText,
+} from "@/lib/chat-moderation";
 
 type Tr = (ar: string, en: string) => string;
 
@@ -143,6 +149,8 @@ type Msg = {
   time: string;
   /** Language the message was written in. */
   srcLang?: "ar" | "en";
+  /** ISO creation timestamp — drives the 5-minute edit window. */
+  createdAt: string;
   /** Stored machine translation of `text` into the other language. */
   translation?: string;
   /** Bumped when the message is edited so cached translations are invalidated. */
@@ -152,16 +160,14 @@ type Msg = {
   attachmentPath?: string;
 };
 
-/** Blocks phone numbers, emails and external messaging links inside order chat. */
-const CONTACT_PATTERNS: RegExp[] = [
-  /[\w.+-]+\s*(@|\[at\]|\(at\))\s*[\w-]+\s*\.\s*[a-z]{2,}/i,
-  /(\+|00)\s*\d[\d\s\-().]{6,}/,
-  /\b\d[\d\s\-().]{8,}\d\b/,
-  /(wa\.me|whats\s*app|واتس|t\.me|telegram|تلجرام|تليجرام|discord|instagram|snapchat|سناب|انستغرام|فيسبوك|facebook|skype|imo)/i,
-];
-
-function hasExternalContact(text: string) {
-  return CONTACT_PATTERNS.some((re) => re.test(text));
+/**
+ * Single moderation gate for the order chat — enforced identically on new
+ * messages and on edits. Returns the Arabic block reason, or null when clean.
+ */
+function moderationFailure(text: string): string | null {
+  const verdict = moderateChatText(text);
+  if (!verdict.blocked) return null;
+  return verdict.reason ?? CONTACT_BLOCK_MESSAGE;
 }
 
 const TRANSLATE_PREF_KEY = "munjaz-auto-translate";
@@ -245,8 +251,7 @@ function Workspace() {
   const tabs = [
     { key: "chat", label: tr("المحادثة", "Chat") },
     { key: "files", label: tr("التسليمات", "Deliverables") },
-    { key: "timeline", label: tr("السجل الزمني", "Timeline") },
-    { key: "dispute", label: tr("النزاع", "Dispute") },
+    { key: "log", label: tr("السجل والنزاع", "Log & dispute") },
   ] as const;
 
   const [tab, setTab] = useState<(typeof tabs)[number]["key"]>("chat");
@@ -264,10 +269,8 @@ function Workspace() {
   const [showOriginal, setShowOriginal] = useState<string[]>([]);
   const [draft, setDraft] = useState("");
 
-  // Secure Gemini-backed order assistant (key stays server-side).
-  const askAssistant = useServerFn(orderAiAssistant);
-  const [aiReplies, setAiReplies] = useState<{ id: string; text: string }[]>([]);
-  const [aiBusy, setAiBusy] = useState(false);
+  // The order room is strictly private between buyer and seller — no AI bot
+  // ever posts into it. Policy violations surface as a client-side banner only.
 
   // Live chat backed by order_messages (realtime).
   const messagesQuery = useOrderMessages(selected);
@@ -277,6 +280,9 @@ function Workspace() {
   const myProfileQuery = useProfile();
   const uploadTier =
     (myProfileQuery.data as { account_tier?: string } | null | undefined)?.account_tier ?? "free";
+  /** Tier-aligned single-file ceiling shown on the delivery dropzone. */
+  const uploadLimitMb = tierFileLimitMb(uploadTier);
+  const uploadLimitLabel = uploadLimitMb >= 1024 ? `${uploadLimitMb / 1024}GB` : `${uploadLimitMb}MB`;
   const chatFileRef = useRef<HTMLInputElement>(null);
 
   function handleFileSelected(e: React.ChangeEvent<HTMLInputElement>) {
@@ -307,10 +313,13 @@ function Workspace() {
         name: m.sender_id === user?.id ? tr("أنا", "Me") : tr("الطرف الآخر", "Counterparty"),
         text: m.body,
         time: new Date(m.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+        createdAt: m.created_at,
         srcLang,
         rev: m.version,
       };
-      if (srcLang !== lang) base.translation = stored[lang] ?? m.body;
+      // Permanent cache: only a real stored translation counts as a hit.
+      if (srcLang !== lang && typeof stored[lang] === "string" && stored[lang]!.trim())
+        base.translation = stored[lang];
       if (m.attachment_path) {
         base.attachmentPath = m.attachment_path;
         base.attachmentName = m.attachment_name ?? m.body;
@@ -319,7 +328,7 @@ function Workspace() {
     });
   }, [messagesQuery.data, user?.id, lang, tr]);
 
-  const [warning, setWarning] = useState(false);
+  const [warning, setWarning] = useState<string | null>(null);
   const [reason, setReason] = useState("");
   // Anti-gibberish gate for the dispute explanation (50+ real characters).
   const reasonError = gibberishError(reason, { minLength: 50, maxLength: 2000, minWords: 4 });
@@ -339,6 +348,8 @@ function Workspace() {
   const [msgRev, setMsgRev] = useState<Record<string, number>>({});
   const [editing, setEditing] = useState<{ id: string; text: string } | null>(null);
   const runTranslate = useServerFn(translateMessage);
+  const cacheTranslation = useCacheTranslation(selected);
+  const cacheTx = cacheTranslation.mutate;
   const [txState, setTxState] = useState<
     Record<string, { text?: string; loading?: boolean; error?: boolean; cached?: boolean }>
   >({});
@@ -350,22 +361,39 @@ function Workspace() {
     if (!translate) return;
     for (const m of messages) {
       if (m.srcLang === lang || m.attachmentPath || !m.text.trim()) continue;
+      // Cost guard: Arabic-only text never needs an Arabic translation.
+      if (lang === "ar" && isArabicOnly(m.text)) continue;
       const key = txKey(m.id, lang, msgRev[m.id] ?? m.rev ?? 0);
       if (txState[key]) continue;
+      // 1) Permanent database cache (order_messages.translations / translated_content).
+      const stored = m.translation;
+      if (stored) {
+        txCacheSet(key, stored);
+        setTxState((s) => ({ ...s, [key]: { text: stored, cached: true } }));
+        continue;
+      }
       const hit = txCacheGet(key);
       if (hit !== undefined) {
         setTxState((s) => ({ ...s, [key]: { text: hit, cached: true } }));
         continue;
       }
       setTxState((s) => ({ ...s, [key]: { loading: true } }));
-      void runTranslate({ data: { text: m.text, target: lang } })
+      // 2) Bounded context: up to the previous 5 real messages, 120 chars each.
+      const idx = messages.findIndex((x) => x.id === m.id);
+      const context = messages
+        .slice(Math.max(0, idx - 5), idx)
+        .filter((x) => !x.attachmentPath && x.text.trim())
+        .map((x) => x.text.slice(0, 120));
+      void runTranslate({ data: { text: m.text, target: lang, context } })
         .then((r: { text: string }) => {
           txCacheSet(key, r.text);
           setTxState((s) => ({ ...s, [key]: { text: r.text } }));
+          // 3) Persist permanently so it is never re-generated.
+          cacheTx({ id: m.id, translations: { [lang]: r.text }, translatedContent: r.text });
         })
         .catch(() => setTxState((s) => ({ ...s, [key]: { error: true } })));
     }
-  }, [translate, messages, lang, msgRev, txState, runTranslate]);
+  }, [translate, messages, lang, msgRev, txState, runTranslate, cacheTx]);
 
   // Instant digital asset anti-piracy shield
   const [assetLocked, setAssetLocked] = useState(false);
@@ -680,36 +708,15 @@ function Workspace() {
   function send() {
     const text = draft.trim();
     if (!text) return;
-    if (hasExternalContact(text)) {
-      setWarning(true);
-      toast.error("⚠️ يُمنع مشاركة وسائل التواصل الخارجية وفقاً للمادة 5 من ميثاق المنصة");
+    const blocked = moderationFailure(text);
+    if (blocked) {
+      setWarning(blocked);
+      toast.error(blocked);
       return;
     }
-    setWarning(false);
+    setWarning(null);
     sendMessage.mutate({ body: text, lang });
     setDraft("");
-
-    // Buyer questions get an automated Arabic assistant reply.
-    if (order && user && order.buyer_id === user.id) {
-      setAiBusy(true);
-      void askAssistant({ data: { orderId: order.id, message: text } })
-        .then((r) => {
-          setAiReplies((prev) => [...prev, { id: `${Date.now()}`, text: r.reply }]);
-        })
-        .catch(() => {
-          setAiReplies((prev) => [
-            ...prev,
-            {
-              id: `${Date.now()}`,
-              text: tr(
-                "تعذّر الوصول للمساعد الذكي حالياً.",
-                "The AI assistant is unavailable right now.",
-              ),
-            },
-          ]);
-        })
-        .finally(() => setAiBusy(false));
-    }
   }
 
   const openDispute = useMutation({
@@ -888,7 +895,7 @@ function Workspace() {
           {order && canCallOrDispute && (
             <button
               type="button"
-              onClick={() => setTab("dispute")}
+              onClick={() => setTab("log")}
               className="inline-flex items-center gap-2 rounded-xl border border-destructive/50 bg-destructive/10 px-4 py-2 text-sm font-semibold text-destructive"
             >
               <AlertTriangle className="size-4" />{" "}
@@ -900,66 +907,28 @@ function Workspace() {
     >
       <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
         <Card className="flex min-h-[560px] min-w-0 w-full flex-col pb-28 sm:pb-5">
-          <div className="relative z-10 flex min-w-0 flex-wrap items-center gap-2 overflow-hidden border-b border-border pb-3">
-            <div className="w-full max-w-full box-border overflow-hidden my-2">
-              <div className="flex items-center gap-2 overflow-x-auto scrollbar-none scroll-smooth w-full max-w-full px-1 py-1">
-                {tabs.map((t) => (
-                  <button
-                    key={t.key}
-                    type="button"
-                    onClick={() => setTab(t.key)}
-                    aria-pressed={tab === t.key}
-                    className={`min-h-[40px] shrink-0 rounded-lg px-3 py-1.5 text-sm ${tab === t.key ? "bg-secondary font-bold text-primary" : "text-muted-foreground"}`}
-                  >
-                    {t.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={() => setTranslatePref(!translate)}
-              className={`inline-flex max-w-full min-w-0 flex-shrink-0 flex-wrap items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold ${translate ? "bg-primary text-primary-foreground" : "border border-border text-muted-foreground"}`}
-            >
-              <Languages className="size-4 shrink-0" />
-              <span className="whitespace-normal text-start leading-tight">
-                🌍 {tr("الترجمة التلقائية", "Auto-translate")}:{" "}
-                {translate ? tr("مفعّلة", "On") : tr("معطّلة", "Off")}
-              </span>
-            </button>
+          <div className="relative z-10 mb-3 grid w-full max-w-full grid-cols-3 gap-1 rounded-xl border border-border/60 bg-card/70 p-1">
+            {tabs.map((t) => (
+              <button
+                key={t.key}
+                type="button"
+                onClick={() => setTab(t.key)}
+                aria-pressed={tab === t.key}
+                className={`min-h-[40px] min-w-0 truncate rounded-lg px-2 py-1.5 text-center text-xs font-semibold transition-colors sm:text-sm ${
+                  tab === t.key
+                    ? "bg-secondary font-bold text-primary"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {t.label}
+              </button>
+            ))}
           </div>
 
           {tab === "chat" && (
             <>
-              <div className="grid gap-2 pt-3">
+              <div className="grid gap-2 pt-1">
                 <ChatSecurityNotice />
-                {translate === null && (
-                  <div className="grid gap-2 rounded-xl border border-accent/40 bg-accent/5 px-3 py-3">
-                    <p className="flex items-start gap-2 text-xs leading-relaxed text-foreground">
-                      <Sparkles className="mt-0.5 size-4 shrink-0 text-accent" />
-                      {tr(
-                        "هل ترغب في تفعيل الترجمة التلقائية الذكية للرسائل إلى لغتك المفضلة؟",
-                        "Would you like to enable smart auto-translation of messages into your preferred language?",
-                      )}
-                    </p>
-                    <div className="flex flex-wrap gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setTranslatePref(true)}
-                        className="rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground"
-                      >
-                        {tr("تفعيل الترجمة التلقائية ⚡", "Enable auto-translation ⚡")}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setTranslatePref(false)}
-                        className="rounded-lg border border-border px-3 py-1.5 text-xs font-bold text-muted-foreground"
-                      >
-                        {tr("الإبقاء على النص الأصلي", "Keep the original text")}
-                      </button>
-                    </div>
-                  </div>
-                )}
               </div>
               <div className="flex h-[55dvh] min-h-0 flex-1 flex-col space-y-3 overflow-y-auto overflow-x-hidden px-3 py-4 sm:h-[600px]">
                 {messages.length === 0 && (
@@ -1002,9 +971,28 @@ function Workspace() {
                                 onClick={() => {
                                   const text = sanitizeText(editing.text, 1000);
                                   if (!text) return;
+                                  // Same moderation gate as sending — edits cannot bypass it.
+                                  const blockedEdit = moderationFailure(text);
+                                  if (blockedEdit) {
+                                    setWarning(blockedEdit);
+                                    toast.error(blockedEdit);
+                                    return;
+                                  }
+                                  if (!isWithinEditWindow(m.createdAt)) {
+                                    toast.error(
+                                      tr(
+                                        "انتهت مهلة تعديل الرسالة (5 دقائق).",
+                                        "The 5-minute edit window has expired.",
+                                      ),
+                                    );
+                                    setEditing(null);
+                                    return;
+                                  }
+                                  setWarning(null);
                                   txCacheInvalidate(m.id);
                                   setMsgRev((r) => ({ ...r, [m.id]: (r[m.id] ?? m.rev ?? 0) + 1 }));
                                   editMessage.mutate({ id: m.id, body: text, version: m.rev });
+                                  cacheTx({ id: m.id, translations: {}, translatedContent: "" });
                                   setEditing(null);
                                 }}
                                 className="rounded-lg bg-background px-2.5 py-1 text-[10px] font-bold text-primary"
@@ -1043,7 +1031,7 @@ function Workspace() {
                             {shown}
                           </p>
                         )}
-                        {m.from === "me" && !isEditing && (
+                        {m.from === "me" && !isEditing && isWithinEditWindow(m.createdAt) && (
                           <button
                             type="button"
                             onClick={() => setEditing({ id: m.id, text: m.text })}
@@ -1112,6 +1100,8 @@ function Workspace() {
                                   });
                                   setShowOriginal((s) => s.filter((x) => x !== m.id));
                                   setMsgRev((r) => ({ ...r, [m.id]: (r[m.id] ?? 0) + 1 }));
+                                  // Clear the permanent cache so the next pass regenerates once.
+                                  cacheTx({ id: m.id, translations: {}, translatedContent: "" });
                                 }}
                                 className="text-start text-[10px] font-bold underline underline-offset-2 opacity-80"
                               >
@@ -1127,32 +1117,12 @@ function Workspace() {
                     </div>
                   );
                 })}
-                {aiReplies.map((r) => (
-                  <div key={r.id} className="flex justify-start">
-                    <div className="max-w-[85%] rounded-2xl border border-accent/40 bg-accent/10 px-4 py-3 text-sm sm:max-w-[75%]">
-                      <p className="mb-1 flex items-center gap-1 text-xs font-bold text-accent">
-                        <Sparkles className="size-3" />{" "}
-                        {tr("مساعد المنجز الذكي", "Munjaz AI assistant")}
-                      </p>
-                      <p className="break-words whitespace-pre-wrap">{r.text}</p>
-                    </div>
-                  </div>
-                ))}
-                {aiBusy && (
-                  <p className="text-xs text-muted-foreground">
-                    {tr("المساعد الذكي يكتب…", "AI assistant is typing…")}
-                  </p>
-                )}
               </div>
 
-
               {warning && (
-                <p className="mb-2 flex items-center gap-2 rounded-lg border border-destructive/50 bg-destructive/10 px-3 py-2 text-xs text-destructive">
-                  <ShieldAlert className="size-4" />{" "}
-                  {tr(
-                    "تم حظر الرسالة: محاولة تبادل وسائل تواصل خارجية.",
-                    "Message blocked: attempt to exchange external contact info.",
-                  )}
+                <p className="mb-2 flex items-start gap-2 rounded-lg border border-destructive/50 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+                  <ShieldAlert className="mt-0.5 size-4 shrink-0" />
+                  <span className="min-w-0 flex-1">{warning}</span>
                 </p>
               )}
 
@@ -1175,10 +1145,10 @@ function Workspace() {
                     onChange={(e) => setDraft(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && send()}
                     placeholder={tr(
-                      "🛡️ حماية الضمان: يمنع مشاركة وسائل التواصل الخارجية لضمان حقوقك المالية وسريان نظام الـ Escrow.",
-                      "🛡️ Escrow protection: sharing external contact details is prohibited to protect your funds and keep escrow valid.",
+                      "اكتب رسالتك بأمان داخل المنصة...",
+                      "Write your message securely inside the platform...",
                     )}
-                    className="flex-1 min-w-0 w-full flex-1 bg-transparent border-0 px-2 py-1 text-right text-sm text-foreground outline-none placeholder:text-muted-foreground focus:ring-0 sm:text-base"
+                    className="min-w-0 w-full flex-1 border-0 bg-transparent px-2 py-1 text-right text-sm text-foreground outline-none placeholder:text-muted-foreground focus:ring-0"
                   />
                   <div className="flex flex-shrink-0 items-center gap-1.5 pl-1">
                     <button
@@ -1194,6 +1164,24 @@ function Workspace() {
                       ) : (
                         <Paperclip className="size-4" />
                       )}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setTranslatePref(!translate)}
+                      aria-pressed={!!translate}
+                      className={`flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl transition-colors ${
+                        translate
+                          ? "bg-primary text-primary-foreground"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                      title={
+                        translate
+                          ? tr("إيقاف الترجمة التلقائية", "Disable auto-translation")
+                          : tr("تفعيل الترجمة التلقائية", "Enable auto-translation")
+                      }
+                      aria-label={tr("الترجمة التلقائية", "Auto-translate")}
+                    >
+                      <Languages className="size-4" />
                     </button>
                     <button
                       type="submit"
@@ -1215,13 +1203,21 @@ function Workspace() {
               <div className="grid place-items-center rounded-xl border border-dashed border-border p-10 text-center">
                 <FileUp className="size-8 text-primary" />
                 <p className="mt-3 font-semibold">
-                  {tr("اسحب ملفات التسليم هنا", "Drag deliverable files here")}
+                  {tr(
+                    `اسحب ملفات التسليم هنا — حتى ${uploadLimitLabel} لكل ملف (للملفات الأكبر يرجى مشاركة رابط سحابي موثوق)`,
+                    `Drag deliverable files here — up to ${uploadLimitLabel} per file (for larger files share a trusted cloud link)`,
+                  )}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  {tr(
-                    "حتى 2GB لكل ملف · تُفتح للمشتري بعد اعتماد المرحلة",
-                    "Up to 2GB per file · unlocked for the buyer after milestone approval",
-                  )}
+                  {milestonesOn
+                    ? tr(
+                        "تُفتح للمشتري بعد اعتماد المرحلة الحالية",
+                        "Unlocked for the buyer after the current milestone is approved",
+                      )
+                    : tr(
+                        "تُفتح للمشتري فور اعتماد واستلام العمل",
+                        "Unlocked for the buyer as soon as the work is approved and received",
+                      )}
                 </p>
               </div>
               {order && order.seller_id === user?.id && (
@@ -1263,7 +1259,7 @@ function Workspace() {
                       value={deliverable}
                       onChange={(e) => setDeliverable(e.target.value)}
                       placeholder={tr(
-                        "رابط أو وصف التسليم (Drive, Figma, ...)",
+                        "رابط العمل المسلّم أو ملاحظات التسليم (اختياري)...",
                         "Deliverable link or description (Drive, Figma, ...)",
                       )}
                       className="flex-1 rounded-lg border border-input bg-surface px-3 py-2 text-sm outline-none focus:border-primary"
@@ -1440,7 +1436,7 @@ function Workspace() {
             </div>
           )}
 
-          {tab === "timeline" && (
+          {tab === "log" && (
             <div ref={timelineRef} className="flex-1 py-4">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <h3 className="flex items-center gap-2 text-sm font-black">
@@ -1529,7 +1525,7 @@ function Workspace() {
             </div>
           )}
 
-          {tab === "dispute" && (
+          {tab === "log" && (
             <div className="flex-1 py-4">
               <div className="rounded-xl border border-destructive/40 bg-destructive/10 p-4">
                 <p className="flex items-center gap-2 font-bold text-destructive">
@@ -1933,25 +1929,32 @@ function Workspace() {
                   {tr("المعالم المرحلية للطلب", "Order milestones")}
                 </h3>
               </div>
-              <button
-                type="button"
-                role="switch"
-                aria-checked={milestonesOn || builderOn}
-                aria-label={tr("تفعيل المعالم المرحلية للطلب", "Enable order milestones")}
-                disabled={milestonesOn || createMilestones.isPending}
-                onClick={() => setBuilderOn((v) => !v)}
-                className={`relative inline-flex h-7 w-12 flex-shrink-0 ml-1 mr-0 cursor-pointer touch-manipulation items-center rounded-full border transition-colors disabled:cursor-default disabled:opacity-70 z-10 ${
-                  milestonesOn || builderOn
-                    ? "border-primary bg-primary/80"
-                    : "border-border bg-secondary"
-                }`}
-              >
-                <span
-                  className={`absolute top-1/2 size-5 -translate-y-1/2 rounded-full bg-background shadow transition-all ${
-                    milestonesOn || builderOn ? "start-[calc(100%-1.5rem)]" : "start-1"
+              <div className="flex flex-shrink-0 items-center gap-2">
+                <span className="mr-2 text-xs font-semibold text-muted-foreground">
+                  {milestonesOn || builderOn ? "مُفعّل" : "مُعطّل"}
+                </span>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={milestonesOn || builderOn}
+                  aria-label={tr("تفعيل المعالم المرحلية للطلب", "Enable order milestones")}
+                  disabled={milestonesOn || createMilestones.isPending}
+                  onClick={() => setBuilderOn((v) => !v)}
+                  className={`relative z-10 ml-1 mr-0 inline-flex h-7 w-12 flex-shrink-0 cursor-pointer touch-manipulation items-center rounded-full transition-colors disabled:cursor-default disabled:opacity-70 ${
+                    milestonesOn || builderOn
+                      ? "border-2 border-emerald-400 bg-emerald-500 shadow-[0_0_12px_rgba(16,185,129,0.4)]"
+                      : "border-2 border-slate-500/70 bg-slate-800/90 shadow-inner"
                   }`}
-                />
-              </button>
+                >
+                  <span
+                    className={`absolute top-1/2 size-5 -translate-y-1/2 rounded-full shadow-md transition-all ${
+                      milestonesOn || builderOn
+                        ? "start-[calc(100%-1.5rem)] bg-white"
+                        : "start-1 bg-slate-100"
+                    }`}
+                  />
+                </button>
+              </div>
             </div>
             {!milestonesOn && !builderOn ? (
               <p className="mt-2 text-xs text-muted-foreground">
