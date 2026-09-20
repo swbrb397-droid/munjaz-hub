@@ -31,7 +31,7 @@ export const translateMessage = createServerFn({ method: "POST" })
     if (geminiKey) {
       try {
         const gres = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`,
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${geminiKey}`,
           {
             method: "POST",
             headers: { "content-type": "application/json" },
