@@ -705,36 +705,15 @@ function Workspace() {
   function send() {
     const text = draft.trim();
     if (!text) return;
-    if (hasExternalContact(text)) {
-      setWarning(true);
-      toast.error("⚠️ يُمنع مشاركة وسائل التواصل الخارجية وفقاً للمادة 5 من ميثاق المنصة");
+    const blocked = moderationFailure(text);
+    if (blocked) {
+      setWarning(blocked);
+      toast.error(blocked);
       return;
     }
-    setWarning(false);
+    setWarning(null);
     sendMessage.mutate({ body: text, lang });
     setDraft("");
-
-    // Buyer questions get an automated Arabic assistant reply.
-    if (order && user && order.buyer_id === user.id) {
-      setAiBusy(true);
-      void askAssistant({ data: { orderId: order.id, message: text } })
-        .then((r) => {
-          setAiReplies((prev) => [...prev, { id: `${Date.now()}`, text: r.reply }]);
-        })
-        .catch(() => {
-          setAiReplies((prev) => [
-            ...prev,
-            {
-              id: `${Date.now()}`,
-              text: tr(
-                "تعذّر الوصول للمساعد الذكي حالياً.",
-                "The AI assistant is unavailable right now.",
-              ),
-            },
-          ]);
-        })
-        .finally(() => setAiBusy(false));
-    }
   }
 
   const openDispute = useMutation({
@@ -913,7 +892,7 @@ function Workspace() {
           {order && canCallOrDispute && (
             <button
               type="button"
-              onClick={() => setTab("dispute")}
+              onClick={() => setTab("log")}
               className="inline-flex items-center gap-2 rounded-xl border border-destructive/50 bg-destructive/10 px-4 py-2 text-sm font-semibold text-destructive"
             >
               <AlertTriangle className="size-4" />{" "}
