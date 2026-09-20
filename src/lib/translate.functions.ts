@@ -19,13 +19,42 @@ export const translateMessage = createServerFn({ method: "POST" })
     return { text, target, context };
   })
   .handler(async ({ data }) => {
-    const apiKey = process.env["LOVABLE_API_KEY"];
-    if (!apiKey) throw new Error("AI_UNAVAILABLE");
-
     const targetName = data.target === "en" ? "English" : "Arabic";
     const contextBlock = data.context.length
       ? `\n\nConversation context (most recent last, for disambiguation only — DO NOT translate these):\n${data.context.map((c, i) => `${i + 1}. ${c}`).join("\n")}`
       : "";
+
+    const instruction = `Translate the following freelance platform message into natural, professional ${targetName}. Preserve technical terms (API, UI/UX, Escrow, USDT, Bug, SEO, Frontend, Backend) without literal distortion. Return ONLY the translation, with no quotes and no notes.${contextBlock}\n\n${data.text}`;
+
+    // Primary engine: Gemini (key stays in encrypted server secrets).
+    const geminiKey = process.env["GEMINI_API_KEY"];
+    if (geminiKey) {
+      try {
+        const gres = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`,
+          {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ contents: [{ parts: [{ text: instruction }] }] }),
+          },
+        );
+        if (gres.ok) {
+          const gp = (await gres.json()) as {
+            candidates?: { content?: { parts?: { text?: string }[] } }[];
+          };
+          const out = gp.candidates?.[0]?.content?.parts?.map((p) => p.text ?? "").join("").trim();
+          if (out) return { text: out, target: data.target };
+        } else {
+          console.error("gemini translate failed", gres.status, await gres.text());
+        }
+      } catch (err) {
+        console.error("gemini translate error", err);
+      }
+    }
+
+    // Fallback engine: Lovable AI Gateway.
+    const apiKey = process.env["LOVABLE_API_KEY"];
+    if (!apiKey) throw new Error("AI_UNAVAILABLE");
     const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: { Authorization: `Bearer ${apiKey}`, "content-type": "application/json" },
