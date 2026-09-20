@@ -2480,6 +2480,8 @@ function Workspace() {
           {extDone ?? reviewDone}
         </p>
       )}
+
+      <Lightbox image={lightbox} onClose={() => setLightbox(null)} />
       </Section>
     </div>
   );
