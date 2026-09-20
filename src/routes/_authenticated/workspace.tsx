@@ -35,7 +35,7 @@ import { useLang } from "@/lib/lang";
 import { useAuth } from "@/hooks/use-auth";
 import { VideoCallPanel } from "@/components/site/VideoCallPanel";
 import { useOrders, useProfile } from "@/lib/queries";
-import { checkUpload } from "@/lib/file-guard";
+import { checkUpload, tierFileLimitMb } from "@/lib/file-guard";
 import { nextActions, useOrderTransition, type OrderStatus } from "@/lib/orders";
 import {
   useCreateMilestones,
@@ -280,6 +280,9 @@ function Workspace() {
   const myProfileQuery = useProfile();
   const uploadTier =
     (myProfileQuery.data as { account_tier?: string } | null | undefined)?.account_tier ?? "free";
+  /** Tier-aligned single-file ceiling shown on the delivery dropzone. */
+  const uploadLimitMb = tierFileLimitMb(uploadTier);
+  const uploadLimitLabel = uploadLimitMb >= 1024 ? `${uploadLimitMb / 1024}GB` : `${uploadLimitMb}MB`;
   const chatFileRef = useRef<HTMLInputElement>(null);
 
   function handleFileSelected(e: React.ChangeEvent<HTMLInputElement>) {
@@ -1256,7 +1259,7 @@ function Workspace() {
                       value={deliverable}
                       onChange={(e) => setDeliverable(e.target.value)}
                       placeholder={tr(
-                        "رابط أو وصف التسليم (Drive, Figma, ...)",
+                        "رابط العمل المسلّم أو ملاحظات التسليم (اختياري)...",
                         "Deliverable link or description (Drive, Figma, ...)",
                       )}
                       className="flex-1 rounded-lg border border-input bg-surface px-3 py-2 text-sm outline-none focus:border-primary"
@@ -1433,7 +1436,7 @@ function Workspace() {
             </div>
           )}
 
-          {tab === "timeline" && (
+          {tab === "log" && (
             <div ref={timelineRef} className="flex-1 py-4">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <h3 className="flex items-center gap-2 text-sm font-black">
@@ -1522,7 +1525,7 @@ function Workspace() {
             </div>
           )}
 
-          {tab === "dispute" && (
+          {tab === "log" && (
             <div className="flex-1 py-4">
               <div className="rounded-xl border border-destructive/40 bg-destructive/10 p-4">
                 <p className="flex items-center gap-2 font-bold text-destructive">
@@ -1926,25 +1929,32 @@ function Workspace() {
                   {tr("المعالم المرحلية للطلب", "Order milestones")}
                 </h3>
               </div>
-              <button
-                type="button"
-                role="switch"
-                aria-checked={milestonesOn || builderOn}
-                aria-label={tr("تفعيل المعالم المرحلية للطلب", "Enable order milestones")}
-                disabled={milestonesOn || createMilestones.isPending}
-                onClick={() => setBuilderOn((v) => !v)}
-                className={`relative inline-flex h-7 w-12 flex-shrink-0 ml-1 mr-0 cursor-pointer touch-manipulation items-center rounded-full border transition-colors disabled:cursor-default disabled:opacity-70 z-10 ${
-                  milestonesOn || builderOn
-                    ? "border-primary bg-primary/80"
-                    : "border-border bg-secondary"
-                }`}
-              >
-                <span
-                  className={`absolute top-1/2 size-5 -translate-y-1/2 rounded-full bg-background shadow transition-all ${
-                    milestonesOn || builderOn ? "start-[calc(100%-1.5rem)]" : "start-1"
+              <div className="flex flex-shrink-0 items-center gap-2">
+                <span className="mr-2 text-xs font-semibold text-muted-foreground">
+                  {milestonesOn || builderOn ? "مُفعّل" : "مُعطّل"}
+                </span>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={milestonesOn || builderOn}
+                  aria-label={tr("تفعيل المعالم المرحلية للطلب", "Enable order milestones")}
+                  disabled={milestonesOn || createMilestones.isPending}
+                  onClick={() => setBuilderOn((v) => !v)}
+                  className={`relative z-10 ml-1 mr-0 inline-flex h-7 w-12 flex-shrink-0 cursor-pointer touch-manipulation items-center rounded-full transition-colors disabled:cursor-default disabled:opacity-70 ${
+                    milestonesOn || builderOn
+                      ? "border-2 border-emerald-400 bg-emerald-500 shadow-[0_0_12px_rgba(16,185,129,0.4)]"
+                      : "border-2 border-slate-500/70 bg-slate-800/90 shadow-inner"
                   }`}
-                />
-              </button>
+                >
+                  <span
+                    className={`absolute top-1/2 size-5 -translate-y-1/2 rounded-full shadow-md transition-all ${
+                      milestonesOn || builderOn
+                        ? "start-[calc(100%-1.5rem)] bg-white"
+                        : "start-1 bg-slate-100"
+                    }`}
+                  />
+                </button>
+              </div>
             </div>
             {!milestonesOn && !builderOn ? (
               <p className="mt-2 text-xs text-muted-foreground">
