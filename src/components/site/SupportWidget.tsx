@@ -111,7 +111,7 @@ export function SupportWidget() {
         onClick={() => setOpen((v) => !v)}
         aria-label="المساعد الذكي"
         aria-expanded={open}
-        className={`pointer-events-auto fixed bottom-[calc(env(safe-area-inset-bottom)+5.5rem)] left-3 z-30 grid place-items-center rounded-full bg-primary text-primary-foreground shadow-2xl transition-all duration-200 hover:scale-105 sm:bottom-6 sm:left-6 ${
+        className={`pointer-events-auto fixed bottom-[calc(env(safe-area-inset-bottom)+5.5rem)] left-3 z-20 mb-20 grid place-items-center rounded-full bg-primary text-primary-foreground shadow-2xl transition-all duration-200 hover:scale-105 sm:bottom-6 sm:left-6 sm:mb-4 ${
           collapsed ? "invisible size-9 opacity-0" : "size-11 opacity-100 sm:size-14"
         }`}
         style={{ boxShadow: "0 0 0 0 oklch(0.76 0.17 165 / 0.6)", animation: "pulse 2.4s ease-in-out infinite" }}

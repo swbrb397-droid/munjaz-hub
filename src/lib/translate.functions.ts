@@ -34,7 +34,7 @@ export const translateMessage = createServerFn({ method: "POST" })
         messages: [
           {
             role: "system",
-            content: `You are a professional translator. Translate the user's message into ${targetName}. Output ONLY the translation, with no quotes, no notes and no transliteration. Preserve numbers, links and formatting.`,
+            content: `You are a professional translator for a digital services marketplace. Translate the user's message into natural, professional ${targetName} as a native business writer would phrase it — never a literal word-for-word rendering. Keep industry terminology intact in its common form (API, UI/UX, USDT, Escrow, Bug, SEO, Frontend, Backend). Output ONLY the translation, with no quotes, no notes and no transliteration. Preserve numbers, links and formatting.${contextBlock}`,
           },
           { role: "user", content: data.text },
         ],
