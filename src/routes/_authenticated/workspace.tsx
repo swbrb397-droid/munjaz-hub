@@ -904,66 +904,28 @@ function Workspace() {
     >
       <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
         <Card className="flex min-h-[560px] min-w-0 w-full flex-col pb-28 sm:pb-5">
-          <div className="relative z-10 flex min-w-0 flex-wrap items-center gap-2 overflow-hidden border-b border-border pb-3">
-            <div className="w-full max-w-full box-border overflow-hidden my-2">
-              <div className="flex items-center gap-2 overflow-x-auto scrollbar-none scroll-smooth w-full max-w-full px-1 py-1">
-                {tabs.map((t) => (
-                  <button
-                    key={t.key}
-                    type="button"
-                    onClick={() => setTab(t.key)}
-                    aria-pressed={tab === t.key}
-                    className={`min-h-[40px] shrink-0 rounded-lg px-3 py-1.5 text-sm ${tab === t.key ? "bg-secondary font-bold text-primary" : "text-muted-foreground"}`}
-                  >
-                    {t.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={() => setTranslatePref(!translate)}
-              className={`inline-flex max-w-full min-w-0 flex-shrink-0 flex-wrap items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold ${translate ? "bg-primary text-primary-foreground" : "border border-border text-muted-foreground"}`}
-            >
-              <Languages className="size-4 shrink-0" />
-              <span className="whitespace-normal text-start leading-tight">
-                🌍 {tr("الترجمة التلقائية", "Auto-translate")}:{" "}
-                {translate ? tr("مفعّلة", "On") : tr("معطّلة", "Off")}
-              </span>
-            </button>
+          <div className="relative z-10 mb-3 grid w-full max-w-full grid-cols-3 gap-1 rounded-xl border border-border/60 bg-card/70 p-1">
+            {tabs.map((t) => (
+              <button
+                key={t.key}
+                type="button"
+                onClick={() => setTab(t.key)}
+                aria-pressed={tab === t.key}
+                className={`min-h-[40px] min-w-0 truncate rounded-lg px-2 py-1.5 text-center text-xs font-semibold transition-colors sm:text-sm ${
+                  tab === t.key
+                    ? "bg-secondary font-bold text-primary"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {t.label}
+              </button>
+            ))}
           </div>
 
           {tab === "chat" && (
             <>
-              <div className="grid gap-2 pt-3">
+              <div className="grid gap-2 pt-1">
                 <ChatSecurityNotice />
-                {translate === null && (
-                  <div className="grid gap-2 rounded-xl border border-accent/40 bg-accent/5 px-3 py-3">
-                    <p className="flex items-start gap-2 text-xs leading-relaxed text-foreground">
-                      <Sparkles className="mt-0.5 size-4 shrink-0 text-accent" />
-                      {tr(
-                        "هل ترغب في تفعيل الترجمة التلقائية الذكية للرسائل إلى لغتك المفضلة؟",
-                        "Would you like to enable smart auto-translation of messages into your preferred language?",
-                      )}
-                    </p>
-                    <div className="flex flex-wrap gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setTranslatePref(true)}
-                        className="rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground"
-                      >
-                        {tr("تفعيل الترجمة التلقائية ⚡", "Enable auto-translation ⚡")}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setTranslatePref(false)}
-                        className="rounded-lg border border-border px-3 py-1.5 text-xs font-bold text-muted-foreground"
-                      >
-                        {tr("الإبقاء على النص الأصلي", "Keep the original text")}
-                      </button>
-                    </div>
-                  </div>
-                )}
               </div>
               <div className="flex h-[55dvh] min-h-0 flex-1 flex-col space-y-3 overflow-y-auto overflow-x-hidden px-3 py-4 sm:h-[600px]">
                 {messages.length === 0 && (
