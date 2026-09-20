@@ -899,8 +899,8 @@ function Workspace() {
       }
     >
       <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
-        <Card className="flex min-h-[560px] flex-col pb-28 sm:pb-5">
-          <div className="relative z-10 flex flex-wrap items-center gap-2 overflow-hidden border-b border-border pb-3">
+        <Card className="flex min-h-[560px] min-w-0 w-full flex-col pb-28 sm:pb-5">
+          <div className="relative z-10 flex min-w-0 flex-wrap items-center gap-2 overflow-hidden border-b border-border pb-3">
             <div className="w-full max-w-full box-border overflow-hidden my-2">
               <div className="flex items-center gap-2 overflow-x-auto scrollbar-none scroll-smooth w-full max-w-full px-1 py-1">
                 {tabs.map((t) => (
@@ -919,10 +919,13 @@ function Workspace() {
             <button
               type="button"
               onClick={() => setTranslatePref(!translate)}
-              className={`inline-flex shrink-0 items-center gap-2 rounded-full px-3 py-1.5 text-xs font-bold ${translate ? "bg-primary text-primary-foreground" : "border border-border text-muted-foreground"}`}
+              className={`inline-flex max-w-full min-w-0 flex-shrink-0 flex-wrap items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold ${translate ? "bg-primary text-primary-foreground" : "border border-border text-muted-foreground"}`}
             >
-              <Languages className="size-4" /> 🌍 {tr("الترجمة التلقائية", "Auto-translate")}:{" "}
-              {translate ? tr("مفعّلة", "On") : tr("معطّلة", "Off")}
+              <Languages className="size-4 shrink-0" />
+              <span className="whitespace-normal text-start leading-tight">
+                🌍 {tr("الترجمة التلقائية", "Auto-translate")}:{" "}
+                {translate ? tr("مفعّلة", "On") : tr("معطّلة", "Off")}
+              </span>
             </button>
           </div>
 
