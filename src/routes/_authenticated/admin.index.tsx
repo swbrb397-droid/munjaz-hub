@@ -97,6 +97,38 @@ function Admin() {
     );
   };
 
+  // Deep user audit radar + 1-click payout (mutex on the row being processed).
+  const [auditUser, setAuditUser] = useState<string | null>(null);
+  const audit = useUserAudit(auditUser, isAdmin);
+  const [payoutBusy, setPayoutBusy] = useState<string | null>(null);
+  const runCryptoPayout = useServerFn(sendCryptoPayout);
+
+  const oneClickPayout = async (withdrawalId: string) => {
+    if (payoutBusy) return;
+    setPayoutBusy(withdrawalId);
+    try {
+      const result = await runCryptoPayout({ data: { withdrawalId } });
+      await logAdminAction("withdrawal_paid", "withdrawal_requests", withdrawalId, {
+        tx_hash: result.reference,
+        batch_id: result.batchId,
+        mode: "one_click",
+      });
+      await qc.invalidateQueries({ queryKey: ["withdrawal-queue"] });
+      toast.success(tr("تم تنفيذ التحويل عبر مزود الدفع ✅", "Payout executed via the provider ✅"));
+    } catch (e) {
+      const raw = e instanceof Error ? e.message : String(e);
+      toast.error(
+        raw.includes("OPEN_DISPUTE_BLOCK")
+          ? tr("محظور: المستخدم لديه نزاع مفتوح.", "Blocked: the user has an open dispute.")
+          : raw.includes("PAYOUT_PROVIDER_UNCONFIGURED")
+            ? tr("مفتاح مزود الدفع غير مُهيّأ.", "Payout provider key is not configured.")
+            : raw,
+      );
+    } finally {
+      setPayoutBusy(null);
+    }
+  };
+
   // Security sentinel: record unauthorized attempts to reach the admin area.
   useEffect(() => {
     if (roles.isLoading || roles.data === undefined || isAdmin) return;
