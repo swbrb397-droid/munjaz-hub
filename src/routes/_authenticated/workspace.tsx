@@ -891,18 +891,20 @@ function Workspace() {
           {isSeller && canExtend && (
           <button
             type="button"
+            disabled={extStatus === "pending"}
+            title={
+              extStatus === "pending"
+                ? tr("يوجد طلب تمديد قيد مراجعة المشتري", "An extension request is already under buyer review")
+                : undefined
+            }
             onClick={() => setExtOpen(true)}
-            className="inline-flex items-center gap-2 rounded-xl border border-border px-4 py-2 text-sm font-semibold"
+            className="inline-flex items-center gap-2 rounded-xl border border-border px-4 py-2 text-sm font-semibold disabled:opacity-40"
           >
             <CalendarClock className="size-4" />{" "}
             {tr("طلب تمديد مهلة التسليم", "Request deadline extension")}
-            {extStatus !== "none" && (
-              <span
-                className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${extStatus === "approved" ? "bg-primary/15 text-primary" : "bg-accent/15 text-accent"}`}
-              >
-                {extStatus === "approved"
-                  ? tr("تمت الموافقة", "Approved")
-                  : tr("قيد الانتظار", "Pending")}
+            {extStatus === "pending" && (
+              <span className="rounded-full bg-accent/15 px-2 py-0.5 text-[10px] font-bold text-accent">
+                {tr("قيد الانتظار", "Pending")}
               </span>
             )}
           </button>
