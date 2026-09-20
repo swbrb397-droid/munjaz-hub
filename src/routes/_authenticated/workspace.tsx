@@ -393,6 +393,25 @@ function Workspace() {
   /** Live translation entry for a message in the active UI language. */
   const txFor = (m: Msg) => txState[txKey(m.id, lang, msgRev[m.id] ?? m.rev ?? 0)];
 
+  /** On-demand translation for a single message bubble (button click). */
+  const translateNow = (m: Msg) => {
+    const key = txKey(m.id, lang, msgRev[m.id] ?? m.rev ?? 0);
+    if (txState[key]?.loading || txState[key]?.text) return;
+    setTxState((s) => ({ ...s, [key]: { loading: true } }));
+    const idx = messages.findIndex((x) => x.id === m.id);
+    const context = messages
+      .slice(Math.max(0, idx - 5), idx)
+      .filter((x) => !x.attachmentPath && x.text.trim())
+      .map((x) => x.text.slice(0, 120));
+    void runTranslate({ data: { text: m.text, target: lang, context } })
+      .then((r: { text: string }) => {
+        txCacheSet(key, r.text);
+        setTxState((s) => ({ ...s, [key]: { text: r.text } }));
+        cacheTx({ id: m.id, translations: { [lang]: r.text }, translatedContent: r.text });
+      })
+      .catch(() => setTxState((s) => ({ ...s, [key]: { error: true } })));
+  };
+
   useEffect(() => {
     if (!translate) return;
     for (const m of messages) {
