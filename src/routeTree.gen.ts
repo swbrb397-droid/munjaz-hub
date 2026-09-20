@@ -28,7 +28,6 @@ import { Route as AuthenticatedWalletRouteImport } from './routes/_authenticated
 import { Route as AuthenticatedWorkspaceRouteImport } from './routes/_authenticated/workspace'
 import { Route as ListingIdRouteImport } from './routes/listing.$id'
 import { Route as UserUsernameRouteImport } from './routes/user.$username'
-import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
 import { Route as AuthenticatedAdminAuditRouteImport } from './routes/_authenticated/admin.audit'
 import { Route as AuthenticatedAdminDisputesRouteImport } from './routes/_authenticated/admin.disputes'
@@ -132,11 +131,6 @@ const UserUsernameRoute = UserUsernameRouteImport.update({
   path: '/user/$username',
   getParentRoute: () => rootRouteImport,
 } as any)
-const DotlovableOauthConsentRoute = DotlovableOauthConsentRouteImport.update({
-  id: '/.lovable/oauth/consent',
-  path: '/.lovable/oauth/consent',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -196,7 +190,6 @@ export interface FileRoutesByFullPath {
   '/workspace': typeof AuthenticatedWorkspaceRoute
   '/listing/$id': typeof ListingIdRoute
   '/user/$username': typeof UserUsernameRoute
-  '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/admin/audit': typeof AuthenticatedAdminAuditRoute
   '/admin/disputes': typeof AuthenticatedAdminDisputesRoute
   '/admin/governance': typeof AuthenticatedAdminGovernanceRoute
@@ -223,7 +216,6 @@ export interface FileRoutesByTo {
   '/workspace': typeof AuthenticatedWorkspaceRoute
   '/listing/$id': typeof ListingIdRoute
   '/user/$username': typeof UserUsernameRoute
-  '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/admin/audit': typeof AuthenticatedAdminAuditRoute
   '/admin/disputes': typeof AuthenticatedAdminDisputesRoute
   '/admin/governance': typeof AuthenticatedAdminGovernanceRoute
@@ -253,7 +245,6 @@ export interface FileRoutesById {
   '/_authenticated/workspace': typeof AuthenticatedWorkspaceRoute
   '/listing/$id': typeof ListingIdRoute
   '/user/$username': typeof UserUsernameRoute
-  '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/_authenticated/admin/audit': typeof AuthenticatedAdminAuditRoute
   '/_authenticated/admin/disputes': typeof AuthenticatedAdminDisputesRoute
   '/_authenticated/admin/governance': typeof AuthenticatedAdminGovernanceRoute
@@ -283,7 +274,6 @@ export interface FileRouteTypes {
     | '/workspace'
     | '/listing/$id'
     | '/user/$username'
-    | '/.lovable/oauth/consent'
     | '/admin/audit'
     | '/admin/disputes'
     | '/admin/governance'
@@ -310,7 +300,6 @@ export interface FileRouteTypes {
     | '/workspace'
     | '/listing/$id'
     | '/user/$username'
-    | '/.lovable/oauth/consent'
     | '/admin/audit'
     | '/admin/disputes'
     | '/admin/governance'
@@ -339,7 +328,6 @@ export interface FileRouteTypes {
     | '/_authenticated/workspace'
     | '/listing/$id'
     | '/user/$username'
-    | '/.lovable/oauth/consent'
     | '/_authenticated/admin/audit'
     | '/_authenticated/admin/disputes'
     | '/_authenticated/admin/governance'
@@ -361,7 +349,6 @@ export interface RootRouteChildren {
   VerifyRoute: typeof VerifyRoute
   ListingIdRoute: typeof ListingIdRoute
   UserUsernameRoute: typeof UserUsernameRoute
-  DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
   ApiPublicCryptoDepositWebhookRoute: typeof ApiPublicCryptoDepositWebhookRoute
 }
 
@@ -500,13 +487,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof UserUsernameRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/.lovable/oauth/consent': {
-      id: '/.lovable/oauth/consent'
-      path: '/.lovable/oauth/consent'
-      fullPath: '/.lovable/oauth/consent'
-      preLoaderRoute: typeof DotlovableOauthConsentRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/_authenticated/admin/': {
       id: '/_authenticated/admin/'
       path: '/'
@@ -617,7 +597,6 @@ const rootRouteChildren: RootRouteChildren = {
   VerifyRoute: VerifyRoute,
   ListingIdRoute: ListingIdRoute,
   UserUsernameRoute: UserUsernameRoute,
-  DotlovableOauthConsentRoute: DotlovableOauthConsentRoute,
   ApiPublicCryptoDepositWebhookRoute: ApiPublicCryptoDepositWebhookRoute,
 }
 export const routeTree = rootRouteImport
