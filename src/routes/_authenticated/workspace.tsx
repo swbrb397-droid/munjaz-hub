@@ -966,7 +966,10 @@ function Workspace() {
               <div className="grid gap-2 pt-1">
                 <ChatSecurityNotice />
               </div>
-              <div className="flex h-[55dvh] min-h-0 flex-1 flex-col space-y-3 overflow-y-auto overflow-x-hidden px-3 py-4 sm:h-[600px]">
+              <div
+                ref={chatScrollRef}
+                className="flex h-[55dvh] min-h-0 flex-1 flex-col space-y-3 overflow-y-auto overflow-x-hidden px-3 py-4 sm:h-[600px]"
+              >
                 {messages.length === 0 && (
                   <p className="py-10 text-center text-sm text-muted-foreground">
                     {tr(
@@ -1048,13 +1051,7 @@ function Workspace() {
                           <button
                             type="button"
                             onClick={() => {
-                              void vaultUrl(m.attachmentPath!)
-                                .then((url) => window.open(url, "_blank", "noopener"))
-                                .catch(() =>
-                                  toast.error(
-                                    tr("تعذّر فتح المرفق", "Could not open the attachment"),
-                                  ),
-                                );
+                              void openAttachment(m.attachmentPath!, m.attachmentName ?? m.text);
                             }}
                             className="flex w-full items-center gap-2 rounded-xl border border-current/30 bg-background/20 px-3 py-2 text-start text-xs font-bold"
                           >
