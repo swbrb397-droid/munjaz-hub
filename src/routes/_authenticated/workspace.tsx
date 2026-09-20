@@ -421,7 +421,7 @@ function Workspace() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("reviews")
-        .select("id")
+        .select("id, rating")
         .eq("order_id", order!.id)
         .eq("reviewer_id", user!.id)
         .maybeSingle();
@@ -430,7 +430,40 @@ function Workspace() {
     },
   });
   const alreadyReviewed = !!myReview.data;
+  /**
+   * Reviews unlock strictly after the buyer accepts the final delivery.
+   * Pending / in_progress / delivered / disputed / cancelled / refunded orders
+   * can never be rated — a refunded arbitration must not allow retaliation.
+   */
   const canReview = !!order && order.status === "completed" && !arbitrated && !alreadyReviewed;
+
+  /** Persists the rating on the live `reviews` table (one row per reviewer). */
+  const submitReview = useMutation({
+    mutationFn: async (input: { rating: number; comment: string }) => {
+      if (!order || !user) throw new Error(tr("لا يوجد طلب محدد.", "No order selected."));
+      const revieweeId = order.buyer_id === user.id ? order.seller_id : order.buyer_id;
+      const { error } = await supabase.from("reviews").insert({
+        order_id: order.id,
+        reviewer_id: user.id,
+        reviewee_id: revieweeId,
+        rating: input.rating,
+        comment: input.comment.slice(0, 500) || null,
+      });
+      if (error) throw new Error(error.message);
+      return input.rating;
+    },
+    onSuccess: (rating) => {
+      void qc.invalidateQueries({ queryKey: ["my-review"] });
+      void qc.invalidateQueries({ queryKey: ["profile"] });
+      void qc.invalidateQueries({ queryKey: ["listings"] });
+      setReviewOpen(false);
+      setReviewText("");
+      setReviewDone(
+        tr(`تم إرسال تقييمك: ${rating} ★`, `Your review was submitted: ${rating} ★`),
+      );
+    },
+    onError: (e: Error) => setActionMsg(e.message),
+  });
 
   /** Status gates for the order action bar. */
   const isAwaitingFunding = order?.status === "pending";
@@ -764,7 +797,7 @@ function Workspace() {
   });
 
   return (
-    <div className="relative z-10 px-3 pt-4 sm:px-6 sm:pt-6">
+    <div className="relative z-10 box-border w-full max-w-full overflow-x-hidden px-3 pt-4 sm:px-6 sm:pt-6">
       <Section
       title={
         order
@@ -842,6 +875,16 @@ function Workspace() {
             </button>
           )}
 
+          {alreadyReviewed && order?.status === "completed" && (
+            <span className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-primary/40 bg-primary/10 px-4 py-2 text-sm font-bold text-primary">
+              <Star className="size-4 fill-accent text-accent" />
+              {tr(
+                `تم إرسال تقييمك: ${myReview.data?.rating ?? ""} ★`,
+                `Your review was submitted: ${myReview.data?.rating ?? ""} ★`,
+              )}
+            </span>
+          )}
+
           {order && canCallOrDispute && (
             <button
               type="button"
@@ -913,7 +956,7 @@ function Workspace() {
                   </div>
                 )}
               </div>
-              <div className="flex h-[55dvh] min-h-0 flex-1 flex-col space-y-3 overflow-y-auto py-4 sm:h-[600px]">
+              <div className="flex h-[55dvh] min-h-0 flex-1 flex-col space-y-3 overflow-y-auto overflow-x-hidden px-3 py-4 sm:h-[600px]">
                 {messages.length === 0 && (
                   <p className="py-10 text-center text-sm text-muted-foreground">
                     {tr(
@@ -1108,7 +1151,8 @@ function Workspace() {
                 </p>
               )}
 
-              <div className="w-full max-w-full flex items-center gap-2 px-3 py-2 bg-card border border-border/50 rounded-xl">
+              <div className="sticky bottom-0 z-20 w-full max-w-full bg-background/95 pb-[env(safe-area-inset-bottom)] backdrop-blur">
+              <div className="w-full max-w-full flex items-center gap-2 p-2 bg-card border border-border/60 rounded-xl shadow-sm">
                 <input
                   ref={chatFileRef}
                   type="file"
@@ -1140,11 +1184,12 @@ function Workspace() {
                 />
                 <button
                   onClick={send}
-                  className="flex-shrink-0 h-9 w-9 inline-flex items-center justify-center rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white"
+                  className="flex-shrink-0 h-9 w-9 inline-flex items-center justify-center rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white shadow-sm active:scale-95"
                   aria-label={tr("إرسال", "Send")}
                 >
-                  <Send className="size-4" />
+                  <Send className="size-4 rtl:rotate-180" />
                 </button>
+              </div>
               </div>
             </>
           )}
@@ -1866,7 +1911,7 @@ function Workspace() {
           </Card>
 
           <Card className="overflow-visible">
-            <div className="flex items-center justify-between w-full px-4 py-3 gap-3">
+            <div className="flex items-center justify-between w-full px-4 py-3.5 gap-3">
               <div className="flex flex-col items-start min-w-0 flex-1">
                 <h3 className="text-sm font-bold">
                   {tr("المعالم المرحلية للطلب", "Order milestones")}
@@ -2200,7 +2245,7 @@ function Workspace() {
         />
       )}
 
-      {reviewOpen && (
+      {reviewOpen && canReview && (
         <div
           className="fixed inset-0 z-[70] grid place-items-center overflow-y-auto bg-background/85 p-4 backdrop-blur"
           role="dialog"
@@ -2252,30 +2297,32 @@ function Workspace() {
               ))}
               <textarea
                 value={reviewText}
-                onChange={(e) => setReviewText(e.target.value)}
+                maxLength={500}
+                onChange={(e) => setReviewText(e.target.value.slice(0, 500))}
                 rows={4}
                 placeholder={tr(
-                  "اكتب تقييمك وتجربتك بالتفصيل...",
-                  "Write your review and experience in detail...",
+                  "اكتب تقييمك وتجربتك بالتفصيل... (اختياري)",
+                  "Write your review and experience in detail... (optional)",
                 )}
                 className="w-full rounded-xl border border-input bg-surface p-3 text-sm outline-none focus:border-primary"
               />
+              <p className="text-end text-[11px] text-muted-foreground">{reviewText.length}/500</p>
               <button
                 type="button"
+                disabled={submitReview.isPending || !canReview}
                 onClick={() => {
-                  const avg = ((stars.quality + stars.communication + stars.speed) / 3).toFixed(1);
-                  setReviewDone(
-                    tr(
-                      `تم نشر تقييمك (${avg}/5) واعتماد الطلب.`,
-                      `Review published (${avg}/5) and order approved.`,
-                    ),
+                  const avg = Math.round(
+                    (stars.quality + stars.communication + stars.speed) / 3,
                   );
-                  setReviewOpen(false);
-                  setReviewText("");
+                  submitReview.mutate({
+                    rating: Math.min(5, Math.max(1, avg)),
+                    comment: reviewText.trim(),
+                  });
                 }}
-                className="w-full rounded-xl bg-primary py-2.5 text-sm font-bold text-primary-foreground"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-2.5 text-sm font-bold text-primary-foreground disabled:opacity-50"
               >
-                {tr("نشر التقييم واعتماد الطلب", "Publish review & approve order")}
+                {submitReview.isPending && <Loader2 className="size-4 animate-spin" />}
+                {tr("إرسال التقييم", "Submit review")}
               </button>
             </div>
           </Card>

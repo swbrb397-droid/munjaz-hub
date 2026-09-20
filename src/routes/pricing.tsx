@@ -169,7 +169,8 @@ function PricingPage() {
 
       <Section title={tr("الباقات", "Plans")} subtitle={tr("الدفع بعملة USDT عبر TRC-20 أو BEP-20", "Pay in USDT via TRC-20 or BEP-20")}>
         <div className="grid gap-5 lg:grid-cols-3">
-          {TIERS.map((t) => (
+          {/* Corporate tier is temporarily concealed until the B2B launch. */}
+          {TIERS.filter((t) => t.id !== "corporate").map((t) => (
             <Card
               key={t.id}
               className={`flex h-full flex-col ${t.featured ? "border-primary/60 glow" : ""} ${t.premium ? "border-accent/50" : ""}`}
@@ -247,7 +248,7 @@ function PricingPage() {
               <table className="w-full min-w-[620px] text-right text-xs">
                 <thead className="bg-secondary/60 text-muted-foreground">
                   <tr>
-                    {["الميزة", "المجانية", "المحترفين", "الشركات"].map((h, i) => (
+                    {["الميزة", "المجانية", "المحترفين"].map((h, i) => (
                       <th
                         key={h}
                         className={`whitespace-nowrap px-4 py-3 font-semibold ${i === 0 ? "sticky start-0 z-10 bg-card" : ""}`}
@@ -259,17 +260,16 @@ function PricingPage() {
                 </thead>
                 <tbody>
                   {[
-                    ["حد التخزين والرفع", "50MB", "500MB", "2GB"],
-                    ["عمولة المنصة", "10% قياسية", "5% مخفضة", "2.5% الأدنى"],
-                    ["مدة حجز الضمان", "48 ساعة", "24 ساعة (مع KYC)", "12–16 ساعة"],
-                    ["أدوات فرق العمل", "—", "—", "متكاملة"],
-                    ["الدعم الفني", "قياسي", "أولوية", "مدير حساب مخصص"],
+                    ["حد التخزين والرفع", "50MB", "500MB"],
+                    ["عمولة المنصة", "10% قياسية", "5% مخفضة"],
+                    ["مدة حجز الضمان", "48 ساعة", "24 ساعة (مع KYC)"],
+                    ["أدوات فرق العمل", "—", "—"],
+                    ["الدعم الفني", "قياسي", "أولوية"],
                   ].map((r) => (
                     <tr key={r[0]} className="border-t border-border">
                       <td className="sticky start-0 z-10 whitespace-nowrap bg-card px-4 py-3 font-semibold">{r[0]}</td>
                       <td className="whitespace-nowrap px-4 py-3 text-muted-foreground">{r[1]}</td>
                       <td className="whitespace-nowrap px-4 py-3 text-primary">{r[2]}</td>
-                      <td className="whitespace-nowrap px-4 py-3 text-accent">{r[3]}</td>
                     </tr>
                   ))}
                 </tbody>

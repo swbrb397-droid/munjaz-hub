@@ -8,6 +8,7 @@ import { DmcaTrigger } from "@/components/site/DmcaModal";
 import { CoverImage } from "@/components/site/CoverImage";
 
 import { useLang } from "@/lib/lang";
+import { sanitizeText } from "@/lib/security";
 import { useAuth } from "@/hooks/use-auth";
 import { useWallet } from "@/lib/queries";
 import { useCreateOrder, useListing } from "@/lib/orders";
@@ -104,10 +105,15 @@ function ListingDetail() {
     }
   }
 
+  // Never render raw seller-supplied strings; fall back to a localized label.
+  const safeTitle = sanitizeText(item.title ?? "", 160) || tr("عرض بدون عنوان", "Untitled listing");
+  const safeSeller = sanitizeText(item.seller ?? "", 80) || tr("بائع موثّق", "Verified seller");
+  const safeTag = sanitizeText(item.tag ?? "", 60) || tr("خدمة رقمية", "Digital service");
+
   return (
     <Section
-      title={item.title}
-      subtitle={`${item.seller} · ${item.tag}`}
+      title={safeTitle}
+      subtitle={`${safeSeller} · ${safeTag}`}
       action={<Link to="/store" className="inline-flex items-center gap-2 text-sm text-primary">{tr("كل العروض", "All listings")} <ArrowLeft className="size-4" /></Link>}
     >
       <div className="grid gap-4 lg:grid-cols-[1.4fr_.6fr]">

@@ -1,5 +1,7 @@
 /** End-to-end referral attribution: capture `?ref=` once, attach it at sign-up. */
-export const REFERRAL_KEY = "munjaz_referral_code";
+export const REFERRAL_KEY = "munjaz_ref_code";
+/** Key used before the rename — still read so in-flight visitors keep attribution. */
+const LEGACY_REFERRAL_KEY = "munjaz_referral_code";
 
 function normalize(code: string) {
   return code.trim().toUpperCase().slice(0, 32);
@@ -21,7 +23,9 @@ export function captureReferralFromUrl() {
 export function storedReferralCode(): string {
   if (typeof window === "undefined") return "";
   try {
-    return normalize(window.localStorage.getItem(REFERRAL_KEY) ?? "");
+    const current = window.localStorage.getItem(REFERRAL_KEY);
+    if (current) return normalize(current);
+    return normalize(window.localStorage.getItem(LEGACY_REFERRAL_KEY) ?? "");
   } catch {
     return "";
   }
@@ -31,6 +35,7 @@ export function clearStoredReferralCode() {
   if (typeof window === "undefined") return;
   try {
     window.localStorage.removeItem(REFERRAL_KEY);
+    window.localStorage.removeItem(LEGACY_REFERRAL_KEY);
   } catch {
     /* ignore */
   }

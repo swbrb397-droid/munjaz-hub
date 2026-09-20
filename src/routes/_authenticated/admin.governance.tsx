@@ -66,7 +66,7 @@ function AdminGovernance() {
                 ["ai_confidence_threshold", tr("حد ثقة الذكاء الاصطناعي (%)", "AI confidence threshold (%)"), Number(g.ai_confidence_threshold)],
                 ["fee_free_pct", tr("عمولة الباقة المجانية (%)", "Free tier commission (%)"), Number(g.fee_free_pct)],
                 ["fee_pro_pct", tr("عمولة باقة Pro (%)", "Pro tier commission (%)"), Number(g.fee_pro_pct)],
-                ["fee_corporate_pct", tr("عمولة باقة الشركات (%)", "Corporate tier commission (%)"), Number(g.fee_corporate_pct)],
+                // Corporate commission stays in the database schema but is hidden from the dashboard.
                 ["sla_free_hours", tr("SLA للحساب المجاني (ساعة)", "Free tier SLA (hours)"), g.sla_free_hours],
                 ["sla_pro_hours", tr("SLA لحساب Pro (ساعة)", "Pro tier SLA (hours)"), g.sla_pro_hours],
                 ["daily_deposit_limit", tr("حد التعبئة اليومي (USDT)", "Daily deposit limit (USDT)"), Number(g.daily_deposit_limit)],
@@ -101,7 +101,6 @@ function AdminGovernance() {
               <select value={tier} onChange={(e) => setTier(e.target.value as AccountTier)} className="rounded-lg border border-input bg-surface px-3 py-2 outline-none focus:border-primary">
                 <option value="free">Free</option>
                 <option value="pro">Pro</option>
-                <option value="corporate">Corporate</option>
               </select>
             </label>
             <label className="grid gap-1.5">

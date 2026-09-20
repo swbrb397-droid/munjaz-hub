@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { CheckCircle2, Copy, Info, Percent, ShieldAlert, Users, Lock, Wallet2, Clock, X } from "lucide-react";
 import { Card, Section } from "@/components/site/Shell";
 import { useLang } from "@/lib/lang";
-import { useProfile, useReferrals } from "@/lib/queries";
+import { useProfile, useReferrals, useReferredCount } from "@/lib/queries";
 import { useAuth } from "@/hooks/use-auth";
 
 export const Route = createFileRoute("/referrals")({
@@ -31,6 +31,7 @@ function ReferralHub() {
   const { user } = useAuth();
   const profile = useProfile();
   const data = useReferrals();
+  const referredCount = useReferredCount();
   const [terms, setTerms] = useState(false);
 
   const loading = data.isLoading || profile.isLoading;
@@ -54,14 +55,14 @@ function ReferralHub() {
       .map((r) => Math.ceil((new Date(r.expires_at).getTime() - now) / 86_400_000))
       .filter((d) => d > 0);
     return {
-      joined: referrals.length,
+      joined: Math.max(referredCount.data ?? 0, referrals.length),
       active: referrals.filter((r) => r.is_active).length,
       available,
       escrowLocked,
       lifetime,
       cycleDaysLeft: daysLeft.length ? Math.max(...daysLeft) : 0,
     };
-  }, [referrals, commissions]);
+  }, [referrals, commissions, referredCount.data]);
 
   const copy = async () => {
     if (!refLink) return;

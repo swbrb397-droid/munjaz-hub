@@ -140,3 +140,24 @@ export function useKycQueue(enabled: boolean) {
     },
   });
 }
+
+/**
+ * Live count of accounts attributed to the signed-in user.
+ * Reads `profiles.referred_by` directly so the counter reflects attribution
+ * even before a commission row exists.
+ */
+export function useReferredCount() {
+  const { user } = useAuth();
+  return useQuery({
+    queryKey: ["referred-count", user?.id],
+    enabled: !!user,
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from("profiles")
+        .select("id", { count: "exact", head: true })
+        .eq("referred_by", user!.id);
+      if (error) throw error;
+      return count ?? 0;
+    },
+  });
+}

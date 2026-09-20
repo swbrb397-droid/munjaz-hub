@@ -5,7 +5,7 @@ import { Copy, Users, Wallet2 } from "lucide-react";
 import { Card } from "@/components/site/Shell";
 import { useLang } from "@/lib/lang";
 import { useAuth } from "@/hooks/use-auth";
-import { useProfile, useReferrals } from "@/lib/queries";
+import { useProfile, useReferrals, useReferredCount } from "@/lib/queries";
 
 /** Referral link + live partner stats, shared by the wallet and profile pages. */
 export function ReferralWidget({ className = "" }: { className?: string }) {
@@ -13,6 +13,7 @@ export function ReferralWidget({ className = "" }: { className?: string }) {
   const { user } = useAuth();
   const profile = useProfile();
   const referrals = useReferrals();
+  const referredCount = useReferredCount();
   const [copied, setCopied] = useState(false);
 
   const storedCode = (profile.data as { referral_code?: string } | null)?.referral_code ?? "";
@@ -21,7 +22,7 @@ export function ReferralWidget({ className = "" }: { className?: string }) {
   const origin = typeof window !== "undefined" ? window.location.origin : "";
   const link = code ? `${origin}/auth?ref=${code}` : "";
 
-  const joined = referrals.data?.referrals.length ?? 0;
+  const joined = Math.max(referredCount.data ?? 0, referrals.data?.referrals.length ?? 0);
   const earned = referrals.data?.totalEarned ?? 0;
 
   const copy = async () => {
