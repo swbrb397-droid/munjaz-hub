@@ -1095,6 +1095,44 @@ function Workspace() {
                             {tr("تعديل الرسالة", "Edit message")}
                           </button>
                         )}
+                        {!translate &&
+                          !isEditing &&
+                          !m.attachmentPath &&
+                          /[a-zA-Z]{3,}/.test(m.text) &&
+                          (() => {
+                            const stored = m.translation || cachedTx?.text;
+                            if (stored)
+                              return (
+                                <div
+                                  className="mt-1 flex items-start gap-1 border-t border-emerald-500/20 pt-1 text-xs font-medium text-emerald-400"
+                                  dir={lang === "ar" ? "rtl" : "ltr"}
+                                >
+                                  <span>🌐</span>
+                                  <span className="break-words">{stored}</span>
+                                </div>
+                              );
+                            if (cachedTx?.loading)
+                              return (
+                                <span className="mt-1 inline-flex items-center gap-1 text-[11px] text-emerald-400/80">
+                                  <Loader2 className="size-3 animate-spin" />
+                                  {tr("جارٍ الترجمة…", "Translating…")}
+                                </span>
+                              );
+                            return (
+                              <button
+                                type="button"
+                                onClick={() => translateNow(m)}
+                                className="mt-1 flex items-center gap-1 text-[11px] text-emerald-400/80 underline hover:text-emerald-300"
+                              >
+                                <span>
+                                  🌐{" "}
+                                  {cachedTx?.error
+                                    ? tr("إعادة المحاولة", "Retry translation")
+                                    : tr("ترجمة إلى العربية", "Translate to Arabic")}
+                                </span>
+                              </button>
+                            );
+                          })()}
                         {translate && foreign && !isEditing && (
                           <div className="mt-2 grid gap-1 border-t border-current/15 pt-2">
                             {!original && (
