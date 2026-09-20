@@ -968,9 +968,28 @@ function Workspace() {
                                 onClick={() => {
                                   const text = sanitizeText(editing.text, 1000);
                                   if (!text) return;
+                                  // Same moderation gate as sending — edits cannot bypass it.
+                                  const blockedEdit = moderationFailure(text);
+                                  if (blockedEdit) {
+                                    setWarning(blockedEdit);
+                                    toast.error(blockedEdit);
+                                    return;
+                                  }
+                                  if (!isWithinEditWindow(m.createdAt)) {
+                                    toast.error(
+                                      tr(
+                                        "انتهت مهلة تعديل الرسالة (5 دقائق).",
+                                        "The 5-minute edit window has expired.",
+                                      ),
+                                    );
+                                    setEditing(null);
+                                    return;
+                                  }
+                                  setWarning(null);
                                   txCacheInvalidate(m.id);
                                   setMsgRev((r) => ({ ...r, [m.id]: (r[m.id] ?? m.rev ?? 0) + 1 }));
                                   editMessage.mutate({ id: m.id, body: text, version: m.rev });
+                                  cacheTx({ id: m.id, translations: {}, translatedContent: "" });
                                   setEditing(null);
                                 }}
                                 className="rounded-lg bg-background px-2.5 py-1 text-[10px] font-bold text-primary"
@@ -1009,7 +1028,7 @@ function Workspace() {
                             {shown}
                           </p>
                         )}
-                        {m.from === "me" && !isEditing && (
+                        {m.from === "me" && !isEditing && isWithinEditWindow(m.createdAt) && (
                           <button
                             type="button"
                             onClick={() => setEditing({ id: m.id, text: m.text })}
@@ -1078,6 +1097,8 @@ function Workspace() {
                                   });
                                   setShowOriginal((s) => s.filter((x) => x !== m.id));
                                   setMsgRev((r) => ({ ...r, [m.id]: (r[m.id] ?? 0) + 1 }));
+                                  // Clear the permanent cache so the next pass regenerates once.
+                                  cacheTx({ id: m.id, translations: {}, translatedContent: "" });
                                 }}
                                 className="text-start text-[10px] font-bold underline underline-offset-2 opacity-80"
                               >
@@ -1093,32 +1114,12 @@ function Workspace() {
                     </div>
                   );
                 })}
-                {aiReplies.map((r) => (
-                  <div key={r.id} className="flex justify-start">
-                    <div className="max-w-[85%] rounded-2xl border border-accent/40 bg-accent/10 px-4 py-3 text-sm sm:max-w-[75%]">
-                      <p className="mb-1 flex items-center gap-1 text-xs font-bold text-accent">
-                        <Sparkles className="size-3" />{" "}
-                        {tr("مساعد المنجز الذكي", "Munjaz AI assistant")}
-                      </p>
-                      <p className="break-words whitespace-pre-wrap">{r.text}</p>
-                    </div>
-                  </div>
-                ))}
-                {aiBusy && (
-                  <p className="text-xs text-muted-foreground">
-                    {tr("المساعد الذكي يكتب…", "AI assistant is typing…")}
-                  </p>
-                )}
               </div>
 
-
               {warning && (
-                <p className="mb-2 flex items-center gap-2 rounded-lg border border-destructive/50 bg-destructive/10 px-3 py-2 text-xs text-destructive">
-                  <ShieldAlert className="size-4" />{" "}
-                  {tr(
-                    "تم حظر الرسالة: محاولة تبادل وسائل تواصل خارجية.",
-                    "Message blocked: attempt to exchange external contact info.",
-                  )}
+                <p className="mb-2 flex items-start gap-2 rounded-lg border border-destructive/50 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+                  <ShieldAlert className="mt-0.5 size-4 shrink-0" />
+                  <span className="min-w-0 flex-1">{warning}</span>
                 </p>
               )}
 
@@ -1141,10 +1142,10 @@ function Workspace() {
                     onChange={(e) => setDraft(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && send()}
                     placeholder={tr(
-                      "🛡️ حماية الضمان: يمنع مشاركة وسائل التواصل الخارجية لضمان حقوقك المالية وسريان نظام الـ Escrow.",
-                      "🛡️ Escrow protection: sharing external contact details is prohibited to protect your funds and keep escrow valid.",
+                      "اكتب رسالتك بأمان داخل المنصة...",
+                      "Write your message securely inside the platform...",
                     )}
-                    className="flex-1 min-w-0 w-full flex-1 bg-transparent border-0 px-2 py-1 text-right text-sm text-foreground outline-none placeholder:text-muted-foreground focus:ring-0 sm:text-base"
+                    className="min-w-0 w-full flex-1 border-0 bg-transparent px-2 py-1 text-right text-sm text-foreground outline-none placeholder:text-muted-foreground focus:ring-0"
                   />
                   <div className="flex flex-shrink-0 items-center gap-1.5 pl-1">
                     <button
@@ -1160,6 +1161,24 @@ function Workspace() {
                       ) : (
                         <Paperclip className="size-4" />
                       )}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setTranslatePref(!translate)}
+                      aria-pressed={!!translate}
+                      className={`flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl transition-colors ${
+                        translate
+                          ? "bg-primary text-primary-foreground"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                      title={
+                        translate
+                          ? tr("إيقاف الترجمة التلقائية", "Disable auto-translation")
+                          : tr("تفعيل الترجمة التلقائية", "Enable auto-translation")
+                      }
+                      aria-label={tr("الترجمة التلقائية", "Auto-translate")}
+                    >
+                      <Languages className="size-4" />
                     </button>
                     <button
                       type="submit"
@@ -1181,13 +1200,21 @@ function Workspace() {
               <div className="grid place-items-center rounded-xl border border-dashed border-border p-10 text-center">
                 <FileUp className="size-8 text-primary" />
                 <p className="mt-3 font-semibold">
-                  {tr("اسحب ملفات التسليم هنا", "Drag deliverable files here")}
+                  {tr(
+                    `اسحب ملفات التسليم هنا — حتى ${uploadLimitLabel} لكل ملف (للملفات الأكبر يرجى مشاركة رابط سحابي موثوق)`,
+                    `Drag deliverable files here — up to ${uploadLimitLabel} per file (for larger files share a trusted cloud link)`,
+                  )}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  {tr(
-                    "حتى 2GB لكل ملف · تُفتح للمشتري بعد اعتماد المرحلة",
-                    "Up to 2GB per file · unlocked for the buyer after milestone approval",
-                  )}
+                  {milestonesOn
+                    ? tr(
+                        "تُفتح للمشتري بعد اعتماد المرحلة الحالية",
+                        "Unlocked for the buyer after the current milestone is approved",
+                      )
+                    : tr(
+                        "تُفتح للمشتري فور اعتماد واستلام العمل",
+                        "Unlocked for the buyer as soon as the work is approved and received",
+                      )}
                 </p>
               </div>
               {order && order.seller_id === user?.id && (
