@@ -33,6 +33,9 @@ import { useAdminOverview, useSandboxAction, type SandboxKind } from "@/lib/admi
 import { useKycSubmissions, useReviewKyc } from "@/lib/kyc";
 import { logAdminAction } from "@/lib/admin-audit";
 import { useFrozenAccounts } from "@/lib/frozen-accounts";
+import { useUserAudit } from "@/lib/admin-user-audit";
+import { useServerFn } from "@tanstack/react-start";
+import { sendCryptoPayout } from "@/lib/payout.functions";
 
 export const Route = createFileRoute("/_authenticated/admin/")({
   head: () => ({
@@ -92,6 +95,38 @@ function Admin() {
         onError: (e: Error) => toast.error(e.message),
       },
     );
+  };
+
+  // Deep user audit radar + 1-click payout (mutex on the row being processed).
+  const [auditUser, setAuditUser] = useState<string | null>(null);
+  const audit = useUserAudit(auditUser, isAdmin);
+  const [payoutBusy, setPayoutBusy] = useState<string | null>(null);
+  const runCryptoPayout = useServerFn(sendCryptoPayout);
+
+  const oneClickPayout = async (withdrawalId: string) => {
+    if (payoutBusy) return;
+    setPayoutBusy(withdrawalId);
+    try {
+      const result = await runCryptoPayout({ data: { withdrawalId } });
+      await logAdminAction("withdrawal_paid", "withdrawal_requests", withdrawalId, {
+        tx_hash: result.reference,
+        batch_id: result.batchId,
+        mode: "one_click",
+      });
+      await qc.invalidateQueries({ queryKey: ["withdrawal-queue"] });
+      toast.success(tr("تم تنفيذ التحويل عبر مزود الدفع ✅", "Payout executed via the provider ✅"));
+    } catch (e) {
+      const raw = e instanceof Error ? e.message : String(e);
+      toast.error(
+        raw.includes("OPEN_DISPUTE_BLOCK")
+          ? tr("محظور: المستخدم لديه نزاع مفتوح.", "Blocked: the user has an open dispute.")
+          : raw.includes("PAYOUT_PROVIDER_UNCONFIGURED")
+            ? tr("مفتاح مزود الدفع غير مُهيّأ.", "Payout provider key is not configured.")
+            : raw,
+      );
+    } finally {
+      setPayoutBusy(null);
+    }
   };
 
   // Security sentinel: record unauthorized attempts to reach the admin area.
@@ -230,6 +265,12 @@ function Admin() {
                 </div>
                 <div className="flex flex-wrap items-start gap-2">
                   <button
+                    onClick={() => setAuditUser(w.user_id)}
+                    className="rounded-lg border border-accent/50 px-3 py-1.5 text-xs font-bold text-accent"
+                  >
+                    {tr("فحص سجل المستخدم 🔍", "Inspect user record 🔍")}
+                  </button>
+                  <button
                     disabled={resolvePayout.isPending || w.status === "paid" || w.status === "rejected"}
                     onClick={() => resolvePayout.mutate({ id: w.id, action: "approve" })}
                     className="rounded-lg border border-border px-3 py-1.5 text-xs disabled:opacity-50"
@@ -237,11 +278,22 @@ function Admin() {
                     {tr("اعتماد", "Approve")}
                   </button>
                   <button
+                    disabled={
+                      payoutBusy !== null || w.status === "paid" || w.status === "rejected"
+                    }
+                    onClick={() => void oneClickPayout(w.id)}
+                    className="rounded-lg bg-emerald-500 px-3 py-1.5 text-xs font-bold text-white disabled:opacity-50"
+                  >
+                    {payoutBusy === w.id
+                      ? tr("جارٍ التحويل…", "Sending…")
+                      : tr("اعتماد وإرسال السحب", "Approve & send payout")}
+                  </button>
+                  <button
                     disabled={resolvePayout.isPending || w.status === "paid" || w.status === "rejected"}
                     onClick={() => setPayoutAction({ id: w.id, mode: "pay" })}
                     className="rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground disabled:opacity-50"
                   >
-                    {tr("اعتماد وإتمام التحويل", "Approve & complete transfer")}
+                    {tr("تسجيل هاش يدوي", "Record hash manually")}
                   </button>
                   <button
                     disabled={resolvePayout.isPending || w.status === "paid" || w.status === "rejected"}
@@ -255,6 +307,79 @@ function Admin() {
             ))}
           </div>
         </Card>
+      )}
+
+      {auditUser && (
+        <div
+          className="fixed inset-0 z-[85] flex justify-end bg-background/80 backdrop-blur"
+          role="dialog"
+          aria-modal="true"
+          onClick={() => setAuditUser(null)}
+        >
+          <div
+            className="h-full w-full max-w-md overflow-y-auto border-s border-border bg-card p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-3">
+              <h3 className="text-lg font-black">{tr("سجل المستخدم", "User record")}</h3>
+              <button
+                onClick={() => setAuditUser(null)}
+                className="rounded-lg border border-border px-2 py-1 text-xs"
+              >
+                ✕
+              </button>
+            </div>
+
+            {audit.isLoading && (
+              <p className="mt-6 text-sm text-muted-foreground">{tr("جارٍ التحميل…", "Loading…")}</p>
+            )}
+            {audit.data && (
+              <div className="mt-4 grid gap-3 text-sm">
+                {audit.data.openDisputes > 0 && (
+                  <p className="rounded-xl border border-destructive/60 bg-destructive/10 px-3 py-3 text-xs font-bold leading-relaxed text-destructive">
+                    {tr(
+                      "⚠️ تحذير أمني عالي: المستخدم لديه نزاع مفتوح! تم تجميد زر الاعتماد التلقائي",
+                      "⚠️ High security alert: this user has an open dispute! Automatic approval is frozen",
+                    )}
+                  </p>
+                )}
+                <div className="rounded-xl border border-border bg-surface-2/50 px-3 py-2">
+                  <p className="font-bold">{audit.data.profile?.display_name ?? "—"}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {tr("تاريخ التسجيل", "Registered")}:{" "}
+                    {audit.data.profile?.created_at
+                      ? new Date(audit.data.profile.created_at).toLocaleDateString()
+                      : "—"}
+                  </p>
+                  <p className="mt-1 text-xs">
+                    <span className="rounded-full border border-border px-2 py-0.5 text-[11px] font-bold">
+                      {audit.data.profile?.account_tier ?? "free"}
+                    </span>
+                    {" · "}
+                    {tr("طلبات مكتملة", "Completed orders")}: {audit.data.profile?.completed_orders ?? 0}
+                  </p>
+                  <p dir="ltr" className="mt-1 break-all font-mono text-[11px] text-muted-foreground">
+                    {audit.data.payoutAddress ?? "—"}
+                  </p>
+                </div>
+                <div className="grid grid-cols-3 gap-2 text-center text-xs">
+                  <div className="rounded-xl border border-border px-2 py-2">
+                    <p className="text-muted-foreground">{tr("نزاعات", "Disputes")}</p>
+                    <p className="mt-1 text-lg font-black">{audit.data.disputesTotal}</p>
+                  </div>
+                  <div className="rounded-xl border border-border px-2 py-2">
+                    <p className="text-muted-foreground">{tr("مكسوبة", "Won")}</p>
+                    <p className="mt-1 text-lg font-black text-primary">{audit.data.disputesWon}</p>
+                  </div>
+                  <div className="rounded-xl border border-border px-2 py-2">
+                    <p className="text-muted-foreground">{tr("خاسرة", "Lost")}</p>
+                    <p className="mt-1 text-lg font-black text-destructive">{audit.data.disputesLost}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
       )}
 
       {payoutAction && (

@@ -63,6 +63,12 @@ import {
   isWithinEditWindow,
   moderateChatText,
 } from "@/lib/chat-moderation";
+import { Lightbox, type LightboxImage } from "@/components/site/Lightbox";
+import {
+  usePendingExtensions,
+  useRequestExtension,
+  useResolveExtension,
+} from "@/lib/extensions";
 
 type Tr = (ar: string, en: string) => string;
 
@@ -339,6 +345,36 @@ function Workspace() {
   const timelineRef = useRef<HTMLDivElement>(null);
   const [exportingLog, setExportingLog] = useState(false);
   const [logHash, setLogHash] = useState<string | null>(null);
+  /** In-app image viewer — replaces popup-blocked window.open() on mobile. */
+  const [lightbox, setLightbox] = useState<LightboxImage | null>(null);
+  const chatScrollRef = useRef<HTMLDivElement>(null);
+
+  const scrollChatToBottom = () => {
+    const el = chatScrollRef.current;
+    if (el) el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+  };
+
+  /** Opens an attachment without a popup: images in the lightbox, files via a direct download anchor. */
+  async function openAttachment(path: string, name: string) {
+    try {
+      const url = await vaultUrl(path);
+      if (!url) throw new Error("no-url");
+      if (/\.(png|jpe?g|gif|webp|avif|bmp|svg)$/i.test(name) || /\.(png|jpe?g|gif|webp|avif|bmp|svg)$/i.test(path)) {
+        setLightbox({ url, name });
+        return;
+      }
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = name;
+      a.target = "_blank";
+      a.rel = "noopener noreferrer";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    } catch {
+      toast.error(tr("تعذّر فتح المرفق", "Could not open the attachment"));
+    }
+  }
 
   const [disputeMsg, setDisputeMsg] = useState<string | null>(null);
   const [actionMsg, setActionMsg] = useState<string | null>(null);
@@ -434,7 +470,14 @@ function Workspace() {
   const [extHours, setExtHours] = useState<24 | 48>(24);
   const [extReason, setExtReason] = useState("");
   const [extDone, setExtDone] = useState<string | null>(null);
-  const [extStatus, setExtStatus] = useState<"none" | "pending" | "approved">("none");
+
+  /** Live extension requests for this order (anti-spam + in-chat action card). */
+  const extensionOrderIds = useMemo(() => (selected ? [selected] : []), [selected]);
+  const pendingExtensions = usePendingExtensions(extensionOrderIds);
+  const requestExtension = useRequestExtension();
+  const resolveExtension = useResolveExtension();
+  const pendingExtension = selected ? (pendingExtensions.data?.[selected] ?? null) : null;
+  const extStatus: "none" | "pending" = pendingExtension ? "pending" : "none";
 
   /** Role isolation — each party only ever sees its own controls. */
   const isBuyer = !!order && !!user && order.buyer_id === user.id;
@@ -643,21 +686,15 @@ function Workspace() {
         ),
         tone: "accent",
       });
-    if (extStatus !== "none")
+    if (pendingExtension)
       items.push({
-        at: null,
+        at: pendingExtension.created_at,
         title: tr(
-          `طلب تمديد الموعد +${extHours} ساعة`,
-          `Deadline extension requested +${extHours}h`,
+          `طلب تمديد الموعد +${pendingExtension.hours} ساعة`,
+          `Deadline extension requested +${pendingExtension.hours}h`,
         ),
-        detail:
-          extStatus === "approved"
-            ? tr(
-                "تمت الموافقة من المشتري وتم تأجيل الإطلاق التلقائي.",
-                "Approved by the buyer; auto-release postponed.",
-              )
-            : tr("بانتظار موافقة المشتري.", "Awaiting buyer approval."),
-        tone: extStatus === "approved" ? "primary" : "accent",
+        detail: tr("بانتظار موافقة المشتري.", "Awaiting buyer approval."),
+        tone: "accent",
       });
     if (order.delivered_at)
       items.push({
@@ -854,18 +891,20 @@ function Workspace() {
           {isSeller && canExtend && (
           <button
             type="button"
+            disabled={extStatus === "pending"}
+            title={
+              extStatus === "pending"
+                ? tr("يوجد طلب تمديد قيد مراجعة المشتري", "An extension request is already under buyer review")
+                : undefined
+            }
             onClick={() => setExtOpen(true)}
-            className="inline-flex items-center gap-2 rounded-xl border border-border px-4 py-2 text-sm font-semibold"
+            className="inline-flex items-center gap-2 rounded-xl border border-border px-4 py-2 text-sm font-semibold disabled:opacity-40"
           >
             <CalendarClock className="size-4" />{" "}
             {tr("طلب تمديد مهلة التسليم", "Request deadline extension")}
-            {extStatus !== "none" && (
-              <span
-                className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${extStatus === "approved" ? "bg-primary/15 text-primary" : "bg-accent/15 text-accent"}`}
-              >
-                {extStatus === "approved"
-                  ? tr("تمت الموافقة", "Approved")
-                  : tr("قيد الانتظار", "Pending")}
+            {extStatus === "pending" && (
+              <span className="rounded-full bg-accent/15 px-2 py-0.5 text-[10px] font-bold text-accent">
+                {tr("قيد الانتظار", "Pending")}
               </span>
             )}
           </button>
@@ -930,7 +969,10 @@ function Workspace() {
               <div className="grid gap-2 pt-1">
                 <ChatSecurityNotice />
               </div>
-              <div className="flex h-[55dvh] min-h-0 flex-1 flex-col space-y-3 overflow-y-auto overflow-x-hidden px-3 py-4 sm:h-[600px]">
+              <div
+                ref={chatScrollRef}
+                className="flex h-[55dvh] min-h-0 flex-1 flex-col space-y-3 overflow-y-auto overflow-x-hidden px-3 py-4 sm:h-[600px]"
+              >
                 {messages.length === 0 && (
                   <p className="py-10 text-center text-sm text-muted-foreground">
                     {tr(
@@ -1012,13 +1054,7 @@ function Workspace() {
                           <button
                             type="button"
                             onClick={() => {
-                              void vaultUrl(m.attachmentPath!)
-                                .then((url) => window.open(url, "_blank", "noopener"))
-                                .catch(() =>
-                                  toast.error(
-                                    tr("تعذّر فتح المرفق", "Could not open the attachment"),
-                                  ),
-                                );
+                              void openAttachment(m.attachmentPath!, m.attachmentName ?? m.text);
                             }}
                             className="flex w-full items-center gap-2 rounded-xl border border-current/30 bg-background/20 px-3 py-2 text-start text-xs font-bold"
                           >
@@ -1119,6 +1155,75 @@ function Workspace() {
                 })}
               </div>
 
+              {pendingExtension && (
+                <div className="mb-2 grid gap-2 rounded-xl border border-accent/40 bg-accent/5 px-3 py-3">
+                  <p className="flex items-start gap-2 text-xs font-bold leading-relaxed text-foreground">
+                    <CalendarClock className="mt-0.5 size-4 shrink-0 text-accent" />
+                    <span className="min-w-0 flex-1">
+                      {tr(
+                        `طلب تمديد مهلة التسليم (+${pendingExtension.hours} ساعة) — السبب: ${pendingExtension.reason}`,
+                        `Deadline extension request (+${pendingExtension.hours}h) — reason: ${pendingExtension.reason}`,
+                      )}
+                    </span>
+                  </p>
+                  {isBuyer ? (
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        disabled={resolveExtension.isPending}
+                        onClick={() =>
+                          resolveExtension.mutate(
+                            { id: pendingExtension.id, accept: true },
+                            {
+                              onSuccess: () => {
+                                sendMessage.mutate({
+                                  body: `✅ وافق المشتري على تمديد مهلة التسليم +${pendingExtension.hours} ساعة.`,
+                                  lang: "ar",
+                                });
+                                toast.success(tr("تم قبول التمديد", "Extension accepted"));
+                              },
+                              onError: (err: Error) => toast.error(err.message),
+                            },
+                          )
+                        }
+                        className="rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground disabled:opacity-40"
+                      >
+                        {tr("قبول التمديد", "Accept extension")}
+                      </button>
+                      <button
+                        type="button"
+                        disabled={resolveExtension.isPending}
+                        onClick={() =>
+                          resolveExtension.mutate(
+                            { id: pendingExtension.id, accept: false },
+                            {
+                              onSuccess: () => {
+                                sendMessage.mutate({
+                                  body: `⛔ رفض المشتري طلب التمديد — يبقى موعد التسليم كما هو.`,
+                                  lang: "ar",
+                                });
+                                toast.success(tr("تم رفض التمديد", "Extension rejected"));
+                              },
+                              onError: (err: Error) => toast.error(err.message),
+                            },
+                          )
+                        }
+                        className="rounded-lg border border-destructive/50 px-3 py-1.5 text-xs font-bold text-destructive disabled:opacity-40"
+                      >
+                        {tr("رفض التمديد", "Reject extension")}
+                      </button>
+                    </div>
+                  ) : (
+                    <span className="inline-flex w-fit rounded-full bg-accent/15 px-2.5 py-1 text-[11px] font-bold text-accent">
+                      {tr(
+                        "طلب تمديد مهلة التسليم قيد مراجعة المشتري",
+                        "Extension request under buyer review",
+                      )}
+                    </span>
+                  )}
+                </div>
+              )}
+
               {warning && (
                 <p className="mb-2 flex items-start gap-2 rounded-lg border border-destructive/50 bg-destructive/10 px-3 py-2 text-xs text-destructive">
                   <ShieldAlert className="mt-0.5 size-4 shrink-0" />
@@ -1143,6 +1248,7 @@ function Workspace() {
                   <input
                     value={draft}
                     onChange={(e) => setDraft(e.target.value)}
+                    onFocus={() => setTimeout(scrollChatToBottom, 150)}
                     onKeyDown={(e) => e.key === "Enter" && send()}
                     placeholder={tr(
                       "اكتب رسالتك بأمان داخل المنصة...",
@@ -2227,21 +2333,42 @@ function Workspace() {
             />
             <button
               type="button"
-              disabled={extReason.trim().length < 10}
+              disabled={
+                extReason.trim().length < 10 ||
+                requestExtension.isPending ||
+                extStatus === "pending" ||
+                !order ||
+                !user
+              }
               onClick={() => {
-                setExtStatus("pending");
-                setExtDone(
-                  tr(
-                    `تم إرسال طلب تمديد ${extHours} ساعة للمشتري — بانتظار الموافقة.`,
-                    `Extension request of ${extHours}h sent to the buyer — awaiting approval.`,
-                  ),
+                if (!order || !user) return;
+                const reasonText = sanitizeText(extReason, 500);
+                requestExtension.mutate(
+                  { orderId: order.id, hours: extHours, reason: reasonText, sellerId: user.id },
+                  {
+                    onSuccess: () => {
+                      sendMessage.mutate({
+                        body: `⏳ طلب تمديد مهلة التسليم (+${extHours} ساعة) — السبب: ${reasonText}`,
+                        lang: "ar",
+                      });
+                      setExtDone(
+                        tr(
+                          `تم إرسال طلب تمديد ${extHours} ساعة للمشتري — بانتظار الموافقة.`,
+                          `Extension request of ${extHours}h sent to the buyer — awaiting approval.`,
+                        ),
+                      );
+                      setExtOpen(false);
+                      setExtReason("");
+                    },
+                    onError: (err: Error) => toast.error(err.message),
+                  },
                 );
-                setExtOpen(false);
-                setExtReason("");
               }}
               className="mt-3 w-full rounded-xl bg-primary py-2.5 text-sm font-bold text-primary-foreground disabled:opacity-40"
             >
-              {tr("إرسال طلب التمديد للمشتري", "Send extension request to buyer")}
+              {requestExtension.isPending
+                ? tr("جارٍ الإرسال…", "Sending…")
+                : tr("إرسال طلب التمديد للمشتري", "Send extension request to buyer")}
             </button>
 
             <p className="mt-2 text-[11px] text-muted-foreground">
@@ -2353,6 +2480,8 @@ function Workspace() {
           {extDone ?? reviewDone}
         </p>
       )}
+
+      <Lightbox image={lightbox} onClose={() => setLightbox(null)} />
       </Section>
     </div>
   );
