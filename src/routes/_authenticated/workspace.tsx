@@ -1155,6 +1155,75 @@ function Workspace() {
                 })}
               </div>
 
+              {pendingExtension && (
+                <div className="mb-2 grid gap-2 rounded-xl border border-accent/40 bg-accent/5 px-3 py-3">
+                  <p className="flex items-start gap-2 text-xs font-bold leading-relaxed text-foreground">
+                    <CalendarClock className="mt-0.5 size-4 shrink-0 text-accent" />
+                    <span className="min-w-0 flex-1">
+                      {tr(
+                        `طلب تمديد مهلة التسليم (+${pendingExtension.hours} ساعة) — السبب: ${pendingExtension.reason}`,
+                        `Deadline extension request (+${pendingExtension.hours}h) — reason: ${pendingExtension.reason}`,
+                      )}
+                    </span>
+                  </p>
+                  {isBuyer ? (
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        disabled={resolveExtension.isPending}
+                        onClick={() =>
+                          resolveExtension.mutate(
+                            { id: pendingExtension.id, accept: true },
+                            {
+                              onSuccess: () => {
+                                sendMessage.mutate({
+                                  body: `✅ وافق المشتري على تمديد مهلة التسليم +${pendingExtension.hours} ساعة.`,
+                                  lang: "ar",
+                                });
+                                toast.success(tr("تم قبول التمديد", "Extension accepted"));
+                              },
+                              onError: (err: Error) => toast.error(err.message),
+                            },
+                          )
+                        }
+                        className="rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground disabled:opacity-40"
+                      >
+                        {tr("قبول التمديد", "Accept extension")}
+                      </button>
+                      <button
+                        type="button"
+                        disabled={resolveExtension.isPending}
+                        onClick={() =>
+                          resolveExtension.mutate(
+                            { id: pendingExtension.id, accept: false },
+                            {
+                              onSuccess: () => {
+                                sendMessage.mutate({
+                                  body: `⛔ رفض المشتري طلب التمديد — يبقى موعد التسليم كما هو.`,
+                                  lang: "ar",
+                                });
+                                toast.success(tr("تم رفض التمديد", "Extension rejected"));
+                              },
+                              onError: (err: Error) => toast.error(err.message),
+                            },
+                          )
+                        }
+                        className="rounded-lg border border-destructive/50 px-3 py-1.5 text-xs font-bold text-destructive disabled:opacity-40"
+                      >
+                        {tr("رفض التمديد", "Reject extension")}
+                      </button>
+                    </div>
+                  ) : (
+                    <span className="inline-flex w-fit rounded-full bg-accent/15 px-2.5 py-1 text-[11px] font-bold text-accent">
+                      {tr(
+                        "طلب تمديد مهلة التسليم قيد مراجعة المشتري",
+                        "Extension request under buyer review",
+                      )}
+                    </span>
+                  )}
+                </div>
+              )}
+
               {warning && (
                 <p className="mb-2 flex items-start gap-2 rounded-lg border border-destructive/50 bg-destructive/10 px-3 py-2 text-xs text-destructive">
                   <ShieldAlert className="mt-0.5 size-4 shrink-0" />
