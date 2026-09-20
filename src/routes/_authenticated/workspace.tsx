@@ -63,6 +63,12 @@ import {
   isWithinEditWindow,
   moderateChatText,
 } from "@/lib/chat-moderation";
+import { Lightbox, type LightboxImage } from "@/components/site/Lightbox";
+import {
+  usePendingExtensions,
+  useRequestExtension,
+  useResolveExtension,
+} from "@/lib/extensions";
 
 type Tr = (ar: string, en: string) => string;
 
@@ -339,6 +345,36 @@ function Workspace() {
   const timelineRef = useRef<HTMLDivElement>(null);
   const [exportingLog, setExportingLog] = useState(false);
   const [logHash, setLogHash] = useState<string | null>(null);
+  /** In-app image viewer — replaces popup-blocked window.open() on mobile. */
+  const [lightbox, setLightbox] = useState<LightboxImage | null>(null);
+  const chatScrollRef = useRef<HTMLDivElement>(null);
+
+  const scrollChatToBottom = () => {
+    const el = chatScrollRef.current;
+    if (el) el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+  };
+
+  /** Opens an attachment without a popup: images in the lightbox, files via a direct download anchor. */
+  async function openAttachment(path: string, name: string) {
+    try {
+      const url = await vaultUrl(path);
+      if (!url) throw new Error("no-url");
+      if (/\.(png|jpe?g|gif|webp|avif|bmp|svg)$/i.test(name) || /\.(png|jpe?g|gif|webp|avif|bmp|svg)$/i.test(path)) {
+        setLightbox({ url, name });
+        return;
+      }
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = name;
+      a.target = "_blank";
+      a.rel = "noopener noreferrer";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    } catch {
+      toast.error(tr("تعذّر فتح المرفق", "Could not open the attachment"));
+    }
+  }
 
   const [disputeMsg, setDisputeMsg] = useState<string | null>(null);
   const [actionMsg, setActionMsg] = useState<string | null>(null);
