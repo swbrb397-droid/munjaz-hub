@@ -1248,6 +1248,7 @@ function Workspace() {
                   <input
                     value={draft}
                     onChange={(e) => setDraft(e.target.value)}
+                    onFocus={() => setTimeout(scrollChatToBottom, 150)}
                     onKeyDown={(e) => e.key === "Enter" && send()}
                     placeholder={tr(
                       "اكتب رسالتك بأمان داخل المنصة...",
