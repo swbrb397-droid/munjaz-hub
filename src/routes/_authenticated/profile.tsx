@@ -1,17 +1,14 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 import {
   AlertTriangle,
-  BadgeCheck,
   Camera,
-  CheckCircle2,
   Crown,
   Loader2,
   Percent,
   ShieldCheck,
   Timer,
-  Upload,
 } from "lucide-react";
 import { Card, Section } from "@/components/site/Shell";
 import { VerifiedBadge } from "@/components/site/VerifiedBadge";
@@ -22,21 +19,20 @@ import { useAuth } from "@/hooks/use-auth";
 import { SecurityPanel } from "@/components/site/SecurityPanel";
 import { EXECUTABLE_REJECTION, isDangerousFile } from "@/lib/file-guard";
 import { NameChangeControl } from "@/components/site/NameChangeCard";
-import { useMyKyc, useSubmitKyc } from "@/lib/kyc";
 
 export const Route = createFileRoute("/_authenticated/profile")({
   head: () => ({
     meta: [
-      { title: "الملف الشخصي وتوثيق الهوية | المنجز" },
+      { title: "الملف الشخصي | المنجز" },
       {
         name: "description",
         content:
-          "أدر ملفك الشخصي، وثّق هويتك (KYC) عبر ثلاث خطوات، واضبط محفظة السحب والتنبيهات والمصادقة الثنائية.",
+          "أدر ملفك الشخصي، واضبط محفظة السحب والتنبيهات والمصادقة الثنائية.",
       },
-      { property: "og:title", content: "الملف الشخصي وتوثيق الهوية | المنجز" },
+      { property: "og:title", content: "الملف الشخصي | المنجز" },
       {
         property: "og:description",
-        content: "توثيق KYC، دورة الضمان، عمولة الباقة، وإعدادات الأمان في مكان واحد.",
+        content: "إعدادات الأمان، عمولة الباقة، وإعدادات الحساب في مكان واحد.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -45,7 +41,7 @@ export const Route = createFileRoute("/_authenticated/profile")({
   component: ProfilePage,
 });
 
-type Kyc = "unverified" | "review" | "verified" | "rejected";
+type Kyc = "verified" | "review" | "rejected" | "unverified";
 type Tier = "free" | "pro" | "corp";
 
 const TIER_META: Record<
@@ -65,23 +61,10 @@ const TIER_META: Record<
   },
 };
 
-const NATIONALITIES = [
-  "فلسطين",
-  "السعودية",
-  "الإمارات",
-  "مصر",
-  "الأردن",
-  "المغرب",
-  "الكويت",
-  "قطر",
-  "أخرى",
-];
-
 function ProfilePage() {
   const { tr } = useLang();
   const { user } = useAuth();
   const { profile: liveProfile } = useUserProfile();
-  const [tab, setTab] = useState<"kyc" | "settings">("kyc");
   const isVerified = liveProfile?.is_verified === true;
   // Tier is decoupled from the admin role: only a live, unexpired paid plan
   // on the profile row may show Pro/Corporate.
@@ -92,21 +75,15 @@ function ProfilePage() {
   const [avatar, setAvatar] = useState<string | null>(null);
   const avatarRef = useRef<HTMLInputElement>(null);
 
-  // Live KYC state straight from the database (submissions + profile flags).
-  const mine = useMyKyc();
-  const latest = (mine.data ?? [])[0];
-  const dbStatus = liveProfile?.is_verified
-    ? "approved"
-    : (latest?.status ?? liveProfile?.kyc_status ?? "unverified");
-  const kyc: Kyc =
-    liveProfile?.is_verified === true
-      ? "verified"
-      : dbStatus === "pending"
-        ? "review"
-        : dbStatus === "rejected"
-          ? "rejected"
-          : "unverified";
-  const rejectionReason = kyc === "rejected" ? (latest?.admin_note ?? null) : null;
+  // KYC status is read-only in the profile view. Full verification submission
+  // lives on the dedicated /kyc route and is reviewed in the admin KYC panel.
+  const kyc: Kyc = isVerified
+    ? "verified"
+    : liveProfile?.kyc_status === "pending"
+      ? "review"
+      : liveProfile?.kyc_status === "rejected"
+        ? "rejected"
+        : "unverified";
 
   const meta = TIER_META[tier];
   // Clean text only — no leading "@" anywhere in the profile header.
@@ -117,10 +94,10 @@ function ProfilePage() {
   return (
     <div className="overflow-x-hidden">
       <Section
-        title={tr("الملف الشخصي والتوثيق", "Profile & verification")}
+        title={tr("الملف الشخصي", "Profile")}
         subtitle={tr(
-          "هويتك، توثيقك، وإعدادات الأمان والسحب.",
-          "Identity, KYC and security settings.",
+          "إدارة الحساب، الأمان، والتفضيلات.",
+          "Account, security, and preferences.",
         )}
       >
         <Card>
@@ -178,7 +155,9 @@ function ProfilePage() {
                 </p>
               )}
               <div className="mt-3 flex flex-wrap gap-2">
-                <KycBadge state={kyc} />
+                <Link to="/kyc" className="inline-flex">
+                  <KycBadge state={kyc} />
+                </Link>
                 <NameChangeControl profile={liveProfile} />
                 <span className="inline-flex items-center gap-1.5 rounded-full border border-accent/40 bg-accent/10 px-3 py-1 text-[11px] font-bold text-accent">
                   <Crown className="size-3.5" /> {tr(meta.name[0], meta.name[1])}
@@ -187,7 +166,7 @@ function ProfilePage() {
             </div>
           </div>
 
-          <div className="mt-5 grid gap-3 sm:grid-cols-3">
+          <div className="mt-5 grid gap-3 sm:grid-cols-2">
             <Metric
               icon={<Timer className="size-4" />}
               label={tr("حالة الضمان المعتمدة", "Escrow hold period")}
@@ -198,42 +177,11 @@ function ProfilePage() {
               label={tr("عمولة المبيعات المطبقة", "Applied sales commission")}
               value={meta.fee}
             />
-            <Metric
-              icon={<ShieldCheck className="size-4" />}
-              label={tr("حالة التوثيق الرسمي", "Verification status")}
-              value={
-                isVerified
-                  ? tr("موثق معتمد", "Verified Account")
-                  : tr("غير موثق", "Not verified")
-              }
-              tone={isVerified ? "ok" : "warn"}
-            />
           </div>
         </Card>
 
-        <div className="mt-4 flex flex-wrap gap-1.5">
-          {[
-            ...(isVerified ? [] : [{ id: "kyc" as const, label: "توثيق الهوية (KYC)" }]),
-            { id: "settings" as const, label: "إعدادات الحساب والأمان" },
-          ].map((t) => (
-            <button
-              key={t.id}
-              type="button"
-              onClick={() => setTab(t.id)}
-              aria-pressed={tab === t.id}
-              className={`chip ${tab === t.id ? "chip-active" : "chip-hover"}`}
-            >
-              {t.label}
-            </button>
-          ))}
-        </div>
-
         <div className="mt-4">
-          {tab === "kyc" && !isVerified ? (
-            <KycWizard state={kyc} reason={rejectionReason} />
-          ) : (
-            <SettingsPanel />
-          )}
+          <SettingsPanel />
         </div>
       </Section>
     </div>
@@ -289,342 +237,6 @@ function KycBadge({ state }: { state: Kyc }) {
     <span className="inline-flex items-center gap-1.5 rounded-full border border-destructive/40 bg-destructive/10 px-3 py-1 text-[11px] font-bold text-destructive">
       <AlertTriangle className="size-3.5" /> {tr("حساب غير موثق", "Unverified account")}
     </span>
-  );
-}
-
-type Doc = { name: string; url: string; file: File };
-
-function Dropzone({
-  label,
-  hint,
-  doc,
-  onPick,
-}: {
-  label: string;
-  hint: string;
-  doc: Doc | null;
-  onPick: (d: Doc) => void;
-}) {
-  const ref = useRef<HTMLInputElement>(null);
-  const [drag, setDrag] = useState(false);
-
-  const handle = (list: FileList | null) => {
-    const f = list?.[0];
-    if (!f) return;
-    if (isDangerousFile(f.name)) {
-      toast.error(EXECUTABLE_REJECTION);
-      return;
-    }
-    if (f.size > 10 * 1024 * 1024) {
-      toast.error("حجم الملف يتجاوز 10MB");
-      return;
-    }
-    if (!/(jpe?g|png|pdf)$/i.test(f.type) && !/\.(jpe?g|png|pdf)$/i.test(f.name)) {
-      toast.error("الصيغ المسموحة: JPG, PNG, PDF");
-      return;
-    }
-    onPick({
-      name: f.name,
-      url: f.type.startsWith("image/") ? URL.createObjectURL(f) : "",
-      file: f,
-    });
-  };
-
-  return (
-    <div
-      onClick={() => ref.current?.click()}
-      onDragOver={(e) => {
-        e.preventDefault();
-        setDrag(true);
-      }}
-      onDragLeave={() => setDrag(false)}
-      onDrop={(e) => {
-        e.preventDefault();
-        setDrag(false);
-        handle(e.dataTransfer.files);
-      }}
-      className={`grid cursor-pointer place-items-center rounded-xl border border-dashed p-5 text-center transition-colors ${
-        drag
-          ? "border-primary bg-primary/10"
-          : doc
-            ? "border-primary/60 bg-primary/5"
-            : "border-border"
-      }`}
-    >
-      {doc?.url ? (
-        <img src={doc.url} alt={label} className="mb-2 h-24 w-full rounded-lg object-cover" />
-      ) : (
-        <Upload className="size-6 text-primary" />
-      )}
-      <p className="mt-1 text-sm font-bold">{doc ? doc.name : label}</p>
-      <p className="text-[11px] text-muted-foreground">{hint}</p>
-      <input
-        ref={ref}
-        type="file"
-        accept=".jpg,.jpeg,.png,.pdf,image/*,application/pdf"
-        className="hidden"
-        onChange={(e) => {
-          handle(e.target.files);
-          e.target.value = "";
-        }}
-      />
-    </div>
-  );
-}
-
-function KycWizard({ state, reason }: { state: Kyc; reason?: string | null }) {
-  const submitKyc = useSubmitKyc();
-  const [step, setStep] = useState(1);
-  const [fullName, setFullName] = useState("");
-  const [dob, setDob] = useState("");
-  const [nat, setNat] = useState(NATIONALITIES[0]!);
-  const [idNumber, setIdNumber] = useState("");
-  const [docType, setDocType] = useState<"id" | "passport">("id");
-  const [front, setFront] = useState<Doc | null>(null);
-  const [back, setBack] = useState<Doc | null>(null);
-  const [selfie, setSelfie] = useState<Doc | null>(null);
-  const [agree, setAgree] = useState(false);
-  const [sending, setSending] = useState(false);
-
-  const step1Valid =
-    fullName.trim().split(/\s+/).length >= 4 && !!dob && idNumber.trim().length >= 6;
-  const step2Valid = !!front && (docType === "passport" || !!back);
-  const step3Valid = !!selfie && agree;
-
-  if (state === "review")
-    return (
-      <Card>
-        <p className="flex items-start gap-2 text-sm font-bold text-amber-500">
-          <Loader2 className="mt-0.5 size-4 shrink-0 animate-spin" />
-          قيد المراجعة — تم استلام طلب التوثيق، عادةً خلال 24 ساعة عمل.
-        </p>
-      </Card>
-    );
-
-  if (state === "verified")
-    return (
-      <Card>
-        <p className="flex items-start gap-2 text-sm font-bold text-emerald-400">
-          <BadgeCheck className="mt-0.5 size-4 shrink-0" /> موثق بنجاح
-        </p>
-      </Card>
-    );
-
-  return (
-    <Card>
-      <p className="flex items-start gap-2 rounded-xl border border-accent/40 bg-accent/10 p-4 text-xs font-bold leading-relaxed text-accent">
-        <BadgeCheck className="mt-0.5 size-4 shrink-0" />
-        توثيق الهوية (KYC) إلزامي لتفعيل فترة الضمان السريعة (12 ساعة) لباقة Pro وسحب الأرباح دون
-        قيود، امتثالاً لقواعد الأمان ومكافحة الاحتيال.
-      </p>
-
-      {state === "rejected" && (
-        <p className="mt-3 flex items-start gap-2 rounded-xl border border-rose-500/40 bg-rose-500/10 p-3 text-xs font-bold leading-relaxed text-rose-400">
-          <AlertTriangle className="mt-0.5 size-4 shrink-0" />
-          تم رفض طلب التوثيق{reason ? ` — السبب: ${reason}` : ""}. يمكنك إعادة الرفع.
-        </p>
-      )}
-
-      <ol className="mt-5 grid gap-3 sm:grid-cols-3">
-        {["البيانات الشخصية", "رفع الوثائق الرسمية", "الصورة الشخصية للتحقق"].map((s, i) => (
-          <li key={s} className="flex items-center gap-2">
-            <span
-              className={`grid size-7 shrink-0 place-items-center rounded-full text-[11px] font-black ${
-                step > i + 1
-                  ? "bg-primary text-primary-foreground"
-                  : step === i + 1
-                    ? "bg-accent/20 text-accent ring-2 ring-accent/50"
-                    : "border border-border text-muted-foreground"
-              }`}
-            >
-              {step > i + 1 ? <CheckCircle2 className="size-4" /> : i + 1}
-            </span>
-            <span
-              className={`min-w-0 truncate text-xs font-bold ${step === i + 1 ? "text-accent" : "text-muted-foreground"}`}
-            >
-              {s}
-            </span>
-          </li>
-        ))}
-      </ol>
-
-      {step === 1 && (
-        <div className="mt-5 grid gap-3 sm:grid-cols-2">
-          <Field
-            label="الاسم الرباعي الرسمي المطابق للوثيقة"
-            value={fullName}
-            onChange={setFullName}
-            placeholder="الاسم الأول واسم الأب والجد والعائلة"
-            className="sm:col-span-2"
-          />
-          <div>
-            <label className="block text-xs font-bold">تاريخ الميلاد</label>
-            <input
-              type="date"
-              value={dob}
-              onChange={(e) => setDob(e.target.value)}
-              className="mt-1.5 w-full rounded-xl border border-input bg-surface px-3 py-2.5 text-sm outline-none focus:border-primary"
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-bold">الجنسية</label>
-            <select
-              value={nat}
-              onChange={(e) => setNat(e.target.value)}
-              className="mt-1.5 w-full rounded-xl border border-input bg-surface px-3 py-2.5 text-sm outline-none focus:border-primary"
-            >
-              {NATIONALITIES.map((n) => (
-                <option key={n} value={n}>
-                  {n}
-                </option>
-              ))}
-            </select>
-          </div>
-          <Field
-            label="رقم الهوية الوطنية أو جواز السفر"
-            value={idNumber}
-            onChange={setIdNumber}
-            placeholder="مثال: 401234567"
-            className="sm:col-span-2"
-          />
-        </div>
-      )}
-
-      {step === 2 && (
-        <div className="mt-5 grid gap-3">
-          <div className="flex flex-wrap gap-1.5">
-            {[
-              { id: "id" as const, label: "بطاقة هوية وطنية" },
-              { id: "passport" as const, label: "جواز سفر ساري المفعول" },
-            ].map((d) => (
-              <button
-                key={d.id}
-                type="button"
-                onClick={() => setDocType(d.id)}
-                className={`rounded-lg px-4 py-2 text-xs font-bold ${docType === d.id ? "bg-primary text-primary-foreground" : "border border-border text-muted-foreground"}`}
-              >
-                {d.label}
-              </button>
-            ))}
-          </div>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Dropzone
-              label="الوجه الأمامي للوثيقة"
-              hint="JPG / PNG / PDF — حتى 10MB"
-              doc={front}
-              onPick={setFront}
-            />
-            {docType === "id" && (
-              <Dropzone
-                label="الوجه الخلفي للوثيقة"
-                hint="JPG / PNG / PDF — حتى 10MB"
-                doc={back}
-                onPick={setBack}
-              />
-            )}
-          </div>
-        </div>
-      )}
-
-      {step === 3 && (
-        <div className="mt-5 grid gap-3">
-          <Dropzone
-            label="صورة شخصية أثناء حمل الوثيقة"
-            hint="صورة واضحة للوجه مع الوثيقة — حتى 10MB"
-            doc={selfie}
-            onPick={setSelfie}
-          />
-          <label className="flex items-start gap-2 text-xs leading-relaxed text-muted-foreground">
-            <input
-              type="checkbox"
-              checked={agree}
-              onChange={(e) => setAgree(e.target.checked)}
-              className="mt-0.5 size-4 shrink-0 accent-primary"
-            />
-            أقر بأن جميع البيانات والوثائق المرفوعة صحيحة وتعود لي شخصياً وتحت طائلة المسؤولية
-            وإلغاء الحساب.
-          </label>
-        </div>
-      )}
-
-      <div className="mt-5 flex flex-wrap gap-2">
-        {step > 1 && (
-          <button
-            type="button"
-            onClick={() => setStep(step - 1)}
-            className="rounded-xl border border-border px-4 py-2.5 text-sm font-bold"
-          >
-            السابق
-          </button>
-        )}
-        {step < 3 ? (
-          <button
-            type="button"
-            disabled={step === 1 ? !step1Valid : !step2Valid}
-            onClick={() => setStep(step + 1)}
-            className="flex-1 rounded-xl bg-primary py-2.5 text-sm font-bold text-primary-foreground disabled:opacity-40"
-          >
-            التالي
-          </button>
-        ) : (
-          <button
-            type="button"
-            disabled={!step3Valid || sending || submitKyc.isPending}
-            onClick={() => {
-              if (!front) return;
-              setSending(true);
-              submitKyc.mutate(
-                { docType, front: front.file, back: back?.file ?? null, fullName },
-                {
-                  onSuccess: () => {
-                    setSending(false);
-                    toast.success("تم إرسال طلب التوثيق للمراجعة");
-                  },
-                  onError: (e: Error) => {
-                    setSending(false);
-                    toast.error(e.message);
-                  },
-                },
-              );
-            }}
-            className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-primary py-2.5 text-sm font-bold text-primary-foreground disabled:opacity-40"
-          >
-            {sending ? (
-              <Loader2 className="size-4 animate-spin" />
-            ) : (
-              <ShieldCheck className="size-4" />
-            )}
-            إرسال طلب التوثيق للمراجعة
-          </button>
-        )}
-      </div>
-    </Card>
-  );
-}
-
-function Field({
-  label,
-  value,
-  onChange,
-  placeholder,
-  className = "",
-}: {
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-  placeholder?: string;
-  className?: string;
-}) {
-  return (
-    <div className={className}>
-      <label className="block text-xs font-bold">{label}</label>
-      <input
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        className="mt-1.5 w-full rounded-xl border border-input bg-surface px-3 py-2.5 text-sm outline-none focus:border-primary"
-      />
-    </div>
   );
 }
 
