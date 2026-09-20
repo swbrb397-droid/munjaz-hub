@@ -1,7 +1,17 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { FileDown, Gavel, Loader2, MessagesSquare, ShieldCheck, X } from "lucide-react";
+import {
+  ExternalLink,
+  FileDown,
+  FileText,
+  Gavel,
+  Loader2,
+  MessagesSquare,
+  ShieldCheck,
+  X,
+} from "lucide-react";
 import { Card, Section } from "@/components/site/Shell";
 import { useLang } from "@/lib/lang";
 import { useUserProfile } from "@/hooks/use-user-profile";
@@ -31,34 +41,79 @@ export const Route = createFileRoute("/_authenticated/admin/disputes")({
   component: AdminDisputes,
 });
 
-/** Evidence entries stored on the case (`dispute_cases.evidence` jsonb array). */
+type EvidenceEntry = { label: string; path: string; href: string };
+
+/** Normalises the free-form `dispute_cases.evidence` jsonb array into file entries. */
+function readEvidence(evidence: unknown): EvidenceEntry[] {
+  const rows = Array.isArray(evidence) ? evidence : [];
+  return rows.map((raw, i) => {
+    const entry = (typeof raw === "string" ? { path: raw } : (raw ?? {})) as Record<string, unknown>;
+    const path = String(
+      entry["path"] ?? entry["storage_path"] ?? entry["file_path"] ?? entry["url"] ?? entry["name"] ?? "",
+    );
+    const label = String(
+      entry["name"] ?? entry["file_name"] ?? path.split("/").pop() ?? `evidence-${i + 1}`,
+    );
+    const href = /^https?:\/\//i.test(path) ? path : "";
+    return { label, path, href };
+  });
+}
+
+/** Evidence files kept in the private `digital-vault` bucket, opened via signed URLs. */
 function EvidenceVault({ evidence }: { evidence: unknown }) {
   const { tr } = useLang();
-  const rows = Array.isArray(evidence) ? evidence : [];
-  if (rows.length === 0)
+  const entries = readEvidence(evidence);
+
+  const links = useQuery({
+    queryKey: ["dispute-evidence-urls", entries.map((e) => e.path).join("|")],
+    enabled: entries.length > 0,
+    staleTime: 50 * 60 * 1000,
+    queryFn: async () => {
+      const out: Record<string, string> = {};
+      for (const e of entries) {
+        if (e.href) {
+          out[e.path] = e.href;
+          continue;
+        }
+        if (!e.path) continue;
+        const url = await vaultUrl(e.path);
+        if (url) out[e.path] = url;
+      }
+      return out;
+    },
+  });
+
+  if (entries.length === 0)
     return <p className="text-xs text-muted-foreground">{tr("لا توجد أدلة مرفقة.", "No evidence attached.")}</p>;
 
   return (
-    <div className="grid gap-2">
-      {rows.map((raw, i) => {
-        const entry = (typeof raw === "string" ? { name: raw } : (raw ?? {})) as Record<string, unknown>;
-        const label = String(entry["name"] ?? entry["work"] ?? entry["type"] ?? `evidence-${i + 1}`);
-        const url = String(entry["url"] ?? entry["proof"] ?? entry["name"] ?? "");
-        const isUrl = /^https?:\/\//i.test(url);
-        const isImage = isUrl && /\.(png|jpe?g|gif|webp|avif)(\?|$)/i.test(url);
+    <div className="grid gap-2 sm:col-span-2">
+      {entries.map((e, i) => {
+        const signedUrl = links.data?.[e.path];
+        if (!signedUrl)
+          return (
+            <div
+              key={`${e.label}-${i}`}
+              className="flex items-center gap-2 rounded-xl border border-border/70 bg-card p-3 text-xs text-muted-foreground"
+            >
+              {links.isLoading ? <Loader2 className="size-4 animate-spin" /> : <FileText className="size-4" />}
+              <span className="min-w-0 truncate">{e.label}</span>
+            </div>
+          );
         return (
-          <div key={`${label}-${i}`} className="rounded-lg border border-border p-2 text-[11px]">
-            <p className="truncate font-bold">{label}</p>
-            {isImage ? (
-              <a href={url} target="_blank" rel="noopener noreferrer">
-                <img src={url} alt={label} loading="lazy" className="mt-2 h-28 w-full rounded-lg object-cover" />
-              </a>
-            ) : isUrl ? (
-              <a href={url} target="_blank" rel="noopener noreferrer" className="mt-1 block truncate text-primary underline">
-                {url}
-              </a>
-            ) : null}
-          </div>
+          <a
+            key={`${e.label}-${i}`}
+            href={signedUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group flex items-center justify-between rounded-xl border border-border/70 bg-card p-3 transition-all hover:border-emerald-500/50"
+          >
+            <div className="flex min-w-0 items-center gap-2">
+              <FileText className="size-4 shrink-0 text-emerald-400" />
+              <span className="truncate text-xs font-medium text-foreground">{e.label}</span>
+            </div>
+            <ExternalLink className="size-4 shrink-0 text-muted-foreground group-hover:text-emerald-400" />
+          </a>
         );
       })}
     </div>
@@ -75,6 +130,14 @@ function CaseModal({ item, onClose }: { item: AdminDispute; onClose: () => void 
   const [ruling, setRuling] = useState("");
   const [directive, setDirective] = useState("");
   const [sendingDirective, setSendingDirective] = useState(false);
+
+  /**
+   * A case is hard-locked once a verdict was issued or the order left the
+   * disputed state — this blocks duplicate refunds and conflicting rulings.
+   */
+  const isDisputeClosed =
+    ["resolved", "rejected", "completed", "refunded"].includes(String(item.status)) ||
+    (!!item.order && item.order.status !== "disputed");
 
   /** Injects a binding official admin message into the order chat. */
   const sendDirective = async () => {
@@ -129,14 +192,18 @@ function CaseModal({ item, onClose }: { item: AdminDispute; onClose: () => void 
         </div>
 
         <div className="mt-4 grid gap-2 rounded-xl border border-border p-4 text-sm">
-          <p className="font-bold">{item.order?.title ?? tr("بدون طلب مرتبط", "No linked order")}</p>
-          <p className="text-xs text-muted-foreground">{item.reason}</p>
-          {item.order && (
-            <p className="text-xs">
-              {tr("قيمة الضمان", "Escrow value")}: <span className="font-bold text-primary">{formatUsdt(item.order.amount_usdt)} USDT</span>
-              {" · "}{item.order.status}
-            </p>
-          )}
+          <p className="font-bold">{sanitizeText(item.order?.title ?? tr("بدون طلب مرتبط", "No linked order"), 160)}</p>
+          <p className="text-xs text-muted-foreground">{sanitizeText(item.reason ?? "", 2000)}</p>
+          <p className="text-xs text-muted-foreground">
+            {tr("تاريخ النزاع", "Dispute date")}: {new Date(item.created_at).toLocaleString()}
+            {item.order && (
+              <>
+                {" · "}
+                {tr("قيمة الضمان", "Escrow value")}:{" "}
+                <span className="font-bold text-primary">{formatUsdt(item.order.amount_usdt)} USDT</span>
+              </>
+            )}
+          </p>
         </div>
 
         <div className="mt-4 grid gap-4 md:grid-cols-2">
@@ -188,53 +255,62 @@ function CaseModal({ item, onClose }: { item: AdminDispute; onClose: () => void 
           </div>
         </div>
 
-        <div className="mt-4 rounded-xl border border-accent/40 bg-accent/5 p-4">
-          <h3 className="text-xs font-black text-accent">{tr("إرسال توجيه إداري رسمي", "Send an official admin directive")}</h3>
-          <textarea
-            value={directive}
-            onChange={(e) => setDirective(e.target.value)}
-            rows={2}
-            placeholder={tr("نص ملزم يُضاف إلى محادثة الطلب…", "Binding text injected into the order chat…")}
-            className="mt-3 w-full rounded-lg border border-input bg-surface px-3 py-2 text-sm outline-none focus:border-primary"
-          />
-          <button
-            type="button"
-            disabled={sendingDirective || directive.trim().length < 5 || !item.order_id}
-            onClick={() => void sendDirective()}
-            className="mt-3 inline-flex min-h-[44px] items-center justify-center rounded-xl bg-accent px-4 py-2 text-sm font-bold text-accent-foreground disabled:opacity-50"
-          >
-            {sendingDirective ? tr("جارٍ الإرسال…", "Sending…") : tr("إرسال التوجيه", "Send directive")}
-          </button>
-        </div>
+        {isDisputeClosed ? (
+          <div className="mt-4 space-y-1 rounded-xl border border-border/70 bg-muted/40 p-4 text-center">
+            <p className="text-sm font-semibold text-foreground">🔒 ملف النزاع مغلق — صدر الحكم النهائي</p>
+            <p className="text-xs text-muted-foreground">تم تنفيذ القرار المالي وإغلاق القضية نهائياً.</p>
+          </div>
+        ) : (
+          <>
+            <div className="mt-4 rounded-xl border border-accent/40 bg-accent/5 p-4">
+              <h3 className="text-xs font-black text-accent">{tr("إرسال توجيه إداري رسمي", "Send an official admin directive")}</h3>
+              <textarea
+                value={directive}
+                onChange={(e) => setDirective(e.target.value)}
+                rows={2}
+                placeholder={tr("نص ملزم يُضاف إلى محادثة الطلب…", "Binding text injected into the order chat…")}
+                className="mt-3 w-full rounded-lg border border-input bg-surface px-3 py-2 text-sm outline-none focus:border-primary"
+              />
+              <button
+                type="button"
+                disabled={sendingDirective || directive.trim().length < 5 || !item.order_id}
+                onClick={() => void sendDirective()}
+                className="mt-3 inline-flex min-h-[44px] items-center justify-center rounded-xl bg-accent px-4 py-2 text-sm font-bold text-accent-foreground disabled:opacity-50"
+              >
+                {sendingDirective ? tr("جارٍ الإرسال…", "Sending…") : tr("إرسال التوجيه", "Send directive")}
+              </button>
+            </div>
 
-        <label className="mt-4 grid gap-2 text-sm">
-          <span className="text-muted-foreground">{tr("حيثيات القرار (اختياري)", "Ruling notes (optional)")}</span>
-          <textarea
-            value={ruling}
-            onChange={(e) => setRuling(e.target.value)}
-            rows={2}
-            className="rounded-lg border border-input bg-surface px-3 py-2 text-sm outline-none focus:border-primary"
-          />
-        </label>
+            <label className="mt-4 grid gap-2 text-sm">
+              <span className="text-muted-foreground">{tr("حيثيات القرار (اختياري)", "Ruling notes (optional)")}</span>
+              <textarea
+                value={ruling}
+                onChange={(e) => setRuling(e.target.value)}
+                rows={2}
+                className="rounded-lg border border-input bg-surface px-3 py-2 text-sm outline-none focus:border-primary"
+              />
+            </label>
 
-        <div className="mt-4 flex flex-wrap gap-2">
-          <button
-            type="button"
-            disabled={resolve.isPending}
-            onClick={() => settle("release")}
-            className="rounded-xl bg-primary px-4 py-2 text-sm font-bold text-primary-foreground disabled:opacity-60"
-          >
-            {tr("تحرير المبلغ للبائع", "Release to seller")}
-          </button>
-          <button
-            type="button"
-            disabled={resolve.isPending}
-            onClick={() => settle("refund")}
-            className="rounded-xl border border-destructive/60 px-4 py-2 text-sm font-bold text-destructive disabled:opacity-60"
-          >
-            {tr("إرجاع المبلغ للمشتري", "Refund buyer")}
-          </button>
-        </div>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <button
+                type="button"
+                disabled={resolve.isPending}
+                onClick={() => settle("release")}
+                className="rounded-xl bg-primary px-4 py-2 text-sm font-bold text-primary-foreground disabled:opacity-60"
+              >
+                {tr("تحرير المبلغ للبائع", "Release to seller")}
+              </button>
+              <button
+                type="button"
+                disabled={resolve.isPending}
+                onClick={() => settle("refund")}
+                className="rounded-xl border border-destructive/60 px-4 py-2 text-sm font-bold text-destructive disabled:opacity-60"
+              >
+                {tr("إرجاع المبلغ للمشتري", "Refund buyer")}
+              </button>
+            </div>
+          </>
+        )}
       </Card>
     </div>
   );

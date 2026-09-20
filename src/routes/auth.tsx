@@ -28,13 +28,8 @@ const ROLES: ReadonlyArray<{ value: SignupRole; ar: string; en: string; hintAr: 
     hintAr: "اشترِ وقدّم خدماتك بحرية من حساب واحد.",
     hintEn: "Buy and offer services freely from one account.",
   },
-  {
-    value: "corporate",
-    ar: "حساب أعمال / شركات",
-    en: "Business / Entity",
-    hintAr: "للفرق الموثقة والمؤسسات التجارية.",
-    hintEn: "For verified teams and commercial institutions.",
-  },
+  // The "Business / Entity" option is temporarily concealed until the
+  // institutional B2B launch; every new account registers as an individual.
 ];
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i;
@@ -411,7 +406,7 @@ function AuthPage() {
           {mode === "signup" && (
             <div className="grid gap-1.5">
               <span className="text-muted-foreground">{tr("نوع الحساب", "Account type")}</span>
-              <div className="grid gap-2 sm:grid-cols-2">
+              <div className="grid gap-2">
                 {ROLES.map((r) => (
                   <button
                     key={r.value}
