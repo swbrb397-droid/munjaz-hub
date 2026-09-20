@@ -686,21 +686,15 @@ function Workspace() {
         ),
         tone: "accent",
       });
-    if (extStatus !== "none")
+    if (pendingExtension)
       items.push({
-        at: null,
+        at: pendingExtension.created_at,
         title: tr(
-          `طلب تمديد الموعد +${extHours} ساعة`,
-          `Deadline extension requested +${extHours}h`,
+          `طلب تمديد الموعد +${pendingExtension.hours} ساعة`,
+          `Deadline extension requested +${pendingExtension.hours}h`,
         ),
-        detail:
-          extStatus === "approved"
-            ? tr(
-                "تمت الموافقة من المشتري وتم تأجيل الإطلاق التلقائي.",
-                "Approved by the buyer; auto-release postponed.",
-              )
-            : tr("بانتظار موافقة المشتري.", "Awaiting buyer approval."),
-        tone: extStatus === "approved" ? "primary" : "accent",
+        detail: tr("بانتظار موافقة المشتري.", "Awaiting buyer approval."),
+        tone: "accent",
       });
     if (order.delivered_at)
       items.push({
