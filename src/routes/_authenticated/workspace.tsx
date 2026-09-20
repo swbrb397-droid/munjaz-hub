@@ -2263,21 +2263,42 @@ function Workspace() {
             />
             <button
               type="button"
-              disabled={extReason.trim().length < 10}
+              disabled={
+                extReason.trim().length < 10 ||
+                requestExtension.isPending ||
+                extStatus === "pending" ||
+                !order ||
+                !user
+              }
               onClick={() => {
-                setExtStatus("pending");
-                setExtDone(
-                  tr(
-                    `تم إرسال طلب تمديد ${extHours} ساعة للمشتري — بانتظار الموافقة.`,
-                    `Extension request of ${extHours}h sent to the buyer — awaiting approval.`,
-                  ),
+                if (!order || !user) return;
+                const reasonText = sanitizeText(extReason, 500);
+                requestExtension.mutate(
+                  { orderId: order.id, hours: extHours, reason: reasonText, sellerId: user.id },
+                  {
+                    onSuccess: () => {
+                      sendMessage.mutate({
+                        body: `⏳ طلب تمديد مهلة التسليم (+${extHours} ساعة) — السبب: ${reasonText}`,
+                        lang: "ar",
+                      });
+                      setExtDone(
+                        tr(
+                          `تم إرسال طلب تمديد ${extHours} ساعة للمشتري — بانتظار الموافقة.`,
+                          `Extension request of ${extHours}h sent to the buyer — awaiting approval.`,
+                        ),
+                      );
+                      setExtOpen(false);
+                      setExtReason("");
+                    },
+                    onError: (err: Error) => toast.error(err.message),
+                  },
                 );
-                setExtOpen(false);
-                setExtReason("");
               }}
               className="mt-3 w-full rounded-xl bg-primary py-2.5 text-sm font-bold text-primary-foreground disabled:opacity-40"
             >
-              {tr("إرسال طلب التمديد للمشتري", "Send extension request to buyer")}
+              {requestExtension.isPending
+                ? tr("جارٍ الإرسال…", "Sending…")
+                : tr("إرسال طلب التمديد للمشتري", "Send extension request to buyer")}
             </button>
 
             <p className="mt-2 text-[11px] text-muted-foreground">
