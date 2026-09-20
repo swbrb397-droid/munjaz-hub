@@ -135,11 +135,20 @@ export function useCacheTranslation(orderId: string | null) {
     mutationFn: async ({
       id,
       translations,
+      translatedContent,
     }: {
       id: string;
       translations: Record<string, string>;
+      translatedContent?: string;
     }) => {
-      const { error } = await supabase.from("order_messages").update({ translations }).eq("id", id);
+      const { error } = await supabase
+        .from("order_messages")
+        .update(
+          translatedContent !== undefined
+            ? { translations, translated_content: translatedContent }
+            : { translations },
+        )
+        .eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["order_messages", orderId] }),
