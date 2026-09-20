@@ -564,6 +564,7 @@ export type Database = {
           lang: string
           order_id: string
           sender_id: string
+          translated_content: string | null
           translations: Json
           updated_at: string
           version: number
@@ -578,6 +579,7 @@ export type Database = {
           lang?: string
           order_id: string
           sender_id: string
+          translated_content?: string | null
           translations?: Json
           updated_at?: string
           version?: number
@@ -592,6 +594,7 @@ export type Database = {
           lang?: string
           order_id?: string
           sender_id?: string
+          translated_content?: string | null
           translations?: Json
           updated_at?: string
           version?: number
