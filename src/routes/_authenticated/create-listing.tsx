@@ -18,6 +18,7 @@ import {
 } from "@/lib/security";
 import { PROHIBITED_CONTENT_MESSAGE, screenCoverImage } from "@/lib/moderation.functions";
 import { type ListingCategory } from "@/lib/catalog";
+import { isInstantCategory, saveInstantDelivery, uploadInstantFile } from "@/lib/instant-delivery";
 import { z } from "zod";
 
 export const Route = createFileRoute("/_authenticated/create-listing")({
@@ -72,8 +73,9 @@ const INSPECTION_OPTIONS: Record<"free" | "pro" | "corporate", number[]> = {
   corporate: [16, 24, 48, 72],
 };
 
-const EN_RE = /^[a-zA-Z0-9\s.,!?'"()#@&-]+$/;
-const AR_RE = /^[\u0600-\u06FF0-9\s.,!?'"()#@&-]+$/;
+// Sentence-friendly English pattern: letters, digits, spaces and common punctuation.
+const EN_RE = /^[A-Za-z0-9\s\-_.,!?:()&'’"/]+$/;
+const AR_RE = /^[\u0600-\u06FF0-9\s\-_.,!?:()&'’"/]+$/;
 const REPEAT_RE = REPEAT_CHAR_RE;
 const descriptionSchema = z
   .string()
@@ -85,9 +87,16 @@ const descriptionSchema = z
 
 /**
  * Validates one language side (title + tag).
+ * When `requirePair` is false the side is purely optional: only character-set
+ * and anti-gibberish rules apply, never "complete the other field" errors.
  * Returns an Arabic inline error, or null when the side is empty or valid.
  */
-function sideError(rawTitle: string, rawTag: string, side: "ar" | "en"): string | null {
+function sideError(
+  rawTitle: string,
+  rawTag: string,
+  side: "ar" | "en",
+  requirePair = true,
+): string | null {
   const title = rawTitle.trim();
   const tag = rawTag.trim();
   if (!title && !tag) return null;
@@ -96,7 +105,7 @@ function sideError(rawTitle: string, rawTag: string, side: "ar" | "en"): string 
   const langMsg =
     side === "ar"
       ? "يجب كتابة العنوان العربي بالحروف العربية فقط"
-      : "يجب كتابة العنوان الإنجليزي بالحروف الإنجليزية (A-Z) فقط";
+      : "يجب كتابة العنوان الإنجليزي بالحروف الإنجليزية (A-Z) وعلامات الترقيم فقط";
 
   if (title && !re.test(title)) return langMsg;
   if (tag && !re.test(tag)) return langMsg;
@@ -109,6 +118,7 @@ function sideError(rawTitle: string, rawTag: string, side: "ar" | "en"): string 
   if (LONG_WORD_RE.test(title) || LONG_WORD_RE.test(tag)) {
     return "لا يمكن أن تتجاوز الكلمة الواحدة 25 حرفاً متصلاً بدون مسافة.";
   }
+  if (!requirePair) return null;
   if (title) {
     const words = title.split(/\s+/).filter((w) => w.length > 0);
     if (words.length < 2) return "اكتب عنواناً من كلمتين على الأقل.";
@@ -142,6 +152,47 @@ function CreateListing() {
   const [menuFor, setMenuFor] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; title: string } | null>(null);
   const isCodeCategory = form.category === "freelance" || form.category === "product";
+
+  // ---- Instant digital fulfilment (every category except freelance) --------
+  const instantMode = isInstantCategory(form.category);
+  const [instantContent, setInstantContent] = useState("");
+  const [instantFile, setInstantFile] = useState<File | null>(null);
+  const [instantSaved, setInstantSaved] = useState<{ path: string | null; name: string | null }>({
+    path: null,
+    name: null,
+  });
+  const instantInput = useRef<HTMLInputElement>(null);
+
+  const instantHint =
+    form.category === "gaming"
+      ? tr("أدخل بيانات الحساب/الكود السري وأرفق ملف الإثبات.", "Enter the account/secret code and attach the proof file.")
+      : form.category === "course"
+        ? tr("أدرج روابط الدروس والمنهج، وأرفق ملف المنهج إن وُجد.", "List lesson links and the curriculum, and attach the syllabus file.")
+        : tr(
+            "أرفق ملف التسليم (PDF / ZIP / كود) و/أو أدخل البرومنت أو النص السري.",
+            "Attach the deliverable file (PDF / ZIP / code) and/or enter the prompt or secret text.",
+          );
+
+  /** Stores the protected instant payload for a listing the seller owns. */
+  const persistInstant = async (listingId: string) => {
+    if (!instantMode) return;
+    const content = instantContent.trim();
+    let filePath = instantSaved.path;
+    let fileName = instantSaved.name;
+    if (instantFile) {
+      const uploaded = await uploadInstantFile(user!.id, instantFile);
+      filePath = uploaded.path;
+      fileName = uploaded.name;
+    }
+    if (!content && !filePath) return;
+    await saveInstantDelivery({
+      listingId,
+      ownerId: user!.id,
+      content: content || null,
+      filePath,
+      fileName,
+    });
+  };
 
   useEffect(() => {
     if (!coverFile) {
@@ -213,10 +264,11 @@ function CreateListing() {
     error: sideError(form.title_ar, form.tag_ar, "ar"),
     complete: form.title_ar.trim().length >= MIN_TITLE && form.tag_ar.trim().length >= 2,
   };
+  // English is strictly optional once the Arabic side is complete.
   const enSide = {
     title: form.title_en.trim(),
     tag: form.tag_en.trim(),
-    error: sideError(form.title_en, form.tag_en, "en"),
+    error: sideError(form.title_en, form.tag_en, "en", !arSide.complete),
     complete: form.title_en.trim().length >= MIN_TITLE && form.tag_en.trim().length >= 2,
   };
   const titleMissing = !arSide.complete && !enSide.complete;
@@ -279,6 +331,7 @@ function CreateListing() {
           })
           .eq("id", editingId);
         if (updErr) throw updErr;
+        await persistInstant(editingId);
         return;
       }
       let coverUrl: string | null = null;
@@ -310,22 +363,26 @@ function CreateListing() {
         coverUrl = signed.data.signedUrl;
       }
       const sellerName = profile.data?.display_name || tr("بائع", "Seller");
-      const { error } = await supabase.from("listings").insert({
-        owner_id: user!.id,
-        title_ar: sanitizeText(form.title_ar, 120) || sanitizeText(form.title_en, 120),
-        title_en: sanitizeText(form.title_en, 120) || sanitizeText(form.title_ar, 120),
-        seller_ar: sanitizeText(sellerName, 80),
-        seller_en: sanitizeText(sellerName, 80),
-        category: form.category,
-        price_usdt: price,
-        tag_ar: sanitizeText(form.tag_ar, 40),
-        tag_en: sanitizeText(form.tag_en, 40) || sanitizeText(form.tag_ar, 40),
-        inspection_window_hours: inspectionHours,
-        cover_key: "product",
-        cover_url: coverUrl,
-        verified: !!profile.data?.is_verified,
-        is_published: true,
-      });
+      const { data: inserted, error } = await supabase
+        .from("listings")
+        .insert({
+          owner_id: user!.id,
+          title_ar: sanitizeText(form.title_ar, 120) || sanitizeText(form.title_en, 120),
+          title_en: sanitizeText(form.title_en, 120) || sanitizeText(form.title_ar, 120),
+          seller_ar: sanitizeText(sellerName, 80),
+          seller_en: sanitizeText(sellerName, 80),
+          category: form.category,
+          price_usdt: price,
+          tag_ar: sanitizeText(form.tag_ar, 40),
+          tag_en: sanitizeText(form.tag_en, 40) || sanitizeText(form.tag_ar, 40),
+          inspection_window_hours: inspectionHours,
+          cover_key: "product",
+          cover_url: coverUrl,
+          verified: !!profile.data?.is_verified,
+          is_published: true,
+        })
+        .select("id")
+        .single();
       if (error) {
         console.error("Listing insert error:", error);
         if (error.code === "42501" || /row.level security/i.test(error.message ?? "")) {
@@ -333,6 +390,7 @@ function CreateListing() {
         }
         throw error;
       }
+      if (inserted?.id) await persistInstant(inserted.id);
     },
     onSuccess: () => {
       const wasEditing = !!editingId;

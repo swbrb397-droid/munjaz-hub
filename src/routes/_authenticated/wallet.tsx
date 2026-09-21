@@ -62,7 +62,8 @@ const networks = [
   { value: "polygon", label: "Polygon" },
 ] as const;
 
-const rates: Record<string, number> = { USD: 1.0002, SAR: 3.7506, AED: 3.6731, EUR: 0.9184 };
+// USDT is hard-pegged 1:1 to USD across the platform (60.00 USDT = 60.00 USD).
+const rates: Record<string, number> = { USD: 1, SAR: 3.7506, AED: 3.6731, EUR: 0.9184 };
 
 const RATE_HINT: Record<string, [string, string]> = {
   USD: ["الدولار الأمريكي — سعر تحويل تقريبي لحظي", "US Dollar — indicative live conversion rate"],
@@ -238,6 +239,9 @@ function WalletPage() {
   const frozen = Boolean((profile.data as { is_frozen?: boolean } | null)?.is_frozen);
   const sla = slaHoursForTier(tier);
   const parsed = parseUsdt(amount) ?? 0;
+  // Hard client-side guards mirroring the database withdrawal rules.
+  const overBalance = parsed > balance;
+  const belowMinimum = parsed < MIN_WITHDRAWAL;
 
   // Smart AML: service earnings are 100% exempt from the anti-mixing surcharge.
   // Only unspent crypto deposits that never entered escrow require the consent.
@@ -398,7 +402,10 @@ function WalletPage() {
           >
             <BadgeCheck className="size-3.5" />
             {profile.data?.is_verified
-              ? tr("حساب موثق — سحب فوري مفعّل", "Verified account — instant withdrawal enabled")
+              ? tr(
+                  "سحب معتمد — يُرسل عبر البلوكتشين فور اعتماد الإدارة بنقرة واحدة",
+                  "Approved withdrawals — sent on-chain the moment an admin approves with one click",
+                )
               : tr(
                   "حساب غير موثق — السحب يخضع للمراجعة والجدولة",
                   "Unverified account — withdrawals are reviewed and scheduled",
@@ -535,13 +542,41 @@ function WalletPage() {
                   `Amount (USDT) — min ${MIN_WITHDRAWAL}`,
                 )}
               </span>
-              <input
-                value={amount}
-                onChange={(e) => setAmount(e.target.value.replace(/[^\d.]/g, ""))}
-                inputMode="decimal"
-                maxLength={16}
-                className="field-lux  px-3 py-2 outline-none focus:border-primary"
-              />
+              <span className="relative block">
+                <input
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value.replace(/[^\d.]/g, ""))}
+                  inputMode="decimal"
+                  maxLength={16}
+                  aria-invalid={overBalance || belowMinimum}
+                  className={`field-lux w-full px-3 py-2 pe-24 outline-none focus:border-primary ${
+                    overBalance || belowMinimum ? "border-destructive focus:border-destructive" : ""
+                  }`}
+                />
+                <button
+                  type="button"
+                  onClick={() => setAmount(usdt2(balance))}
+                  className="absolute inset-y-1 end-1 rounded-lg border border-primary/40 bg-primary/10 px-2.5 text-[11px] font-bold text-primary hover:bg-primary/20"
+                >
+                  {tr("المبلغ كامل", "Max")}
+                </button>
+              </span>
+              {overBalance && (
+                <span className="text-xs font-bold text-destructive">
+                  {tr(
+                    "الرصيد المتاح غير كافٍ لإتمام هذه المعاملة",
+                    "Available balance is not enough for this transaction",
+                  )}
+                </span>
+              )}
+              {!overBalance && belowMinimum && (
+                <span className="text-xs font-bold text-amber-500">
+                  {tr(
+                    `الحد الأدنى للسحب هو ${MIN_WITHDRAWAL} USDT`,
+                    `Minimum withdrawal is ${MIN_WITHDRAWAL} USDT`,
+                  )}
+                </span>
+              )}
             </label>
             <p className="text-xs text-muted-foreground sm:col-span-2">
               {tr(
@@ -565,7 +600,14 @@ function WalletPage() {
             </span>
             <button
                onClick={() => protectWithMfa("withdraw")}
-              disabled={withdraw.isPending || frozen || lockHours > 0 || (!legalAck && !amlExempt)}
+              disabled={
+                withdraw.isPending ||
+                frozen ||
+                lockHours > 0 ||
+                overBalance ||
+                belowMinimum ||
+                (!legalAck && !amlExempt)
+              }
               className="inline-flex min-h-[44px] items-center gap-2 rounded-lg bg-primary px-4 py-2 font-bold text-primary-foreground disabled:opacity-60"
             >
               {withdraw.isPending && <Loader2 className="size-4 animate-spin" />}

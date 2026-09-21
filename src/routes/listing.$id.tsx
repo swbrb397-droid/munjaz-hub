@@ -12,6 +12,8 @@ import { sanitizeText } from "@/lib/security";
 import { useAuth } from "@/hooks/use-auth";
 import { useWallet } from "@/lib/queries";
 import { useCreateOrder, useListing } from "@/lib/orders";
+import { isInstantCategory } from "@/lib/instant-delivery";
+import { supabase } from "@/lib/cloud-client";
 import { TopUpDialog } from "@/components/site/TopUpDialog";
 import { toast } from "sonner";
 
@@ -85,7 +87,7 @@ function ListingDetail() {
       return;
     }
     try {
-      await createOrder.mutateAsync({
+      const created = await createOrder.mutateAsync({
         listingId: item!.id,
         sellerId: item!.ownerId,
         title: item!.title,
@@ -94,6 +96,14 @@ function ListingDetail() {
         deliveryDays: deliveryDays,
         sowTerms: sow.trim(),
       });
+      // Instant digital fulfilment: settle the order immediately (seller is paid
+      // net of the platform fee by the escrow trigger) and hand over the content.
+      if (isInstantCategory(item!.category) && created?.id) {
+        const settled = await supabase.from("orders").update({ status: "completed" }).eq("id", created.id);
+        if (settled.error) throw new Error(settled.error.message);
+        navigate({ to: "/fulfillment/$orderId", params: { orderId: created.id } });
+        return;
+      }
       navigate({ to: "/workspace" });
     } catch (e) {
       const message = (e as Error).message;
