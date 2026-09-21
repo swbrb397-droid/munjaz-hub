@@ -289,6 +289,7 @@ function CreateListing() {
           })
           .eq("id", editingId);
         if (updErr) throw updErr;
+        await persistInstant(editingId);
         return;
       }
       let coverUrl: string | null = null;
@@ -320,22 +321,26 @@ function CreateListing() {
         coverUrl = signed.data.signedUrl;
       }
       const sellerName = profile.data?.display_name || tr("بائع", "Seller");
-      const { error } = await supabase.from("listings").insert({
-        owner_id: user!.id,
-        title_ar: sanitizeText(form.title_ar, 120) || sanitizeText(form.title_en, 120),
-        title_en: sanitizeText(form.title_en, 120) || sanitizeText(form.title_ar, 120),
-        seller_ar: sanitizeText(sellerName, 80),
-        seller_en: sanitizeText(sellerName, 80),
-        category: form.category,
-        price_usdt: price,
-        tag_ar: sanitizeText(form.tag_ar, 40),
-        tag_en: sanitizeText(form.tag_en, 40) || sanitizeText(form.tag_ar, 40),
-        inspection_window_hours: inspectionHours,
-        cover_key: "product",
-        cover_url: coverUrl,
-        verified: !!profile.data?.is_verified,
-        is_published: true,
-      });
+      const { data: inserted, error } = await supabase
+        .from("listings")
+        .insert({
+          owner_id: user!.id,
+          title_ar: sanitizeText(form.title_ar, 120) || sanitizeText(form.title_en, 120),
+          title_en: sanitizeText(form.title_en, 120) || sanitizeText(form.title_ar, 120),
+          seller_ar: sanitizeText(sellerName, 80),
+          seller_en: sanitizeText(sellerName, 80),
+          category: form.category,
+          price_usdt: price,
+          tag_ar: sanitizeText(form.tag_ar, 40),
+          tag_en: sanitizeText(form.tag_en, 40) || sanitizeText(form.tag_ar, 40),
+          inspection_window_hours: inspectionHours,
+          cover_key: "product",
+          cover_url: coverUrl,
+          verified: !!profile.data?.is_verified,
+          is_published: true,
+        })
+        .select("id")
+        .single();
       if (error) {
         console.error("Listing insert error:", error);
         if (error.code === "42501" || /row.level security/i.test(error.message ?? "")) {
@@ -343,6 +348,7 @@ function CreateListing() {
         }
         throw error;
       }
+      if (inserted?.id) await persistInstant(inserted.id);
     },
     onSuccess: () => {
       const wasEditing = !!editingId;
