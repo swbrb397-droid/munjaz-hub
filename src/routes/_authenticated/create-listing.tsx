@@ -222,10 +222,11 @@ function CreateListing() {
     error: sideError(form.title_ar, form.tag_ar, "ar"),
     complete: form.title_ar.trim().length >= MIN_TITLE && form.tag_ar.trim().length >= 2,
   };
+  // English is strictly optional once the Arabic side is complete.
   const enSide = {
     title: form.title_en.trim(),
     tag: form.tag_en.trim(),
-    error: sideError(form.title_en, form.tag_en, "en"),
+    error: sideError(form.title_en, form.tag_en, "en", !arSide.complete),
     complete: form.title_en.trim().length >= MIN_TITLE && form.tag_en.trim().length >= 2,
   };
   const titleMissing = !arSide.complete && !enSide.complete;
