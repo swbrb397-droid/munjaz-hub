@@ -72,8 +72,9 @@ const INSPECTION_OPTIONS: Record<"free" | "pro" | "corporate", number[]> = {
   corporate: [16, 24, 48, 72],
 };
 
-const EN_RE = /^[a-zA-Z0-9\s.,!?'"()#@&-]+$/;
-const AR_RE = /^[\u0600-\u06FF0-9\s.,!?'"()#@&-]+$/;
+// Sentence-friendly English pattern: letters, digits, spaces and common punctuation.
+const EN_RE = /^[A-Za-z0-9\s\-_.,!?:()&'’"/]+$/;
+const AR_RE = /^[\u0600-\u06FF0-9\s\-_.,!?:()&'’"/]+$/;
 const REPEAT_RE = REPEAT_CHAR_RE;
 const descriptionSchema = z
   .string()
