@@ -86,9 +86,16 @@ const descriptionSchema = z
 
 /**
  * Validates one language side (title + tag).
+ * When `requirePair` is false the side is purely optional: only character-set
+ * and anti-gibberish rules apply, never "complete the other field" errors.
  * Returns an Arabic inline error, or null when the side is empty or valid.
  */
-function sideError(rawTitle: string, rawTag: string, side: "ar" | "en"): string | null {
+function sideError(
+  rawTitle: string,
+  rawTag: string,
+  side: "ar" | "en",
+  requirePair = true,
+): string | null {
   const title = rawTitle.trim();
   const tag = rawTag.trim();
   if (!title && !tag) return null;
@@ -97,7 +104,7 @@ function sideError(rawTitle: string, rawTag: string, side: "ar" | "en"): string 
   const langMsg =
     side === "ar"
       ? "يجب كتابة العنوان العربي بالحروف العربية فقط"
-      : "يجب كتابة العنوان الإنجليزي بالحروف الإنجليزية (A-Z) فقط";
+      : "يجب كتابة العنوان الإنجليزي بالحروف الإنجليزية (A-Z) وعلامات الترقيم فقط";
 
   if (title && !re.test(title)) return langMsg;
   if (tag && !re.test(tag)) return langMsg;
@@ -110,6 +117,7 @@ function sideError(rawTitle: string, rawTag: string, side: "ar" | "en"): string 
   if (LONG_WORD_RE.test(title) || LONG_WORD_RE.test(tag)) {
     return "لا يمكن أن تتجاوز الكلمة الواحدة 25 حرفاً متصلاً بدون مسافة.";
   }
+  if (!requirePair) return null;
   if (title) {
     const words = title.split(/\s+/).filter((w) => w.length > 0);
     if (words.length < 2) return "اكتب عنواناً من كلمتين على الأقل.";
