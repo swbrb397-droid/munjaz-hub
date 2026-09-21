@@ -18,6 +18,7 @@ import {
 } from "@/lib/security";
 import { PROHIBITED_CONTENT_MESSAGE, screenCoverImage } from "@/lib/moderation.functions";
 import { type ListingCategory } from "@/lib/catalog";
+import { isInstantCategory, saveInstantDelivery, uploadInstantFile } from "@/lib/instant-delivery";
 import { z } from "zod";
 
 export const Route = createFileRoute("/_authenticated/create-listing")({
