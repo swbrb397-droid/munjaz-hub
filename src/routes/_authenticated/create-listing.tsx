@@ -152,6 +152,47 @@ function CreateListing() {
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; title: string } | null>(null);
   const isCodeCategory = form.category === "freelance" || form.category === "product";
 
+  // ---- Instant digital fulfilment (every category except freelance) --------
+  const instantMode = isInstantCategory(form.category);
+  const [instantContent, setInstantContent] = useState("");
+  const [instantFile, setInstantFile] = useState<File | null>(null);
+  const [instantSaved, setInstantSaved] = useState<{ path: string | null; name: string | null }>({
+    path: null,
+    name: null,
+  });
+  const instantInput = useRef<HTMLInputElement>(null);
+
+  const instantHint =
+    form.category === "gaming"
+      ? tr("أدخل بيانات الحساب/الكود السري وأرفق ملف الإثبات.", "Enter the account/secret code and attach the proof file.")
+      : form.category === "course"
+        ? tr("أدرج روابط الدروس والمنهج، وأرفق ملف المنهج إن وُجد.", "List lesson links and the curriculum, and attach the syllabus file.")
+        : tr(
+            "أرفق ملف التسليم (PDF / ZIP / كود) و/أو أدخل البرومنت أو النص السري.",
+            "Attach the deliverable file (PDF / ZIP / code) and/or enter the prompt or secret text.",
+          );
+
+  /** Stores the protected instant payload for a listing the seller owns. */
+  const persistInstant = async (listingId: string) => {
+    if (!instantMode) return;
+    const content = instantContent.trim();
+    let filePath = instantSaved.path;
+    let fileName = instantSaved.name;
+    if (instantFile) {
+      const uploaded = await uploadInstantFile(user!.id, instantFile);
+      filePath = uploaded.path;
+      fileName = uploaded.name;
+    }
+    if (!content && !filePath) return;
+    await saveInstantDelivery({
+      listingId,
+      ownerId: user!.id,
+      content: content || null,
+      filePath,
+      fileName,
+    });
+  };
+
   useEffect(() => {
     if (!coverFile) {
       setCoverPreview(null);
