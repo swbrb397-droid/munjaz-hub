@@ -351,6 +351,44 @@ export type Database = {
         }
         Relationships: []
       }
+      listing_instant_delivery: {
+        Row: {
+          content: string | null
+          created_at: string
+          file_name: string | null
+          file_path: string | null
+          listing_id: string
+          owner_id: string
+          updated_at: string
+        }
+        Insert: {
+          content?: string | null
+          created_at?: string
+          file_name?: string | null
+          file_path?: string | null
+          listing_id: string
+          owner_id: string
+          updated_at?: string
+        }
+        Update: {
+          content?: string | null
+          created_at?: string
+          file_name?: string | null
+          file_path?: string | null
+          listing_id?: string
+          owner_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "listing_instant_delivery_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: true
+            referencedRelation: "listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       listings: {
         Row: {
           category: Database["public"]["Enums"]["listing_category"]
