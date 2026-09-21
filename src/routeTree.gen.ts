@@ -34,6 +34,7 @@ import { Route as AuthenticatedAdminDisputesRouteImport } from './routes/_authen
 import { Route as AuthenticatedAdminGovernanceRouteImport } from './routes/_authenticated/admin.governance'
 import { Route as AuthenticatedAdminKycRouteImport } from './routes/_authenticated/admin.kyc'
 import { Route as AuthenticatedAdminServicesRouteImport } from './routes/_authenticated/admin.services'
+import { Route as AuthenticatedFulfillmentOrderIdRouteImport } from './routes/_authenticated/fulfillment.$orderId'
 import { Route as ApiPublicCryptoDepositWebhookRouteImport } from './routes/api/public/crypto-deposit-webhook'
 
 const IndexRoute = IndexRouteImport.update({
@@ -164,6 +165,12 @@ const AuthenticatedAdminServicesRoute =
     path: '/services',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const AuthenticatedFulfillmentOrderIdRoute =
+  AuthenticatedFulfillmentOrderIdRouteImport.update({
+    id: '/fulfillment/$orderId',
+    path: '/fulfillment/$orderId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const ApiPublicCryptoDepositWebhookRoute =
   ApiPublicCryptoDepositWebhookRouteImport.update({
     id: '/api/public/crypto-deposit-webhook',
@@ -195,6 +202,7 @@ export interface FileRoutesByFullPath {
   '/admin/governance': typeof AuthenticatedAdminGovernanceRoute
   '/admin/kyc': typeof AuthenticatedAdminKycRoute
   '/admin/services': typeof AuthenticatedAdminServicesRoute
+  '/fulfillment/$orderId': typeof AuthenticatedFulfillmentOrderIdRoute
   '/api/public/crypto-deposit-webhook': typeof ApiPublicCryptoDepositWebhookRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
 }
@@ -221,6 +229,7 @@ export interface FileRoutesByTo {
   '/admin/governance': typeof AuthenticatedAdminGovernanceRoute
   '/admin/kyc': typeof AuthenticatedAdminKycRoute
   '/admin/services': typeof AuthenticatedAdminServicesRoute
+  '/fulfillment/$orderId': typeof AuthenticatedFulfillmentOrderIdRoute
   '/api/public/crypto-deposit-webhook': typeof ApiPublicCryptoDepositWebhookRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
 }
@@ -250,6 +259,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/governance': typeof AuthenticatedAdminGovernanceRoute
   '/_authenticated/admin/kyc': typeof AuthenticatedAdminKycRoute
   '/_authenticated/admin/services': typeof AuthenticatedAdminServicesRoute
+  '/_authenticated/fulfillment/$orderId': typeof AuthenticatedFulfillmentOrderIdRoute
   '/api/public/crypto-deposit-webhook': typeof ApiPublicCryptoDepositWebhookRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
 }
@@ -279,6 +289,7 @@ export interface FileRouteTypes {
     | '/admin/governance'
     | '/admin/kyc'
     | '/admin/services'
+    | '/fulfillment/$orderId'
     | '/api/public/crypto-deposit-webhook'
     | '/admin/'
   fileRoutesByTo: FileRoutesByTo
@@ -305,6 +316,7 @@ export interface FileRouteTypes {
     | '/admin/governance'
     | '/admin/kyc'
     | '/admin/services'
+    | '/fulfillment/$orderId'
     | '/api/public/crypto-deposit-webhook'
     | '/admin'
   id:
@@ -333,6 +345,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/governance'
     | '/_authenticated/admin/kyc'
     | '/_authenticated/admin/services'
+    | '/_authenticated/fulfillment/$orderId'
     | '/api/public/crypto-deposit-webhook'
     | '/_authenticated/admin/'
   fileRoutesById: FileRoutesById
@@ -529,6 +542,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminServicesRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/fulfillment/$orderId': {
+      id: '/_authenticated/fulfillment/$orderId'
+      path: '/fulfillment/$orderId'
+      fullPath: '/fulfillment/$orderId'
+      preLoaderRoute: typeof AuthenticatedFulfillmentOrderIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/api/public/crypto-deposit-webhook': {
       id: '/api/public/crypto-deposit-webhook'
       path: '/api/public/crypto-deposit-webhook'
@@ -569,6 +589,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
   AuthenticatedWalletRoute: typeof AuthenticatedWalletRoute
   AuthenticatedWorkspaceRoute: typeof AuthenticatedWorkspaceRoute
+  AuthenticatedFulfillmentOrderIdRoute: typeof AuthenticatedFulfillmentOrderIdRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -580,6 +601,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
   AuthenticatedWalletRoute: AuthenticatedWalletRoute,
   AuthenticatedWorkspaceRoute: AuthenticatedWorkspaceRoute,
+  AuthenticatedFulfillmentOrderIdRoute: AuthenticatedFulfillmentOrderIdRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
