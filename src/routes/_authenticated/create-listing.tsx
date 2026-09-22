@@ -397,6 +397,9 @@ function CreateListing() {
       setForm(emptyForm);
       setCoverFile(null);
       setCodeAudit(false);
+      setInstantContent("");
+      setInstantFile(null);
+      setInstantSaved({ path: null, name: null });
       setStep(1);
       setEditingId(null);
 

@@ -141,13 +141,36 @@ export function useNfts(opts: { search?: string; sort?: SortKey } = {}) {
 
       const { data, error } = await q;
       if (error) throw error;
-      return (data ?? []).map((r) => ({
+
+      // Sellers publish NFT assets as regular listings tagged "NFT" / "عقود ذكية",
+      // so the gallery merges those live rows with the curated nft_items feed.
+      let lq = supabase
+        .from("listings")
+        .select("id,title_ar,title_en,tag_ar,tag_en,price_usdt,created_at")
+        .eq("is_published", true)
+        .or("tag_en.ilike.%nft%,tag_ar.ilike.%nft%,tag_ar.ilike.%عقود ذكية%,title_en.ilike.%nft%,title_ar.ilike.%NFT%")
+        .order("created_at", { ascending: false })
+        .limit(24);
+      if (search) lq = lq.or(`title_ar.ilike.%${search}%,title_en.ilike.%${search}%`);
+      const listingNfts = await lq;
+
+      const curated: NftItem[] = (data ?? []).map((r) => ({
         id: r.id,
         name: r.name,
         collection: r.collection,
         price: Number(r.price_usdt),
         hue: r.hue,
       }));
+
+      const fromListings: NftItem[] = (listingNfts.data ?? []).map((r, i) => ({
+        id: r.id,
+        name: r.title_ar || r.title_en || "NFT",
+        collection: r.tag_ar || r.tag_en || "Polygon",
+        price: Number(r.price_usdt),
+        hue: (i * 47) % 360,
+      }));
+
+      return [...curated, ...fromListings];
     },
   });
 }
