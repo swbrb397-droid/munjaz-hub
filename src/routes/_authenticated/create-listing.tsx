@@ -397,6 +397,9 @@ function CreateListing() {
       setForm(emptyForm);
       setCoverFile(null);
       setCodeAudit(false);
+      setInstantContent("");
+      setInstantFile(null);
+      setInstantSaved({ path: null, name: null });
       setStep(1);
       setEditingId(null);
 
@@ -652,6 +655,41 @@ function CreateListing() {
                   </span>
                 </label>
 
+                {instantMode && (
+                  <div className="grid gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-3 text-sm sm:col-span-2">
+                    <span className="text-xs font-bold text-emerald-400">
+                      {tr("محتوى التسليم الفوري (يُسلَّم للمشتري لحظة الدفع)", "Instant delivery content (handed over the moment payment clears)")}
+                    </span>
+                    <span className="text-[11px] text-muted-foreground">{instantHint}</span>
+                    <input
+                      ref={instantInput}
+                      type="file"
+                      className="hidden"
+                      onChange={(e) => setInstantFile(e.target.files?.[0] ?? null)}
+                    />
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => instantInput.current?.click()}
+                        className="rounded-lg border border-border bg-surface px-3 py-2 text-xs font-bold hover:text-primary"
+                      >
+                        {tr("اختر ملف التسليم", "Choose deliverable file")}
+                      </button>
+                      <span className="min-w-0 truncate text-[11px] text-muted-foreground">
+                        {instantFile?.name ?? instantSaved.name ?? tr("لا يوجد ملف مرفق", "No file attached")}
+                      </span>
+                    </div>
+                    <textarea
+                      className={`${field} min-h-24 resize-y`}
+                      maxLength={5000}
+                      value={instantContent}
+                      onChange={(e) => setInstantContent(e.target.value)}
+                      placeholder={tr("النص السري / البرومنت / الروابط…", "Secret text / prompt / links…")}
+                    />
+                  </div>
+                )}
+
+
                 <div className="grid gap-1.5 text-sm sm:col-span-2">
                   <span className="text-muted-foreground">{tr("صورة الغلاف", "Cover image")}</span>
                   <input
@@ -793,6 +831,19 @@ function CreateListing() {
                         onClick={() => {
                           setMenuFor(null);
                           setEditingId(l.id);
+                          setInstantFile(null);
+                          setInstantContent("");
+                          setInstantSaved({ path: null, name: null });
+                          void supabase
+                            .from("listing_instant_delivery")
+                            .select("content,file_path,file_name")
+                            .eq("listing_id", l.id)
+                            .maybeSingle()
+                            .then(({ data }) => {
+                              if (!data) return;
+                              setInstantContent(data.content ?? "");
+                              setInstantSaved({ path: data.file_path, name: data.file_name });
+                            });
                           setForm({
                             title_ar: l.title_ar ?? "",
                             title_en: l.title_en ?? "",
