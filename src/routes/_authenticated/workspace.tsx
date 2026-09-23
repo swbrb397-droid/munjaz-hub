@@ -264,13 +264,13 @@ function Workspace() {
   /** null = not answered yet (consent prompt visible). */
   const [translate, setTranslate] = useState<boolean | null>(null);
   useEffect(() => {
-    const stored = window.localStorage.getItem(TRANSLATE_PREF_KEY);
+    const stored = localGet(TRANSLATE_PREF_KEY);
     if (stored === "on") setTranslate(true);
     else if (stored === "off") setTranslate(false);
   }, []);
   function setTranslatePref(v: boolean) {
     setTranslate(v);
-    window.localStorage.setItem(TRANSLATE_PREF_KEY, v ? "on" : "off");
+    localSet(TRANSLATE_PREF_KEY, v ? "on" : "off");
   }
   const [showOriginal, setShowOriginal] = useState<string[]>([]);
   const [draft, setDraft] = useState("");

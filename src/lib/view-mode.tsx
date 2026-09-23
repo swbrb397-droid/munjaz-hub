@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { localGet, localSet } from "@/lib/safe-storage";
 
 export type ViewMode = "buyer" | "seller";
 
@@ -20,12 +21,12 @@ export function ViewModeProvider({ children }: { children: ReactNode }) {
   const [view, setView] = useState<ViewMode>("buyer");
 
   useEffect(() => {
-    const stored = window.localStorage.getItem(STORAGE_KEY);
+    const stored = localGet(STORAGE_KEY);
     if (stored === "buyer" || stored === "seller") setView(stored);
   }, []);
 
   useEffect(() => {
-    window.localStorage.setItem(STORAGE_KEY, view);
+    localSet(STORAGE_KEY, view);
   }, [view]);
 
   return (
