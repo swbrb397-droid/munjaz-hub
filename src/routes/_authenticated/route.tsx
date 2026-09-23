@@ -1,5 +1,5 @@
-import { createFileRoute, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
-import { useEffect } from "react";
+import { createFileRoute, Outlet, useNavigate } from "@tanstack/react-router";
+import { useEffect, useRef } from "react";
 import { useAuth } from "@/hooks/use-auth";
 
 export const Route = createFileRoute("/_authenticated")({
@@ -22,13 +22,18 @@ function Spinner() {
 function AuthGate() {
   const { isAuthenticated, loading } = useAuth();
   const navigate = useNavigate();
-  const href = useRouterState({ select: (s) => s.location.href });
+  const sentRef = useRef(false);
 
   useEffect(() => {
-    if (loading || isAuthenticated) return;
+    if (loading || isAuthenticated || sentRef.current) return;
+    sentRef.current = true;
     // Preserve the full deep link (path + query) so login can return the user here.
+    const href =
+      typeof window === "undefined"
+        ? "/"
+        : `${window.location.pathname}${window.location.search}`;
     void navigate({ to: "/auth", search: { redirectTo: href }, replace: true });
-  }, [loading, isAuthenticated, href, navigate]);
+  }, [loading, isAuthenticated, navigate]);
 
   if (loading || !isAuthenticated) return <Spinner />;
   return <Outlet />;
