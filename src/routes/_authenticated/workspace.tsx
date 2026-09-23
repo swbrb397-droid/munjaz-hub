@@ -30,6 +30,7 @@ import { SecureDownload } from "@/components/site/SecureDownload";
 import { ChatSecurityNotice } from "@/components/site/ChatSecurityNotice";
 import { downloadElementPdf } from "@/lib/pdf";
 import { logAuditEvent } from "@/lib/audit";
+import { localGet, localSet } from "@/lib/safe-storage";
 
 import { useLang } from "@/lib/lang";
 import { useAuth } from "@/hooks/use-auth";

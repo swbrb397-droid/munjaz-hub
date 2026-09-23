@@ -5,6 +5,7 @@ import { Card } from "@/components/site/Shell";
 import { QrCode } from "@/components/site/QrCode";
 import { supabase } from "@/lib/cloud-client";
 import { useAuth } from "@/hooks/use-auth";
+import { localGet, localSet } from "@/lib/safe-storage";
 
 const PW_RATE_KEY = "munjaz.pw-change-at";
 const PW_RATE_WINDOW_MS = 15 * 60 * 1000;
