@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { localGet, localSet } from "@/lib/safe-storage";
 
 export type Lang = "ar" | "en";
 
@@ -73,14 +74,14 @@ export function LangProvider({ children }: { children: ReactNode }) {
   const [lang, setLang] = useState<Lang>("ar");
 
   useEffect(() => {
-    const stored = window.localStorage.getItem("munjaz-lang");
+    const stored = localGet("munjaz-lang");
     if (stored === "en" || stored === "ar") setLang(stored);
   }, []);
 
   useEffect(() => {
     document.documentElement.lang = lang;
     document.documentElement.dir = lang === "ar" ? "rtl" : "ltr";
-    window.localStorage.setItem("munjaz-lang", lang);
+    localSet("munjaz-lang", lang);
   }, [lang]);
 
   return (

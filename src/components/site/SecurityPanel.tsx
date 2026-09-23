@@ -5,6 +5,7 @@ import { Card } from "@/components/site/Shell";
 import { QrCode } from "@/components/site/QrCode";
 import { supabase } from "@/lib/cloud-client";
 import { useAuth } from "@/hooks/use-auth";
+import { localGet, localSet } from "@/lib/safe-storage";
 
 const PW_RATE_KEY = "munjaz.pw-change-at";
 const PW_RATE_WINDOW_MS = 15 * 60 * 1000;
@@ -114,7 +115,7 @@ export function SecurityPanel({ className = "" }: { className?: string }) {
       toast.error("يجب تسجيل الدخول");
       return;
     }
-    const last = Number(window.localStorage.getItem(PW_RATE_KEY) ?? "0");
+    const last = Number(localGet(PW_RATE_KEY) ?? "0");
     if (last && Date.now() - last < PW_RATE_WINDOW_MS) {
       const mins = Math.ceil((PW_RATE_WINDOW_MS - (Date.now() - last)) / 60000);
       toast.error(`تم تغيير كلمة المرور مؤخراً — حاول مجدداً بعد ${mins} دقيقة`);
@@ -141,7 +142,7 @@ export function SecurityPanel({ className = "" }: { className?: string }) {
 
       const stamp = new Date().toISOString();
       await supabase.from("profiles").update({ password_last_changed_at: stamp }).eq("id", user.id);
-      window.localStorage.setItem(PW_RATE_KEY, String(Date.now()));
+      localSet(PW_RATE_KEY, String(Date.now()));
 
       setPwOpen(false);
       setCurrentPw("");
