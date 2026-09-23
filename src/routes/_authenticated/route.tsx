@@ -3,9 +3,11 @@ import { useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
 
 export const Route = createFileRoute("/_authenticated")({
+  ssr: false,
   // The gate runs inside the component (never in beforeLoad) so the first
   // client render always matches the server output — redirecting mid-hydration
   // made React throw a hydration error that collapsed the whole app.
+  pendingComponent: Spinner,
   component: AuthGate,
 });
 
