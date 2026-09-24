@@ -85,9 +85,13 @@ export const translateMessage = createServerFn({ method: "POST" })
 
     const instruction = `Translate the following freelance platform message into natural, professional ${targetName}. Preserve technical terms (API, UI/UX, Escrow, USDT, Bug, SEO, Frontend, Backend) without literal distortion. Return ONLY the translation, with no quotes and no notes.${contextBlock}\n\n${data.text}`;
 
-    // 1) Primary engine: Gemini (key stays in encrypted server secrets).
-    const geminiKey = process.env["GEMINI_API_KEY"];
-    if (geminiKey) {
+    // 1) Gemini key cascade: primary → backup 1 → backup 2 (encrypted server secrets).
+    const geminiKeys = [
+      process.env["GEMINI_API_KEY"],
+      process.env["GEMINI_API_KEY_BACKUP_1"],
+      process.env["GEMINI_API_KEY_BACKUP_2"],
+    ].filter((k): k is string => !!k);
+    for (const geminiKey of geminiKeys) {
       const out = await tryGemini(geminiKey, instruction);
       if (out) return { text: out, target: data.target };
     }
