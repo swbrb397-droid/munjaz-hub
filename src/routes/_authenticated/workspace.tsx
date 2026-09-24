@@ -402,11 +402,13 @@ function Workspace() {
       .slice(Math.max(0, idx - 5), idx)
       .filter((x) => !x.attachmentPath && x.text.trim())
       .map((x) => x.text.slice(0, 120));
-    void runTranslate({ data: { text: m.text, target: lang, context } })
+    // Auto-detect direction: Arabic → English, anything else → Arabic.
+    const target: "ar" | "en" = isArabicOnly(m.text) ? "en" : "ar";
+    void runTranslate({ data: { text: m.text, target, context } })
       .then((r: { text: string }) => {
         txCacheSet(key, r.text);
         setTxState((s) => ({ ...s, [key]: { text: r.text } }));
-        cacheTx({ id: m.id, translations: { [lang]: r.text }, translatedContent: r.text });
+        cacheTx({ id: m.id, translations: { [target]: r.text }, translatedContent: r.text });
       })
       .catch(() => setTxState((s) => ({ ...s, [key]: { error: true } })));
   };
@@ -1116,7 +1118,7 @@ function Workspace() {
                                   🌐{" "}
                                   {cachedTx?.error
                                     ? tr("إعادة المحاولة", "Retry translation")
-                                    : tr("ترجمة إلى العربية", "Translate to Arabic")}
+                                    : "ترجمة / Translate"}
                                 </span>
                               </button>
                             );
