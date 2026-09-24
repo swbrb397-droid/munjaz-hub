@@ -21,7 +21,6 @@ import {
   Sparkles,
   Star,
   Unlock,
-  Video,
   X,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -34,7 +33,6 @@ import { localGet, localSet } from "@/lib/safe-storage";
 
 import { useLang } from "@/lib/lang";
 import { useAuth } from "@/hooks/use-auth";
-import { VideoCallPanel } from "@/components/site/VideoCallPanel";
 import { useOrders, useProfile } from "@/lib/queries";
 import { checkUpload, tierFileLimitMb } from "@/lib/file-guard";
 import { nextActions, useOrderTransition, type OrderStatus } from "@/lib/orders";
@@ -562,7 +560,6 @@ function Workspace() {
   const canCallOrDispute = order?.status === "in_progress" || order?.status === "delivered";
 
   // In-app video room (no popup windows)
-  const [callOpen, setCallOpen] = useState(false);
 
   // Mobile: "My orders" collapses into an accordion instead of stacking under chat.
   const [ordersOpen, setOrdersOpen] = useState(false);
@@ -897,16 +894,6 @@ function Workspace() {
                 {tr("إلغاء الطلب", "Cancel order")}
               </button>
             </>
-          )}
-          {canCallOrDispute && (
-          <button
-            type="button"
-            disabled={!order}
-            onClick={() => setCallOpen(true)}
-            className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-accent/50 bg-accent/10 px-4 py-2 text-sm font-semibold text-accent disabled:opacity-40"
-          >
-            <Video className="size-4" /> {tr("بدء مكالمة فيديو", "Start video call")}
-          </button>
           )}
           {isSeller && canExtend && (
           <button
@@ -2439,15 +2426,6 @@ function Workspace() {
         </div>
       )}
 
-      {callOpen && order && user && (
-        <VideoCallPanel
-          orderId={order.id}
-          orderNumber={order.order_number}
-          userId={user.id}
-          open={callOpen}
-          onClose={() => setCallOpen(false)}
-        />
-      )}
 
       {reviewOpen && canReview && (
         <div

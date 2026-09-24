@@ -20,6 +20,15 @@ import { PROHIBITED_CONTENT_MESSAGE, screenCoverImage } from "@/lib/moderation.f
 import { type ListingCategory } from "@/lib/catalog";
 import { isInstantCategory, saveInstantDelivery, uploadInstantFile } from "@/lib/instant-delivery";
 import { z } from "zod";
+import { ErrorBoundary } from "@/components/site/ErrorBoundary";
+
+function SafeCreateListing() {
+  return (
+    <ErrorBoundary label="حدث خطأ غير متوقع أثناء معالجة هذا الجزء. تم حفظ بياناتك المدخلة، يمكنك المتابعة">
+      <CreateListing />
+    </ErrorBoundary>
+  );
+}
 
 export const Route = createFileRoute("/_authenticated/create-listing")({
   head: () => ({
@@ -32,7 +41,7 @@ export const Route = createFileRoute("/_authenticated/create-listing")({
       { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
-  component: CreateListing,
+  component: SafeCreateListing,
 });
 
 const MIN_PRICE = 3;
@@ -665,7 +674,20 @@ function CreateListing() {
                       ref={instantInput}
                       type="file"
                       className="hidden"
-                      onChange={(e) => setInstantFile(e.target.files?.[0] ?? null)}
+                      onChange={(e) => {
+                        const f = e.target.files?.[0] ?? null;
+                        e.target.value = "";
+                        if (f && f.size > 25 * 1024 * 1024) {
+                          toast.error(
+                            tr(
+                              "حجم الملف يتجاوز 25MB — يُرجى رفعه على رابط سحابي (Google Drive / Mega) ووضع الرابط في صندوق النص.",
+                              "File exceeds 25MB — please use a cloud link (Google Drive / Mega) in the text box.",
+                            ),
+                          );
+                          return;
+                        }
+                        setInstantFile(f);
+                      }}
                     />
                     <div className="flex flex-wrap items-center gap-2">
                       <button
@@ -675,9 +697,25 @@ function CreateListing() {
                       >
                         {tr("اختر ملف التسليم", "Choose deliverable file")}
                       </button>
-                      <span className="min-w-0 truncate text-[11px] text-muted-foreground">
-                        {instantFile?.name ?? instantSaved.name ?? tr("لا يوجد ملف مرفق", "No file attached")}
-                      </span>
+                      {instantFile ? (
+                        <span className="inline-flex min-w-0 items-center gap-2 rounded-lg border border-emerald-500/40 bg-emerald-500/5 px-2 py-1 text-[11px]">
+                          <span className="min-w-0 truncate font-bold">{instantFile.name}</span>
+                          <bdi className="shrink-0 text-muted-foreground">
+                            {(instantFile.size / (1024 * 1024)).toFixed(2)} MB
+                          </bdi>
+                          <button
+                            type="button"
+                            onClick={() => setInstantFile(null)}
+                            className="shrink-0 font-bold text-destructive"
+                          >
+                            ✕ {tr("إلغاء", "Remove")}
+                          </button>
+                        </span>
+                      ) : (
+                        <span className="min-w-0 truncate text-[11px] text-muted-foreground">
+                          {instantSaved.name ?? tr("لا يوجد ملف مرفق", "No file attached")}
+                        </span>
+                      )}
                     </div>
                     <textarea
                       className={`${field} min-h-24 resize-y`}
