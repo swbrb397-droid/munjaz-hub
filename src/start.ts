@@ -18,6 +18,15 @@ const errorMiddleware = createMiddleware().server(async ({ next }) => {
   }
 });
 
+const legacyIndexRedirect = createMiddleware().server(async ({ request, next }) => {
+  const url = new URL(request.url);
+  if (url.pathname === "/index" || url.pathname === "/index/") {
+    url.pathname = "/";
+    return Response.redirect(url, 307);
+  }
+  return next();
+});
+
 // Start installs this automatically when src/start.ts is absent; defining the
 // file opts out, so re-add it explicitly to keep server functions protected
 // from cross-site requests.
@@ -27,5 +36,5 @@ const csrfMiddleware = createCsrfMiddleware({
 
 export const startInstance = createStart(() => ({
   functionMiddleware: [attachCloudAuth],
-  requestMiddleware: [errorMiddleware, csrfMiddleware],
+  requestMiddleware: [errorMiddleware, legacyIndexRedirect, csrfMiddleware],
 }));
