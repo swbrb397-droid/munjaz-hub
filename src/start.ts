@@ -34,7 +34,11 @@ const csrfMiddleware = createCsrfMiddleware({
   filter: (ctx) => ctx.handlerType === "serverFn",
 });
 
+// errorMiddleware is intentionally not registered: in SPA mode errors are
+// handled by client-side error boundaries instead of a server crash page.
+void errorMiddleware;
+
 export const startInstance = createStart(() => ({
   functionMiddleware: [attachCloudAuth],
-  requestMiddleware: [errorMiddleware, legacyIndexRedirect, csrfMiddleware],
+  requestMiddleware: [legacyIndexRedirect, csrfMiddleware],
 }));

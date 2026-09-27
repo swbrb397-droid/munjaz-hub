@@ -10,6 +10,8 @@ export const getRouter = () => {
     context: { queryClient },
     scrollRestoration: true,
     defaultPreloadStaleTime: 0,
+    // Client-only rendering for every route: no server render, no hydration mismatch.
+    defaultSsr: false,
   });
 
   return router;
