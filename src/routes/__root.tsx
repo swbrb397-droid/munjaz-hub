@@ -17,6 +17,7 @@ import { ViewModeProvider } from "../lib/view-mode";
 import { NotifyProvider } from "../lib/notify";
 import { Toaster } from "@/components/ui/sonner";
 import { GlobalErrorBoundary, BrandedFallback } from "@/components/site/GlobalErrorBoundary";
+import { ErrorBoundary } from "@/components/site/ErrorBoundary";
 
 
 import { supabase } from "@/lib/cloud-client";
@@ -79,6 +80,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
     ],
   }),
+  // Client-only rendering for the whole tree: no server render, no hydration mismatch.
+  ssr: false,
   shellComponent: RootShell,
   component: RootComponent,
   notFoundComponent: NotFoundComponent,
@@ -129,7 +132,9 @@ function RootComponent() {
           <NotifyProvider>
           <Shell>
             {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-            <Outlet />
+            <ErrorBoundary label="page">
+              <Outlet />
+            </ErrorBoundary>
           </Shell>
           <Toaster position="top-center" richColors />
           </NotifyProvider>

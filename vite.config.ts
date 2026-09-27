@@ -18,8 +18,9 @@ export default defineConfig({
     },
   },
   tanstackStart: {
-    // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
-    // nitro/vite builds from this
+    // Redirect TanStack Start's bundled server entry to src/server.ts.
     server: { entry: "server" },
+    // Pure SPA: every URL is served the static shell; all pages render in the browser.
+    spa: { enabled: true },
   },
 });
