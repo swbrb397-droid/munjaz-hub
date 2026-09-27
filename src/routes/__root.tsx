@@ -17,6 +17,7 @@ import { ViewModeProvider } from "../lib/view-mode";
 import { NotifyProvider } from "../lib/notify";
 import { Toaster } from "@/components/ui/sonner";
 import { GlobalErrorBoundary, BrandedFallback } from "@/components/site/GlobalErrorBoundary";
+import { ErrorBoundary } from "@/components/site/ErrorBoundary";
 
 
 import { supabase } from "@/lib/cloud-client";
@@ -129,7 +130,9 @@ function RootComponent() {
           <NotifyProvider>
           <Shell>
             {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-            <Outlet />
+            <ErrorBoundary label="page">
+              <Outlet />
+            </ErrorBoundary>
           </Shell>
           <Toaster position="top-center" richColors />
           </NotifyProvider>
