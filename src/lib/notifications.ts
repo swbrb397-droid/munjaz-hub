@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/cloud-client";
 import { useAuth } from "@/hooks/use-auth";
 import type { Tables } from "@/integrations/supabase/types";
+import { emailNotification } from "@/lib/notify-email.functions";
 
 export type LiveNotification = Tables<"notifications">;
 
@@ -33,7 +34,11 @@ export function useLiveNotifications(limit = 5) {
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "notifications", filter: `user_id=eq.${user.id}` },
-        () => void qc.invalidateQueries({ queryKey: ["notifications"] }),
+        (payload) => {
+          void qc.invalidateQueries({ queryKey: ["notifications"] });
+          const id = (payload.new as { id?: string })?.id;
+          if (id) void emailNotification({ data: { id } }).catch(() => {});
+        },
       )
       .subscribe();
     return () => {
