@@ -96,7 +96,8 @@ export function useListings(opts: ListingFilters = {}) {
       if (maxPrice > 0) q = q.lte("price_usdt", maxPrice);
       if (maxDeliveryDays > 0) q = q.lte("delivery_days", maxDeliveryDays);
       if (language !== "all") q = q.in("language", [language, "both"]);
-      if (search) q = q.or(`title_ar.ilike.%${search}%,title_en.ilike.%${search}%,seller_ar.ilike.%${search}%,seller_en.ilike.%${search}%`);
+      const safe = search.replace(/[,().%*\\:"]/g, " ").trim();
+      if (safe) q = q.or(`title_ar.ilike.%${safe}%,title_en.ilike.%${safe}%,seller_ar.ilike.%${safe}%,seller_en.ilike.%${safe}%`);
 
       const { data, error, count } = await q;
       if (error) throw error;
@@ -137,7 +138,8 @@ export function useNfts(opts: { search?: string; sort?: SortKey } = {}) {
         .eq("is_published", true)
         .order(col, { ascending });
 
-      if (search) q = q.or(`name.ilike.%${search}%,collection.ilike.%${search}%`);
+      const safe = search.replace(/[,().%*\\:"]/g, " ").trim();
+      if (safe) q = q.or(`name.ilike.%${safe}%,collection.ilike.%${safe}%`);
 
       const { data, error } = await q;
       if (error) throw error;
