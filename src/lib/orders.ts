@@ -34,12 +34,8 @@ export function useListing(id: string) {
 
       let sellerTier: string | null = null;
       if (data.owner_id) {
-        const prof = await supabase
-          .from("profiles")
-          .select("account_tier")
-          .eq("id", data.owner_id)
-          .maybeSingle();
-        sellerTier = (prof.data as { account_tier?: string } | null)?.account_tier ?? null;
+        const prof = await supabase.rpc("get_public_profiles", { _ids: [data.owner_id] });
+        sellerTier = (prof.data?.[0] as { account_tier?: string } | undefined)?.account_tier ?? null;
       }
 
       const rates = await fetchFeeRates();
@@ -97,10 +93,10 @@ export function useCreateOrder() {
 
       // Dynamic platform fee keyed to the seller's tier, read from live governance.
       const [sellerProfile, rates] = await Promise.all([
-        supabase.from("profiles").select("account_tier").eq("id", input.sellerId).maybeSingle(),
+        supabase.rpc("get_public_profiles", { _ids: [input.sellerId] }),
         fetchFeeRates(),
       ]);
-      const rate = rateForTier(rates, (sellerProfile.data as { account_tier?: string } | null)?.account_tier);
+      const rate = rateForTier(rates, (sellerProfile.data?.[0] as { account_tier?: string } | undefined)?.account_tier);
 
       const { data, error } = await supabase
         .from("orders")

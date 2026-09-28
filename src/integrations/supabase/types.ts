@@ -1516,6 +1516,23 @@ export type Database = {
           xp_points: number
         }[]
       }
+      get_public_profiles: {
+        Args: { _ids: string[] }
+        Returns: {
+          account_tier: Database["public"]["Enums"]["account_tier"]
+          avatar_url: string
+          bio: string
+          completed_orders: number
+          country: string
+          created_at: string
+          display_name: string
+          id: string
+          is_verified: boolean
+          level: number
+          rating: number
+          xp_points: number
+        }[]
+      }
       has_recent_mfa_verification: {
         Args: { _user_id: string }
         Returns: boolean
