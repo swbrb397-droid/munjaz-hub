@@ -467,6 +467,13 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "listings_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
         ]
       }
       nft_items: {
@@ -948,6 +955,13 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "profiles_referred_by_fkey"
+            columns: ["referred_by"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
         ]
       }
       rate_limit_events: {
@@ -1356,7 +1370,51 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      public_profiles: {
+        Row: {
+          account_tier: Database["public"]["Enums"]["account_tier"] | null
+          avatar_url: string | null
+          bio: string | null
+          completed_orders: number | null
+          country: string | null
+          created_at: string | null
+          display_name: string | null
+          id: string | null
+          is_verified: boolean | null
+          level: number | null
+          rating: number | null
+          xp_points: number | null
+        }
+        Insert: {
+          account_tier?: Database["public"]["Enums"]["account_tier"] | null
+          avatar_url?: string | null
+          bio?: string | null
+          completed_orders?: number | null
+          country?: string | null
+          created_at?: string | null
+          display_name?: string | null
+          id?: string | null
+          is_verified?: boolean | null
+          level?: number | null
+          rating?: number | null
+          xp_points?: number | null
+        }
+        Update: {
+          account_tier?: Database["public"]["Enums"]["account_tier"] | null
+          avatar_url?: string | null
+          bio?: string | null
+          completed_orders?: number | null
+          country?: string | null
+          created_at?: string | null
+          display_name?: string | null
+          id?: string | null
+          is_verified?: boolean | null
+          level?: number | null
+          rating?: number | null
+          xp_points?: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       admin_platform_overview: {
