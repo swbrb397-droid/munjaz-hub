@@ -864,10 +864,12 @@ export type Database = {
           completed_orders: number
           country: string | null
           created_at: string
+          deactivated_at: string | null
           display_name: string
           frozen_at: string | null
           frozen_reason: string | null
           id: string
+          is_deactivated: boolean
           is_frozen: boolean
           is_verified: boolean
           kyc_status: string
@@ -892,10 +894,12 @@ export type Database = {
           completed_orders?: number
           country?: string | null
           created_at?: string
+          deactivated_at?: string | null
           display_name?: string
           frozen_at?: string | null
           frozen_reason?: string | null
           id: string
+          is_deactivated?: boolean
           is_frozen?: boolean
           is_verified?: boolean
           kyc_status?: string
@@ -920,10 +924,12 @@ export type Database = {
           completed_orders?: number
           country?: string | null
           created_at?: string
+          deactivated_at?: string | null
           display_name?: string
           frozen_at?: string | null
           frozen_reason?: string | null
           id?: string
+          is_deactivated?: boolean
           is_frozen?: boolean
           is_verified?: boolean
           kyc_status?: string
@@ -1359,6 +1365,11 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_adjust_user_role: {
+        Args: { p_action: string; p_role: string; p_user_id: string }
+        Returns: undefined
+      }
+      admin_deactivate_user: { Args: { p_user_id: string }; Returns: undefined }
       admin_platform_overview: {
         Args: never
         Returns: {
@@ -1444,6 +1455,19 @@ export type Database = {
         }
       }
       admin_sandbox_action: { Args: { _kind: string }; Returns: Json }
+      admin_send_user_notification: {
+        Args: {
+          p_message: string
+          p_title: string
+          p_type: string
+          p_user_id: string
+        }
+        Returns: string
+      }
+      admin_toggle_user_ban: {
+        Args: { p_banned: boolean; p_reason: string; p_user_id: string }
+        Returns: undefined
+      }
       auto_release_escrow: { Args: never; Returns: number }
       check_rate_limit: {
         Args: { _action: string; _max: number; _window: string }
@@ -1555,6 +1579,10 @@ export type Database = {
           _meta?: Json
         }
         Returns: string
+      }
+      pay_referral_commission: {
+        Args: { _fee: number; _order_id: string; _referred: string }
+        Returns: undefined
       }
       platform_stats: {
         Args: never
@@ -1813,7 +1841,13 @@ export type Database = {
     }
     Enums: {
       account_tier: "free" | "pro" | "corporate"
-      app_role: "buyer" | "seller" | "admin" | "hybrid" | "corporate"
+      app_role:
+        | "buyer"
+        | "seller"
+        | "admin"
+        | "hybrid"
+        | "corporate"
+        | "moderator"
       case_kind: "dispute" | "review_appeal"
       case_status: "open" | "ai_reviewed" | "resolved" | "rejected"
       incident_kind:
@@ -1979,7 +2013,14 @@ export const Constants = {
   public: {
     Enums: {
       account_tier: ["free", "pro", "corporate"],
-      app_role: ["buyer", "seller", "admin", "hybrid", "corporate"],
+      app_role: [
+        "buyer",
+        "seller",
+        "admin",
+        "hybrid",
+        "corporate",
+        "moderator",
+      ],
       case_kind: ["dispute", "review_appeal"],
       case_status: ["open", "ai_reviewed", "resolved", "rejected"],
       incident_kind: [
