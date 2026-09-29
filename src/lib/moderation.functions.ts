@@ -162,6 +162,27 @@ export const screenCoverImage = createServerFn({ method: "POST" })
       }
     }
 
+    // Gemini Vision rotation pool before the gateway fallback.
+    {
+      const { geminiGenerate, imagePart } = await import("./gemini-pool.server");
+      const img = imagePart(data.dataUrl);
+      if (img) {
+        const raw = await geminiGenerate("vision", [{ text: GEMINI_PROMPT }, img], { json: true });
+        if (raw) {
+          try {
+            const parsed = JSON.parse(raw) as { allowed?: boolean; reason?: string };
+            if (typeof parsed.allowed === "boolean") {
+              const v = { allowed: parsed.allowed, reason: String(parsed.reason ?? "").slice(0, 300) };
+              if (!v.allowed) await logBlocked(v.reason);
+              return v;
+            }
+          } catch {
+            /* malformed — fall through */
+          }
+        }
+      }
+    }
+
     const lovableKey = process.env["LOVABLE_API_KEY"];
     if (lovableKey) {
       const v = await screenViaGemini(data.dataUrl, lovableKey);
