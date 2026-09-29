@@ -62,6 +62,7 @@ const adminGroup: { title: [string, string]; items: { to: string; label: [string
     { to: "/admin/kyc", label: ["مراجعة توثيق الهوية KYC", "KYC review"], icon: BadgeCheck },
     { to: "/admin/services", label: ["إدارة العروض والخدمات", "Services moderation"], icon: Store },
     { to: "/admin/users", label: ["إدارة المستخدمين", "User management"], icon: Users },
+    { to: "/admin/ai", label: ["مساعد الذكاء الاصطناعي", "AI co-pilot"], icon: Bot },
     { to: "/admin/governance", label: ["مولد الاشتراكات وحوكمة الرسوم", "Passes & governance"], icon: Settings2 },
   ],
 };
