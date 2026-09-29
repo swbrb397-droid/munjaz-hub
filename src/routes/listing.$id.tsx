@@ -43,6 +43,7 @@ function ListingDetail() {
   const [sow, setSow] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [topUp, setTopUp] = useState(false);
+  const [buyingInstant, setBuyingInstant] = useState(false);
 
   if (listing.isLoading) {
     return (
@@ -114,6 +115,8 @@ function ListingDetail() {
         setTopUp(true);
       }
       setError(message);
+    } finally {
+      setBuyingInstant(false);
     }
   }
 
@@ -194,10 +197,10 @@ function ListingDetail() {
 
             <button
               onClick={buy}
-              disabled={createOrder.isPending || isOwner}
+              disabled={createOrder.isPending || buyingInstant || isOwner}
               className="mt-4 w-full rounded-xl bg-primary px-4 py-3 font-bold text-primary-foreground glow disabled:opacity-50"
             >
-              {createOrder.isPending
+              {createOrder.isPending || buyingInstant
                 ? tr("جارٍ إنشاء الطلب...", "Creating order...")
                 : isOwner
                   ? tr("هذا عرضك", "This is your listing")

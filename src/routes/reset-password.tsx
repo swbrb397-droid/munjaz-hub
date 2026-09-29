@@ -55,8 +55,14 @@ function ResetPassword() {
   }, []);
 
   async function submit() {
-    if (password.length < 8) return toast.error(tr("كلمة المرور 8 أحرف على الأقل", "Password must be at least 8 characters"));
-    if (password !== confirm) return toast.error(tr("كلمتا المرور غير متطابقتين", "Passwords do not match"));
+    if (password.length < 8) {
+      toast.error(tr("كلمة المرور 8 أحرف على الأقل", "Password must be at least 8 characters"));
+      return;
+    }
+    if (password !== confirm) {
+      toast.error(tr("كلمتا المرور غير متطابقتين", "Passwords do not match"));
+      return;
+    }
     setBusy(true);
     try {
       if (factorId) {
