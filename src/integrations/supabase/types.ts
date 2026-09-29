@@ -1468,6 +1468,10 @@ export type Database = {
         Args: { p_banned: boolean; p_reason: string; p_user_id: string }
         Returns: undefined
       }
+      attach_referral_after_oauth: {
+        Args: { p_code: string }
+        Returns: boolean
+      }
       auto_release_escrow: { Args: never; Returns: number }
       check_rate_limit: {
         Args: { _action: string; _max: number; _window: string }
@@ -1656,6 +1660,10 @@ export type Database = {
           rating: number
           xp_points: number
         }[]
+      }
+      purchase_digital_asset_instant: {
+        Args: { p_listing_id: string }
+        Returns: string
       }
       purchase_subscription_plan: {
         Args: { p_tier: Database["public"]["Enums"]["account_tier"] }
