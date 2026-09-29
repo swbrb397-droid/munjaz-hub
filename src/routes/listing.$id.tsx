@@ -87,7 +87,17 @@ function ListingDetail() {
       return;
     }
     try {
-      const created = await createOrder.mutateAsync({
+      // Instant digital goods: one atomic transaction (charge, pay seller + referrals, complete).
+      if (isInstantCategory(item!.category)) {
+        setBuyingInstant(true);
+        const { data: orderId, error: rpcError } = await supabase.rpc("purchase_digital_asset_instant", {
+          p_listing_id: item!.id,
+        });
+        if (rpcError) throw new Error(rpcError.message.includes("INSUFFICIENT") ? "INSUFFICIENT_BALANCE" : rpcError.message);
+        navigate({ to: "/fulfillment/$orderId", params: { orderId: orderId as string } });
+        return;
+      }
+      await createOrder.mutateAsync({
         listingId: item!.id,
         sellerId: item!.ownerId,
         title: item!.title,
@@ -96,14 +106,6 @@ function ListingDetail() {
         deliveryDays: deliveryDays,
         sowTerms: sow.trim(),
       });
-      // Instant digital fulfilment: settle the order immediately (seller is paid
-      // net of the platform fee by the escrow trigger) and hand over the content.
-      if (isInstantCategory(item!.category) && created?.id) {
-        const settled = await supabase.from("orders").update({ status: "completed" }).eq("id", created.id);
-        if (settled.error) throw new Error(settled.error.message);
-        navigate({ to: "/fulfillment/$orderId", params: { orderId: created.id } });
-        return;
-      }
       navigate({ to: "/workspace" });
     } catch (e) {
       const message = (e as Error).message;
