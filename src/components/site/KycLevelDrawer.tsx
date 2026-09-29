@@ -14,7 +14,7 @@ const ORDER_GOALS = [0, 5, 25, 100];
 type Props = {
   open: boolean;
   onOpenChange: (v: boolean) => void;
-  kycTier?: string | null;
+  kycTier?: string | null | undefined;
   isVerified?: boolean;
   level: number;
   completedOrders: number;
