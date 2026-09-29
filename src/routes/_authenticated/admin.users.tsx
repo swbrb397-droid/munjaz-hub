@@ -158,6 +158,10 @@ function UserPanel({ u }: { u: AdminUserRow }) {
   const notify = () => run("notify", async () => {
     const { error } = await supabase.rpc("admin_send_user_notification" as never, { p_user_id: u.id, p_title: title, p_message: msg, p_type: type } as never);
     if (error) throw error;
+    // Email copy is best-effort: a delivery failure never fails the in-app alert.
+    void emailUser({ data: { userId: u.id, title, message: msg } })
+      .then((r) => { if (!r.emailed) toast.warning("وصل التنبيه داخل المنصة، لكن تعذّر إرساله بالبريد"); })
+      .catch(() => toast.warning("وصل التنبيه داخل المنصة، لكن تعذّر إرساله بالبريد"));
     setTitle(""); setMsg("");
   }, "تم إرسال الإشعار");
 
