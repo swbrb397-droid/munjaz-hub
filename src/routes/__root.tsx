@@ -23,6 +23,7 @@ import { ErrorBoundary } from "@/components/site/ErrorBoundary";
 import { supabase } from "@/lib/cloud-client";
 import { cleanupLegacyStorage } from "@/lib/storage-cleanup";
 import { captureReferralFromUrl } from "@/lib/referral-capture";
+import { finishGoogleSignIn } from "@/lib/google-auth";
 
 
 
@@ -116,7 +117,13 @@ function RootComponent() {
   useEffect(() => {
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((event) => {
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      // Google sign-in return: finish referral attachment and land on the dashboard.
+      if (session && (event === "SIGNED_IN" || event === "INITIAL_SESSION")) {
+        void finishGoogleSignIn().then((go) => {
+          if (go) void router.navigate({ to: "/dashboard", replace: true });
+        });
+      }
       if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
       router.invalidate();
       if (event !== "SIGNED_OUT") queryClient.invalidateQueries();

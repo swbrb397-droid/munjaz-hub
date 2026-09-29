@@ -9,6 +9,7 @@ import { useAuth } from "@/hooks/use-auth";
 
 import { supabase } from "@/lib/cloud-client";
 import { clearStoredReferralCode, storedReferralCode } from "@/lib/referral-capture";
+import { finishGoogleSignIn, signInWithGoogle } from "@/lib/google-auth";
 
 // CRITICAL — AUTH CONFIG LOCK: this route uses the live Almunjaz-hub Supabase
 // project via src/lib/cloud-client. Do NOT replace this with the generated
@@ -134,6 +135,8 @@ function AuthPage() {
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   // Pre-filled from the `?ref=` link captured on first visit.
   const [referral, setReferral] = useState(() => storedReferralCode());
+  const [forgotOpen, setForgotOpen] = useState(false);
+  const [googleBusy, setGoogleBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -535,6 +538,43 @@ function AuthPage() {
           </button>
         </form>
 
+        {mode === "signin" && (
+          <button
+            type="button"
+            onClick={() => setForgotOpen(true)}
+            className="mt-3 w-full text-center text-xs text-primary underline-offset-4 hover:underline"
+          >
+            {tr("نسيت كلمة المرور؟", "Forgot password?")}
+          </button>
+        )}
+
+        <div className="my-4 flex items-center gap-3 text-[11px] text-muted-foreground">
+          <span className="h-px flex-1 bg-border" />
+          {tr("أو", "or")}
+          <span className="h-px flex-1 bg-border" />
+        </div>
+        <button
+          type="button"
+          disabled={googleBusy}
+          onClick={async () => {
+            setGoogleBusy(true);
+            const r = await signInWithGoogle();
+            if (r.error) {
+              toast.error(tr("تعذّر تسجيل الدخول عبر Google", "Google sign-in failed"));
+              setGoogleBusy(false);
+              return;
+            }
+            if (r.done) {
+              await finishGoogleSignIn();
+              void navigate({ to: "/dashboard", replace: true });
+            }
+          }}
+          className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl border border-input bg-surface px-4 py-3 text-sm font-bold transition-colors hover:border-primary disabled:opacity-60"
+        >
+          {googleBusy ? <Loader2 className="size-4 animate-spin" /> : <span className="font-black text-primary">G</span>}
+          {tr("تسجيل الدخول عبر Google", "Continue with Google")}
+        </button>
+
         <button
           type="button"
           onClick={() => { setMode(mode === "signin" ? "signup" : "signin"); setErr(null); setMsg(null); }}
@@ -542,7 +582,54 @@ function AuthPage() {
         >
           {mode === "signin" ? tr("ليس لديك حساب؟ أنشئ حساباً", "No account? Create one") : tr("لديك حساب؟ سجّل الدخول", "Already have an account? Sign in")}
         </button>
+        {forgotOpen && <ForgotPasswordDialog onClose={() => setForgotOpen(false)} />}
       </Card>
+    </div>
+  );
+}
+
+function ForgotPasswordDialog({ onClose }: { onClose: () => void }) {
+  const { tr } = useLang();
+  const [email, setEmail] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [sent, setSent] = useState(false);
+  async function send() {
+    const e = email.trim().toLowerCase();
+    if (!EMAIL_RE.test(e)) {
+      toast.error(tr("صيغة البريد الإلكتروني غير صحيحة", "Invalid email address"));
+      return;
+    }
+    setBusy(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(e, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    setBusy(false);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    setSent(true);
+  }
+  return (
+    <div className="fixed inset-0 z-50 grid place-items-center bg-background/80 p-4 backdrop-blur-sm" onClick={onClose}>
+      <div className="w-full max-w-sm rounded-2xl border border-border bg-card p-5" onClick={(e) => e.stopPropagation()}>
+        <h2 className="text-lg font-black">{tr("استعادة كلمة المرور", "Reset password")}</h2>
+        {sent ? (
+          <p className="mt-3 text-sm text-primary">
+            {tr("إذا كان البريد مسجلاً فستصلك رسالة برابط الاستعادة.", "If the email is registered, a reset link is on its way.")}
+          </p>
+        ) : (
+          <>
+            <p className="mt-1 text-xs text-muted-foreground">{tr("أدخل بريدك وسنرسل لك رابط الاستعادة.", "Enter your email and we'll send a reset link.")}</p>
+            <input type="email" dir="ltr" value={email} onChange={(e) => setEmail(e.target.value)} className="mt-3 min-h-12 w-full rounded-lg border border-input bg-surface px-3 outline-none focus:border-primary" />
+            <button type="button" disabled={busy} onClick={send} className="mt-3 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-primary font-bold text-primary-foreground disabled:opacity-60">
+              {busy && <Loader2 className="size-4 animate-spin" />}
+              {tr("إرسال الرابط", "Send link")}
+            </button>
+          </>
+        )}
+        <button type="button" onClick={onClose} className="mt-3 w-full text-xs text-muted-foreground hover:text-foreground">{tr("إغلاق", "Close")}</button>
+      </div>
     </div>
   );
 }

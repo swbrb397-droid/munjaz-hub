@@ -16,13 +16,14 @@ export const emailNotification = createServerFn({ method: "POST" })
     if (error || !n) return { sent: false };
     const email = (context.claims as { email?: string }).email;
     if (!email) return { sent: false };
-    const { sendResendEmail, notificationEmailHtml } = await import("./resend.server");
-    await sendResendEmail({
+    const { sendPlatformEmail, notificationEmailHtml } = await import("./resend.server");
+    const r = await sendPlatformEmail({
       to: email,
       subject: `مُنجِز — ${n.title}`,
       html: notificationEmailHtml(n.title, n.body ?? "", n.link),
       text: `${n.title}\n\n${n.body ?? ""}`,
       idempotencyKey: `notif-${n.id}`,
+      actorId: context.userId,
     });
-    return { sent: true };
+    return { sent: r.delivered };
   });

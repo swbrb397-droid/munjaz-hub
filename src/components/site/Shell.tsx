@@ -5,6 +5,7 @@ import {
   Home, Store, Trophy, PlusCircle, LayoutDashboard, ClipboardList, Briefcase, Users, UserCog, CreditCard, ShieldCheck,
   Gavel, BadgeCheck, Settings2, ScrollText,
   type LucideIcon,
+  Bot,
 } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useLang, type TranslationKey } from "@/lib/lang";
@@ -62,6 +63,7 @@ const adminGroup: { title: [string, string]; items: { to: string; label: [string
     { to: "/admin/kyc", label: ["مراجعة توثيق الهوية KYC", "KYC review"], icon: BadgeCheck },
     { to: "/admin/services", label: ["إدارة العروض والخدمات", "Services moderation"], icon: Store },
     { to: "/admin/users", label: ["إدارة المستخدمين", "User management"], icon: Users },
+    { to: "/admin/ai", label: ["مساعد الذكاء الاصطناعي", "AI co-pilot"], icon: Bot },
     { to: "/admin/governance", label: ["مولد الاشتراكات وحوكمة الرسوم", "Passes & governance"], icon: Settings2 },
   ],
 };
