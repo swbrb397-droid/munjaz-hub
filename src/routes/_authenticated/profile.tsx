@@ -19,6 +19,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { SecurityPanel } from "@/components/site/SecurityPanel";
 import { EXECUTABLE_REJECTION, isDangerousFile } from "@/lib/file-guard";
 import { NameChangeControl } from "@/components/site/NameChangeCard";
+import { supabase } from "@/lib/cloud-client";
 
 export const Route = createFileRoute("/_authenticated/profile")({
   head: () => ({
@@ -64,7 +65,7 @@ const TIER_META: Record<
 function ProfilePage() {
   const { tr } = useLang();
   const { user } = useAuth();
-  const { profile: liveProfile } = useUserProfile();
+  const { profile: liveProfile, refetch } = useUserProfile();
   const isVerified = liveProfile?.is_verified === true;
   // Tier is decoupled from the admin role: only a live, unexpired paid plan
   // on the profile row may show Pro/Corporate.
@@ -73,6 +74,7 @@ function ProfilePage() {
   const dbTier = liveProfile?.account_tier;
   const tier: Tier = !planActive ? "free" : dbTier === "pro" ? "pro" : dbTier === "corporate" ? "corp" : "free";
   const [avatar, setAvatar] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
   const avatarRef = useRef<HTMLInputElement>(null);
 
   // KYC status is read-only in the profile view. Full verification submission
@@ -104,8 +106,10 @@ function ProfilePage() {
           <div className="flex flex-wrap items-center gap-4">
             <div className="relative shrink-0">
               <div className="grid size-20 place-items-center overflow-hidden rounded-full border border-border bg-secondary text-xl font-black">
-                {avatar ? (
-                  <img src={avatar} alt="صورة الملف الشخصي" className="size-full object-cover" />
+                {uploading ? (
+                  <Loader2 className="size-6 animate-spin" />
+                ) : avatar || liveProfile?.avatar_url ? (
+                  <img src={avatar || liveProfile?.avatar_url || ""} alt="صورة الملف الشخصي" className="size-full object-cover" />
                 ) : (
                   handle.slice(0, 2).toUpperCase()
                 )}
@@ -123,19 +127,40 @@ function ProfilePage() {
                 type="file"
                 accept="image/*"
                 className="hidden"
-                onChange={(e) => {
+                onChange={async (e) => {
                   const f = e.target.files?.[0];
-                  if (!f) return;
-                  if (isDangerousFile(f.name)) {
+                  e.target.value = "";
+                  if (!f || !user) return;
+                  if (isDangerousFile(f.name) || !f.type.startsWith("image/")) {
                     toast.error(EXECUTABLE_REJECTION);
                     return;
                   }
-                  if (f.size > 10 * 1024 * 1024) {
-                    toast.error("الحد الأقصى 10MB");
+                  if (f.size > 5 * 1024 * 1024) {
+                    toast.error("الحد الأقصى 5MB");
                     return;
                   }
-                  setAvatar(URL.createObjectURL(f));
-                  toast.success("تم تحديث الصورة الشخصية");
+                  setUploading(true);
+                  try {
+                    const path = `${user.id}/avatar.png`;
+                    const { error: upErr } = await supabase.storage
+                      .from("avatars")
+                      .upload(path, f, { upsert: true, contentType: f.type, cacheControl: "3600" });
+                    if (upErr) throw upErr;
+                    const { data: signed, error: sErr } = await supabase.storage
+                      .from("avatars")
+                      .createSignedUrl(path, 60 * 60 * 24 * 365);
+                    if (sErr || !signed?.signedUrl) throw sErr ?? new Error("URL");
+                    const url = `${signed.signedUrl}&v=${Date.now()}`;
+                    const { error: pErr } = await supabase.from("profiles").update({ avatar_url: url }).eq("id", user.id);
+                    if (pErr) throw pErr;
+                    setAvatar(url);
+                    void refetch();
+                    toast.success("تم تحديث الصورة الشخصية");
+                  } catch (err) {
+                    toast.error(`تعذّر رفع الصورة: ${(err as Error)?.message ?? ""}`);
+                  } finally {
+                    setUploading(false);
+                  }
                 }}
               />
             </div>

@@ -1,7 +1,6 @@
-# Consolidated production fixes
-
-- [ ] Fix workspace top-header clipping and safe-area spacing.
-- [ ] Require a moderated service cover and strengthen description validation.
-- [ ] Improve Arabic TOTP onboarding and enforce TOTP for withdrawals/address changes.
-- [ ] Remove subscription redemption UI; fix receipt text and referral link display.
-- [ ] Verify TypeScript and affected flows.
+# Roadmap
+- [x] Admin user management page + guarded RPCs
+- [x] Dual referral engine (12 months, 20%→10%)
+- [x] Mandatory 2FA for withdrawals
+- [x] Real avatar upload; workspace icon
+- [ ] Signed-in end-to-end test of admin page, avatar upload and withdrawal (needs a signed-in session)

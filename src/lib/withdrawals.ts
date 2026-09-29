@@ -28,6 +28,7 @@ export function withdrawalErrorMessage(raw: string, ar: boolean): string {
     INVALID_ADDRESS: ["عنوان المحفظة غير صالح.", "Invalid wallet address."],
     INSUFFICIENT_FUNDS: ["الرصيد غير كافٍ (شامل الرسوم).", "Insufficient balance (including fees)."],
     ACCOUNT_FROZEN: ["الحساب مجمّد أمنياً — تواصل مع الدعم.", "Account frozen for security — contact support."],
+    MFA_SETUP_REQUIRED: ["يجب تفعيل المصادقة الثنائية (2FA) أولاً من إعدادات الأمان قبل طلب السحب", "Enable two-factor authentication (2FA) in security settings before requesting a withdrawal."],
     MFA_REQUIRED: ["يلزم تأكيد المصادقة الثنائية قبل السحب.", "Two-factor authentication is required before withdrawal."],
     NOT_AUTHENTICATED: ["يجب تسجيل الدخول.", "You must be signed in."],
     FORBIDDEN: ["صلاحيات غير كافية.", "Insufficient permissions."],
@@ -67,10 +68,15 @@ export function useRequestWithdrawal() {
       const address = sanitizeAddress(input.address);
       if (!isValidAddress(address)) throw new Error("INVALID_ADDRESS");
 
+      // Mandatory 2FA: a verified TOTP factor must exist and the session must be aal2.
+      const { data: factors, error: factorsError } = await supabase.auth.mfa.listFactors();
+      if (factorsError) throw factorsError;
+      const hasVerifiedTotp = (factors?.totp ?? []).some((f) => f.status === "verified");
+      if (!hasVerifiedTotp) throw new Error("MFA_SETUP_REQUIRED");
       const { data: assurance, error: assuranceError } =
         await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
       if (assuranceError) throw assuranceError;
-      if (assurance.nextLevel === "aal2" && assurance.currentLevel !== "aal2") {
+      if (assurance?.currentLevel !== "aal2") {
         throw new Error("MFA_REQUIRED");
       }
 
