@@ -1,3 +1,4 @@
+import { translateAuthError } from "@/lib/auth-errors";
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -127,7 +128,7 @@ function PricingPage() {
       void qc.invalidateQueries({ queryKey: ["transactions"] });
       toast.success(tr("تم تفعيل الباقة لمدة 30 يوماً.", "Your plan is active for 30 days."));
     },
-    onError: (error: Error) => toast.error(error.message),
+    onError: (error: Error) => toast.error(translateAuthError(error)),
   });
 
   const upgrade = (tier: TierId, price: number) => {

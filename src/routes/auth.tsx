@@ -1,3 +1,4 @@
+import { translateAuthError } from "@/lib/auth-errors";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { toast } from "sonner";
@@ -90,15 +91,7 @@ function authErrorMessage(raw: string, ar: boolean): string {
   if (/email not confirmed|confirm/.test(m))
     return ar ? "يرجى تأكيد البريد الإلكتروني أولاً" : "Please confirm your email first";
 
-  if (/password should be at least|weak password/.test(m))
-    return ar ? "كلمة المرور قصيرة جداً (6 أحرف على الأقل)" : "Password is too short (min 6 characters)";
-  if (/rate limit|too many requests|over_email_send_rate/.test(m))
-    return ar ? "عدد المحاولات كبير — حاول مجدداً بعد قليل" : "Too many attempts — please try again shortly";
-  if (/invalid email|unable to validate email/.test(m))
-    return ar ? "صيغة البريد الإلكتروني غير صحيحة" : "Invalid email address";
-  if (/network|fetch/.test(m))
-    return ar ? "تعذّر الاتصال بالخادم — تحقق من الإنترنت" : "Network error — check your connection";
-  return raw;
+  return translateAuthError(raw, ar);
 }
 
 export const Route = createFileRoute("/auth")({
@@ -605,7 +598,7 @@ function ForgotPasswordDialog({ onClose }: { onClose: () => void }) {
     });
     setBusy(false);
     if (error) {
-      toast.error(error.message);
+      toast.error(translateAuthError(error, lang === "ar"));
       return;
     }
     setSent(true);
