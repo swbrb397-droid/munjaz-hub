@@ -24,6 +24,7 @@ import {
   MIN_WITHDRAWAL,
   WITHDRAWAL_FEE,
   slaHoursForTier,
+  requestWithdrawalSecure,
   useMyWithdrawals,
   withdrawalErrorMessage,
   type WithdrawalNetwork,
@@ -249,6 +250,9 @@ function WalletPage() {
   const unspent = Math.max(0, Number(unspentDeposits.data ?? 0));
   const earnedAvailable = Math.max(0, availableNow - unspent);
   const amlExempt = parsed > 0 && parsed <= earnedAvailable;
+  // Mirrors request_withdrawal: earnings are spent first; 5% applies only to the deposit portion.
+  const depositPortion = Math.max(0, parsed - earnedAvailable);
+  const totalFee = Number((WITHDRAWAL_FEE + depositPortion * 0.05).toFixed(2));
 
   // Triple trigger: password change, MFA change, or payout-address change.
   const rawLockHours = coolingHoursLeft([
@@ -584,12 +588,12 @@ function WalletPage() {
             <span className="text-muted-foreground">
               {tr("الرسوم:", "Fee:")}{" "}
               <span className="text-foreground" dir="ltr">
-                {usdt2(WITHDRAWAL_FEE)} USDT
+                {usdt2(totalFee)} USDT
               </span>
               {" · "}
               {tr("الصافي:", "Net:")}{" "}
               <span className="text-foreground" dir="ltr">
-                {usdt2(Math.max(0, parsed - WITHDRAWAL_FEE))} USDT
+                {usdt2(Math.max(0, parsed - totalFee))} USDT
               </span>
             </span>
             <button
