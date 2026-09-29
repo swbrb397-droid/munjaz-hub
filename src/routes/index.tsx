@@ -9,6 +9,7 @@ import { useLang } from "@/lib/lang";
 import { VerifiedBadge } from "@/components/site/VerifiedBadge";
 import { ShareListing } from "@/components/site/ShareListing";
 import { CoverImage } from "@/components/site/CoverImage";
+import { countryName, flagEmoji } from "@/lib/countries";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -199,8 +200,8 @@ function Ticker() {
 }
 
 export function ServiceCard({
-  id, title, seller, price, rating, orders, verified, tag, cover, category,
-}: { id: string; title: string; seller: string; price: number; rating: number; orders: number; verified: boolean; tag: string; cover: string; category?: string }) {
+  id, title, seller, price, rating, orders, verified, tag, cover, category, country,
+}: { id: string; title: string; seller: string; price: number; rating: number; orders: number; verified: boolean; tag: string; cover: string; category?: string; country?: string | null }) {
   const { tr } = useLang();
   const audited = /برمج|develop|code|عقود ذكية|smart contract|web3|crypto|blockchain/i.test(`${tag} ${title}`);
   const instant = category === "product" || category === "course" || /nft|قالب|template|أصل رقمي/i.test(`${tag} ${title}`);
@@ -230,6 +231,7 @@ export function ServiceCard({
         <h3 className="mt-1 font-bold leading-snug">{title}</h3>
         <p className="mt-1 flex flex-wrap items-center gap-1.5 text-sm text-muted-foreground">
           {seller} {verified && <VerifiedBadge />}
+          <SellerCountry code={country ?? null} />
         </p>
         <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
           <Star className="size-3.5 fill-accent text-accent" /> {rating} · {orders} {tr("طلب", "orders")}
@@ -241,6 +243,33 @@ export function ServiceCard({
 
       </Card>
     </Link>
+  );
+}
+
+function SellerCountry({ code }: { code: string | null }) {
+  const { tr, lang } = useLang();
+  const [open, setOpen] = useState(false);
+  const name = countryName(code, lang === "ar");
+  const label = name ?? tr("الدولة غير محددة", "Country not set");
+  return (
+    <span className="relative inline-flex">
+      <button
+        type="button"
+        aria-label={tr(`دولة البائع: ${label}`, `Seller country: ${label}`)}
+        aria-expanded={open}
+        onClick={(e) => { e.preventDefault(); e.stopPropagation(); setOpen((v) => !v); }}
+        onBlur={() => setOpen(false)}
+        className="inline-flex min-h-7 items-center gap-1 rounded-full border border-border bg-secondary/60 px-2 text-xs hover:border-primary/60"
+      >
+        <span aria-hidden>{code ? flagEmoji(code) : "🌐"}</span>
+        {name && <span className="max-w-24 truncate text-[11px] font-bold text-foreground">{name}</span>}
+      </button>
+      {open && (
+        <span role="tooltip" className="absolute bottom-full start-0 z-20 mb-1.5 whitespace-nowrap rounded-lg border border-border bg-popover px-3 py-1.5 text-xs font-bold text-popover-foreground shadow-lg">
+          {code ? `${flagEmoji(code)} ` : ""}{tr("دولة البائع:", "Seller country:")} {label}
+        </span>
+      )}
+    </span>
   );
 }
 

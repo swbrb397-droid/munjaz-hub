@@ -32,6 +32,7 @@ export type Listing = {
   tag: string;
   cover: string;
   deliveryDays?: number;
+  country?: string | null;
 };
 
 export type NftItem = { id: string; name: string; collection: string; price: number; hue: number };
@@ -84,7 +85,7 @@ export function useListings(opts: ListingFilters = {}) {
       let q = supabase
         .from("listings")
         .select(
-          "id,title_ar,title_en,seller_ar,seller_en,category,price_usdt,rating,orders_count,verified,tag_ar,tag_en,cover_key,cover_url,delivery_days,language",
+          "id,title_ar,title_en,seller_ar,seller_en,category,price_usdt,rating,orders_count,verified,tag_ar,tag_en,cover_key,cover_url,delivery_days,language,owner_id",
           { count: "exact" },
         )
         .eq("is_published", true)
@@ -101,6 +102,13 @@ export function useListings(opts: ListingFilters = {}) {
 
       const { data, error, count } = await q;
       if (error) throw error;
+      // Seller countries via the public-profile routine (never exposes private columns).
+      const ownerIds = [...new Set((data ?? []).map((r) => r.owner_id).filter(Boolean))] as string[];
+      const countries = new Map<string, string | null>();
+      if (ownerIds.length) {
+        const { data: pubs } = await supabase.rpc("get_public_profiles", { _ids: ownerIds });
+        for (const p of pubs ?? []) countries.set(p.id, p.country ?? null);
+      }
       return {
         total: count ?? 0,
         page,
@@ -117,6 +125,7 @@ export function useListings(opts: ListingFilters = {}) {
           tag: lang === "ar" ? r.tag_ar : r.tag_en,
           cover: (r.cover_url ?? "").trim(),
           deliveryDays: r.delivery_days ?? 3,
+          country: r.owner_id ? countries.get(r.owner_id) ?? null : null,
         })),
       };
     },

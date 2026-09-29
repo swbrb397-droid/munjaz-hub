@@ -20,6 +20,7 @@ import { SecurityPanel } from "@/components/site/SecurityPanel";
 import { EXECUTABLE_REJECTION, isDangerousFile } from "@/lib/file-guard";
 import { NameChangeControl } from "@/components/site/NameChangeCard";
 import { supabase } from "@/lib/cloud-client";
+import { COUNTRIES, flagEmoji } from "@/lib/countries";
 
 export const Route = createFileRoute("/_authenticated/profile")({
   head: () => ({
@@ -184,6 +185,22 @@ function ProfilePage() {
                   <KycBadge state={kyc} />
                 </Link>
                 <NameChangeControl profile={liveProfile} />
+                <select
+                  aria-label="دولتك"
+                  value={liveProfile?.country ?? ""}
+                  onChange={async (e) => {
+                    if (!user) return;
+                    const { error } = await supabase.from("profiles").update({ country: e.target.value || null }).eq("id", user.id);
+                    if (error) toast.error("تعذّر حفظ الدولة");
+                    else { toast.success("تم حفظ الدولة"); void refetch(); }
+                  }}
+                  className="min-h-7 rounded-full border border-border bg-secondary px-3 text-[11px] font-bold"
+                >
+                  <option value="">🌐 اختر دولتك</option>
+                  {COUNTRIES.map((c) => (
+                    <option key={c.code} value={c.code}>{flagEmoji(c.code)} {c.ar}</option>
+                  ))}
+                </select>
                 <span className="inline-flex items-center gap-1.5 rounded-full border border-accent/40 bg-accent/10 px-3 py-1 text-[11px] font-bold text-accent">
                   <Crown className="size-3.5" /> {tr(meta.name[0], meta.name[1])}
                 </span>
