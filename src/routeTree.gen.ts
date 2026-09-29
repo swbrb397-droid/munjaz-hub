@@ -15,6 +15,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as LeaderboardRouteImport } from './routes/leaderboard'
 import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as ReferralsRouteImport } from './routes/referrals'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as StoreRouteImport } from './routes/store'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as VerifyRouteImport } from './routes/verify'
@@ -65,6 +66,11 @@ const PricingRoute = PricingRouteImport.update({
 const ReferralsRoute = ReferralsRouteImport.update({
   id: '/referrals',
   path: '/referrals',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const StoreRoute = StoreRouteImport.update({
@@ -190,6 +196,7 @@ export interface FileRoutesByFullPath {
   '/leaderboard': typeof LeaderboardRoute
   '/pricing': typeof PricingRoute
   '/referrals': typeof ReferralsRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/store': typeof StoreRoute
   '/terms': typeof TermsRoute
   '/verify': typeof VerifyRoute
@@ -219,6 +226,7 @@ export interface FileRoutesByTo {
   '/leaderboard': typeof LeaderboardRoute
   '/pricing': typeof PricingRoute
   '/referrals': typeof ReferralsRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/store': typeof StoreRoute
   '/terms': typeof TermsRoute
   '/verify': typeof VerifyRoute
@@ -249,6 +257,7 @@ export interface FileRoutesById {
   '/leaderboard': typeof LeaderboardRoute
   '/pricing': typeof PricingRoute
   '/referrals': typeof ReferralsRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/store': typeof StoreRoute
   '/terms': typeof TermsRoute
   '/verify': typeof VerifyRoute
@@ -280,6 +289,7 @@ export interface FileRouteTypes {
     | '/leaderboard'
     | '/pricing'
     | '/referrals'
+    | '/reset-password'
     | '/store'
     | '/terms'
     | '/verify'
@@ -309,6 +319,7 @@ export interface FileRouteTypes {
     | '/leaderboard'
     | '/pricing'
     | '/referrals'
+    | '/reset-password'
     | '/store'
     | '/terms'
     | '/verify'
@@ -338,6 +349,7 @@ export interface FileRouteTypes {
     | '/leaderboard'
     | '/pricing'
     | '/referrals'
+    | '/reset-password'
     | '/store'
     | '/terms'
     | '/verify'
@@ -369,6 +381,7 @@ export interface RootRouteChildren {
   LeaderboardRoute: typeof LeaderboardRoute
   PricingRoute: typeof PricingRoute
   ReferralsRoute: typeof ReferralsRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
   StoreRoute: typeof StoreRoute
   TermsRoute: typeof TermsRoute
   VerifyRoute: typeof VerifyRoute
@@ -419,6 +432,13 @@ declare module '@tanstack/react-router' {
       path: '/referrals'
       fullPath: '/referrals'
       preLoaderRoute: typeof ReferralsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/store': {
@@ -635,6 +655,7 @@ const rootRouteChildren: RootRouteChildren = {
   LeaderboardRoute: LeaderboardRoute,
   PricingRoute: PricingRoute,
   ReferralsRoute: ReferralsRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
   StoreRoute: StoreRoute,
   TermsRoute: TermsRoute,
   VerifyRoute: VerifyRoute,
