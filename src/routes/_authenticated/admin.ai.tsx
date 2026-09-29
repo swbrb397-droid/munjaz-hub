@@ -89,7 +89,7 @@ function AdminAi() {
           <h2 className="flex items-center gap-2 font-black"><Radar className="size-5 text-primary" />مفتش الاحتيال</h2>
           <p className="mt-1 text-xs text-muted-foreground">آخر 30 يوماً: إيداع ثم سحب سريع دون شراء، وحلقات الإحالة.</p>
           <button className={`${btn} mt-3 w-full`} disabled={busy !== null} onClick={() => run("f", async () => setFraudOut(await fraud()))}>
-            {busy === "f" && <Loader2 className="size-4 animate-spin" />}تشغيل الفحص
+            {busy === "f" && <Loader2 className="size-4 animate-spin" />}تشغيل الفحص الآن
           </button>
           {fraudOut && (
             <div className="mt-3 grid gap-2 text-xs">

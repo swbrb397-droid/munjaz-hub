@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/lib/cloud-client";
-import { adminListUsers, adminSetAuthAccess, type AdminUserRow } from "@/lib/admin-users.functions";
+import { adminListUsers, adminSetAuthAccess, adminEmailNotification, type AdminUserRow } from "@/lib/admin-users.functions";
 
 export const Route = createFileRoute("/_authenticated/admin/users")({
   head: () => ({
@@ -130,6 +130,7 @@ function AdminUsers() {
 function UserPanel({ u }: { u: AdminUserRow }) {
   const qc = useQueryClient();
   const setAccess = useServerFn(adminSetAuthAccess);
+  const emailUser = useServerFn(adminEmailNotification);
   const [reason, setReason] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
   const [title, setTitle] = useState("");
