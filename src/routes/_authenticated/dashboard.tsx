@@ -58,6 +58,7 @@ function Dashboard() {
         ];
 
   const xp = profile.data?.xp_points ?? 0;
+  const [kycOpen, setKycOpen] = useState(false);
   const level = profile.data?.level ?? 1;
   const nextLevelXp = level * 500;
   const pct = Math.min(100, Math.round((xp / Math.max(1, nextLevelXp)) * 100));
