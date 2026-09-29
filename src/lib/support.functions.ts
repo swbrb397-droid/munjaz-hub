@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const SYSTEM_PROMPT = `أنت المساعد الذكي الرسمي لمنصة «المنجز» للأعمال الرقمية والضمان (Escrow).
 أجب بالعربية الفصحى المهنية وبإيجاز (٤ جمل كحد أقصى).
@@ -10,8 +11,9 @@ const SYSTEM_PROMPT = `أنت المساعد الذكي الرسمي لمنصة 
 - قرار التحكيم الآلي قرار ابتدائي، ويحق تصعيده للتحكيم البشري خلال 24 ساعة.
 لا تطلب أي بيانات تواصل خارجية أو دفع خارج المنصة إطلاقاً.`;
 
-/** Public support assistant (works for guests too) backed by the Lovable AI gateway. */
+/** Support assistant for signed-in users, backed by the Lovable AI gateway. */
 export const supportAssistant = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((input: { message: string; lang?: string }) => {
     const message = String(input?.message ?? "").trim().slice(0, 1000);
     if (!message) throw new Error("MESSAGE_REQUIRED");

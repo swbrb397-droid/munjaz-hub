@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Bot, Send, X } from "lucide-react";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
+import { Link } from "@tanstack/react-router";
 import { useAuth } from "@/hooks/use-auth";
 import { useProfile } from "@/lib/queries";
 import { useLang } from "@/lib/lang";
@@ -83,6 +84,10 @@ export function SupportWidget() {
   const send = async (raw: string) => {
     const text = raw.trim().slice(0, 500);
     if (!text || typing) return;
+    if (!isAuthenticated) {
+      toast.error("سجّل الدخول لاستخدام المساعد الذكي");
+      return;
+    }
     setInput("");
     setMsgs((m) => [...m, { id: `${Date.now()}-u`, role: "user", text }]);
     setTyping(true);
@@ -185,6 +190,11 @@ export function SupportWidget() {
           ))}
         </div>
 
+        {!isAuthenticated && (
+          <div className="px-3 pt-3 text-center text-[11px] text-muted-foreground">
+            <Link to="/auth" className="font-bold text-primary underline">سجّل الدخول</Link> لاستخدام المساعد الذكي
+          </div>
+        )}
         <div className="grid grid-cols-[minmax(0,1fr)_auto] items-end gap-2 p-3">
           <textarea
             value={input}
