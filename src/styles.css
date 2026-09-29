@@ -5,6 +5,10 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
+  --color-net-tron: oklch(0.63 0.22 25);
+  --color-net-bsc: oklch(0.82 0.16 85);
+  --color-net-polygon: oklch(0.6 0.22 295);
+  --animate-fade-in: fade-in 0.35s ease-out both;
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -290,4 +294,9 @@
   &::-webkit-scrollbar {
     display: none;
   }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
 }

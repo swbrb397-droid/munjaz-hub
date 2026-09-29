@@ -1,3 +1,4 @@
+import { translateAuthError } from "@/lib/auth-errors";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Loader2, ShieldCheck } from "lucide-react";
@@ -21,7 +22,7 @@ export const Route = createFileRoute("/reset-password")({
 });
 
 function ResetPassword() {
-  const { tr } = useLang();
+  const { tr, lang } = useLang();
   const navigate = useNavigate();
   const [ready, setReady] = useState(false);
   const [hasSession, setHasSession] = useState(false);
@@ -75,7 +76,7 @@ function ResetPassword() {
       toast.success(tr("تم تحديث كلمة المرور", "Password updated"));
       void navigate({ to: "/dashboard", replace: true });
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : String(e));
+      toast.error(translateAuthError(e, lang === "ar"));
     } finally {
       setBusy(false);
     }

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { toast } from "sonner";
 import { Copy, KeyRound, Loader2, Lock, ShieldCheck, ShieldAlert, X } from "lucide-react";
 import { Card } from "@/components/site/Shell";
@@ -6,6 +7,7 @@ import { QrCode } from "@/components/site/QrCode";
 import { supabase } from "@/lib/cloud-client";
 import { useAuth } from "@/hooks/use-auth";
 import { localGet, localSet } from "@/lib/safe-storage";
+import { translateAuthError } from "@/lib/auth-errors";
 
 const PW_RATE_KEY = "munjaz.pw-change-at";
 const PW_RATE_WINDOW_MS = 15 * 60 * 1000;
@@ -29,6 +31,9 @@ export function SecurityPanel({ className = "" }: { className?: string }) {
   const [newPw, setNewPw] = useState("");
   const [confirmPw, setConfirmPw] = useState("");
   const [savingPw, setSavingPw] = useState(false);
+  const [pwCode, setPwCode] = useState("");
+  const [emailCodeSent, setEmailCodeSent] = useState(false);
+  const [sendingEmailCode, setSendingEmailCode] = useState(false);
 
   const refreshFactors = useCallback(async () => {
     setChecking(true);
@@ -103,11 +108,25 @@ export function SecurityPanel({ className = "" }: { className?: string }) {
     if (!activeFactorId) return;
     const { error } = await supabase.auth.mfa.unenroll({ factorId: activeFactorId });
     if (error) {
-      toast.error(error.message);
+      toast.error(translateAuthError(error));
       return;
     }
     toast.success("تم تعطيل المصادقة الثنائية");
     await refreshFactors();
+  };
+
+  const sendEmailCode = async () => {
+    setSendingEmailCode(true);
+    try {
+      const { error } = await supabase.auth.reauthenticate();
+      if (error) throw error;
+      setEmailCodeSent(true);
+      toast.success("أرسلنا رمز تحقق إلى بريدك الإلكتروني");
+    } catch (e) {
+      toast.error(translateAuthError(e));
+    } finally {
+      setSendingEmailCode(false);
+    }
   };
 
   const changePassword = async () => {
@@ -129,6 +148,10 @@ export function SecurityPanel({ className = "" }: { className?: string }) {
       toast.error("كلمة المرور الجديدة وتأكيدها غير متطابقين");
       return;
     }
+    if (!/^\d{6}$/.test(pwCode.trim())) {
+      toast.error(activeFactorId ? "أدخل رمز المصادقة الثنائية المكوّن من 6 أرقام" : "أدخل رمز التحقق المرسل إلى بريدك");
+      return;
+    }
     setSavingPw(true);
     try {
       const { error: reauthError } = await supabase.auth.signInWithPassword({
@@ -137,7 +160,18 @@ export function SecurityPanel({ className = "" }: { className?: string }) {
       });
       if (reauthError) throw new Error("كلمة المرور الحالية غير صحيحة");
 
-      const { error } = await supabase.auth.updateUser({ password: newPw });
+      let nonce: string | undefined;
+      if (activeFactorId) {
+        const { error: mfaError } = await supabase.auth.mfa.challengeAndVerify({
+          factorId: activeFactorId,
+          code: pwCode.trim(),
+        });
+        if (mfaError) throw new Error("رمز المصادقة الثنائية غير صحيح أو انتهت صلاحيته");
+      } else {
+        nonce = pwCode.trim();
+      }
+
+      const { error } = await supabase.auth.updateUser(nonce ? { password: newPw, nonce } : { password: newPw });
       if (error) throw error;
 
       const stamp = new Date().toISOString();
@@ -148,10 +182,12 @@ export function SecurityPanel({ className = "" }: { className?: string }) {
       setCurrentPw("");
       setNewPw("");
       setConfirmPw("");
+      setPwCode("");
+      setEmailCodeSent(false);
       toast.success("تم تغيير كلمة المرور بنجاح");
       toast.warning("السحب مجمد مؤقتاً لمدة 24 ساعة لحماية أصولك بعد إجراء تعديل أمني على حسابك");
     } catch (e) {
-      toast.error((e as Error).message || "تعذّر تحديث كلمة المرور");
+      toast.error(translateAuthError(e));
     } finally {
       setSavingPw(false);
     }
@@ -287,7 +323,8 @@ export function SecurityPanel({ className = "" }: { className?: string }) {
         </div>
       )}
 
-      {pwOpen && (
+      {pwOpen &&
+        createPortal((
         <div
           className="fixed inset-0 z-[70] grid place-items-center overflow-y-auto bg-background/85 p-4 backdrop-blur"
           role="dialog"
@@ -330,12 +367,49 @@ export function SecurityPanel({ className = "" }: { className?: string }) {
                 autoComplete="new-password"
                 className="w-full rounded-xl border border-input bg-surface px-3 py-2.5 text-sm outline-none focus:border-primary"
               />
+              {activeFactorId ? (
+                <input
+                  value={pwCode}
+                  onChange={(e) => setPwCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  placeholder="رمز المصادقة الثنائية (6 أرقام)"
+                  dir="ltr"
+                  className="w-full rounded-xl border border-input bg-surface px-3 py-2.5 text-center font-mono text-sm tracking-[0.4em] outline-none focus:border-primary"
+                />
+              ) : (
+                <div className="grid gap-2 rounded-xl border border-border bg-secondary/40 p-3">
+                  <p className="text-[11px] leading-relaxed text-muted-foreground">
+                    المصادقة الثنائية غير مفعّلة — يلزم تأكيد بريدك الإلكتروني برمز تحقق قبل تغيير كلمة المرور.
+                  </p>
+                  <button
+                    type="button"
+                    disabled={sendingEmailCode}
+                    onClick={() => void sendEmailCode()}
+                    className="inline-flex min-h-[40px] items-center justify-center gap-2 rounded-lg border border-primary/40 bg-primary/10 px-3 text-xs font-bold text-primary disabled:opacity-40"
+                  >
+                    {sendingEmailCode && <Loader2 className="size-3.5 animate-spin" />}
+                    {emailCodeSent ? "إعادة إرسال الرمز" : "إرسال رمز التحقق إلى بريدي"}
+                  </button>
+                  {emailCodeSent && (
+                    <input
+                      value={pwCode}
+                      onChange={(e) => setPwCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                      inputMode="numeric"
+                      autoComplete="one-time-code"
+                      placeholder="رمز البريد (6 أرقام)"
+                      dir="ltr"
+                      className="w-full rounded-xl border border-input bg-surface px-3 py-2.5 text-center font-mono text-sm tracking-[0.4em] outline-none focus:border-primary"
+                    />
+                  )}
+                </div>
+              )}
               <p className="text-[11px] leading-relaxed text-amber-500">
                 تنبيه: تغيير كلمة المرور يفرض تجميد السحب لمدة 24 ساعة لحماية أصولك.
               </p>
               <button
                 type="button"
-                disabled={savingPw || !currentPw || !newPw || !confirmPw}
+                disabled={savingPw || !currentPw || !newPw || !confirmPw || pwCode.length !== 6}
                 onClick={() => void changePassword()}
                 className="inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-xl bg-primary py-2.5 text-sm font-bold text-primary-foreground disabled:opacity-40"
               >
@@ -344,7 +418,7 @@ export function SecurityPanel({ className = "" }: { className?: string }) {
             </div>
           </div>
         </div>
-      )}
+        ), document.body)}
     </Card>
   );
 }

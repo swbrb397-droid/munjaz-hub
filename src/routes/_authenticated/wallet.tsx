@@ -37,6 +37,7 @@ import { useLockedEscrow } from "@/lib/escrow";
 import { TopUpDialog } from "@/components/site/TopUpDialog";
 import { ReferralWidget } from "@/components/site/ReferralWidget";
 import { MfaChallengeDialog } from "@/components/site/MfaChallengeDialog";
+import { NetworkSheet } from "@/components/site/NetworkSheet";
 
 export const Route = createFileRoute("/_authenticated/wallet")({
   head: () => ({
@@ -64,13 +65,38 @@ const networks = [
 ] as const;
 
 // USDT is hard-pegged 1:1 to USD across the platform (60.00 USDT = 60.00 USD).
-const rates: Record<string, number> = { USD: 1, SAR: 3.7506, AED: 3.6731, EUR: 0.9184 };
+const FALLBACK_RATES: Record<string, number> = { USD: 1, SAR: 3.7506, AED: 3.6731, EUR: 0.9184, EGP: 48.5, RUB: 81, CNY: 7.12 };
+const CURRENCY_ORDER = ["USD", "SAR", "AED", "EUR", "EGP", "RUB", "CNY"] as const;
+const CURRENCY_SYMBOL: Record<string, string> = { USD: "$", SAR: "ر.س", AED: "د.إ", EUR: "€", EGP: "ج.م", RUB: "₽", CNY: "¥" };
+
+/** Live USD-based rates (USDT pegged 1:1), refreshed hourly with a safe fallback. */
+function useFiatRates() {
+  return useQuery({
+    queryKey: ["fiat-rates"],
+    staleTime: 60 * 60 * 1000,
+    queryFn: async () => {
+      try {
+        const res = await fetch("https://open.er-api.com/v6/latest/USD");
+        const json = (await res.json()) as { result?: string; rates?: Record<string, number> };
+        if (json.result !== "success" || !json.rates) return FALLBACK_RATES;
+        const out: Record<string, number> = {};
+        for (const c of CURRENCY_ORDER) out[c] = json.rates[c] ?? FALLBACK_RATES[c]!;
+        return out;
+      } catch {
+        return FALLBACK_RATES;
+      }
+    },
+  });
+}
 
 const RATE_HINT: Record<string, [string, string]> = {
   USD: ["الدولار الأمريكي — سعر تحويل تقريبي لحظي", "US Dollar — indicative live conversion rate"],
   SAR: ["الريال السعودي — سعر تحويل تقريبي لحظي", "Saudi Riyal — indicative live conversion rate"],
   AED: ["الدرهم الإماراتي — سعر تحويل تقريبي لحظي", "UAE Dirham — indicative live conversion rate"],
   EUR: ["اليورو — سعر تحويل تقريبي لحظي", "Euro — indicative live conversion rate"],
+  EGP: ["الجنيه المصري — سعر تحويل تقريبي لحظي", "Egyptian Pound — indicative live conversion rate"],
+  RUB: ["الروبل الروسي — سعر تحويل تقريبي لحظي", "Russian Ruble — indicative live conversion rate"],
+  CNY: ["اليوان الصيني — سعر تحويل تقريبي لحظي", "Chinese Yuan — indicative live conversion rate"],
 };
 
 const COOLING_LOCK_HOURS = 24;
@@ -156,6 +182,8 @@ function WalletPage() {
   const [topUp, setTopUp] = useState(false);
   const [network, setNetwork] = useState<WithdrawalNetwork>("polygon");
   const gasRows = useMemo(() => gasEstimates(), []);
+  const fiat = useFiatRates();
+  const rates = fiat.data ?? FALLBACK_RATES;
 
   const [amount, setAmount] = useState("250");
   const [legalAck, setLegalAck] = useState(false);
@@ -375,18 +403,18 @@ function WalletPage() {
               </span>
             </p>
           </div>
-          <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
-            {Object.entries(rates).map(([c, r]) => (
+          <div className="mt-4 grid grid-cols-2 gap-2 text-xs sm:grid-cols-3">
+            {CURRENCY_ORDER.map((c) => [c, rates[c] ?? FALLBACK_RATES[c]!] as const).map(([c, r]) => (
               <div
                 key={c}
                 title={tr(RATE_HINT[c]?.[0] ?? c, RATE_HINT[c]?.[1] ?? c)}
                 className="cursor-help rounded-lg border border-border px-3 py-2"
               >
                 <span className="inline-flex items-center gap-1 text-muted-foreground">
-                  {c} <Info className="size-3 opacity-60" />
+                  {c} · {CURRENCY_SYMBOL[c]} <Info className="size-3 opacity-60" />
                 </span>
-                <p className="font-semibold" dir="ltr">
-                  ≈ {(balance * r).toFixed(2)}
+                <p className="truncate font-semibold" dir="ltr">
+                  ≈ {(balance * r).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </p>
               </div>
             ))}
@@ -521,17 +549,7 @@ function WalletPage() {
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
             <label className="grid gap-2 text-sm">
               <span className="text-muted-foreground">{tr("الشبكة", "Network")}</span>
-              <select
-                value={network}
-                onChange={(e) => setNetwork(e.target.value as WithdrawalNetwork)}
-                className="field-lux  px-3 py-2 outline-none focus:border-primary"
-              >
-                {networks.map((n) => (
-                  <option key={n.value} value={n.value}>
-                    {n.label}
-                  </option>
-                ))}
-              </select>
+<NetworkSheet value={network} onChange={(n) => setNetwork(n)} rows={gasRows} />
             </label>
             <label className="grid gap-2 text-sm">
               <span className="text-muted-foreground">
