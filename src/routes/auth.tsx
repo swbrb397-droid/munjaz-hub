@@ -582,7 +582,7 @@ function AuthPage() {
 }
 
 function ForgotPasswordDialog({ onClose }: { onClose: () => void }) {
-  const { tr } = useLang();
+  const { tr, lang } = useLang();
   const [email, setEmail] = useState("");
   const [busy, setBusy] = useState(false);
   const [sent, setSent] = useState(false);
