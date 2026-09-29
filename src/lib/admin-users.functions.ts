@@ -103,3 +103,46 @@ export const adminSetAuthAccess = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+/** Admin alert email: sends the matching notification by email; never throws on delivery failure. */
+export const adminEmailNotification = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { userId: string; title: string; message: string }) => {
+    const userId = String(input?.userId ?? "");
+    if (!/^[0-9a-f-]{36}$/i.test(userId)) throw new Error("INVALID_USER");
+    const title = String(input?.title ?? "").trim().slice(0, 150);
+    const message = String(input?.message ?? "").trim().slice(0, 2000);
+    if (!title || !message) throw new Error("INVALID_INPUT");
+    return { userId, title, message };
+  })
+  .handler(async ({ data, context }) => {
+    const ctx = context as Ctx;
+    await assertAdmin(ctx);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { sendPlatformEmail, notificationEmailHtml } = await import("./resend.server");
+    const log = async (action: string, meta: Record<string, unknown>) => {
+      await supabaseAdmin.from("audit_logs").insert({
+        admin_id: ctx.userId, action_type: action, target_table: "notifications", target_id: data.userId, meta: meta as never,
+      });
+    };
+    try {
+      const { data: u, error } = await supabaseAdmin.auth.admin.getUserById(data.userId);
+      const email = u?.user?.email;
+      if (error || !email) {
+        await log("admin_email_skipped", { reason: "no_email" });
+        return { emailed: false };
+      }
+      const res = await sendPlatformEmail({
+        to: email,
+        subject: data.title,
+        html: notificationEmailHtml(data.title, data.message, "/dashboard"),
+        text: `${data.title}\n\n${data.message}`,
+        actorId: ctx.userId,
+      });
+      await log(res.delivered ? "admin_email_sent" : "admin_email_failed", { via: res.via, subject: data.title.slice(0, 120) });
+      return { emailed: res.delivered };
+    } catch (e) {
+      await log("admin_email_failed", { error: (e instanceof Error ? e.message : String(e)).slice(0, 200) }).catch(() => {});
+      return { emailed: false };
+    }
+  });
