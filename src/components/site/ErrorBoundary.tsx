@@ -22,6 +22,7 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   override componentDidCatch(error: Error, info: ErrorInfo) {
+    console.error('[Root Crash Captured]:', error);
     console.error("[ErrorBoundary]", this.props.label ?? "block", error, info.componentStack);
     reportLovableError(error, { boundary: this.props.label ?? "ui_error_boundary" });
   }

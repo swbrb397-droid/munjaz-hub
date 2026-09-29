@@ -37,6 +37,7 @@ export class GlobalErrorBoundary extends Component<{ children: ReactNode }, Stat
   }
 
   override componentDidCatch(error: Error, info: ErrorInfo) {
+    console.error('[Root Crash Captured]:', error);
     console.error("[GlobalErrorBoundary]", error, info.componentStack);
     reportLovableError(error, { boundary: "global_error_boundary" });
   }

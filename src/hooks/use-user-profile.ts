@@ -25,8 +25,8 @@ export function useUserProfile() {
         supabase.from("profiles").select("*").eq("id", user!.id).maybeSingle(),
         supabase.from("user_roles").select("role").eq("user_id", user!.id),
       ]);
-      if (profileRes.error) throw profileRes.error;
-      if (rolesRes.error) throw rolesRes.error;
+      if (profileRes.error) console.warn("[profile] fallback", profileRes.error.message);
+      if (rolesRes.error) console.warn("[roles] fallback", rolesRes.error.message);
 
       const roles = (rolesRes.data ?? []).map((r) => String(r.role));
       const profile = profileRes.data as Tables<"profiles"> | null;
