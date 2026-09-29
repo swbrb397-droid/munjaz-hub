@@ -5,6 +5,7 @@ import {
   Home, Store, Trophy, PlusCircle, LayoutDashboard, ClipboardList, Briefcase, Users, UserCog, CreditCard, ShieldCheck,
   Gavel, BadgeCheck, Settings2, ScrollText,
   type LucideIcon,
+  Bot,
 } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useLang, type TranslationKey } from "@/lib/lang";
