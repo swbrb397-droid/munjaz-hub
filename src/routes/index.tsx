@@ -9,6 +9,7 @@ import { useLang } from "@/lib/lang";
 import { VerifiedBadge } from "@/components/site/VerifiedBadge";
 import { ShareListing } from "@/components/site/ShareListing";
 import { CoverImage } from "@/components/site/CoverImage";
+import { countryName, flagEmoji } from "@/lib/countries";
 
 export const Route = createFileRoute("/")({
   head: () => ({
