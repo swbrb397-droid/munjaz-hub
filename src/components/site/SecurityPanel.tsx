@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { toast } from "sonner";
 import { Copy, KeyRound, Loader2, Lock, ShieldCheck, ShieldAlert, X } from "lucide-react";
 import { Card } from "@/components/site/Shell";
@@ -322,7 +323,8 @@ export function SecurityPanel({ className = "" }: { className?: string }) {
         </div>
       )}
 
-      {pwOpen && (
+      {pwOpen &&
+        createPortal((
         <div
           className="fixed inset-0 z-[70] grid place-items-center overflow-y-auto bg-background/85 p-4 backdrop-blur"
           role="dialog"
@@ -416,7 +418,7 @@ export function SecurityPanel({ className = "" }: { className?: string }) {
             </div>
           </div>
         </div>
-      )}
+        ), document.body)}
     </Card>
   );
 }
