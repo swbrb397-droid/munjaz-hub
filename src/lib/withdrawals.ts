@@ -28,6 +28,7 @@ export function withdrawalErrorMessage(raw: string, ar: boolean): string {
     INVALID_ADDRESS: ["عنوان المحفظة غير صالح.", "Invalid wallet address."],
     INSUFFICIENT_FUNDS: ["الرصيد غير كافٍ (شامل الرسوم).", "Insufficient balance (including fees)."],
     ACCOUNT_FROZEN: ["الحساب مجمّد أمنياً — تواصل مع الدعم.", "Account frozen for security — contact support."],
+    MFA_VERIFICATION_MANDATORY: ["يجب تفعيل المصادقة الثنائية (2FA) أولاً من إعدادات الأمان قبل طلب السحب", "Enable two-factor authentication (2FA) in security settings before requesting a withdrawal."],
     MFA_SETUP_REQUIRED: ["يجب تفعيل المصادقة الثنائية (2FA) أولاً من إعدادات الأمان قبل طلب السحب", "Enable two-factor authentication (2FA) in security settings before requesting a withdrawal."],
     MFA_REQUIRED: ["يلزم تأكيد المصادقة الثنائية قبل السحب.", "Two-factor authentication is required before withdrawal."],
     NOT_AUTHENTICATED: ["يجب تسجيل الدخول.", "You must be signed in."],
@@ -57,10 +58,8 @@ export function useMyWithdrawals() {
   });
 }
 
-export function useRequestWithdrawal() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async (input: { amount: string; network: WithdrawalNetwork; address: string }) => {
+/** Single entry point for every withdrawal: validation + mandatory 2FA + RPC. */
+export async function requestWithdrawalSecure(input: { amount: string; network: WithdrawalNetwork; address: string }) {
       if (!throttle("withdrawal", 3, 60_000)) throw new Error("RATE_LIMITED");
       const amount = parseUsdt(input.amount);
       if (amount === null) throw new Error("INVALID_AMOUNT");
@@ -87,7 +86,12 @@ export function useRequestWithdrawal() {
       });
       if (error) throw new Error(error.message);
       return data;
-    },
+}
+
+export function useRequestWithdrawal() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: requestWithdrawalSecure,
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["withdrawals"] });
       qc.invalidateQueries({ queryKey: ["wallet"] });

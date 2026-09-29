@@ -40,6 +40,52 @@ export async function sendResendEmail(opts: {
   return (await res.json()) as { id: string };
 }
 
+/**
+ * Primary: Resend. On 429 / 403 / network failure the send is silently handed
+ * to the failover path and recorded for administrators; users never see it.
+ */
+export async function sendPlatformEmail(opts: {
+  to: string;
+  subject: string;
+  html: string;
+  text?: string;
+  idempotencyKey?: string;
+  actorId?: string | null;
+}): Promise<{ delivered: boolean; via: "resend" | "failover" }> {
+  try {
+    await sendResendEmail(opts);
+    return { delivered: true, via: "resend" };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    const status = /\[(\d{3})\]/.exec(msg)?.[1];
+    const retryable = !status || status === "429" || status === "403" || status.startsWith("5");
+    if (!retryable) throw err;
+    // Failover: one delayed retry on Resend, then log for admin follow-up.
+    await new Promise((r) => setTimeout(r, 1500));
+    try {
+      await sendResendEmail(opts);
+      return { delivered: true, via: "resend" };
+    } catch {
+      /* fall through */
+    }
+    try {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      if (opts.actorId) {
+        await supabaseAdmin.from("audit_logs").insert({
+          admin_id: opts.actorId,
+          action_type: "email_failover",
+          target_table: "notifications",
+          target_id: null,
+          meta: { status: status ?? "network", subject: opts.subject.slice(0, 120) },
+        });
+      }
+    } catch (e) {
+      console.error("email failover log failed", e);
+    }
+    return { delivered: false, via: "failover" };
+  }
+}
+
 const esc = (s: string) =>
   s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
 

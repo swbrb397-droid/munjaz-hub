@@ -271,13 +271,7 @@ function WalletPage() {
       const invalidAddress = validatePayoutAddress(target, network);
       if (invalidAddress) throw new Error(invalidAddress);
 
-      const { data, error } = await supabase.rpc("request_withdrawal", {
-        _amount: requestedAmount,
-        _network: network,
-        _address: target,
-      });
-      if (error) throw new Error(error.message);
-      return data;
+      return requestWithdrawalSecure({ amount: String(requestedAmount), network, address: target });
     },
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ["wallet"] });
