@@ -28,6 +28,7 @@ export function renderErrorPage(): string {
         <a class="secondary" href="/">الصفحة الرئيسية</a>
       </div>
     </div>
+    <script>console.error('[Root Crash Captured]:', 'Server returned the fallback error page (HTTP 500) for ' + location.pathname);</script>
   </body>
 </html>`;
 }

@@ -8,7 +8,11 @@ export function usePlatformStats() {
     staleTime: 60_000,
     queryFn: async () => {
       const { data, error } = await supabase.rpc("platform_stats");
-      if (error) throw error;
+      // Guests/RLS denials fall back to an empty state instead of crashing the page.
+      if (error) {
+        console.warn("[platform_stats] fallback", error.message);
+        return { listings: 0, sellers: 0, completedOrders: 0, volume: 0 };
+      }
       const row = (data ?? [])[0];
       return {
         listings: Number(row?.listings_count ?? 0),
