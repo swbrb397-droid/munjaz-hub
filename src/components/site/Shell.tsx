@@ -2,7 +2,7 @@ import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   Bell, Globe, LogIn, LogOut, Menu, Repeat2, Wallet2, X,
-  Home, Store, Trophy, PlusCircle, LayoutDashboard, ClipboardList, Users, UserCog, CreditCard, ShieldCheck,
+  Home, Store, Trophy, PlusCircle, LayoutDashboard, ClipboardList, Briefcase, Users, UserCog, CreditCard, ShieldCheck,
   Gavel, BadgeCheck, Settings2, ScrollText,
   type LucideIcon,
 } from "lucide-react";
@@ -38,7 +38,7 @@ const navGroups: ReadonlyArray<NavGroup> = [
       { to: "/dashboard", key: "dashboard", icon: LayoutDashboard },
       { to: "/wallet", key: "wallet", icon: Wallet2 },
       { to: "/orders", key: "orders", icon: ClipboardList },
-      { to: "/workspace", key: "workspace", icon: ClipboardList },
+      { to: "/workspace", key: "workspace", icon: Briefcase },
       { to: "/referrals", key: "referrals", icon: Users },
     ],
   },
@@ -61,6 +61,7 @@ const adminGroup: { title: [string, string]; items: { to: string; label: [string
     { to: "/admin/disputes", label: ["مركز تسوية النزاعات والضمان", "Disputes & escrow"], icon: Gavel },
     { to: "/admin/kyc", label: ["مراجعة توثيق الهوية KYC", "KYC review"], icon: BadgeCheck },
     { to: "/admin/services", label: ["إدارة العروض والخدمات", "Services moderation"], icon: Store },
+    { to: "/admin/users", label: ["إدارة المستخدمين", "User management"], icon: Users },
     { to: "/admin/governance", label: ["مولد الاشتراكات وحوكمة الرسوم", "Passes & governance"], icon: Settings2 },
   ],
 };
