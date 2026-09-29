@@ -22,7 +22,7 @@ export const Route = createFileRoute("/reset-password")({
 });
 
 function ResetPassword() {
-  const { tr } = useLang();
+  const { tr, lang } = useLang();
   const navigate = useNavigate();
   const [ready, setReady] = useState(false);
   const [hasSession, setHasSession] = useState(false);
