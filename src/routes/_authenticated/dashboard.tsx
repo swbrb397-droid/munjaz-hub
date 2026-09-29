@@ -4,6 +4,7 @@ import { ArrowLeft, Award, Coins, ShoppingBag, TrendingUp, Users } from "lucide-
 
 import { Card, Section } from "@/components/site/Shell";
 import { PrestigeTracker } from "@/components/site/PrestigeTracker";
+import { KycLevelDrawer } from "@/components/site/KycLevelDrawer";
 import { useLang } from "@/lib/lang";
 import { useAuth } from "@/hooks/use-auth";
 import { useOrders, useProfile, useReferrals, useWallet } from "@/lib/queries";
@@ -175,7 +176,17 @@ function Dashboard() {
               <div className="h-3 rounded-full bg-gradient-to-l from-primary to-violet" style={{ width: `${pct}%` }} />
             </div>
             <div className="mt-4 flex flex-wrap gap-2 text-xs">
-              <span className="rounded-full border border-border px-3 py-1 text-muted-foreground">KYC: {profile.data?.kyc_tier ?? "tier0"}</span>
+              <button type="button" onClick={() => setKycOpen(true)} className="cursor-pointer rounded-full border border-primary/40 bg-primary/10 px-3 py-1 font-bold text-primary transition hover:bg-primary/20">
+                {tr("المستوى", "Level")} {level}{profile.data?.is_verified ? ` · ${tr("موثّق", "Verified")}` : ""} · <bdi>KYC: {profile.data?.kyc_tier ?? "tier0"}</bdi>
+              </button>
+              <KycLevelDrawer
+                open={kycOpen}
+                onOpenChange={setKycOpen}
+                kycTier={profile.data?.kyc_tier}
+                isVerified={profile.data?.is_verified === true}
+                level={level}
+                completedOrders={profile.data?.completed_orders ?? 0}
+              />
               <span className="rounded-full border border-border px-3 py-1 text-muted-foreground">
                 {profile.data?.completed_orders ?? 0} {tr("طلب مكتمل", "completed orders")}
               </span>
