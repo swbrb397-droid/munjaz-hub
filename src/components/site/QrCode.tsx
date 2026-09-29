@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import QRCode from "qrcode";
 
 /** Renders a real QR code (client-side) for any value. */
 export function QrCode({ value, size = 176, className = "" }: { value: string; size?: number; className?: string }) {
@@ -7,11 +6,13 @@ export function QrCode({ value, size = 176, className = "" }: { value: string; s
 
   useEffect(() => {
     let alive = true;
-    QRCode.toDataURL(value, {
+    // Loaded only in the browser: qrcode's Node build breaks the live server.
+    import("qrcode")
+      .then((m) => (m.default ?? m).toDataURL(value, {
       width: size * 2,
       margin: 1,
       color: { dark: "#0B0F17", light: "#FFFFFF" },
-    })
+    }))
       .then((url) => alive && setSrc(url))
       .catch(() => alive && setSrc(null));
     return () => {
