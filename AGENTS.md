@@ -12,3 +12,5 @@
 - Referral payouts live in `public.pay_referral_commission`, called from the escrow trigger for both buyer and seller. Why: one place for 20%/10%/0% tiering.
 - Gemini calls go through `src/lib/gemini-pool.server.ts` (chat/vision key pools from secrets, rotate on 429/RESOURCE_EXHAUSTED). Why: one place for failover; keys never in code.
 - Instant digital purchases use the `purchase_digital_asset_instant` RPC. Why: charge, seller payout and referrals succeed or fail together.
+- Admin role/ban/deactivate RPCs require aal2 and the UI gates them with MfaChallengeDialog. Why: no privileged change without fresh 2FA.
+- Reviews are buyer-to-seller only (RLS + get_listing_reviews public RPC). Why: sellers cannot rate buyers.
