@@ -67,9 +67,6 @@ function ListingDetail() {
       ...(seo.cover?.startsWith("http") ? { image: seo.cover } : {}),
       url: `https://almunjazhub.com/listing/${seo.id}`,
       offers: { "@type": "Offer", price: seo.price, priceCurrency: "USDT", availability: "https://schema.org/InStock" },
-      ...(seo.rating > 0 && seo.orders > 0
-        ? { aggregateRating: { "@type": "AggregateRating", ratingValue: seo.rating, reviewCount: seo.orders } }
-        : {}),
     });
     document.head.appendChild(ld);
     return () => {

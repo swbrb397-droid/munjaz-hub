@@ -197,7 +197,6 @@ function Store() {
             </span>
             <input
               type="range"
-              aria-label={tr("أقصى سعر", "Max price")}
               min={0}
               max={2000}
               step={25}
