@@ -154,6 +154,7 @@ function Store() {
               value={query}
               onChange={(e) => { setQuery(e.target.value); setPage(1); }}
               placeholder={tr("ابحث عن خدمة...", "Search for a service...")}
+              aria-label={tr("ابحث عن خدمة", "Search for a service")}
               className="field-lux w-full min-w-0 px-3 py-2 text-sm text-foreground outline-none"
             />
             <select
@@ -196,6 +197,7 @@ function Store() {
             </span>
             <input
               type="range"
+              aria-label={tr("أقصى سعر", "Max price")}
               min={0}
               max={2000}
               step={25}

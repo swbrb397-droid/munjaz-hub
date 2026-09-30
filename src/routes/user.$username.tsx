@@ -9,10 +9,12 @@ import { COVERS } from "@/lib/catalog";
 
 export const Route = createFileRoute("/user/$username")({
   head: ({ params }) => ({
+    links: [{ rel: "canonical", href: `https://almunjazhub.com/user/${params.username}` }],
     meta: [
-      { title: "ملف البائع | المنجز" },
-      { name: "description", content: "ملف بائع في منصة المنجز: التقييم الحقيقي، عدد الطلبات المكتملة، والعروض المنشورة." },
-      { property: "og:title", content: "ملف البائع | المنجز" },
+      { title: `${params.username} | ملف البائع | المنجز` },
+      { name: "description", content: `ملف البائع ${params.username} في منصة المنجز: التقييم الحقيقي، عدد الطلبات المكتملة، والعروض المنشورة.` },
+      { property: "og:title", content: `${params.username} | ملف البائع | المنجز` },
+      { property: "og:url", content: `https://almunjazhub.com/user/${params.username}` },
       { property: "og:description", content: `عروض وتقييمات البائع ${params.username} على منصة المنجز.` },
       { property: "og:type", content: "profile" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -50,7 +52,7 @@ function SellerProfilePage() {
 
   if (seller.isLoading) {
     return (
-      <Section title={tr("جارٍ التحميل...", "Loading...")}>
+      <Section level={2} title={tr("جارٍ التحميل...", "Loading...")}>
         <div className="h-32 animate-pulse rounded-2xl bg-secondary/70" />
       </Section>
     );
@@ -58,7 +60,7 @@ function SellerProfilePage() {
 
   if (!seller.data) {
     return (
-      <Section title={tr("البائع غير موجود", "Seller not found")}>
+      <Section level={2} title={tr("البائع غير موجود", "Seller not found")}>
         <Card>
           <p className="text-muted-foreground">{tr("تعذّر العثور على هذا الملف الشخصي.", "We couldn't find this profile.")}</p>
           <Link to="/leaderboard" className="mt-4 inline-flex items-center gap-2 text-sm text-primary">
@@ -78,7 +80,7 @@ function SellerProfilePage() {
   ];
 
   return (
-    <Section title="" subtitle="">
+    <Section level={2} title="" subtitle="">
       <Card className="flex flex-wrap items-center gap-5">
         {s.avatar_url ? (
           <img src={s.avatar_url} alt={s.display_name} className="size-20 rounded-2xl object-cover" />

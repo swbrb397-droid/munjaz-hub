@@ -19,9 +19,11 @@ import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
 
 export const Route = createFileRoute("/listing/$id")({
-  head: () => ({
+  head: ({ params }) => ({
+    links: [{ rel: "canonical", href: `https://almunjazhub.com/listing/${params.id}` }],
     meta: [
       { title: "تفاصيل العرض | المنجز" },
+      { property: "og:url", content: `https://almunjazhub.com/listing/${params.id}` },
       { name: "description", content: "تفاصيل الخدمة أو المنتج الرقمي على المنجز: السعر بعملة USDT، مدة التسليم، نطاق العمل، وشراء محمي بضمان الوساطة." },
       { property: "og:title", content: "تفاصيل العرض | المنجز" },
       { property: "og:description", content: "اشترِ بضمان الوساطة USDT مع تحرير تلقائي بعد اعتماد التسليم." },
@@ -48,7 +50,7 @@ function ListingDetail() {
 
   if (listing.isLoading) {
     return (
-      <Section title={tr("جارٍ التحميل", "Loading")}>
+      <Section level={2} title={tr("جارٍ التحميل", "Loading")}>
         <div className="grid place-items-center py-20"><Loader2 className="size-6 animate-spin text-primary" /></div>
       </Section>
     );
@@ -57,7 +59,7 @@ function ListingDetail() {
   const item = listing.data;
   if (!item) {
     return (
-      <Section title={tr("العرض غير متاح", "Listing unavailable")} subtitle={tr("قد يكون محذوفاً أو غير منشور.", "It may be deleted or unpublished.")}>
+      <Section level={2} title={tr("العرض غير متاح", "Listing unavailable")} subtitle={tr("قد يكون محذوفاً أو غير منشور.", "It may be deleted or unpublished.")}>
         <Link to="/store" className="text-primary">{tr("العودة للمتجر", "Back to store")}</Link>
       </Section>
     );
@@ -127,7 +129,7 @@ function ListingDetail() {
   const safeTag = sanitizeText(item.tag ?? "", 60) || tr("خدمة رقمية", "Digital service");
 
   return (
-    <Section
+    <Section level={2}
       title={safeTitle}
       subtitle={`${safeSeller} · ${safeTag}`}
       action={<Link to="/store" className="inline-flex items-center gap-2 text-sm text-primary">{tr("كل العروض", "All listings")} <ArrowLeft className="size-4" /></Link>}
@@ -163,6 +165,7 @@ function ListingDetail() {
             value={sow}
             onChange={(e) => setSow(e.target.value)}
             rows={5}
+            aria-label={tr("نطاق العمل (SOW)", "Statement of work (SOW)")}
             placeholder={tr("اكتب متطلباتك بدقة: المخرجات، الصيغ، عدد التعديلات...", "Describe your requirements: deliverables, formats, revisions...")}
             className="mt-3 w-full rounded-xl border border-input bg-surface p-3 text-sm outline-none focus:border-primary"
           />
