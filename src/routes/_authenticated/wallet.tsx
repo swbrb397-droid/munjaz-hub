@@ -68,6 +68,16 @@ const networks = [
 const FALLBACK_RATES: Record<string, number> = { USD: 1, SAR: 3.7506, AED: 3.6731, EUR: 0.9184, EGP: 48.5, RUB: 81, CNY: 7.12 };
 const CURRENCY_ORDER = ["USD", "SAR", "AED", "EUR", "EGP", "RUB", "CNY"] as const;
 const CURRENCY_SYMBOL: Record<string, string> = { USD: "$", SAR: "ر.س", AED: "د.إ", EUR: "€", EGP: "ج.م", RUB: "₽", CNY: "¥" };
+const CURRENCY_FLAG: Record<string, string> = { USD: "🇺🇸", SAR: "🇸🇦", AED: "🇦🇪", EUR: "🇪🇺", EGP: "🇪🇬", RUB: "🇷🇺", CNY: "🇨🇳" };
+const CURRENCY_NAME: Record<string, [string, string]> = {
+  USD: ["دولار أمريكي", "US Dollar"],
+  SAR: ["ريال سعودي", "Saudi Riyal"],
+  AED: ["درهم إماراتي", "UAE Dirham"],
+  EUR: ["يورو", "Euro"],
+  EGP: ["جنيه مصري", "Egyptian Pound"],
+  RUB: ["روبل روسي", "Russian Ruble"],
+  CNY: ["يوان صيني", "Chinese Yuan"],
+};
 
 /** Live USD-based rates (USDT pegged 1:1), refreshed hourly with a safe fallback. */
 function useFiatRates() {
@@ -405,13 +415,30 @@ function WalletPage() {
           </div>
           <div className="mt-4 grid grid-cols-2 gap-2 text-xs sm:grid-cols-3">
             {CURRENCY_ORDER.map((c) => [c, rates[c] ?? FALLBACK_RATES[c]!] as const).map(([c, r]) => (
-              <div
-                key={c}
-                title={tr(RATE_HINT[c]?.[0] ?? c, RATE_HINT[c]?.[1] ?? c)}
-                className="cursor-help rounded-lg border border-border px-3 py-2"
-              >
-                <span className="inline-flex items-center gap-1 text-muted-foreground">
-                  {c} · {CURRENCY_SYMBOL[c]} <Info className="size-3 opacity-60" />
+              <div key={c} className="rounded-lg border border-border px-3 py-2">
+                <span className="inline-flex min-w-0 items-center gap-1 text-muted-foreground">
+                  <span aria-hidden>{CURRENCY_FLAG[c]}</span>
+                  <span className="truncate">{CURRENCY_SYMBOL[c]} {c}</span>
+                  <Popover>
+                    <PopoverTrigger
+                      aria-label={tr(`تفاصيل ${CURRENCY_NAME[c]?.[0] ?? c}`, `${CURRENCY_NAME[c]?.[1] ?? c} details`)}
+                      className="grid size-5 shrink-0 place-items-center rounded-full hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                    >
+                      <Info className="size-3 opacity-70" />
+                    </PopoverTrigger>
+                    <PopoverContent side="top" className="w-60 text-xs">
+                      <p className="font-bold text-foreground">
+                        {CURRENCY_FLAG[c]} {tr(CURRENCY_NAME[c]?.[0] ?? c, CURRENCY_NAME[c]?.[1] ?? c)}
+                      </p>
+                      <p className="mt-2 text-foreground">
+                        {tr("سعر الصرف", "Exchange rate")}:{" "}
+                        <bdi dir="ltr">1 USDT ≈ {r.toFixed(2)} {CURRENCY_SYMBOL[c]}</bdi>
+                      </p>
+                      <p className="mt-2 text-muted-foreground">
+                        {tr("يتم تحديث الأسعار تلقائياً بناءً على أسواق الصرف العالمية", "Rates update automatically from global exchange markets")}
+                      </p>
+                    </PopoverContent>
+                  </Popover>
                 </span>
                 <p className="truncate font-semibold" dir="ltr">
                   ≈ {(balance * r).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
