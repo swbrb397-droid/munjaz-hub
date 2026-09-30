@@ -104,14 +104,15 @@ export function SecurityPanel({ className = "" }: { className?: string }) {
     }
   };
 
+  const [disableOpen, setDisableOpen] = useState(false);
+
+  /** Runs only after MfaChallengeDialog verified the current TOTP code. */
   const disableMfa = async () => {
     if (!activeFactorId) return;
     const { error } = await supabase.auth.mfa.unenroll({ factorId: activeFactorId });
-    if (error) {
-      toast.error(translateAuthError(error));
-      return;
-    }
-    toast.success("تم تعطيل المصادقة الثنائية");
+    if (error) throw new Error(translateAuthError(error));
+    toast.success("تم تعطيل المصادقة الثنائية بنجاح");
+    setActiveFactorId(null);
     await refreshFactors();
   };
 
@@ -224,7 +225,7 @@ export function SecurityPanel({ className = "" }: { className?: string }) {
         {activeFactorId ? (
           <button
             type="button"
-            onClick={() => void disableMfa()}
+            onClick={() => setDisableOpen(true)}
             className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-destructive/50 px-4 py-2.5 text-sm font-bold text-destructive"
           >
             <Lock className="size-4" /> <bdi>تعطيل 2FA</bdi>

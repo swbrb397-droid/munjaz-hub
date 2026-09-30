@@ -37,6 +37,7 @@ function rpcError(e: unknown) {
   if (m.includes("FORBIDDEN")) return "صلاحيات غير كافية";
   if (m.includes("CANNOT_TARGET_SELF")) return "لا يمكنك تنفيذ هذا الإجراء على حسابك";
   if (m.includes("REASON_REQUIRED")) return "اكتب سبباً واضحاً (5 أحرف على الأقل)";
+  if (m.includes("MFA_REQUIRED")) return "هذا الإجراء يتطلب التحقق بالمصادقة الثنائية أولاً";
   if (m.includes("INVALID_INPUT")) return "أكمل العنوان والرسالة";
   return m || "حدث خطأ";
 }
