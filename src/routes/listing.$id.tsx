@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ArrowLeft, Loader2, ShieldCheck, Star, Timer } from "lucide-react";
 import { Card, Section } from "@/components/site/Shell";
 import { VerifiedBadge } from "@/components/site/VerifiedBadge";
@@ -47,6 +47,37 @@ function ListingDetail() {
   const [error, setError] = useState<string | null>(null);
   const [topUp, setTopUp] = useState(false);
   const [buyingInstant, setBuyingInstant] = useState(false);
+
+  // Per-listing title, description and Product structured data (pure SPA: set on the client).
+  const seo = listing.data;
+  useEffect(() => {
+    if (!seo) return;
+    const prevTitle = document.title;
+    document.title = `${seo.title} | المنجز`;
+    const desc = document.querySelector('meta[name="description"]');
+    const prevDesc = desc?.getAttribute("content") ?? null;
+    desc?.setAttribute("content", `${seo.title} — ${seo.tag} — السعر: ${seo.price} USDT على منصة المنجز.`);
+    const ld = document.createElement("script");
+    ld.type = "application/ld+json";
+    ld.text = JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "Product",
+      name: seo.title,
+      description: seo.tag,
+      ...(seo.cover?.startsWith("http") ? { image: seo.cover } : {}),
+      url: `https://almunjazhub.com/listing/${seo.id}`,
+      offers: { "@type": "Offer", price: seo.price, priceCurrency: "USDT", availability: "https://schema.org/InStock" },
+      ...(seo.rating > 0 && seo.orders > 0
+        ? { aggregateRating: { "@type": "AggregateRating", ratingValue: seo.rating, reviewCount: seo.orders } }
+        : {}),
+    });
+    document.head.appendChild(ld);
+    return () => {
+      document.title = prevTitle;
+      if (desc && prevDesc !== null) desc.setAttribute("content", prevDesc);
+      ld.remove();
+    };
+  }, [seo]);
 
   if (listing.isLoading) {
     return (
