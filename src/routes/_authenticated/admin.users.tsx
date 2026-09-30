@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/lib/cloud-client";
+import { MfaChallengeDialog } from "@/components/site/MfaChallengeDialog";
 import { adminListUsers, adminSetAuthAccess, adminEmailNotification, type AdminUserRow } from "@/lib/admin-users.functions";
 
 export const Route = createFileRoute("/_authenticated/admin/users")({
@@ -138,23 +139,35 @@ function UserPanel({ u }: { u: AdminUserRow }) {
   const [type, setType] = useState("info");
   const [confirm, setConfirm] = useState(0);
   const refresh = () => qc.invalidateQueries({ queryKey: ["admin-users"] });
+  const [challenge, setChallenge] = useState<{ factorId: string; action: () => Promise<void> } | null>(null);
+
+  /** 2FA step-up: privileged mutations run only after a fresh TOTP verification. */
+  const gated = async (action: () => Promise<void>) => {
+    const { data, error } = await supabase.auth.mfa.listFactors();
+    const factor = error ? null : (data?.totp ?? []).find((f) => f.status === "verified");
+    if (!factor) {
+      toast.error("يجب تفعيل المصادقة الثنائية (2FA) في صفحة ملفك الشخصي قبل تنفيذ الإجراءات الحساسة.");
+      return;
+    }
+    setChallenge({ factorId: factor.id, action });
+  };
 
   const run = async (key: string, fn: () => Promise<void>, ok: string) => {
     setBusy(key);
     try { await fn(); toast.success(ok); await refresh(); } catch (e) { toast.error(rpcError(e)); } finally { setBusy(null); }
   };
 
-  const toggleBan = (banned: boolean) => run("ban", async () => {
+  const toggleBan = (banned: boolean) => void gated(() => run("ban", async () => {
     const { error } = await supabase.rpc("admin_toggle_user_ban" as never, { p_user_id: u.id, p_banned: banned, p_reason: reason } as never);
     if (error) throw error;
     await setAccess({ data: { userId: u.id, blocked: banned || u.is_deactivated } });
     setReason("");
-  }, banned ? "تم حظر المستخدم" : "تم رفع الحظر");
+  }, banned ? "تم حظر المستخدم" : "تم رفع الحظر"));
 
-  const toggleRole = (r: string, has: boolean) => run(`role-${r}`, async () => {
+  const toggleRole = (r: string, has: boolean) => void gated(() => run(`role-${r}`, async () => {
     const { error } = await supabase.rpc("admin_adjust_user_role" as never, { p_user_id: u.id, p_role: r, p_action: has ? "remove" : "add" } as never);
     if (error) throw error;
-  }, "تم تحديث الأدوار");
+  }, "تم تحديث الأدوار"));
 
   const notify = () => run("notify", async () => {
     const { error } = await supabase.rpc("admin_send_user_notification" as never, { p_user_id: u.id, p_title: title, p_message: msg, p_type: type } as never);
@@ -166,12 +179,12 @@ function UserPanel({ u }: { u: AdminUserRow }) {
     setTitle(""); setMsg("");
   }, "تم إرسال الإشعار");
 
-  const deactivate = () => run("deactivate", async () => {
+  const deactivate = () => void gated(() => run("deactivate", async () => {
     const { error } = await supabase.rpc("admin_deactivate_user" as never, { p_user_id: u.id } as never);
     if (error) throw error;
     await setAccess({ data: { userId: u.id, blocked: true } });
     setConfirm(0);
-  }, "تم تعطيل الحساب");
+  }, "تم تعطيل الحساب"));
 
   const stat = (l: string, v: string) => (
     <div className="rounded-lg border border-border p-2"><div className="text-[11px] text-muted-foreground">{l}</div><bdi className="font-mono text-sm font-bold">{v}</bdi></div>
@@ -179,6 +192,14 @@ function UserPanel({ u }: { u: AdminUserRow }) {
 
   return (
     <div dir="rtl" className="space-y-4">
+      {challenge && (
+        <MfaChallengeDialog
+          factorId={challenge.factorId}
+          title="تأكيد أمني مطلوب - أدخل رمز المصادقة الثنائية (2FA)"
+          onVerified={challenge.action}
+          onClose={() => setChallenge(null)}
+        />
+      )}
       <SheetHeader><SheetTitle className="text-right">{u.display_name}</SheetTitle></SheetHeader>
       <div className="space-y-1 text-xs text-muted-foreground">
         <div>البريد: <bdi>{u.email ?? "—"}</bdi></div>
