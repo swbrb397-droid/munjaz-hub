@@ -94,6 +94,26 @@ const CHAPTERS: ReadonlyArray<Chapter> = [
     ],
     highlights: ["USDT"],
   },
+  {
+    icon: Scale,
+    badge: ["📜 الشفافية القانونية", "📜 Legal Transparency"],
+    title: ["وضوح قبل الثقة: ما نتحمّله وما لا نتحمّله", "Clarity Before Trust: What We Cover and What We Don't"],
+    quote: [
+      "المنجز مزوّد برمجيات للضمان ومطابقة الطلبات، لا بنك ولا منصة تداول؛ نحتفظ بالأموال فقط لإتمام صفقتك.",
+      "Al-Munjaz is escrow and order-matching software, not a bank or exchange; we hold funds only to complete your deal.",
+    ],
+    points: [
+      [
+        "لسنا مسؤولين عن ازدحام شبكات البلوكتشين أو تقلب رسوم الغاز أو تأخر تأكيدات الشبكات الخارجية.",
+        "We are not liable for blockchain congestion, gas fee swings, or confirmation delays on external networks.",
+      ],
+      [
+        "يحق لنا طلب التوثيق (KYC) أو تجميد السحب 24–48 ساعة عند رصد نشاط غير معتاد أو تغيير بيانات الأمان.",
+        "We may request KYC or freeze withdrawals for 24–48 hours on unusual activity or security changes.",
+      ],
+    ],
+    highlights: ["KYC"],
+  },
 ];
 
 function HighlightText({ text, terms }: { text: string; terms: string[] }) {

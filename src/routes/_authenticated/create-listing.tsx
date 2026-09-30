@@ -112,7 +112,9 @@ function sideError(
   rawTag: string,
   side: "ar" | "en",
   requirePair = true,
+  ui: "ar" | "en" = "ar",
 ): string | null {
+  const L = (a: string, e: string) => (ui === "ar" ? a : e);
   const title = rawTitle.trim();
   const tag = rawTag.trim();
   if (!title && !tag) return null;
@@ -120,29 +122,29 @@ function sideError(
   const re = side === "ar" ? AR_RE : EN_RE;
   const langMsg =
     side === "ar"
-      ? "يجب كتابة العنوان العربي بالحروف العربية فقط"
-      : "يجب كتابة العنوان الإنجليزي بالحروف الإنجليزية (A-Z) وعلامات الترقيم فقط";
+      ? L("يجب كتابة العنوان العربي بالحروف العربية فقط", "The Arabic title must use Arabic letters only")
+      : L("يجب كتابة العنوان الإنجليزي بالحروف الإنجليزية (A-Z) وعلامات الترقيم فقط", "The English title must use English letters (A-Z) and punctuation only");
 
   if (title && !re.test(title)) return langMsg;
   if (tag && !re.test(tag)) return langMsg;
   if (REPEAT_RE.test(title) || REPEAT_RE.test(tag)) {
-    return "النص يحتوي على تكرار غير مفهوم لنفس الحرف — اكتب عنواناً واضحاً.";
+    return L("النص يحتوي على تكرار غير مفهوم لنفس الحرف — اكتب عنواناً واضحاً.", "The text repeats the same character meaninglessly — write a clear title.");
   }
   if (SYLLABLE_LOOP_RE.test(title) || SYLLABLE_LOOP_RE.test(tag)) {
-    return "النص يحتوي على مقاطع مكرّرة غير مفهومة — اكتب عنواناً حقيقياً.";
+    return L("النص يحتوي على مقاطع مكرّرة غير مفهومة — اكتب عنواناً حقيقياً.", "The text contains meaningless repeated syllables — write a real title.");
   }
   if (LONG_WORD_RE.test(title) || LONG_WORD_RE.test(tag)) {
-    return "لا يمكن أن تتجاوز الكلمة الواحدة 25 حرفاً متصلاً بدون مسافة.";
+    return L("لا يمكن أن تتجاوز الكلمة الواحدة 25 حرفاً متصلاً بدون مسافة.", "A single word cannot exceed 25 characters without a space.");
   }
   if (!requirePair) return null;
   if (title) {
     const words = title.split(/\s+/).filter((w) => w.length > 0);
-    if (words.length < 2) return "اكتب عنواناً من كلمتين على الأقل.";
+    if (words.length < 2) return L("اكتب عنواناً من كلمتين على الأقل.", "Write a title of at least two words.");
     if (title.replace(/\s+/g, "").length < MIN_TITLE)
-      return `العنوان قصير جداً — ${MIN_TITLE} أحرف فعلية على الأقل.`;
+      return L(`العنوان قصير جداً — ${MIN_TITLE} أحرف فعلية على الأقل.`, `Title too short — at least ${MIN_TITLE} real characters.`);
   }
-  if (title && tag.length < 2) return "أضف وسماً (Tag) لا يقل عن حرفين لنفس اللغة.";
-  if (tag && title.length < 10) return "أكمل العنوان بنفس اللغة (10 أحرف على الأقل).";
+  if (title && tag.length < 2) return L("أضف وسماً (Tag) لا يقل عن حرفين لنفس اللغة.", "Add a tag of at least two characters in the same language.");
+  if (tag && title.length < 10) return L("أكمل العنوان بنفس اللغة (10 أحرف على الأقل).", "Complete the title in the same language (at least 10 characters).");
   return null;
 }
 
@@ -277,14 +279,14 @@ function CreateListing() {
   const arSide = {
     title: form.title_ar.trim(),
     tag: form.tag_ar.trim(),
-    error: sideError(form.title_ar, form.tag_ar, "ar"),
+    error: sideError(form.title_ar, form.tag_ar, "ar", true, lang),
     complete: form.title_ar.trim().length >= MIN_TITLE && form.tag_ar.trim().length >= 2,
   };
   // English is strictly optional once the Arabic side is complete.
   const enSide = {
     title: form.title_en.trim(),
     tag: form.tag_en.trim(),
-    error: sideError(form.title_en, form.tag_en, "en", !arSide.complete),
+    error: sideError(form.title_en, form.tag_en, "en", !arSide.complete, lang),
     complete: form.title_en.trim().length >= MIN_TITLE && form.tag_en.trim().length >= 2,
   };
   const titleMissing = !arSide.complete && !enSide.complete;
@@ -330,7 +332,7 @@ function CreateListing() {
   const create = useMutation({
     mutationFn: async () => {
       if (!canSubmit) {
-        throw new Error("لا يمكن نشر العرض: يجب تصحيح الأخطاء ورفع غلاف متوافق مع معايير المنصة أولاً");
+        throw new Error(tr("لا يمكن نشر العرض: يجب تصحيح الأخطاء ورفع غلاف متوافق مع معايير المنصة أولاً", "Cannot publish: fix the errors and upload a compliant cover first"));
       }
       // Edit mode: update the existing listing instead of inserting a new one.
       if (editingId) {
@@ -475,7 +477,7 @@ function CreateListing() {
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!canSubmit) {
-      toast.error("لا يمكن نشر العرض: يجب تصحيح الأخطاء ورفع غلاف متوافق مع معايير المنصة أولاً");
+      toast.error(tr("لا يمكن نشر العرض: يجب تصحيح الأخطاء ورفع غلاف متوافق مع معايير المنصة أولاً", "Cannot publish: fix the errors and upload a compliant cover first"));
       return;
     }
     if (create.isPending) return;
@@ -640,10 +642,10 @@ function CreateListing() {
                     <span className="min-w-0">
                       <span className="flex items-center gap-1.5 font-bold text-primary">
                         <ShieldCheck className="size-3.5 shrink-0" />
-                        طلب فحص النزاهة والأمان التلقائي للكود البرمجي (Smart Contract Integrity Check)
+                        {tr("طلب فحص النزاهة والأمان التلقائي للكود البرمجي (Smart Contract Integrity Check)", "Request automatic code integrity & security check (Smart Contract Integrity Check)")}
                       </span>
                       <span className="mt-1 block text-muted-foreground">
-                        عند اعتماد الفحص تظهر شارة «كود مدقق ومحمي 🛡️» على عرضك في السوق.
+                        {tr("عند اعتماد الفحص تظهر شارة «كود مدقق ومحمي 🛡️» على عرضك في السوق.", "Once approved, a “Verified & protected code 🛡️” badge appears on your listing.")}
                       </span>
                     </span>
                   </label>

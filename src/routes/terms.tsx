@@ -30,7 +30,7 @@ export const Route = createFileRoute("/terms")({
 
 function TermsPage() {
   const { tr, lang } = useLang();
-  const lastUpdated = "9 August 2026";
+  const lastUpdated = "30 September 2026";
 
   return (
     <Section
@@ -168,6 +168,33 @@ function TermsPage() {
           body={tr(
             `السلطة التقديرية للنزاعات: تحتفظ المنصة بحق تقديري مطلق وغير قابل للطعن القضائي في تجميد الحسابات وفض النزاعات وإعادة توجيه أموال الضمان، وتُعتبر رسوم المعالجة التشغيلية غير قابلة للاسترداد.`,
             `Discretionary Dispute Authority: The platform retains an absolute, judicially non-appealable discretionary right to freeze accounts, settle disputes, and redirect escrow funds; operational processing fees are non-refundable.`,
+          )}
+        />
+
+        <Clause
+          icon={<Shield className="size-5 text-primary" />}
+          title={tr("14. إخلاء مسؤولية الوسيط البرمجي", "14. Software Intermediary Disclaimer")}
+          body={tr(
+            `المنجز مزوّد برمجيات لمطابقة الطلبات وإدارة الضمان، وليست بنكاً ولا منصة تداول ولا مؤسسة إيداع أو استثمار. تحتفظ المنصة بأموال المستخدمين في حسابات الضمان الداخلية بصفة مؤقتة وللغرض الوحيد المتمثل في إتمام الطلبات وتسوية النزاعات وتنفيذ طلبات السحب، ولا تستثمر هذه الأموال ولا تدفع عليها أي عائد. لا تقدم المنصة أي نصيحة مالية أو استثمارية أو ضريبية، ويتحمل المستخدم وحده مسؤولية الالتزامات الضريبية والتنظيمية في بلده.`,
+            `Al-Munjaz is a software provider for order matching and escrow management. It is not a bank, exchange, deposit-taking institution, or investment service. The platform holds user funds in internal escrow balances temporarily and solely for the purpose of completing orders, settling disputes, and executing withdrawal requests; it does not invest these funds or pay any interest or yield on them. The platform provides no financial, investment, or tax advice, and each user is solely responsible for their own tax and regulatory obligations in their jurisdiction.`,
+          )}
+        />
+
+        <Clause
+          icon={<AlertTriangle className="size-5 text-amber" />}
+          title={tr("15. تقلبات البلوكتشين والتأخير", "15. Blockchain Volatility & Delays")}
+          body={tr(
+            `تعتمد الإيداعات والسحوبات على شبكات بلوكتشين خارجية (TRC-20 وBEP-20 وPolygon) لا تملكها المنصة ولا تتحكم بها. لا تتحمل المنجز أي مسؤولية عن ازدحام الشبكات، أو تقلب أسعار رسوم الغاز الأصلية، أو تأخر تأكيدات الشبكة أو مزوّدي الدفع من الطرف الثالث، أو توقف أي شبكة أو إعادة تنظيمها أو تغيّر بروتوكولها. قد يختلف وقت وصول الأموال وتكلفتها الفعلية عن التقديرات المعروضة في الواجهة، وتُعرض أسعار تحويل العملات لأغراض إرشادية فقط.`,
+            `Deposits and withdrawals rely on external blockchain networks (TRC-20, BEP-20, and Polygon) that the platform neither owns nor controls. Al-Munjaz is not liable for network congestion, native gas price fluctuations, confirmation latency on the network or at third-party payment providers, or any network outage, reorganisation, or protocol change. Actual arrival times and costs may differ from the estimates shown in the interface, and currency conversion rates are displayed for guidance only.`,
+          )}
+        />
+
+        <Clause
+          icon={<UserCheck className="size-5 text-emerald" />}
+          title={tr("16. حقوق مكافحة غسل الأموال والتحقق", "16. AML & Verification Rights")}
+          body={tr(
+            `تحتفظ المنصة بحق طلب تأكيد الهوية (KYC) أو مستندات إضافية في أي وقت، وبحق تجميد السحوبات مؤقتاً لمدة تتراوح بين 24 و48 ساعة — أو أطول إذا تطلّب التحقيق ذلك — عند رصد ارتفاع مفاجئ أو غير معتاد في المعاملات، أو تغيير بيانات الأمان مثل كلمة المرور أو المصادقة الثنائية، أو مؤشرات على تلاعب في الإحالات أو حسابات متعددة مرتبطة. قد تُحجب عمولات الإحالة بين الحسابات التي تشترك في عنوان سحب أو هوية موثقة، ويجوز رفع الحالات المشبوهة إلى الجهات المختصة وفق القانون المعمول به.`,
+            `The platform reserves the right to request identity confirmation (KYC) or additional documents at any time, and to temporarily freeze withdrawals for 24 to 48 hours — or longer where an investigation requires it — upon detecting sudden or unusual transaction spikes, changes to security settings such as the password or two-factor authentication, or signs of referral manipulation or linked multiple accounts. Referral commissions may be withheld between accounts sharing a withdrawal address or verified identity, and suspicious cases may be reported to the competent authorities as required by applicable law.`,
           )}
         />
       </div>

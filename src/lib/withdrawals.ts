@@ -1,3 +1,4 @@
+import { translateAuthError } from "@/lib/auth-errors";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/cloud-client";
 import { useAuth } from "@/hooks/use-auth";
@@ -35,7 +36,7 @@ export function withdrawalErrorMessage(raw: string, ar: boolean): string {
     FORBIDDEN: ["صلاحيات غير كافية.", "Insufficient permissions."],
   };
   const key = Object.keys(map).find((k) => raw.includes(k));
-  if (!key) return raw;
+  if (!key) return translateAuthError(raw, ar);
   const entry = map[key]!;
   return ar ? entry[0] : entry[1];
 }

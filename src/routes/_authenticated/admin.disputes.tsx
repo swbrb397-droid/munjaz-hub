@@ -257,8 +257,8 @@ function CaseModal({ item, onClose }: { item: AdminDispute; onClose: () => void 
 
         {isDisputeClosed ? (
           <div className="mt-4 space-y-1 rounded-xl border border-border/70 bg-muted/40 p-4 text-center">
-            <p className="text-sm font-semibold text-foreground">🔒 ملف النزاع مغلق — صدر الحكم النهائي</p>
-            <p className="text-xs text-muted-foreground">تم تنفيذ القرار المالي وإغلاق القضية نهائياً.</p>
+            <p className="text-sm font-semibold text-foreground">{tr("🔒 ملف النزاع مغلق — صدر الحكم النهائي", "🔒 Dispute closed — final ruling issued")}</p>
+            <p className="text-xs text-muted-foreground">{tr("تم تنفيذ القرار المالي وإغلاق القضية نهائياً.", "The financial decision was executed and the case is permanently closed.")}</p>
           </div>
         ) : (
           <>
