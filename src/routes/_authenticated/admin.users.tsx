@@ -74,8 +74,8 @@ function AdminUsers() {
         <Card>
           <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
             <label className="relative sm:col-span-2 lg:col-span-1">
-              <Search className="absolute right-3 top-2.5 size-4 text-muted-foreground" />
-              <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={tr("الاسم، المعرّف، كود الإحالة، البريد", "Name, ID, referral code, email")} className={`${inputCls} pr-9`} />
+              <Search className="absolute end-3 top-2.5 size-4 text-muted-foreground" />
+              <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={tr("الاسم، المعرّف، كود الإحالة، البريد", "Name, ID, referral code, email")} className={`${inputCls} pe-9`} />
             </label>
             <select value={role} onChange={(e) => setRole(e.target.value)} className={inputCls}>
               <option value="all">{tr("كل الأدوار", "All roles")}</option><option value="admin">{tr("مشرف عام", "Super admin")}</option>
