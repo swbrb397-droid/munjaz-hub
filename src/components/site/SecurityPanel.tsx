@@ -8,6 +8,7 @@ import { supabase } from "@/lib/cloud-client";
 import { useAuth } from "@/hooks/use-auth";
 import { localGet, localSet } from "@/lib/safe-storage";
 import { translateAuthError } from "@/lib/auth-errors";
+import { MfaChallengeDialog } from "@/components/site/MfaChallengeDialog";
 
 const PW_RATE_KEY = "munjaz.pw-change-at";
 const PW_RATE_WINDOW_MS = 15 * 60 * 1000;
@@ -196,6 +197,17 @@ export function SecurityPanel({ className = "" }: { className?: string }) {
 
   return (
     <Card className={className}>
+      {disableOpen && activeFactorId && typeof document !== "undefined" &&
+        createPortal(
+          <MfaChallengeDialog
+            factorId={activeFactorId}
+            title="تعطيل المصادقة الثنائية"
+            description="أدخل رمز الـ 6 أرقام الحالي من تطبيق المصادقة لتأكيد إيقاف الحماية"
+            onVerified={disableMfa}
+            onClose={() => setDisableOpen(false)}
+          />,
+          document.body,
+        )}
       <h3 className="text-sm font-black">كلمة المرور والمصادقة الثنائية</h3>
 
       <div className="mt-3">
