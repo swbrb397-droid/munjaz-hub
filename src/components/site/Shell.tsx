@@ -249,8 +249,8 @@ export function Shell({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen overflow-x-hidden">
       <header className="sticky top-0 z-50 glass">
-        <div className="mx-auto flex h-16 max-w-7xl items-center gap-2 px-3 sm:gap-4 sm:px-4">
-          <Link to="/" className="flex min-w-0 shrink items-center gap-1.5 sm:gap-2" aria-label={t("brand")}>
+        <div className="mx-auto flex h-16 max-w-7xl items-center gap-2 px-3 sm:gap-4 sm:px-4 lg:gap-6 xl:gap-8">
+          <Link to="/" className="flex min-w-0 shrink items-center gap-1.5 sm:gap-2 lg:shrink-0" aria-label={t("brand")}>
             <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-primary/15 text-sm font-bold text-primary glow sm:size-9 sm:text-base">م</span>
             <span className="whitespace-nowrap text-sm font-extrabold leading-none neon-text sm:text-base lg:text-lg">
               المنجز
@@ -258,13 +258,13 @@ export function Shell({ children }: { children: ReactNode }) {
 
           </Link>
 
-          <nav className="mx-auto hidden items-center gap-1 lg:flex">
+          <nav className="mx-auto hidden min-w-0 items-center gap-0.5 overflow-hidden lg:flex xl:gap-1">
             {flatNav.map((item) => (
               <Link
                 key={item.to}
                 to={item.to}
-                className="rounded-lg px-2.5 py-2.5 text-sm text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-                activeProps={{ className: "rounded-lg px-2.5 py-2.5 text-sm bg-secondary text-primary" }}
+                className="shrink-0 whitespace-nowrap rounded-lg px-2 py-2.5 text-sm text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground xl:px-2.5"
+                activeProps={{ className: "shrink-0 whitespace-nowrap rounded-lg px-2 py-2.5 text-sm bg-secondary text-primary xl:px-2.5" }}
                 activeOptions={{ exact: item.to === "/" }}
               >
                 {t(item.key)}
@@ -293,7 +293,7 @@ export function Shell({ children }: { children: ReactNode }) {
               className="hidden h-9 shrink-0 items-center gap-1.5 rounded-lg border border-primary/40 bg-primary/10 px-2.5 text-xs font-bold text-primary transition-colors hover:bg-primary/20 sm:flex"
             >
               <ScrollText className="size-4" />
-              <span className="hidden lg:inline">{lang === "ar" ? "ميثاق المنصة" : "Manifesto"}</span>
+              <span className="hidden xl:inline">{lang === "ar" ? "ميثاق المنصة" : "Manifesto"}</span>
             </button>
             <AuthButton />
             <LangSwitch />
