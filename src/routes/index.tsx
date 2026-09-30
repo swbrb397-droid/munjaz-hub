@@ -336,11 +336,11 @@ function AffiliateCalculator() {
         <div className="grid gap-6">
           <label className="grid gap-2">
             <span className="flex justify-between text-sm"><span>{tr("عدد المُحالين", "Number of referrals")}</span><span className="font-bold text-primary">{referrals}</span></span>
-            <input type="range" aria-label={lang === "ar" ? "عدد الإحالات" : "Number of referrals"} min={1} max={300} value={referrals} onChange={(e) => setReferrals(Number(e.target.value))} className="accent-[oklch(0.76_0.17_165)]" />
+            <input type="range" aria-label={tr("عدد الإحالات", "Number of referrals")} min={1} max={300} value={referrals} onChange={(e) => setReferrals(Number(e.target.value))} className="accent-[oklch(0.76_0.17_165)]" />
           </label>
           <label className="grid gap-2">
             <span className="flex justify-between text-sm"><span>{tr("متوسط إنفاق المُحال شهرياً (USDT)", "Average referral monthly spend (USDT)")}</span><span className="font-bold text-primary">{avgSpend}</span></span>
-            <input type="range" aria-label={lang === "ar" ? "متوسط الإنفاق" : "Average spend"} min={50} max={3000} step={50} value={avgSpend} onChange={(e) => setAvgSpend(Number(e.target.value))} className="accent-[oklch(0.76_0.17_165)]" />
+            <input type="range" aria-label={tr("متوسط الإنفاق", "Average spend")} min={50} max={3000} step={50} value={avgSpend} onChange={(e) => setAvgSpend(Number(e.target.value))} className="accent-[oklch(0.76_0.17_165)]" />
           </label>
         </div>
         <div className="rounded-2xl border border-primary/40 bg-primary/10 p-5 text-center">
