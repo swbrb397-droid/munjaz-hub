@@ -225,7 +225,7 @@ function Clause({
       <div className="flex items-start gap-4">
         <div className="mt-0.5 shrink-0">{icon}</div>
         <div>
-          <h2 className="text-lg font-bold text-foreground">{title}</h2>
+          <h3 className="text-lg font-bold text-foreground">{title}</h3>
           <p className="mt-2 leading-relaxed text-sm text-muted-foreground">{body}</p>
         </div>
       </div>

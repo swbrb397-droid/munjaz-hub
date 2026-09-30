@@ -37,7 +37,7 @@ function Landing() {
     <>
       <Hero />
       <Ticker />
-      <Section title={tr("خدمات مميزة", "Featured services")} subtitle={tr("بضمان الوساطة ومراحل تسليم موثقة", "With escrow protection and verified delivery milestones")} action={<Link to="/store" className="text-sm text-primary">{tr("تصفح الكل ←", "Browse all ←")}</Link>}>
+      <Section level={2} title={tr("خدمات مميزة", "Featured services")} subtitle={tr("بضمان الوساطة ومراحل تسليم موثقة", "With escrow protection and verified delivery milestones")} action={<Link to="/store" className="text-sm text-primary">{tr("تصفح الكل ←", "Browse all ←")}</Link>}>
         {featured.length > 0 ? (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {featured.slice(0, 4).map((s) => <ServiceCard key={s.id} {...s} />)}
@@ -45,7 +45,7 @@ function Landing() {
         ) : <EmptyState text={tr("لا توجد خدمات معروضة حالياً — كن أول من يضيف عرضاً في المنصة", "No services listed yet — be the first to publish an offer")} />}
       </Section>
 
-      <Section title={tr("منتجات رقمية ودورات", "Digital products & courses")} subtitle={tr("تسليم فوري وتشغيل داخل المنصة", "Instant delivery and in-platform access")}>
+      <Section level={2} title={tr("منتجات رقمية ودورات", "Digital products & courses")} subtitle={tr("تسليم فوري وتشغيل داخل المنصة", "Instant delivery and in-platform access")}>
         {featured.some((s) => s.category === "course" || s.category === "product") ? (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {featured.filter((s) => s.category === "course" || s.category === "product").map((s) => <ServiceCard key={s.id} {...s} />)}
@@ -53,7 +53,7 @@ function Landing() {
         ) : <EmptyState text={tr("لا توجد منتجات أو دورات حالياً", "No products or courses yet")} />}
       </Section>
 
-      <Section title={tr("معرض NFT", "NFT gallery")} subtitle={tr("أصول رقمية موثقة على Polygon", "Verified digital assets on Polygon")} action={<Link to="/store" className="text-sm text-primary">{tr("المعرض الكامل ←", "Full gallery ←")}</Link>}>
+      <Section level={2} title={tr("معرض NFT", "NFT gallery")} subtitle={tr("أصول رقمية موثقة على Polygon", "Verified digital assets on Polygon")} action={<Link to="/store" className="text-sm text-primary">{tr("المعرض الكامل ←", "Full gallery ←")}</Link>}>
         {nfts.length > 0 ? (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {nfts.slice(0, 3).map((n) => <NftCard key={n.id} {...n} />)}
@@ -331,16 +331,16 @@ function AffiliateCalculator() {
   const monthly = referrals * avgSpend * commission * share;
 
   return (
-    <Section title={tr("حاسبة برنامج الإحالة", "Referral program calculator")} subtitle={tr("احصل على 15–20% من صافي عمولة المنصة لمدة 12 شهراً لكل مُحال", "Earn 15–20% of net platform commission for 12 months per referral")}>
+    <Section level={2} title={tr("حاسبة برنامج الإحالة", "Referral program calculator")} subtitle={tr("احصل على 15–20% من صافي عمولة المنصة لمدة 12 شهراً لكل مُحال", "Earn 15–20% of net platform commission for 12 months per referral")}>
       <Card className="grid gap-6 lg:grid-cols-[1fr_320px]">
         <div className="grid gap-6">
           <label className="grid gap-2">
             <span className="flex justify-between text-sm"><span>{tr("عدد المُحالين", "Number of referrals")}</span><span className="font-bold text-primary">{referrals}</span></span>
-            <input type="range" min={1} max={300} value={referrals} onChange={(e) => setReferrals(Number(e.target.value))} className="accent-[oklch(0.76_0.17_165)]" />
+            <input type="range" aria-label={tr("عدد الإحالات", "Number of referrals")} min={1} max={300} value={referrals} onChange={(e) => setReferrals(Number(e.target.value))} className="accent-[oklch(0.76_0.17_165)]" />
           </label>
           <label className="grid gap-2">
             <span className="flex justify-between text-sm"><span>{tr("متوسط إنفاق المُحال شهرياً (USDT)", "Average referral monthly spend (USDT)")}</span><span className="font-bold text-primary">{avgSpend}</span></span>
-            <input type="range" min={50} max={3000} step={50} value={avgSpend} onChange={(e) => setAvgSpend(Number(e.target.value))} className="accent-[oklch(0.76_0.17_165)]" />
+            <input type="range" aria-label={tr("متوسط الإنفاق", "Average spend")} min={50} max={3000} step={50} value={avgSpend} onChange={(e) => setAvgSpend(Number(e.target.value))} className="accent-[oklch(0.76_0.17_165)]" />
           </label>
         </div>
         <div className="rounded-2xl border border-primary/40 bg-primary/10 p-5 text-center">

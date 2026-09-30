@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ArrowLeft, Loader2, ShieldCheck, Star, Timer } from "lucide-react";
 import { Card, Section } from "@/components/site/Shell";
 import { VerifiedBadge } from "@/components/site/VerifiedBadge";
@@ -19,9 +19,11 @@ import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
 
 export const Route = createFileRoute("/listing/$id")({
-  head: () => ({
+  head: ({ params }) => ({
+    links: [{ rel: "canonical", href: `https://almunjazhub.com/listing/${params.id}` }],
     meta: [
       { title: "تفاصيل العرض | المنجز" },
+      { property: "og:url", content: `https://almunjazhub.com/listing/${params.id}` },
       { name: "description", content: "تفاصيل الخدمة أو المنتج الرقمي على المنجز: السعر بعملة USDT، مدة التسليم، نطاق العمل، وشراء محمي بضمان الوساطة." },
       { property: "og:title", content: "تفاصيل العرض | المنجز" },
       { property: "og:description", content: "اشترِ بضمان الوساطة USDT مع تحرير تلقائي بعد اعتماد التسليم." },
@@ -45,6 +47,34 @@ function ListingDetail() {
   const [error, setError] = useState<string | null>(null);
   const [topUp, setTopUp] = useState(false);
   const [buyingInstant, setBuyingInstant] = useState(false);
+
+  // Per-listing title, description and Product structured data (pure SPA: set on the client).
+  const seo = listing.data;
+  useEffect(() => {
+    if (!seo) return;
+    const prevTitle = document.title;
+    document.title = `${seo.title} | المنجز`;
+    const desc = document.querySelector('meta[name="description"]');
+    const prevDesc = desc?.getAttribute("content") ?? null;
+    desc?.setAttribute("content", `${seo.title} — ${seo.tag} — السعر: ${seo.price} USDT على منصة المنجز.`);
+    const ld = document.createElement("script");
+    ld.type = "application/ld+json";
+    ld.text = JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "Product",
+      name: seo.title,
+      description: seo.tag,
+      ...(seo.cover?.startsWith("http") ? { image: seo.cover } : {}),
+      url: `https://almunjazhub.com/listing/${seo.id}`,
+      offers: { "@type": "Offer", price: seo.price, priceCurrency: "USDT", availability: "https://schema.org/InStock" },
+    });
+    document.head.appendChild(ld);
+    return () => {
+      document.title = prevTitle;
+      if (desc && prevDesc !== null) desc.setAttribute("content", prevDesc);
+      ld.remove();
+    };
+  }, [seo]);
 
   if (listing.isLoading) {
     return (
@@ -127,7 +157,7 @@ function ListingDetail() {
   const safeTag = sanitizeText(item.tag ?? "", 60) || tr("خدمة رقمية", "Digital service");
 
   return (
-    <Section
+    <Section level={2}
       title={safeTitle}
       subtitle={`${safeSeller} · ${safeTag}`}
       action={<Link to="/store" className="inline-flex items-center gap-2 text-sm text-primary">{tr("كل العروض", "All listings")} <ArrowLeft className="size-4" /></Link>}
@@ -163,6 +193,7 @@ function ListingDetail() {
             value={sow}
             onChange={(e) => setSow(e.target.value)}
             rows={5}
+            aria-label={tr("نطاق العمل (SOW)", "Statement of work (SOW)")}
             placeholder={tr("اكتب متطلباتك بدقة: المخرجات، الصيغ، عدد التعديلات...", "Describe your requirements: deliverables, formats, revisions...")}
             className="mt-3 w-full rounded-xl border border-input bg-surface p-3 text-sm outline-none focus:border-primary"
           />
