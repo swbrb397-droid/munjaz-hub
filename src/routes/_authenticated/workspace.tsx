@@ -526,18 +526,21 @@ function Workspace() {
    * Pending / in_progress / delivered / disputed / cancelled / refunded orders
    * can never be rated — a refunded arbitration must not allow retaliation.
    */
-  const canReview = !!order && order.status === "completed" && !arbitrated && !alreadyReviewed;
+  const canReview = isBuyer && order.status === "completed" && !arbitrated && !alreadyReviewed;
 
   /** Persists the rating on the live `reviews` table (one row per reviewer). */
   const submitReview = useMutation({
-    mutationFn: async (input: { rating: number; comment: string }) => {
+    mutationFn: async (input: { rating: number; comment: string; quality?: number; communication?: number; punctuality?: number }) => {
       if (!order || !user) throw new Error(tr("لا يوجد طلب محدد.", "No order selected."));
-      const revieweeId = order.buyer_id === user.id ? order.seller_id : order.buyer_id;
+      if (order.buyer_id !== user.id) throw new Error(tr("التقييم متاح للمشتري فقط.", "Only the buyer can review."));
       const { error } = await supabase.from("reviews").insert({
         order_id: order.id,
         reviewer_id: user.id,
-        reviewee_id: revieweeId,
+        reviewee_id: order.seller_id,
         rating: input.rating,
+        quality: input.quality ?? null,
+        communication: input.communication ?? null,
+        punctuality: input.punctuality ?? null,
         comment: input.comment.slice(0, 500) || null,
       });
       if (error) throw new Error(error.message);
@@ -2438,7 +2441,7 @@ function Workspace() {
           <Card className="max-h-[85dvh] w-full max-w-md overflow-y-auto pb-8">
             <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
               <h2 className="min-w-0 truncate text-lg font-black">
-                {tr("تقييم متبادل بعد الإنجاز", "Two-way review after completion")}
+                {tr("قيّم البائع بعد الإنجاز", "Rate the seller after completion")}
               </h2>
               <button
                 type="button"
@@ -2499,6 +2502,9 @@ function Workspace() {
                     (stars.quality + stars.communication + stars.speed) / 3,
                   );
                   submitReview.mutate({
+                    quality: stars.quality,
+                    communication: stars.communication,
+                    punctuality: stars.speed,
                     rating: Math.min(5, Math.max(1, avg)),
                     comment: reviewText.trim(),
                   });
