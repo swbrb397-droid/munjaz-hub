@@ -2488,7 +2488,7 @@ function Workspace() {
                 onChange={(e) => setReviewText(e.target.value.slice(0, 500))}
                 rows={4}
                 placeholder={tr(
-                  "اكتب تقييمك وتجربتك بالتفصيل... (اختياري)",
+                  "ملاحظات إضافية (اختياري)",
                   "Write your review and experience in detail... (optional)",
                 )}
                 className="w-full rounded-xl border border-input bg-surface p-3 text-sm outline-none focus:border-primary"
