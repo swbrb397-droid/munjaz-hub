@@ -1579,6 +1579,19 @@ export type Database = {
           xp_points: number
         }[]
       }
+      get_listing_reviews: {
+        Args: { p_listing_id: string }
+        Returns: {
+          comment: string
+          communication: number
+          created_at: string
+          id: string
+          punctuality: number
+          quality: number
+          rating: number
+          reviewer_name: string
+        }[]
+      }
       get_public_profiles: {
         Args: { _ids: string[] }
         Returns: {
