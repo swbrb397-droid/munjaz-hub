@@ -59,7 +59,7 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
 
   void router;
   void reset;
-  return <BrandedFallback message={error?.message} />;
+  return <BrandedFallback message={(error as Error | undefined)?.message} />;
 }
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
