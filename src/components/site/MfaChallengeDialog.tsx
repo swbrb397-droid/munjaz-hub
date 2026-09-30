@@ -12,9 +12,11 @@ export function MfaChallengeDialog({
   title,
   onVerified,
   onClose,
+  description,
 }: {
   factorId: string;
   title: string;
+  description?: string;
   onVerified: () => Promise<void> | void;
   onClose: () => void;
 }) {
@@ -73,10 +75,11 @@ export function MfaChallengeDialog({
           </button>
         </div>
         <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
-          {tr(
-            "أدخل الرمز اللحظي المكوّن من 6 أرقام من تطبيق المصادقة لإتمام هذا الإجراء المالي.",
-            "Enter the current 6-digit code from your authenticator app to complete this financial action.",
-          )}
+          {description ??
+            tr(
+              "أدخل الرمز اللحظي المكوّن من 6 أرقام من تطبيق المصادقة لإتمام هذا الإجراء المالي.",
+              "Enter the current 6-digit code from your authenticator app to complete this financial action.",
+            )}
         </p>
         <input
           autoFocus

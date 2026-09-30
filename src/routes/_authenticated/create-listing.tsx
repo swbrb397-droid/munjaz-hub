@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ImagePlus, Loader2, MoreHorizontal, Pencil, PlusCircle, Power, ShieldCheck, Trash2, X } from "lucide-react";
+import { BadgeCheck, Boxes, Code2, Gamepad2, GraduationCap, ImagePlus, Loader2, MoreHorizontal, Pencil, PlusCircle, Power, ShieldCheck, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import { Card, Section } from "@/components/site/Shell";
 import { useLang } from "@/lib/lang";
@@ -29,6 +29,13 @@ function SafeCreateListing() {
     </ErrorBoundary>
   );
 }
+
+const CATEGORY_STYLE = {
+  freelance: { icon: Code2, ring: "border-emerald-500/70 ring-emerald-500/30 shadow-[0_0_18px_-4px] shadow-emerald-500/50", chip: "bg-emerald-500/15 text-emerald-400", text: "text-emerald-400" },
+  course: { icon: GraduationCap, ring: "border-blue-500/70 ring-blue-500/30 shadow-[0_0_18px_-4px] shadow-blue-500/50", chip: "bg-blue-500/15 text-blue-400", text: "text-blue-400" },
+  product: { icon: Boxes, ring: "border-purple-500/70 ring-purple-500/30 shadow-[0_0_18px_-4px] shadow-purple-500/50", chip: "bg-purple-500/15 text-purple-400", text: "text-purple-400" },
+  gaming: { icon: Gamepad2, ring: "border-amber-500/70 ring-amber-500/30 shadow-[0_0_18px_-4px] shadow-amber-500/50", chip: "bg-amber-500/15 text-amber-400", text: "text-amber-400" },
+} as const;
 
 export const Route = createFileRoute("/_authenticated/create-listing")({
   head: () => ({
@@ -536,18 +543,32 @@ function CreateListing() {
                   {enSide.error && <span className="text-xs font-bold text-destructive">{enSide.error}</span>}
                 </label>
 
-                <label className="grid gap-1.5 text-sm">
+                <div className="grid gap-1.5 text-sm sm:col-span-2">
                   <span className="text-muted-foreground">{tr("التصنيف", "Category")}</span>
-                  <select
-                    className={field}
-                    value={form.category}
-                    onChange={(e) => setForm({ ...form, category: e.target.value as ListingCategory })}
-                  >
-                    {categories.map((c) => (
-                      <option key={c.key} value={c.key}>{c.label}</option>
-                    ))}
-                  </select>
-                </label>
+                  <div role="radiogroup" className="grid grid-cols-1 gap-2 min-[360px]:grid-cols-2">
+                    {categories.map((c) => {
+                      const meta = CATEGORY_STYLE[c.key];
+                      const Icon = meta.icon;
+                      const on = form.category === c.key;
+                      return (
+                        <button
+                          key={c.key}
+                          type="button"
+                          role="radio"
+                          aria-checked={on}
+                          onClick={() => setForm({ ...form, category: c.key })}
+                          className={`relative flex min-h-[64px] items-center gap-3 rounded-2xl border bg-card/60 p-3 text-start backdrop-blur-md transition-all ${on ? `${meta.ring} ring-2` : "border-border hover:border-muted-foreground/50"}`}
+                        >
+                          <span className={`grid size-10 shrink-0 place-items-center rounded-xl ${meta.chip}`}>
+                            <Icon className="size-5" />
+                          </span>
+                          <span className="min-w-0 text-sm font-bold">{c.label}</span>
+                          {on && <BadgeCheck className={`absolute end-2 top-2 size-4 ${meta.text}`} />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
 
                 <label className="grid gap-1.5 text-sm">
                   <span className="text-muted-foreground">{tr("السعر (USDT)", "Price (USDT)")}</span>

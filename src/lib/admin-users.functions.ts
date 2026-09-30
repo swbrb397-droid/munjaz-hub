@@ -39,18 +39,9 @@ export const adminListUsers = createServerFn({ method: "POST" })
     await assertAdmin(context as Ctx);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    const [profiles, wallets, roles, kyc, refs] = await Promise.all([
-      supabaseAdmin
-        .from("profiles")
-        .select("id,display_name,avatar_url,referral_code,created_at,is_frozen,frozen_reason,is_deactivated,kyc_status,is_verified,account_tier")
-        .order("created_at", { ascending: false })
-        .limit(1000),
-      supabaseAdmin.from("wallets").select("user_id,available_usdt,locked_usdt,lifetime_earned"),
-      supabaseAdmin.from("user_roles").select("user_id,role"),
-      supabaseAdmin.from("kyc_submissions").select("user_id,status,created_at").order("created_at", { ascending: false }),
-      supabaseAdmin.from("referrals").select("referrer_id,total_earned_usdt"),
-    ]);
-    for (const r of [profiles, wallets, roles, kyc, refs]) if (r.error) throw new Error(r.error.message);
+    // Single round-trip aggregate (admin-checked inside the SQL function).
+    const dir = await (context as Ctx).supabase.rpc("admin_get_users_directory");
+    if (dir.error) throw new Error(dir.error.message);
 
     const emails = new Map<string, { email: string | null; last: string | null }>();
     for (let page = 1; page <= 20; page++) {
@@ -60,28 +51,17 @@ export const adminListUsers = createServerFn({ method: "POST" })
       if (data.users.length < 1000) break;
     }
 
-    const w = new Map((wallets.data ?? []).map((x) => [x.user_id, x]));
-    const rl = new Map<string, string[]>();
-    for (const r of roles.data ?? []) rl.set(r.user_id, [...(rl.get(r.user_id) ?? []), String(r.role)]);
-    const kl = new Map<string, string>();
-    for (const k of kyc.data ?? []) if (!kl.has(k.user_id)) kl.set(k.user_id, k.status);
-    const rf = new Map<string, { n: number; e: number }>();
-    for (const r of refs.data ?? []) {
-      const cur = rf.get(r.referrer_id) ?? { n: 0, e: 0 };
-      rf.set(r.referrer_id, { n: cur.n + 1, e: cur.e + Number(r.total_earned_usdt ?? 0) });
-    }
-
-    return (profiles.data ?? []).map((p) => ({
+    return ((dir.data ?? []) as any[]).map((p) => ({
       ...p,
       email: emails.get(p.id)?.email ?? null,
       last_sign_in_at: emails.get(p.id)?.last ?? null,
-      roles: rl.get(p.id) ?? [],
-      available_usdt: Number(w.get(p.id)?.available_usdt ?? 0),
-      locked_usdt: Number(w.get(p.id)?.locked_usdt ?? 0),
-      lifetime_earned: Number(w.get(p.id)?.lifetime_earned ?? 0),
-      invited_count: rf.get(p.id)?.n ?? 0,
-      referral_earned: rf.get(p.id)?.e ?? 0,
-      latest_kyc: kl.get(p.id) ?? null,
+      roles: p.roles ?? [],
+      available_usdt: Number(p.available_usdt ?? 0),
+      locked_usdt: Number(p.locked_usdt ?? 0),
+      lifetime_earned: Number(p.lifetime_earned ?? 0),
+      invited_count: Number(p.invited_count ?? 0),
+      referral_earned: Number(p.referral_earned ?? 0),
+      latest_kyc: p.latest_kyc ?? null,
     })) as AdminUserRow[];
   });
 

@@ -14,11 +14,16 @@ import { countryName, flagEmoji } from "@/lib/countries";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "المنجز | سوق الخدمات الرقمية بعملة USDT" },
-      { name: "description", content: "منصة المنجز: خدمات مستقلين بضمان الوساطة، منتجات رقمية، دورات، جلسات قيمنق، ومعرض NFT — بمحفظة USDT داخلية بدون رسوم." },
-      { property: "og:title", content: "المنجز | سوق الخدمات الرقمية بعملة USDT" },
-      { property: "og:description", content: "ضمان ذكي، محفظة USDT داخلية، وتسويات نزاعات بالذكاء الاصطناعي." },
+      { title: "منصة مُنجَز | سوق الخدمات الرقمية والأصول المشفرة" },
+      { name: "description", content: "منصة مُنجَز للعمل الحر والخدمات الرقمية المصغرة والمنتجات الفورية بالدفع عبر USDT مع ضمان مالي ذكي." },
+      { name: "keywords", content: "منجز, العمل الحر, خدمات رقمية, USDT, وساطة مالية, عملات رقمية, بيع دورات, برومبتات" },
+      { property: "og:title", content: "منصة مُنجَز | سوق الخدمات الرقمية والأصول المشفرة" },
+      { property: "og:description", content: "منصة مُنجَز للعمل الحر والخدمات الرقمية المصغرة والمنتجات الفورية بالدفع عبر USDT مع ضمان مالي ذكي." },
+      { property: "og:url", content: "https://almunjazhub.com" },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
+    links: [{ rel: "canonical", href: "https://almunjazhub.com/" }],
   }),
   component: Landing,
 });

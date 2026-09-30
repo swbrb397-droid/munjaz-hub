@@ -16,6 +16,7 @@ import { isInstantCategory } from "@/lib/instant-delivery";
 import { supabase } from "@/lib/cloud-client";
 import { TopUpDialog } from "@/components/site/TopUpDialog";
 import { toast } from "sonner";
+import { useQuery } from "@tanstack/react-query";
 
 export const Route = createFileRoute("/listing/$id")({
   head: () => ({
@@ -224,7 +225,70 @@ function ListingDetail() {
           </Card>
         </div>
       </div>
+      <BuyerReviews listingId={id} />
       {topUp && <TopUpDialog onClose={() => setTopUp(false)} defaultAmount={Math.max(0, Number((price - balance).toFixed(2)))} />}
     </Section>
+  );
+}
+
+type ListingReview = {
+  id: string; rating: number; quality: number | null; communication: number | null;
+  punctuality: number | null; comment: string | null; created_at: string; reviewer_name: string | null;
+};
+
+/** Public buyer-only reviews for this listing (live data). */
+function BuyerReviews({ listingId }: { listingId: string }) {
+  const { tr } = useLang();
+  const q = useQuery({
+    queryKey: ["listing-reviews", listingId],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("get_listing_reviews" as never, { p_listing_id: listingId } as never);
+      if (error) throw error;
+      return (data ?? []) as unknown as ListingReview[];
+    },
+  });
+  const rows = q.data ?? [];
+  const avg = rows.length ? rows.reduce((a, r) => a + r.rating, 0) / rows.length : 0;
+  const dim = (label: string, v: number | null) =>
+    v ? <span className="rounded-full border border-border px-2 py-0.5">{label} <bdi>{v}/5</bdi></span> : null;
+  return (
+    <Card className="mt-6">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h2 className="text-lg font-black">{tr("تقييمات وآراء المشترين", "Buyer reviews")}</h2>
+        {rows.length > 0 && (
+          <span className="inline-flex items-center gap-1 text-sm font-bold">
+            <Star className="size-4 fill-accent text-accent" /> <bdi>{avg.toFixed(2)}</bdi>
+            <span className="text-muted-foreground">(<bdi>{rows.length}</bdi>)</span>
+          </span>
+        )}
+      </div>
+      {q.isLoading ? (
+        <Loader2 className="mt-4 size-5 animate-spin text-muted-foreground" />
+      ) : rows.length === 0 ? (
+        <p className="mt-3 text-sm text-muted-foreground">{tr("لا توجد تقييمات بعد.", "No reviews yet.")}</p>
+      ) : (
+        <ul className="mt-4 grid gap-3">
+          {rows.map((r) => (
+            <li key={r.id} className="rounded-xl border border-border p-3">
+              <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
+                <span className="font-bold">{r.reviewer_name ?? tr("مشترٍ", "Buyer")}</span>
+                <span className="flex gap-0.5">
+                  {[1, 2, 3, 4, 5].map((n) => (
+                    <Star key={n} className={`size-3.5 ${n <= r.rating ? "fill-accent text-accent" : "text-muted-foreground"}`} />
+                  ))}
+                </span>
+              </div>
+              <div className="mt-2 flex flex-wrap gap-1.5 text-[11px] text-muted-foreground">
+                {dim(tr("جودة العمل", "Quality"), r.quality)}
+                {dim(tr("التواصل", "Communication"), r.communication)}
+                {dim(tr("الالتزام بالموعد", "On time"), r.punctuality)}
+              </div>
+              {r.comment && <p className="mt-2 text-sm leading-relaxed">{r.comment}</p>}
+              <p className="mt-1 text-[11px] text-muted-foreground"><bdi>{new Date(r.created_at).toLocaleDateString("ar")}</bdi></p>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Card>
   );
 }
