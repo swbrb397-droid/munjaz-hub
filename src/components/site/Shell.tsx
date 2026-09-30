@@ -293,7 +293,7 @@ export function Shell({ children }: { children: ReactNode }) {
               className="hidden h-9 shrink-0 items-center gap-1.5 rounded-lg border border-primary/40 bg-primary/10 px-2.5 text-xs font-bold text-primary transition-colors hover:bg-primary/20 sm:flex"
             >
               <ScrollText className="size-4" />
-              <span className="hidden lg:inline">{lang === "ar" ? "ميثاق المنصة" : "Manifesto"}</span>
+              <span className="hidden xl:inline">{lang === "ar" ? "ميثاق المنصة" : "Manifesto"}</span>
             </button>
             <AuthButton />
             <LangSwitch />
