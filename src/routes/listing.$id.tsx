@@ -50,7 +50,7 @@ function ListingDetail() {
 
   if (listing.isLoading) {
     return (
-      <Section level={2} title={tr("جارٍ التحميل", "Loading")}>
+      <Section title={tr("جارٍ التحميل", "Loading")}>
         <div className="grid place-items-center py-20"><Loader2 className="size-6 animate-spin text-primary" /></div>
       </Section>
     );
@@ -59,7 +59,7 @@ function ListingDetail() {
   const item = listing.data;
   if (!item) {
     return (
-      <Section level={2} title={tr("العرض غير متاح", "Listing unavailable")} subtitle={tr("قد يكون محذوفاً أو غير منشور.", "It may be deleted or unpublished.")}>
+      <Section title={tr("العرض غير متاح", "Listing unavailable")} subtitle={tr("قد يكون محذوفاً أو غير منشور.", "It may be deleted or unpublished.")}>
         <Link to="/store" className="text-primary">{tr("العودة للمتجر", "Back to store")}</Link>
       </Section>
     );

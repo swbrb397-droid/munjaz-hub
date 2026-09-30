@@ -52,7 +52,7 @@ function SellerProfilePage() {
 
   if (seller.isLoading) {
     return (
-      <Section level={2} title={tr("جارٍ التحميل...", "Loading...")}>
+      <Section title={tr("جارٍ التحميل...", "Loading...")}>
         <div className="h-32 animate-pulse rounded-2xl bg-secondary/70" />
       </Section>
     );
@@ -60,7 +60,7 @@ function SellerProfilePage() {
 
   if (!seller.data) {
     return (
-      <Section level={2} title={tr("البائع غير موجود", "Seller not found")}>
+      <Section title={tr("البائع غير موجود", "Seller not found")}>
         <Card>
           <p className="text-muted-foreground">{tr("تعذّر العثور على هذا الملف الشخصي.", "We couldn't find this profile.")}</p>
           <Link to="/leaderboard" className="mt-4 inline-flex items-center gap-2 text-sm text-primary">
