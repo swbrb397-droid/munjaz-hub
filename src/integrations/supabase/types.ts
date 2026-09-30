@@ -404,6 +404,7 @@ export type Database = {
           owner_id: string | null
           price_usdt: number
           rating: number
+          reviews_count: number
           seller_ar: string
           seller_en: string
           tag_ar: string
@@ -427,6 +428,7 @@ export type Database = {
           owner_id?: string | null
           price_usdt?: number
           rating?: number
+          reviews_count?: number
           seller_ar: string
           seller_en: string
           tag_ar?: string
@@ -450,6 +452,7 @@ export type Database = {
           owner_id?: string | null
           price_usdt?: number
           rating?: number
+          reviews_count?: number
           seller_ar?: string
           seller_en?: string
           tag_ar?: string
@@ -1064,9 +1067,12 @@ export type Database = {
       reviews: {
         Row: {
           comment: string | null
+          communication: number | null
           created_at: string
           id: string
           order_id: string
+          punctuality: number | null
+          quality: number | null
           rating: number
           reviewee_id: string
           reviewer_id: string
@@ -1074,9 +1080,12 @@ export type Database = {
         }
         Insert: {
           comment?: string | null
+          communication?: number | null
           created_at?: string
           id?: string
           order_id: string
+          punctuality?: number | null
+          quality?: number | null
           rating: number
           reviewee_id: string
           reviewer_id: string
@@ -1084,9 +1093,12 @@ export type Database = {
         }
         Update: {
           comment?: string | null
+          communication?: number | null
           created_at?: string
           id?: string
           order_id?: string
+          punctuality?: number | null
+          quality?: number | null
           rating?: number
           reviewee_id?: string
           reviewer_id?: string
@@ -1370,6 +1382,29 @@ export type Database = {
         Returns: undefined
       }
       admin_deactivate_user: { Args: { p_user_id: string }; Returns: undefined }
+      admin_get_users_directory: {
+        Args: never
+        Returns: {
+          account_tier: string
+          available_usdt: number
+          avatar_url: string
+          created_at: string
+          display_name: string
+          frozen_reason: string
+          id: string
+          invited_count: number
+          is_deactivated: boolean
+          is_frozen: boolean
+          is_verified: boolean
+          kyc_status: string
+          latest_kyc: string
+          lifetime_earned: number
+          locked_usdt: number
+          referral_code: string
+          referral_earned: number
+          roles: string[]
+        }[]
+      }
       admin_platform_overview: {
         Args: never
         Returns: {
