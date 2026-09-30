@@ -14,11 +14,11 @@ import { countryName, flagEmoji } from "@/lib/countries";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "منصة مُنجَز | سوق الخدمات الرقمية والأصول المشفرة" },
-      { name: "description", content: "منصة مُنجَز للعمل الحر والخدمات الرقمية المصغرة والمنتجات الفورية بالدفع عبر USDT مع ضمان مالي ذكي." },
-      { name: "keywords", content: "منجز, العمل الحر, خدمات رقمية, USDT, وساطة مالية, عملات رقمية, بيع دورات, برومبتات" },
-      { property: "og:title", content: "منصة مُنجَز | سوق الخدمات الرقمية والأصول المشفرة" },
-      { property: "og:description", content: "منصة مُنجَز للعمل الحر والخدمات الرقمية المصغرة والمنتجات الفورية بالدفع عبر USDT مع ضمان مالي ذكي." },
+      { title: "منصة المُنجِز | سوق الخدمات المصغرة والمنتجات الرقمية بـ USDT" },
+      { name: "description", content: "أول منصة عربية موثوقة للخدمات المصغرة والعمل الحر والأصول الرقمية، بدفع فوري عبر USDT مع ضمان مالي ذكي وحماية كاملة للمشتري والبائع." },
+      { name: "keywords", content: "المُنجِز, المنجز, منصة المنجز, عمل حر, خدمات مصغرة, USDT, وساطة مالية, منتجات رقمية, Al Munjiz Hub, Almunjiz" },
+      { property: "og:title", content: "منصة المُنجِز - Al Munjiz Hub" },
+      { property: "og:description", content: "سوق رقمي متكامل للعمل الحر، المنتجات الفورية، والدورات التدريبية بدفع عبر USDT وضمان وساطة ذكي." },
       { property: "og:url", content: "https://almunjazhub.com" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
