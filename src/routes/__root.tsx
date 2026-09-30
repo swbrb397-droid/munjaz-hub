@@ -1,3 +1,4 @@
+import type { ErrorComponentProps } from "@tanstack/react-router";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   Outlet,
@@ -49,7 +50,7 @@ function NotFoundComponent() {
   );
 }
 
-function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
+function ErrorComponent({ error, reset }: ErrorComponentProps) {
   console.error('[Root Crash Captured]:', error);
   const router = useRouter();
   useEffect(() => {
@@ -58,7 +59,7 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
 
   void router;
   void reset;
-  return <BrandedFallback message={error?.message} />;
+  return <BrandedFallback message={(error as Error).message} />;
 }
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
