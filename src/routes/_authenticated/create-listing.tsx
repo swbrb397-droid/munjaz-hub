@@ -1,7 +1,9 @@
+import { useServerFn } from "@tanstack/react-start";
+import { requestCodeAudit } from "@/lib/code-audit.functions";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { BadgeCheck, Boxes, Code2, Gamepad2, GraduationCap, ImagePlus, Loader2, MoreHorizontal, Pencil, PlusCircle, Power, ShieldCheck, Trash2, X } from "lucide-react";
+import { BadgeCheck, Boxes, Code2, GraduationCap, ImagePlus, Loader2, MoreHorizontal, Pencil, PlusCircle, Power, ShieldCheck, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import { Card, Section } from "@/components/site/Shell";
 import { useLang } from "@/lib/lang";
@@ -34,7 +36,6 @@ const CATEGORY_STYLE = {
   freelance: { icon: Code2, ring: "border-emerald-500/70 ring-emerald-500/30 shadow-[0_0_18px_-4px] shadow-emerald-500/50", chip: "bg-emerald-500/15 text-emerald-400", text: "text-emerald-400" },
   course: { icon: GraduationCap, ring: "border-blue-500/70 ring-blue-500/30 shadow-[0_0_18px_-4px] shadow-blue-500/50", chip: "bg-blue-500/15 text-blue-400", text: "text-blue-400" },
   product: { icon: Boxes, ring: "border-purple-500/70 ring-purple-500/30 shadow-[0_0_18px_-4px] shadow-purple-500/50", chip: "bg-purple-500/15 text-purple-400", text: "text-purple-400" },
-  gaming: { icon: Gamepad2, ring: "border-amber-500/70 ring-amber-500/30 shadow-[0_0_18px_-4px] shadow-amber-500/50", chip: "bg-amber-500/15 text-amber-400", text: "text-amber-400" },
 } as const;
 
 export const Route = createFileRoute("/_authenticated/create-listing")({
@@ -161,6 +162,7 @@ function CreateListing() {
   const fileInput = useRef<HTMLInputElement>(null);
   const [step, setStep] = useState<1 | 2>(1);
   const [codeAudit, setCodeAudit] = useState(false);
+  const runAudit = useServerFn(requestCodeAudit);
   const [editingId, setEditingId] = useState<string | null>(null);
   const tier = (profile.data?.account_tier ?? "free") as "free" | "pro" | "corporate";
   const inspectionChoices = INSPECTION_OPTIONS[tier];
@@ -182,9 +184,7 @@ function CreateListing() {
   const instantInput = useRef<HTMLInputElement>(null);
 
   const instantHint =
-    form.category === "gaming"
-      ? tr("أدخل بيانات الحساب/الكود السري وأرفق ملف الإثبات.", "Enter the account/secret code and attach the proof file.")
-      : form.category === "course"
+    form.category === "course"
         ? tr("أدرج روابط الدروس والمنهج، وأرفق ملف المنهج إن وُجد.", "List lesson links and the curriculum, and attach the syllabus file.")
         : tr(
             "أرفق ملف التسليم (PDF / ZIP / كود) و/أو أدخل البرومنت أو النص السري.",
@@ -292,7 +292,12 @@ function CreateListing() {
   const titleMissing = !arSide.complete && !enSide.complete;
   const langInvalid = !!arSide.error || !!enSide.error;
 
+  // Product/course listings must carry a real payload (text >= 15 chars or a file).
+  const instantPayloadOk =
+    !instantMode || instantContent.trim().length >= 15 || !!instantFile || !!instantSaved.path;
+
   const canSubmit =
+    instantPayloadOk &&
     !titleMissing &&
     !langInvalid &&
     Number.isFinite(price) &&
@@ -346,11 +351,12 @@ function CreateListing() {
             tag_ar: sanitizeText(form.tag_ar, 40),
             tag_en: sanitizeText(form.tag_en, 40) || sanitizeText(form.tag_ar, 40),
             inspection_window_hours: inspectionHours,
+            ...(descriptionResult.success ? { description: sanitizeText(form.description_ar, MAX_DESC) } : {}),
           })
           .eq("id", editingId);
         if (updErr) throw updErr;
         await persistInstant(editingId);
-        return;
+        return editingId;
       }
       let coverUrl: string | null = null;
       if (coverFile) {
@@ -394,6 +400,7 @@ function CreateListing() {
           tag_ar: sanitizeText(form.tag_ar, 40),
           tag_en: sanitizeText(form.tag_en, 40) || sanitizeText(form.tag_ar, 40),
           inspection_window_hours: inspectionHours,
+          description: sanitizeText(form.description_ar, MAX_DESC),
           cover_key: "product",
           cover_url: coverUrl,
           verified: !!profile.data?.is_verified,
@@ -408,9 +415,32 @@ function CreateListing() {
         }
         throw error;
       }
-      if (inserted?.id) await persistInstant(inserted.id);
+      if (inserted?.id) {
+        try {
+          await persistInstant(inserted.id);
+        } catch (err) {
+          // Never leave a published listing without its delivery payload.
+          await supabase.from("listings").delete().eq("id", inserted.id);
+          throw err;
+        }
+      }
+      return inserted?.id ?? null;
     },
-    onSuccess: () => {
+    onSuccess: (listingId) => {
+      if (codeAudit && listingId) {
+        const pending = toast.loading(tr("جارٍ فحص الكود أمنياً…", "Running the security code audit…"));
+        runAudit({ data: { listingId } })
+          .then((r) => {
+            toast.dismiss(pending);
+            if (r.passed) toast.success(tr("اجتاز الكود الفحص الأمني — ظهرت شارة «كود مدقق أمنياً».", "Code passed the audit — the “Security Audited” badge is live."));
+            else toast.error(tr("لم يجتز الكود الفحص الأمني:", "Code did not pass the audit:") + " " + r.report.slice(0, 200));
+            qc.invalidateQueries({ queryKey: ["listings"] });
+          })
+          .catch(() => {
+            toast.dismiss(pending);
+            toast.error(tr("تعذّر إجراء الفحص الآن، حاول لاحقاً من تعديل العرض.", "Audit unavailable right now — retry later by editing the listing."));
+          });
+      }
       const wasEditing = !!editingId;
       setForm(emptyForm);
       setCoverFile(null);
@@ -488,7 +518,6 @@ function CreateListing() {
     { key: "freelance", label: tr("خدمة مستقل / برمجة", "Freelance / development") },
     { key: "course", label: tr("دورة تدريبية", "Course") },
     { key: "product", label: tr("منتج رقمي / عقود ذكية", "Digital product / smart contracts") },
-    { key: "gaming", label: tr("قيمنق", "Gaming") },
   ];
 
   const field = "w-full rounded-lg border border-input bg-surface px-3 py-2 text-sm outline-none focus:border-primary";
@@ -747,6 +776,11 @@ function CreateListing() {
                       onChange={(e) => setInstantContent(e.target.value)}
                       placeholder={tr("النص السري / البرومنت / الروابط…", "Secret text / prompt / links…")}
                     />
+                    {!instantPayloadOk && (
+                      <span className="text-[11px] font-bold text-destructive">
+                        {tr("إلزامي: أرفق ملف التسليم أو اكتب محتوى لا يقل عن 15 حرفاً.", "Required: attach the deliverable file or enter at least 15 characters.")}
+                      </span>
+                    )}
                   </div>
                 )}
 
