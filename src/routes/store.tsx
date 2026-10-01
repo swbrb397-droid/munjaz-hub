@@ -15,7 +15,7 @@ export const Route = createFileRoute("/store")({
   head: () => ({
     meta: [
       { title: "المتجر الرقمي و NFT | المنجز" },
-      { name: "description", content: "تصفح خدمات المستقلين، المنتجات الرقمية، الدورات، جلسات القيمنق، ومعرض NFT على منصة المنجز بعملة USDT." },
+      { name: "description", content: "تصفح خدمات المستقلين، المنتجات الرقمية، الدورات التدريبية، ومعرض NFT على منصة المنجز بعملة USDT." },
       { property: "og:title", content: "المتجر الرقمي و NFT | المنجز" },
       { property: "og:description", content: "فلترة كاملة للأصول الرقمية والدورات وخدمات المستقلين بعملة USDT." },
     ],
@@ -97,7 +97,6 @@ function Store() {
     { key: "freelance", label: tr("خدمات مستقلين", "Freelance services") },
     { key: "course", label: tr("دورات", "Courses") },
     { key: "product", label: tr("منتجات رقمية", "Digital products") },
-    { key: "gaming", label: tr("قيمنق", "Gaming") },
   ];
 
   const sorts: { key: SortKey; label: string }[] = [

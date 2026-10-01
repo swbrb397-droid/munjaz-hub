@@ -1,11 +1,10 @@
 import { useState } from "react";
-import { Code2, Gamepad2, GraduationCap, Package } from "lucide-react";
+import { Code2, GraduationCap, Package } from "lucide-react";
 
 const CATEGORY_ICON = {
   freelance: Code2,
   course: GraduationCap,
   product: Package,
-  gaming: Gamepad2,
 } as const;
 
 export type CoverCategory = keyof typeof CATEGORY_ICON;

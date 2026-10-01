@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { CheckCircle2, Copy, Download, Loader2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { AlertTriangle, CheckCircle2, Copy, Download, Loader2, Timer } from "lucide-react";
 import { toast } from "sonner";
 import { Card, Section } from "@/components/site/Shell";
 import { useLang } from "@/lib/lang";
@@ -32,13 +32,75 @@ function Fulfillment() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("orders")
-        .select("id,title,amount_usdt,status,listing_id,category")
+        .select("id,title,amount_usdt,status,listing_id,category,auto_release_at")
         .eq("id", orderId)
         .maybeSingle();
       if (error) throw error;
       return data;
     },
   });
+
+  const qc = useQueryClient();
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, []);
+  const status = order.data?.status;
+  const releaseAt = order.data?.auto_release_at ? new Date(order.data.auto_release_at).getTime() : 0;
+  const remaining = Math.max(0, releaseAt - now);
+  const inWindow = status === "delivered" && remaining > 0;
+  const hh = String(Math.floor(remaining / 3_600_000)).padStart(2, "0");
+  const mm = String(Math.floor((remaining % 3_600_000) / 60_000)).padStart(2, "0");
+  const ss = String(Math.floor((remaining % 60_000) / 1000)).padStart(2, "0");
+
+  const [confirming, setConfirming] = useState(false);
+  const [disputeOpen, setDisputeOpen] = useState(false);
+  const [reason, setReason] = useState("");
+  const [shot, setShot] = useState<File | null>(null);
+  const [sending, setSending] = useState(false);
+
+  const refresh = () => qc.invalidateQueries({ queryKey: ["fulfillment-order", orderId] });
+
+  const confirmEarly = async () => {
+    setConfirming(true);
+    const { error } = await supabase.rpc("confirm_instant_delivery", { p_order_id: orderId });
+    setConfirming(false);
+    if (error) { toast.error(tr("تعذّر تأكيد الاستلام", "Could not confirm receipt")); return; }
+    toast.success(tr("تم تأكيد الاستلام وتحرير المبلغ للبائع", "Receipt confirmed and funds released to the seller"));
+    refresh();
+  };
+
+  const submitDispute = async () => {
+    if (reason.trim().length < 20) { toast.error(tr("اكتب سبباً واضحاً لا يقل عن 20 حرفاً", "Write a clear reason of at least 20 characters")); return; }
+    if (!shot) { toast.error(tr("لقطة الشاشة إلزامية كدليل", "A screenshot is required as evidence")); return; }
+    if (!shot.type.startsWith("image/") || shot.size > 5 * 1024 * 1024) { toast.error(tr("يجب أن يكون الدليل صورة لا تتجاوز 5MB", "Evidence must be an image up to 5MB")); return; }
+    setSending(true);
+    try {
+      const safe = shot.name.replace(/[^\w.\-]+/g, "_").slice(-60);
+      const path = `${orderId}/disputes/${Date.now()}-${safe}`;
+      const up = await supabase.storage.from("digital-vault").upload(path, shot, { upsert: false });
+      if (up.error) throw up.error;
+      const { error } = await supabase.rpc("open_instant_dispute", {
+        p_order_id: orderId,
+        p_reason: reason.trim(),
+        p_evidence: [{ bucket: "digital-vault", path, name: safe }],
+      });
+      if (error) throw error;
+      toast.success(tr("تم فتح النزاع — المبلغ مجمّد حتى قرار الإدارة", "Dispute opened — funds stay frozen until the admin ruling"));
+      setDisputeOpen(false);
+      refresh();
+    } catch (e) {
+      const msg = (e as Error).message ?? "";
+      toast.error(
+        msg.includes("WINDOW_CLOSED")
+          ? tr("انتهت مهلة الـ 24 ساعة لفتح النزاع", "The 24-hour dispute window has closed")
+          : tr("تعذّر فتح النزاع، حاول مجدداً", "Could not open the dispute, try again"),
+      );
+    } finally {
+      setSending(false);
+    }
+  };
 
   const delivery = useInstantDelivery(order.data?.listing_id ?? null, !!order.data?.listing_id);
 
@@ -69,14 +131,82 @@ function Fulfillment() {
 
   return (
     <Section
-      title={tr("✅ تم الشراء بنجاح — محتوى طلبك الفوري جاهز الآن", "✅ Purchase complete — your instant content is ready")}
+      title={tr("تم الشراء بنجاح — محتوى طلبك الفوري جاهز الآن", "Purchase complete — your instant content is ready")}
       subtitle={order.data?.title ?? ""}
     >
       <Card className="grid gap-4 p-5">
-        <p className="inline-flex items-center gap-2 rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-xs font-bold text-emerald-400">
-          <CheckCircle2 className="size-4 shrink-0" />
-          {tr("تمت تسوية المبلغ وإغلاق الطلب فوراً — لا حاجة لأي محادثة ضمان.", "Payment settled and the order closed instantly — no escrow chat needed.")}
-        </p>
+        {status === "delivered" && (
+          <div className="grid gap-3 rounded-xl border border-primary/40 bg-primary/5 p-3">
+            <p className="inline-flex items-center gap-2 text-xs font-bold text-primary">
+              <Timer className="size-4 shrink-0" />
+              {inWindow
+                ? tr("المبلغ محجوز في الضمان — يُحرَّر للبائع تلقائياً بعد:", "Funds held in escrow — auto-released to the seller in:")
+                : tr("انتهت مهلة الاعتراض — جارٍ تحرير المبلغ للبائع.", "Dispute window ended — releasing funds to the seller.")}
+              {inWindow && <bdi dir="ltr" className="font-mono text-sm">{hh}:{mm}:{ss}</bdi>}
+            </p>
+            {inWindow && (
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={confirmEarly}
+                  disabled={confirming}
+                  className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-bold text-primary-foreground disabled:opacity-60"
+                >
+                  {confirming ? <Loader2 className="size-4 animate-spin" /> : <CheckCircle2 className="size-4" />}
+                  {tr("تأكيد الاستلام والقبول", "Confirm & Accept")}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setDisputeOpen((v) => !v)}
+                  className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-destructive/50 bg-destructive/10 px-4 py-2 text-sm font-bold text-destructive"
+                >
+                  <AlertTriangle className="size-4" />
+                  {tr("الإبلاغ عن محتوى معطوب / فتح نزاع", "Report Problem / Open Dispute")}
+                </button>
+              </div>
+            )}
+            {inWindow && disputeOpen && (
+              <div className="grid gap-2 rounded-xl border border-destructive/40 p-3">
+                <label className="grid gap-1 text-xs">
+                  <span className="font-bold">{tr("سبب النزاع (إلزامي)", "Dispute reason (required)")}</span>
+                  <textarea
+                    dir="auto"
+                    value={reason}
+                    maxLength={2000}
+                    onChange={(e) => setReason(e.target.value)}
+                    className="min-h-24 rounded-lg border border-input bg-surface p-2 text-sm outline-none focus:border-primary"
+                    placeholder={tr("صف المشكلة بدقة: ملف تالف، رابط معطل، كود مستخدم…", "Describe the problem: corrupt file, dead link, used code…")}
+                  />
+                </label>
+                <label className="grid gap-1 text-xs">
+                  <span className="font-bold">{tr("لقطة شاشة كدليل (إلزامي)", "Screenshot evidence (required)")}</span>
+                  <input type="file" accept="image/*" onChange={(e) => setShot(e.target.files?.[0] ?? null)} className="text-xs" />
+                </label>
+                <button
+                  type="button"
+                  onClick={submitDispute}
+                  disabled={sending}
+                  className="inline-flex min-h-[44px] w-fit items-center gap-2 rounded-xl bg-destructive px-4 py-2 text-sm font-bold text-destructive-foreground disabled:opacity-60"
+                >
+                  {sending && <Loader2 className="size-4 animate-spin" />}
+                  {tr("إرسال النزاع للإدارة", "Send dispute to admin")}
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+        {status === "disputed" && (
+          <p className="inline-flex items-center gap-2 rounded-xl border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs font-bold text-destructive">
+            <AlertTriangle className="size-4 shrink-0" />
+            {tr("النزاع قيد مراجعة الإدارة — المبلغ مجمّد حتى صدور القرار.", "Dispute under admin review — funds frozen until the ruling.")}
+          </p>
+        )}
+        {status === "completed" && (
+          <p className="inline-flex items-center gap-2 rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-xs font-bold text-emerald-400">
+            <CheckCircle2 className="size-4 shrink-0" />
+            {tr("اكتمل الطلب وتم تحرير المبلغ للبائع.", "Order completed and funds released to the seller.")}
+          </p>
+        )}
 
         {delivery.isLoading ? (
           <p className="inline-flex items-center gap-2 text-sm text-muted-foreground">

@@ -135,6 +135,7 @@ function SellerProfilePage() {
               tag={lang === "ar" ? l.tag_ar : l.tag_en}
               cover={(l.cover_url ?? "").trim() || COVERS[l.cover_key] || COVERS["product"] || ""}
               category={l.category}
+              audited={l.is_code_audited === true}
             />
           ))}
         </div>

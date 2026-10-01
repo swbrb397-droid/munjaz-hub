@@ -1,0 +1,1 @@
+REVOKE ALL ON FUNCTION public.reset_audit_on_payload_change() FROM PUBLIC, anon, authenticated;

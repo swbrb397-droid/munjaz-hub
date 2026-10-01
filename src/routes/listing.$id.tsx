@@ -168,6 +168,11 @@ function ListingDetail() {
             <CoverImage src={item.cover} alt={item.title} category={item.category} className="h-64 w-full" iconClassName="size-12" />
           </div>
           <p className="mt-5 text-2xl font-black">{item.title}</p>
+          {item.raw.is_code_audited && (
+            <span className="mt-2 inline-flex w-fit items-center gap-1 rounded-full border border-primary/60 bg-primary/10 px-2.5 py-1 text-xs font-bold text-primary">
+              <ShieldCheck className="size-3.5" /> {tr("كود مدقق أمنياً", "Security Audited")}
+            </span>
+          )}
           <p className="mt-2 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
             {item.seller} {item.verified && <VerifiedBadge />}
             <span className="inline-flex items-center gap-1"><Star className="size-3.5 fill-accent text-accent" /> {item.rating}</span>
@@ -177,7 +182,7 @@ function ListingDetail() {
           <div className="mt-6 grid gap-3 sm:grid-cols-3">
             {[
               { icon: ShieldCheck, t: tr("ضمان وساطة", "Escrow protected"), s: tr("تُجمَّد الأموال حتى الاعتماد", "Funds held until approval") },
-              { icon: Timer, t: tr("تحرير تلقائي", "Auto-release"), s: tr("خلال 48 ساعة من التسليم (الباقة المجانية)", "48 hours after delivery (Free tier)") },
+              { icon: Timer, t: tr("تحرير تلقائي", "Auto-release"), s: isInstantCategory(item.category) ? tr("تسليم فوري + 24 ساعة لفتح نزاع قبل التحرير", "Instant access + 24h to dispute before release") : tr("خلال 48 ساعة من التسليم (الباقة المجانية)", "48 hours after delivery (Free tier)") },
               { icon: Star, t: tr("جودة موثقة", "Verified quality"), s: tr("تقييمات محمية ضد الابتزاز", "Ratings protected from blackmail") },
             ].map((b) => (
               <div key={b.t} className="rounded-xl border border-border p-3">
@@ -187,6 +192,15 @@ function ListingDetail() {
               </div>
             ))}
           </div>
+
+          {item.raw.description && (
+            <>
+              <h2 className="mt-8 text-lg font-bold">{tr("وصف العرض", "Description")}</h2>
+              <p dir="auto" className="mt-3 whitespace-pre-wrap break-words text-sm leading-relaxed text-muted-foreground">
+                {item.raw.description}
+              </p>
+            </>
+          )}
 
           <h2 className="mt-8 text-lg font-bold">{tr("نطاق العمل (SOW)", "Statement of work (SOW)")}</h2>
           <textarea

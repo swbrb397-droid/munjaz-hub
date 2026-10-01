@@ -14,3 +14,6 @@
 - Instant digital purchases use the `purchase_digital_asset_instant` RPC. Why: charge, seller payout and referrals succeed or fail together.
 - Admin role/ban/deactivate RPCs require aal2 and the UI gates them with MfaChallengeDialog. Why: no privileged change without fresh 2FA.
 - Reviews are buyer-to-seller only (RLS + get_listing_reviews public RPC). Why: sellers cannot rate buyers.
+- Instant purchases settle via 24h escrow: `purchase_digital_asset_instant` leaves orders `delivered` with `auto_release_at`; buyer uses `confirm_instant_delivery` / `open_instant_dispute`; the existing cron releases. Why: buyer protection without auto-refunds.
+- Code audit flags on listings are writable only by service role (trigger); `src/lib/code-audit.functions.ts` runs the Gemini pool audit. Why: sellers cannot self-certify.
+- Leaderboard ranking lives in the `get_merit_leaderboard` SQL function. Why: one tamper-proof formula.

@@ -24,8 +24,6 @@ export function usePlatformStats() {
   });
 }
 
-export type LeaderboardMetric = "rating" | "completed_orders" | "xp_points";
-
 export type LeaderRow = {
   id: string;
   display_name: string;
@@ -35,18 +33,23 @@ export type LeaderRow = {
   level: number;
   xp_points: number;
   is_verified: boolean;
+  dispute_rate: number;
+  speed_bonus: number;
+  merit_score: number;
 };
 
-/** Real seller ranking straight from the database — no boosting, no seeded rows. */
-export function useLeaderboard(metric: LeaderboardMetric) {
+/**
+ * Meritocratic ranking computed in the database:
+ * (completed × 10) + (rating × 20) − (dispute rate × 50) + speed bonus.
+ * Frozen accounts and sellers without completed orders are excluded server-side.
+ */
+export function useLeaderboard() {
   return useQuery({
-    queryKey: ["leaderboard", metric],
+    queryKey: ["leaderboard", "merit"],
     staleTime: 30_000,
+    refetchInterval: 60_000,
     queryFn: async () => {
-      const { data, error } = await supabase.rpc("get_leaderboard", {
-        p_filter: metric,
-        p_limit: 50,
-      });
+      const { data, error } = await supabase.rpc("get_merit_leaderboard", { p_limit: 50 });
       if (error) throw error;
       return (data ?? []).map((r) => ({
         id: String(r.id),
@@ -57,9 +60,10 @@ export function useLeaderboard(metric: LeaderboardMetric) {
         level: Number(r.level ?? 1),
         xp_points: Number(r.xp_points ?? 0),
         is_verified: Boolean(r.is_verified),
+        dispute_rate: Number(r.dispute_rate ?? 0),
+        speed_bonus: Number(r.speed_bonus ?? 0),
+        merit_score: Number(r.merit_score ?? 0),
       })) as LeaderRow[];
     },
-    select: (rows) => [...rows].sort((a, b) => b[metric] - a[metric]),
   });
 }
-

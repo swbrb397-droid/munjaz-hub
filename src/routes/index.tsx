@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { ArrowLeft, BadgeCheck, Gamepad2, ShieldCheck, Sparkle, Star, Zap } from "lucide-react";
+import { ArrowLeft, BadgeCheck, GraduationCap, ShieldCheck, Sparkle, Star, Zap } from "lucide-react";
 import { Card, Section } from "@/components/site/Shell";
 import { NETWORK_STRIP } from "@/lib/network-strip";
 import { useListings, useNfts } from "@/lib/catalog";
@@ -85,8 +85,8 @@ function Hero() {
           </h1>
           <p className="mt-4 max-w-xl text-base text-muted-foreground sm:text-lg">
             {tr(
-              "خدمات مستقلين، منتجات فورية، دورات، جلسات قيمنق، و NFT — بمحفظة داخلية بدون رسوم غاز، وسحوبات فورية للحسابات الموثقة.",
-              "Freelance services, instant products, courses, gaming sessions, and NFTs — with a gas-free internal wallet and instant withdrawals for verified accounts.",
+              "خدمات مستقلين، منتجات رقمية فورية، دورات تدريبية، و NFT — بمحفظة داخلية بدون رسوم غاز، وسحوبات فورية للحسابات الموثقة.",
+              "Freelance services, instant digital products, courses, and NFTs — with a gas-free internal wallet and instant withdrawals for verified accounts.",
             )}
           </p>
           <div className="mt-7 grid grid-cols-2 gap-3 sm:flex sm:flex-wrap">
@@ -122,10 +122,10 @@ function Hero() {
           </Card>
           <Card>
             <div className="flex items-center gap-3">
-              <Gamepad2 className="size-5 text-violet" />
+              <GraduationCap className="size-5 text-violet" />
               <div>
-                <p className="font-bold">{tr("مركز القيمنق والتدريب", "Gaming & coaching hub")}</p>
-                <p className="text-sm text-muted-foreground">{tr("حجز جلسات مباشرة مع مدربين محترفين.", "Book live sessions with professional coaches.")}</p>
+                <p className="font-bold">{tr("دورات ومنتجات رقمية بضمان 24 ساعة", "Courses & digital products with a 24h guarantee")}</p>
+                <p className="text-sm text-muted-foreground">{tr("استلام فوري مع مهلة 24 ساعة للإبلاغ عن أي محتوى معطوب.", "Instant access with a 24-hour window to report broken content.")}</p>
               </div>
             </div>
           </Card>
@@ -208,10 +208,9 @@ function Ticker() {
 }
 
 export function ServiceCard({
-  id, title, seller, price, rating, orders, verified, tag, cover, category, country,
-}: { id: string; title: string; seller: string; price: number; rating: number; orders: number; verified: boolean; tag: string; cover: string; category?: string; country?: string | null }) {
+  id, title, seller, price, rating, orders, verified, tag, cover, category, country, audited = false,
+}: { id: string; title: string; seller: string; price: number; rating: number; orders: number; verified: boolean; tag: string; cover: string; category?: string; country?: string | null; audited?: boolean | undefined }) {
   const { tr } = useLang();
-  const audited = /برمج|develop|code|عقود ذكية|smart contract|web3|crypto|blockchain/i.test(`${tag} ${title}`);
   const instant = category === "product" || category === "course" || /nft|قالب|template|أصل رقمي/i.test(`${tag} ${title}`);
   return (
     <Link to="/listing/$id" params={{ id }} className="block">
@@ -227,7 +226,7 @@ export function ServiceCard({
               className="absolute top-2 end-2 inline-flex items-center gap-1 rounded-full border border-primary/60 bg-background/70 px-2 py-0.5 text-[10px] font-bold text-primary backdrop-blur"
               style={{ boxShadow: "0 0 12px oklch(0.76 0.17 165 / 0.55)" }}
             >
-              <ShieldCheck className="size-3" /> كود مدقق ومحمي 🛡️
+              <ShieldCheck className="size-3" /> {tr("كود مدقق أمنياً", "Security Audited")}
             </span>
           )}
         </div>
