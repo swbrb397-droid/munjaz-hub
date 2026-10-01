@@ -16,7 +16,9 @@ export const Route = createFileRoute("/")({
     meta: [
       { title: "منصة المُنجِز | سوق العمل الحر والمنتجات الرقمية بضمان USDT | Al Munjiz Hub" },
       { name: "description", content: "منصة المُنجِز: سوق رقمي عالمي مستقل للخدمات المصغرة والعمل الحر والمنتجات الرقمية، يربط المبدعين والمشترين حول العالم بوساطة مالية ذكية (Escrow) ودفع فوري وآمن عبر USDT." },
-      { name: "description", lang: "en", content: "Al Munjiz Hub: A global borderless digital services and freelance marketplace with automated crypto escrow. Fast, secure USDT payments for creators and clients worldwide." } as Record<string, string>,
+      { name: "twitter:description", content: "Al Munjiz Hub: A global borderless digital services and freelance marketplace with automated crypto escrow. Fast, secure USDT payments for creators and clients worldwide." },
+      { property: "og:locale", content: "ar_AR" },
+      { property: "og:locale:alternate", content: "en_US" },
       { name: "keywords", content: "المُنجِز, Al Munjiz Hub, Munjaz, Freelance Marketplace, Digital Products, Crypto Escrow, USDT Payments, Web3 Freelancing, العمل الحر, وساطة مالية, خدمات مصغرة" },
       { property: "og:title", content: "Al Munjiz Hub | Global Crypto Freelance & Digital Escrow Marketplace" },
       { property: "og:description", content: "Empowering global talent with secure smart escrow, instant USDT payouts, and transparent platform fees." },
