@@ -391,13 +391,17 @@ export type Database = {
       }
       listings: {
         Row: {
+          audit_report: string | null
+          audit_status: string
           category: Database["public"]["Enums"]["listing_category"]
           cover_key: string
           cover_url: string | null
           created_at: string
           delivery_days: number
+          description: string | null
           id: string
           inspection_window_hours: number
+          is_code_audited: boolean
           is_published: boolean
           language: string
           orders_count: number
@@ -415,13 +419,17 @@ export type Database = {
           verified: boolean
         }
         Insert: {
+          audit_report?: string | null
+          audit_status?: string
           category?: Database["public"]["Enums"]["listing_category"]
           cover_key?: string
           cover_url?: string | null
           created_at?: string
           delivery_days?: number
+          description?: string | null
           id?: string
           inspection_window_hours?: number
+          is_code_audited?: boolean
           is_published?: boolean
           language?: string
           orders_count?: number
@@ -439,13 +447,17 @@ export type Database = {
           verified?: boolean
         }
         Update: {
+          audit_report?: string | null
+          audit_status?: string
           category?: Database["public"]["Enums"]["listing_category"]
           cover_key?: string
           cover_url?: string | null
           created_at?: string
           delivery_days?: number
+          description?: string | null
           id?: string
           inspection_window_hours?: number
+          is_code_audited?: boolean
           is_published?: boolean
           language?: string
           orders_count?: number
@@ -1536,6 +1548,10 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      confirm_instant_delivery: {
+        Args: { p_order_id: string }
+        Returns: undefined
+      }
       create_deposit: {
         Args: {
           _address?: string
@@ -1592,6 +1608,22 @@ export type Database = {
           reviewer_name: string
         }[]
       }
+      get_merit_leaderboard: {
+        Args: { p_limit?: number }
+        Returns: {
+          avatar_url: string
+          completed_orders: number
+          display_name: string
+          dispute_rate: number
+          id: string
+          is_verified: boolean
+          level: number
+          merit_score: number
+          rating: number
+          speed_bonus: number
+          xp_points: number
+        }[]
+      }
       get_public_profiles: {
         Args: { _ids: string[] }
         Returns: {
@@ -1630,6 +1662,10 @@ export type Database = {
           _kind: Database["public"]["Enums"]["incident_kind"]
           _meta?: Json
         }
+        Returns: string
+      }
+      open_instant_dispute: {
+        Args: { p_evidence: Json; p_order_id: string; p_reason: string }
         Returns: string
       }
       pay_referral_commission: {
@@ -1914,7 +1950,7 @@ export type Database = {
         | "frozen_account_attempt"
         | "prohibited_content_blocked"
       kyc_tier: "tier0" | "tier1" | "tier2" | "tier3"
-      listing_category: "freelance" | "course" | "product" | "gaming"
+      listing_category: "freelance" | "course" | "product"
       order_status:
         | "pending"
         | "in_progress"
@@ -2088,7 +2124,7 @@ export const Constants = {
         "prohibited_content_blocked",
       ],
       kyc_tier: ["tier0", "tier1", "tier2", "tier3"],
-      listing_category: ["freelance", "course", "product", "gaming"],
+      listing_category: ["freelance", "course", "product"],
       order_status: [
         "pending",
         "in_progress",
