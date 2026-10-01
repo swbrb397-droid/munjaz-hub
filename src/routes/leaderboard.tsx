@@ -1,9 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
-import { BadgeCheck, Crown, Medal, Sparkles, Star, Trophy, Zap } from "lucide-react";
+import { BadgeCheck, Crown, Medal, Sparkles } from "lucide-react";
 import { Card, Section } from "@/components/site/Shell";
 import { useLang } from "@/lib/lang";
-import { useLeaderboard, type LeaderboardMetric } from "@/lib/platform";
+import { useLeaderboard } from "@/lib/platform";
 
 
 export const Route = createFileRoute("/leaderboard")({
@@ -28,16 +27,8 @@ const rankStyles = [
 
 function Leaderboard() {
   const { tr } = useLang();
-  const [metric, setMetric] = useState<LeaderboardMetric>("rating");
-  const board = useLeaderboard(metric);
-  const rows = board.data ?? [];
-  const rankedRows = rows.filter((seller) => seller.completed_orders > 0);
-
-  const metrics: { key: LeaderboardMetric; label: string; icon: typeof Star }[] = [
-    { key: "rating", label: tr("التقييم", "Rating"), icon: Star },
-    { key: "completed_orders", label: tr("الطلبات المكتملة", "Completed orders"), icon: Trophy },
-    { key: "xp_points", label: tr("نقاط الخبرة", "XP points"), icon: Zap },
-  ];
+  const board = useLeaderboard();
+  const rankedRows = board.data ?? [];
 
   return (
     <Section
@@ -48,19 +39,12 @@ function Leaderboard() {
       )}
     >
 
-      <Card className="mb-6 flex flex-wrap items-center gap-2">
-        <span className="me-2 text-sm text-muted-foreground">{tr("الفرز حسب", "Sort by")}</span>
-        {metrics.map((m) => (
-          <button
-            key={m.key}
-            type="button"
-            onClick={() => setMetric(m.key)}
-            aria-pressed={metric === m.key}
-            className={`chip ${metric === m.key ? "chip-active" : "chip-hover"}`}
-          >
-            <m.icon className="size-4" /> {m.label}
-          </button>
-        ))}
+      <Card className="mb-6 grid gap-1 text-xs leading-relaxed text-muted-foreground">
+        <span className="font-bold text-foreground">{tr("معادلة الكفاءة الاستحقاقية", "Meritocratic efficiency score")}</span>
+        <span dir="ltr" className="font-mono text-primary">
+          Score = Completed×10 + Rating×20 − DisputeRate×50 + SpeedBonus(0–15)
+        </span>
+        <span>{tr("تُستبعد الحسابات المجمدة ومن ليس لديهم طلبات مكتملة. تتحدث كل دقيقة.", "Frozen accounts and sellers with no completed orders are excluded. Refreshes every minute.")}</span>
       </Card>
 
       {board.isLoading ? (
@@ -111,9 +95,7 @@ function Leaderboard() {
                       </span>
                     </div>
                     <span className="shrink-0 text-xs font-bold text-primary" dir="ltr">
-                      {metric === "rating"
-                        ? seller.rating.toFixed(2)
-                        : seller[metric].toLocaleString("en-US")}
+                      {seller.merit_score.toFixed(2)}
                     </span>
                   </div>
                   <dl className="mt-4 grid grid-cols-3 divide-x divide-x-reverse divide-border border-t border-border pt-3 text-center">
@@ -126,8 +108,8 @@ function Leaderboard() {
                       <dd className="mt-1 font-bold" dir="ltr">{seller.completed_orders.toLocaleString("en-US")}</dd>
                     </div>
                     <div className="min-w-0 px-1">
-                      <dt className="truncate text-[10px] text-muted-foreground">XP</dt>
-                      <dd className="mt-1 font-bold text-muted-foreground" dir="ltr">{seller.xp_points.toLocaleString("en-US")}</dd>
+                      <dt className="truncate text-[10px] text-muted-foreground">{tr("النزاعات", "Disputes")}</dt>
+                      <dd className="mt-1 font-bold text-muted-foreground" dir="ltr">{(seller.dispute_rate * 100).toFixed(2)}%</dd>
                     </div>
                   </dl>
                 </Card>
@@ -143,7 +125,8 @@ function Leaderboard() {
                 <th className="p-4 text-start font-medium">{tr("البائع", "Seller")}</th>
                 <th className="p-4 text-start font-medium">{tr("التقييم", "Rating")}</th>
                 <th className="p-4 text-start font-medium">{tr("الطلبات المكتملة", "Completed")}</th>
-                <th className="p-4 text-start font-medium">{tr("نقاط الخبرة", "XP")}</th>
+                <th className="p-4 text-start font-medium">{tr("نسبة النزاعات", "Dispute rate")}</th>
+                <th className="p-4 text-start font-medium">{tr("نقاط الكفاءة", "Merit score")}</th>
               </tr>
             </thead>
             <tbody>
@@ -182,7 +165,8 @@ function Leaderboard() {
                     </td>
                     <td className="p-4 font-bold text-primary">{s.rating.toFixed(2)}</td>
                     <td className="p-4">{s.completed_orders.toLocaleString("en-US")}</td>
-                    <td className="p-4 text-muted-foreground">{s.xp_points.toLocaleString("en-US")}</td>
+                    <td className="p-4 text-muted-foreground" dir="ltr">{(s.dispute_rate * 100).toFixed(2)}%</td>
+                    <td className="p-4 font-black text-primary" dir="ltr">{s.merit_score.toFixed(2)}</td>
                   </tr>
                 );
               })}
