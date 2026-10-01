@@ -162,7 +162,8 @@ export function useNfts(opts: { search?: string; sort?: SortKey } = {}) {
         .or("tag_en.ilike.%nft%,tag_ar.ilike.%nft%,tag_ar.ilike.%عقود ذكية%,title_en.ilike.%nft%,title_ar.ilike.%NFT%")
         .order("created_at", { ascending: false })
         .limit(24);
-      if (search) lq = lq.or(`title_ar.ilike.%${search}%,title_en.ilike.%${search}%`);
+      const safeL = (search ?? "").replace(/[,().%*\\:"]/g, " ").trim();
+      if (safeL) lq = lq.or(`title_ar.ilike.%${safeL}%,title_en.ilike.%${safeL}%`);
       const listingNfts = await lq;
 
       const curated: NftItem[] = (data ?? []).map((r) => ({
