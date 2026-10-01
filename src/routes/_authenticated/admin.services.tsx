@@ -27,7 +27,6 @@ const CATEGORIES = [
   ["freelance", "خدمات مستقلة", "Freelance"],
   ["course", "دورات", "Courses"],
   ["product", "منتجات رقمية", "Products"],
-  ["gaming", "ألعاب", "Gaming"],
 ] as const;
 
 type StatusFilter = "all" | "active" | "suspended";

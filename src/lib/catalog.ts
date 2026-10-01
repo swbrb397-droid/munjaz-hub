@@ -5,7 +5,6 @@ import coverDesign from "@/assets/cover-design.jpg";
 import coverCode from "@/assets/cover-code.jpg";
 import coverCourse from "@/assets/cover-course.jpg";
 import coverProduct from "@/assets/cover-product.jpg";
-import coverGaming from "@/assets/cover-gaming.jpg";
 import coverVideo from "@/assets/cover-video.jpg";
 
 export const COVERS: Record<string, string> = {
@@ -13,11 +12,10 @@ export const COVERS: Record<string, string> = {
   code: coverCode,
   course: coverCourse,
   product: coverProduct,
-  gaming: coverGaming,
   video: coverVideo,
 };
 
-export type ListingCategory = "freelance" | "course" | "product" | "gaming";
+export type ListingCategory = "freelance" | "course" | "product";
 export type SortKey = "recent" | "price_asc" | "price_desc" | "rating" | "popular";
 
 export type Listing = {
@@ -29,6 +27,7 @@ export type Listing = {
   rating: number;
   orders: number;
   verified: boolean;
+  audited?: boolean;
   tag: string;
   cover: string;
   deliveryDays?: number;
@@ -85,7 +84,7 @@ export function useListings(opts: ListingFilters = {}) {
       let q = supabase
         .from("listings")
         .select(
-          "id,title_ar,title_en,seller_ar,seller_en,category,price_usdt,rating,orders_count,verified,tag_ar,tag_en,cover_key,cover_url,delivery_days,language,owner_id",
+          "id,title_ar,title_en,seller_ar,seller_en,category,price_usdt,rating,orders_count,verified,tag_ar,tag_en,cover_key,cover_url,delivery_days,language,owner_id,is_code_audited",
           { count: "exact" },
         )
         .eq("is_published", true)
@@ -122,6 +121,7 @@ export function useListings(opts: ListingFilters = {}) {
           rating: Number(r.rating),
           orders: r.orders_count,
           verified: r.verified,
+          audited: r.is_code_audited === true,
           tag: lang === "ar" ? r.tag_ar : r.tag_en,
           cover: (r.cover_url ?? "").trim(),
           deliveryDays: r.delivery_days ?? 3,

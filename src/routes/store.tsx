@@ -97,7 +97,6 @@ function Store() {
     { key: "freelance", label: tr("خدمات مستقلين", "Freelance services") },
     { key: "course", label: tr("دورات", "Courses") },
     { key: "product", label: tr("منتجات رقمية", "Digital products") },
-    { key: "gaming", label: tr("قيمنق", "Gaming") },
   ];
 
   const sorts: { key: SortKey; label: string }[] = [
