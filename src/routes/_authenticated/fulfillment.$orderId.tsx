@@ -66,16 +66,15 @@ function Fulfillment() {
     setConfirming(true);
     const { error } = await supabase.rpc("confirm_instant_delivery", { p_order_id: orderId });
     setConfirming(false);
-    if (error) return toast.error(tr("تعذّر تأكيد الاستلام", "Could not confirm receipt"));
+    if (error) { toast.error(tr("تعذّر تأكيد الاستلام", "Could not confirm receipt")); return; }
     toast.success(tr("تم تأكيد الاستلام وتحرير المبلغ للبائع", "Receipt confirmed and funds released to the seller"));
     refresh();
   };
 
   const submitDispute = async () => {
-    if (reason.trim().length < 20) return toast.error(tr("اكتب سبباً واضحاً لا يقل عن 20 حرفاً", "Write a clear reason of at least 20 characters"));
-    if (!shot) return toast.error(tr("لقطة الشاشة إلزامية كدليل", "A screenshot is required as evidence"));
-    if (!shot.type.startsWith("image/") || shot.size > 5 * 1024 * 1024)
-      return toast.error(tr("يجب أن يكون الدليل صورة لا تتجاوز 5MB", "Evidence must be an image up to 5MB"));
+    if (reason.trim().length < 20) { toast.error(tr("اكتب سبباً واضحاً لا يقل عن 20 حرفاً", "Write a clear reason of at least 20 characters")); return; }
+    if (!shot) { toast.error(tr("لقطة الشاشة إلزامية كدليل", "A screenshot is required as evidence")); return; }
+    if (!shot.type.startsWith("image/") || shot.size > 5 * 1024 * 1024) { toast.error(tr("يجب أن يكون الدليل صورة لا تتجاوز 5MB", "Evidence must be an image up to 5MB")); return; }
     setSending(true);
     try {
       const safe = shot.name.replace(/[^\w.\-]+/g, "_").slice(-60);
