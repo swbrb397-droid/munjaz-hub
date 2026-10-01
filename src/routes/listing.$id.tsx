@@ -157,7 +157,7 @@ function ListingDetail() {
   const safeTag = sanitizeText(item.tag ?? "", 60) || tr("خدمة رقمية", "Digital service");
 
   return (
-    <Section level={2}
+    <Section
       title={safeTitle}
       subtitle={`${safeSeller} · ${safeTag}`}
       action={<Link to="/store" className="inline-flex items-center gap-2 text-sm text-primary">{tr("كل العروض", "All listings")} <ArrowLeft className="size-4" /></Link>}
@@ -167,7 +167,7 @@ function ListingDetail() {
           <div className="overflow-hidden rounded-xl border border-border">
             <CoverImage src={item.cover} alt={item.title} category={item.category} className="h-64 w-full" iconClassName="size-12" />
           </div>
-          <h1 className="mt-5 text-2xl font-black">{item.title}</h1>
+          <p className="mt-5 text-2xl font-black">{item.title}</p>
           <p className="mt-2 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
             {item.seller} {item.verified && <VerifiedBadge />}
             <span className="inline-flex items-center gap-1"><Star className="size-3.5 fill-accent text-accent" /> {item.rating}</span>

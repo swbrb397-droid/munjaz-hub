@@ -408,17 +408,19 @@ export function Section({
 }) {
   return (
     <section className="mx-auto max-w-7xl px-4 py-9 sm:py-12">
-      <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
-        <div>
-          {level === 1 ? (
-            <h1 className="select-none text-xl font-extrabold sm:text-3xl">{title}</h1>
-          ) : (
-            <h2 className="select-none text-xl font-extrabold sm:text-3xl">{title}</h2>
-          )}
-          {subtitle && <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p>}
+      {(title || subtitle || action) && (
+        <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
+          <div>
+            {title && (level === 1 ? (
+              <h1 className="select-none text-xl font-extrabold sm:text-3xl">{title}</h1>
+            ) : (
+              <h2 className="select-none text-xl font-extrabold sm:text-3xl">{title}</h2>
+            ))}
+            {subtitle && <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p>}
+          </div>
+          {action}
         </div>
-        {action}
-      </div>
+      )}
       {children}
     </section>
   );

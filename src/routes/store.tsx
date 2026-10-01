@@ -39,7 +39,7 @@ function ListingDeepLink({ id, onClose }: { id: string; onClose: () => void }) {
     <div className="fixed inset-0 z-[70] grid place-items-center overflow-y-auto bg-background/85 p-4 backdrop-blur" role="dialog" aria-modal="true">
       <div className="w-full max-w-md rounded-2xl border border-border bg-card p-5">
         <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
-          <h2 className="min-w-0 truncate text-sm font-black">{tr("عرض مشارَك 🔗", "Shared listing 🔗")}</h2>
+          <p className="min-w-0 truncate text-sm font-black">{tr("عرض مشارَك 🔗", "Shared listing 🔗")}</p>
           <button type="button" onClick={onClose} aria-label={tr("إغلاق", "Close")} className="grid size-8 shrink-0 place-items-center rounded-lg border border-border">
             <X className="size-4" />
           </button>
@@ -257,7 +257,7 @@ function Store() {
       </Section>
 
 
-      <Section title={tr("معرض NFT", "NFT gallery")} subtitle={tr("مجموعات موثقة قابلة للعرض والبيع", "Verified collections available to display and sell")}>
+      <Section level={2} title={tr("معرض NFT", "NFT gallery")} subtitle={tr("مجموعات موثقة قابلة للعرض والبيع", "Verified collections available to display and sell")}>
         {nfts.isLoading ? (
           <div className="flex justify-center py-10"><Loader2 className="size-5 animate-spin text-primary" /></div>
         ) : (
