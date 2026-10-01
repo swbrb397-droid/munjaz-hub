@@ -14,11 +14,14 @@ import { countryName, flagEmoji } from "@/lib/countries";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "منصة المُنجِز | سوق الخدمات المصغرة والمنتجات الرقمية بـ USDT" },
-      { name: "description", content: "أول منصة عربية موثوقة للخدمات المصغرة والعمل الحر والأصول الرقمية، بدفع فوري عبر USDT مع ضمان مالي ذكي وحماية كاملة للمشتري والبائع." },
-      { name: "keywords", content: "المُنجِز, المنجز, منصة المنجز, عمل حر, خدمات مصغرة, USDT, وساطة مالية, منتجات رقمية, Al Munjiz Hub, Almunjiz" },
-      { property: "og:title", content: "منصة المُنجِز - Al Munjiz Hub" },
-      { property: "og:description", content: "سوق رقمي متكامل للعمل الحر، المنتجات الفورية، والدورات التدريبية بدفع عبر USDT وضمان وساطة ذكي." },
+      { title: "منصة المُنجِز | سوق العمل الحر والمنتجات الرقمية بضمان USDT | Al Munjiz Hub" },
+      { name: "description", content: "منصة المُنجِز: سوق رقمي عالمي مستقل للخدمات المصغرة والعمل الحر والمنتجات الرقمية، يربط المبدعين والمشترين حول العالم بوساطة مالية ذكية (Escrow) ودفع فوري وآمن عبر USDT." },
+      { name: "twitter:description", content: "Al Munjiz Hub: A global borderless digital services and freelance marketplace with automated crypto escrow. Fast, secure USDT payments for creators and clients worldwide." },
+      { property: "og:locale", content: "ar_AR" },
+      { property: "og:locale:alternate", content: "en_US" },
+      { name: "keywords", content: "المُنجِز, Al Munjiz Hub, Munjaz, Freelance Marketplace, Digital Products, Crypto Escrow, USDT Payments, Web3 Freelancing, العمل الحر, وساطة مالية, خدمات مصغرة" },
+      { property: "og:title", content: "Al Munjiz Hub | Global Crypto Freelance & Digital Escrow Marketplace" },
+      { property: "og:description", content: "Empowering global talent with secure smart escrow, instant USDT payouts, and transparent platform fees." },
       { property: "og:url", content: "https://almunjazhub.com" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },

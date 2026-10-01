@@ -148,6 +148,7 @@ export const createTopUpInvoice = createServerFn({ method: "POST" })
               price_currency: "usd",
               pay_currency: NP_CURRENCY[data.network],
               order_id: invoice.id,
+              ipn_callback_url: "https://almunjazhub.com/api/public/crypto-deposit-webhook",
               order_description: `Munjaz wallet top-up ${data.amount} USDT`,
               is_fee_paid_by_user: true,
             }
@@ -156,6 +157,7 @@ export const createTopUpInvoice = createServerFn({ method: "POST" })
               price_currency: "usd",
               pay_currency: NP_CURRENCY[data.network],
               order_id: invoice.id,
+              ipn_callback_url: "https://almunjazhub.com/api/public/crypto-deposit-webhook",
               order_description: `Munjaz wallet top-up ${data.amount} USDT`,
             };
 
