@@ -70,6 +70,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "author", content: "Al-Munjaz" },
       { name: "theme-color", content: "#0B0F19" },
       { name: "application-name", content: "مُنجَز | Almunjaz Hub" },
+      { name: "google-site-verification", content: "j52cZizrSH7NVvYjSyZrmbXEDb5CwLT4LThNJoH77X4" },
       { property: "og:site_name", content: "مُنجَز | Almunjaz Hub" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
