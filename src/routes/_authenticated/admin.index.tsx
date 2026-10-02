@@ -9,6 +9,7 @@ import {
   ShieldAlert,
   ShieldCheck,
   TrendingUp,
+  ArrowRight,
 } from "lucide-react";
 import { Card, Section } from "@/components/site/Shell";
 import { useLang } from "@/lib/lang";
