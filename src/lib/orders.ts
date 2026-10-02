@@ -1,3 +1,4 @@
+import { fireOrderEmail } from "@/lib/order-email";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/cloud-client";
 import { sanitizeText } from "@/lib/security";
@@ -123,6 +124,7 @@ export function useCreateOrder() {
         if (funded.error.message.includes("INSUFFICIENT_FUNDS")) throw new Error("INSUFFICIENT_BALANCE");
         throw new Error(funded.error.message);
       }
+      fireOrderEmail(data.id, "order_placed");
       return data;
     },
     onSuccess: () => {

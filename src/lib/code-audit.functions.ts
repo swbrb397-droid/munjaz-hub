@@ -22,6 +22,14 @@ export const requestCodeAudit = createServerFn({ method: "POST" })
       .maybeSingle();
     if (error || !listing || listing.owner_id !== userId) throw new Error("NOT_FOUND");
 
+    // Cost guard: max 3 Gemini audits per user per hour (persisted in rate_limit_events).
+    const rl = await supabase.rpc("check_rate_limit", { _action: "code_audit", _max: 3, _window: "1 hour" });
+    if (rl.error) {
+      if (rl.error.message.includes("RATE_LIMITED"))
+        throw new Error("RATE_LIMITED: تجاوزت الحد المسموح (3 طلبات فحص في الساعة). يُرجى المحاولة لاحقاً.");
+      throw new Error("AUDIT_UNAVAILABLE");
+    }
+
     const { data: payload } = await supabase
       .from("listing_instant_delivery")
       .select("content,file_path,file_name")

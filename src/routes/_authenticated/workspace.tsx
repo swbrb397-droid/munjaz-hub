@@ -1,3 +1,4 @@
+import { fireOrderEmail } from "@/lib/order-email";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -840,6 +841,7 @@ function Workspace() {
         lang: "ar",
       });
       if (notice.error) throw notice.error;
+      fireOrderEmail(order.id, "dispute_opened");
     },
     onSuccess: () => {
       setReason("");
