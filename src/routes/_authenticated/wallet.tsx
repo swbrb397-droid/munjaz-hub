@@ -563,7 +563,7 @@ function WalletPage() {
                       className={`font-mono text-[11px] font-bold ${g.tone === "best" ? "text-primary" : "text-muted-foreground"}`}
                       dir="ltr"
                     >
-                      ≈ {g.fee.toFixed(3)} USDT
+                      {g.fee.toFixed(2)} USDT
                     </span>
                     <span className="text-[10px] text-muted-foreground">
                       {tr(g.etaAr, g.etaEn)}
