@@ -6,7 +6,7 @@ export type Lang = "ar" | "en";
 const dict = {
   ar: {
     home: "الرئيسية",
-    store: "المتجر و NFT",
+    store: "السوق",
     leaderboard: "لوحة المتصدرين",
     createListing: "إنشاء عرض",
     dashboard: "لوحة التحكم",
@@ -30,7 +30,7 @@ const dict = {
   },
   en: {
     home: "Home",
-    store: "Store & NFT",
+    store: "Store",
     leaderboard: "Leaderboard",
     createListing: "Create listing",
     dashboard: "Dashboard",
