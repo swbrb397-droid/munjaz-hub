@@ -23,7 +23,9 @@ import { useLang } from "@/lib/lang";
 import { useProfile, useRoles, useTransactions, useWallet } from "@/lib/queries";
 import {
   MIN_WITHDRAWAL,
-  WITHDRAWAL_FEE,
+  NETWORK_WITHDRAWAL_FEE,
+  useWithdrawalCooldown,
+  useFinancialHalt,
   slaHoursForTier,
   requestWithdrawalSecure,
   useMyWithdrawals,
@@ -281,7 +283,7 @@ function WalletPage() {
   const parsed = parseUsdt(amount) ?? 0;
   // Hard client-side guards mirroring the database withdrawal rules.
   const overBalance = parsed > balance;
-  const belowMinimum = parsed < MIN_WITHDRAWAL;
+  const belowMinimum = parsed < MIN_WITHDRAWAL; // refined below with net payout
 
   // Smart AML: service earnings are 100% exempt from the anti-mixing surcharge.
   // Only unspent crypto deposits that never entered escrow require the consent.
@@ -291,7 +293,24 @@ function WalletPage() {
   const amlExempt = parsed > 0 && parsed <= earnedAvailable;
   // Mirrors request_withdrawal: earnings are spent first; 5% applies only to the deposit portion.
   const depositPortion = Math.max(0, parsed - earnedAvailable);
-  const totalFee = Number((WITHDRAWAL_FEE + depositPortion * 0.05).toFixed(2));
+  const totalFee = Number((NETWORK_WITHDRAWAL_FEE[network] + depositPortion * 0.05).toFixed(2));
+  const belowNetMinimum = parsed > 0 && parsed - totalFee < MIN_WITHDRAWAL;
+  const cooldown = useWithdrawalCooldown();
+  const halt = useFinancialHalt();
+  const halted = halt.data === true;
+  const [nowTick, setNowTick] = useState(() => Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNowTick(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, []);
+  const cooldownMs = cooldown.data ? Math.max(0, new Date(cooldown.data).getTime() - nowTick) : 0;
+  const cooldownLabel = (() => {
+    const t = Math.floor(cooldownMs / 1000);
+    const h = String(Math.floor(t / 3600)).padStart(2, "0");
+    const m = String(Math.floor((t % 3600) / 60)).padStart(2, "0");
+    const sec = String(t % 60).padStart(2, "0");
+    return `${h}:${m}:${sec}`;
+  })();
 
   // Triple trigger: password change, MFA change, or payout-address change.
   const rawLockHours = coolingHoursLeft([
@@ -301,7 +320,7 @@ function WalletPage() {
       ?.payout_address_updated_at,
   ]);
   // Administrators bypass the 24h security cooling lock (operational testing).
-  const lockHours = isAdmin ? 0 : rawLockHours;
+  const lockHours = cooldownMs > 0 ? Math.ceil(cooldownMs / 3600_000) : isAdmin ? 0 : rawLockHours;
 
   const withdraw = useMutation({
     mutationFn: async () => {
@@ -469,9 +488,23 @@ function WalletPage() {
           {lockHours > 0 && (
             <p className="mt-3 inline-flex items-start gap-2 rounded-xl border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-[11px] leading-relaxed text-amber-500">
               <Lock className="mt-0.5 size-3.5 shrink-0" />
+              <span>
+                {tr(
+                  "تم تجميد السحب مؤقتاً لمدة 24 ساعة كإجراء احترازي لتحديث بيانات الأمان.",
+                  "Withdrawals are paused for 24 hours as a precaution after a security update.",
+                )}
+                {cooldownMs > 0 && (
+                  <span className="ms-1 font-mono font-black" dir="ltr">{cooldownLabel}</span>
+                )}
+              </span>
+            </p>
+          )}
+          {halted && (
+            <p role="alert" className="mt-3 flex items-start gap-2 rounded-xl border border-destructive/50 bg-destructive/10 px-3 py-2 text-[11px] font-bold leading-relaxed text-destructive">
+              <Lock className="mt-0.5 size-3.5 shrink-0" />
               {tr(
-                `السحب مجمد مؤقتاً لمدة ${lockHours} ساعة بعد إجراء تعديل أمني على حسابك.`,
-                `Withdrawals are temporarily locked for ${lockHours} more hour(s) after a recent security change.`,
+                "النظام المالي في وضع صيانة طارئة حالياً. جميع التحويلات معلقة مؤقتاً.",
+                "The financial system is under emergency maintenance. All transfers are temporarily suspended.",
               )}
             </p>
           )}
@@ -648,8 +681,10 @@ function WalletPage() {
                 withdraw.isPending ||
                 frozen ||
                 lockHours > 0 ||
+                halted ||
                 overBalance ||
                 belowMinimum ||
+                belowNetMinimum ||
                 (!legalAck && !amlExempt)
               }
               className="inline-flex min-h-[44px] items-center gap-2 rounded-lg bg-primary px-4 py-2 font-bold text-primary-foreground disabled:opacity-60"
