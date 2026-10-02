@@ -1,3 +1,4 @@
+import { fireOrderEmail } from "@/lib/order-email";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -87,6 +88,7 @@ function Fulfillment() {
         p_evidence: [{ bucket: "digital-vault", path, name: safe }],
       });
       if (error) throw error;
+      fireOrderEmail(orderId, "dispute_opened");
       toast.success(tr("تم فتح النزاع — المبلغ مجمّد حتى قرار الإدارة", "Dispute opened — funds stay frozen until the admin ruling"));
       setDisputeOpen(false);
       refresh();
@@ -224,6 +226,12 @@ function Fulfillment() {
                 {downloading ? <Loader2 className="size-4 animate-spin" /> : <Download className="size-4" />}
                 {tr("تنزيل الملف الآن", "Download the file now")}
               </button>
+            )}
+            {/\.(zip|rar|7z|tar|gz)$/i.test(delivery.data?.file_name ?? delivery.data?.file_path ?? "") && (
+              <p role="note" className="flex items-start gap-2 rounded-xl border border-destructive/40 bg-destructive/10 p-3 text-xs font-bold text-foreground">
+                <AlertTriangle className="mt-0.5 size-4 shrink-0 text-destructive" />
+                تنبيه أمني: يُرجى دائماً فحص الملفات المضغوطة ببرنامج مكافحة الفيروسات قبل فتحها.
+              </p>
             )}
 
             {delivery.data?.content && (

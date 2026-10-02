@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.guard_order_message_integrity() FROM public, anon, authenticated;

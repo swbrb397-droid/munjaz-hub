@@ -1,8 +1,9 @@
+import { fireOrderEmail } from "@/lib/order-email";
 import { useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/cloud-client";
 import { useAuth } from "@/hooks/use-auth";
-import { checkUpload } from "@/lib/file-guard";
+import { checkUpload, checkUploadDeep, checkArchive, isDangerousFile, EXECUTABLE_REJECTION } from "@/lib/file-guard";
 import { sanitizeText } from "@/lib/security";
 import type { Tables } from "@/integrations/supabase/types";
 
@@ -100,7 +101,7 @@ export function useSendAttachment(orderId: string | null) {
       tier?: string | null;
     }) => {
       if (!orderId) throw new Error("NO_ORDER");
-      const rejection = checkUpload(file, tier);
+      const rejection = await checkUploadDeep(file, tier);
       if (rejection) throw new Error(rejection);
       const safeName = file.name.replace(/[^\w.\-]+/g, "_").slice(-80);
       const path = `${orderId}/${Date.now()}_${safeName}`;
@@ -236,6 +237,9 @@ export function useUploadDeliverable(orderId: string | null) {
   return useMutation({
     mutationFn: async ({ file, isFinal }: { file: File; isFinal: boolean }) => {
       if (!orderId) throw new Error("NO_ORDER");
+      if (isDangerousFile(file.name)) throw new Error(EXECUTABLE_REJECTION);
+      const archiveErr = await checkArchive(file);
+      if (archiveErr) throw new Error(archiveErr);
       const safeName = file.name.replace(/[^\w.\-]+/g, "_").slice(-80);
       const path = `${orderId}/${Date.now()}-${safeName}`;
       const buffer = await file.arrayBuffer();
@@ -258,6 +262,7 @@ export function useUploadDeliverable(orderId: string | null) {
         is_final: isFinal,
       });
       if (error) throw error;
+      fireOrderEmail(orderId, "deliverable_submitted");
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["order_deliverables", orderId] }),
   });
@@ -281,6 +286,7 @@ export function useLinkDeliverable(orderId: string | null) {
         is_final: isFinal,
       });
       if (error) throw error;
+      fireOrderEmail(orderId, "deliverable_submitted");
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["order_deliverables", orderId] }),
   });

@@ -121,6 +121,16 @@ export const createTopUpInvoice = createServerFn({ method: "POST" })
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
+    // Throttle: at most 3 open (pending, unexpired) invoices per wallet.
+    const { count: openCount, error: countErr } = await supabaseAdmin
+      .from("crypto_invoices")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", userId)
+      .eq("status", "pending")
+      .gt("expires_at", new Date().toISOString());
+    if (countErr) throw new Error("INVOICE_FAILED");
+    if ((openCount ?? 0) >= 3) throw new Error("TOO_MANY_OPEN_INVOICES");
+
     const { data: invoice, error } = await supabaseAdmin
       .from("crypto_invoices")
       .insert({

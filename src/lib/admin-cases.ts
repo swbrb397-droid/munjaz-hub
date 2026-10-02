@@ -103,14 +103,17 @@ export function useResolveDispute() {
   return useMutation({
     mutationFn: async (input: {
       id: string;
-      action: "release" | "refund";
+      action: "release" | "refund" | "split";
       ruling?: string;
+      /** Buyer refund share (1–99) when action is "split". */
+      refundPct?: number;
       orderId?: string | null;
     }) => {
       const { error } = await supabase.rpc("admin_resolve_dispute", {
         _case_id: input.id,
         _action: input.action,
         ...(input.ruling ? { _ruling: input.ruling } : {}),
+        ...(input.action === "split" ? { _refund_pct: input.refundPct } : {}),
       });
       if (error) throw error;
 
@@ -122,7 +125,9 @@ export function useResolveDispute() {
             order_id: input.orderId,
             sender_id: auth.user.id,
             body:
-              input.action === "release"
+              input.action === "split"
+                ? `⚖️ حكم الإدارة العليا: تسوية جزئية — استرداد ${input.refundPct}% للمشتري وتحرير ${100 - (input.refundPct ?? 0)}% للبائع بعد خصم عمولة المنصة، وأُغلق النزاع نهائياً.${input.ruling ? ` الحيثيات: ${input.ruling}` : ""}`
+                : input.action === "release"
                 ? `⚖️ حكم الإدارة العليا: تم الحكم لصالح البائع وتحرير مبلغ الضمان بعد خصم عمولة المنصة، وأُغلق النزاع نهائياً.${input.ruling ? ` الحيثيات: ${input.ruling}` : ""}`
                 : `⚖️ حكم الإدارة العليا: تم الحكم لصالح المشتري واسترداد كامل مبلغ الضمان إلى محفظته، وأُغلق النزاع نهائياً.${input.ruling ? ` الحيثيات: ${input.ruling}` : ""}`,
             lang: "ar",
@@ -134,7 +139,7 @@ export function useResolveDispute() {
         type: "DISPUTE_FLAG",
         userId: null,
         target: input.id,
-        meta: { action: input.action, order: input.orderId ?? "" },
+        meta: { action: input.action, order: input.orderId ?? "", refund_pct: input.refundPct ?? "" },
       });
     },
     onSuccess: () => {

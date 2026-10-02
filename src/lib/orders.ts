@@ -1,3 +1,4 @@
+import { fireOrderEmail } from "@/lib/order-email";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/cloud-client";
 import { sanitizeText } from "@/lib/security";
@@ -123,6 +124,7 @@ export function useCreateOrder() {
         if (funded.error.message.includes("INSUFFICIENT_FUNDS")) throw new Error("INSUFFICIENT_BALANCE");
         throw new Error(funded.error.message);
       }
+      fireOrderEmail(data.id, "order_placed");
       return data;
     },
     onSuccess: () => {
@@ -171,6 +173,29 @@ export function useOrderTransition() {
       qc.invalidateQueries({ queryKey: ["wallet"] });
       qc.invalidateQueries({ queryKey: ["transactions"] });
       qc.invalidateQueries({ queryKey: ["profile"] });
+    },
+  });
+}
+
+/** Buyer self-cancel within 15 minutes of funding while the seller hasn't started. */
+export function useBuyerInstantCancel() {
+  const qc = useQueryClient();
+  const { tr } = useLang();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.rpc("buyer_instant_cancel" as never, { p_order_id: id } as never);
+      if (error) {
+        if (error.message.includes("CANCEL_WINDOW_CLOSED"))
+          throw new Error(tr("انتهت مهلة الإلغاء الفوري (15 دقيقة). افتح نزاعاً إن لزم.", "The 15-minute instant-cancel window has closed."));
+        if (error.message.includes("SELLER_STARTED"))
+          throw new Error(tr("بدأ البائع العمل بالفعل — لا يمكن الإلغاء الفوري.", "The seller has already started — instant cancel is unavailable."));
+        throw new Error(error.message);
+      }
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["orders"] });
+      qc.invalidateQueries({ queryKey: ["wallet"] });
+      qc.invalidateQueries({ queryKey: ["transactions"] });
     },
   });
 }

@@ -1,3 +1,4 @@
+import { fireOrderEmail } from "@/lib/order-email";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -35,7 +36,7 @@ import { useLang } from "@/lib/lang";
 import { useAuth } from "@/hooks/use-auth";
 import { useOrders, useProfile } from "@/lib/queries";
 import { checkUpload, tierFileLimitMb } from "@/lib/file-guard";
-import { nextActions, useOrderTransition, type OrderStatus } from "@/lib/orders";
+import { nextActions, useOrderTransition, useBuyerInstantCancel, type OrderStatus } from "@/lib/orders";
 import {
   useCreateMilestones,
   useEditMessage,
@@ -465,6 +466,7 @@ function Workspace() {
   const linkDeliverable = useLinkDeliverable(selected);
   const setApproval = useSetDeliverableApproval(selected);
   const transition = useOrderTransition();
+  const instantCancel = useBuyerInstantCancel();
   const releaseEscrow = useMutation({
     mutationFn: async (orderId: string) => {
       const { data, error } = await supabase.rpc("release_escrow_to_seller", {
@@ -840,6 +842,7 @@ function Workspace() {
         lang: "ar",
       });
       if (notice.error) throw notice.error;
+      fireOrderEmail(order.id, "dispute_opened");
     },
     onSuccess: () => {
       setReason("");
@@ -900,6 +903,23 @@ function Workspace() {
               </button>
             </>
           )}
+          {isBuyer && order?.status === "in_progress" &&
+            Date.now() - new Date(order.created_at).getTime() < 15 * 60 * 1000 && (
+              <button
+                type="button"
+                disabled={instantCancel.isPending}
+                onClick={() => {
+                  if (!window.confirm(tr("إلغاء الطلب واسترداد كامل المبلغ إلى محفظتك؟", "Cancel and refund the full amount to your wallet?"))) return;
+                  instantCancel.mutate(order.id, {
+                    onSuccess: () => toast.success(tr("تم الإلغاء واسترداد المبلغ كاملاً ✅", "Cancelled — full refund issued ✅")),
+                    onError: (e: Error) => toast.error(e.message),
+                  });
+                }}
+                className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-destructive/50 bg-destructive/10 px-4 py-2 text-sm font-semibold text-destructive disabled:opacity-50"
+              >
+                {tr("إلغاء فوري واسترداد (خلال 15 دقيقة)", "Instant cancel & refund (15 min)")}
+              </button>
+            )}
           {isSeller && canExtend && (
           <button
             type="button"

@@ -9,6 +9,10 @@ export type { TopUpInvoice, TopUpMethod, TopUpNetwork };
 
 export function topUpErrorMessage(raw: string, ar: boolean): string {
   const map: Record<string, [string, string]> = {
+    TOO_MANY_OPEN_INVOICES: [
+      "لديك 3 فواتير شحن مفتوحة بالفعل. أكمل إحداها أو انتظر انتهاء صلاحيتها قبل إنشاء فاتورة جديدة.",
+      "You already have 3 open top-up invoices. Complete one or wait for it to expire first.",
+    ],
     MIN_TOPUP_10: ["الحد الأدنى للشحن 10 USDT.", "Minimum top-up is 10 USDT."],
     MAX_TOPUP_100000: ["الحد الأقصى للشحن 100000 USDT.", "Maximum top-up is 100,000 USDT."],
     INVALID_NETWORK: ["اختر شبكة صحيحة.", "Choose a valid network."],

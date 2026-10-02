@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/cloud-client";
 import type { ListingCategory } from "@/lib/catalog";
+import { checkArchive, isDangerousFile, EXECUTABLE_REJECTION } from "@/lib/file-guard";
 
 export const INSTANT_BUCKET = "digital-deliverables";
 
@@ -42,6 +43,9 @@ export async function signInstantFile(path: string): Promise<string | null> {
 
 /** Uploads the seller's deliverable file into their own folder. */
 export async function uploadInstantFile(userId: string, file: File): Promise<{ path: string; name: string }> {
+  if (isDangerousFile(file.name)) throw new Error(EXECUTABLE_REJECTION);
+  const archiveErr = await checkArchive(file);
+  if (archiveErr) throw new Error(archiveErr);
   const safeName = file.name.replace(/[^\w.\-]+/g, "_").slice(-80);
   const path = `${userId}/${Date.now()}-${safeName}`;
   const { error } = await supabase.storage.from(INSTANT_BUCKET).upload(path, file, { upsert: false });

@@ -17,3 +17,6 @@
 - Instant purchases settle via 24h escrow: `purchase_digital_asset_instant` leaves orders `delivered` with `auto_release_at`; buyer uses `confirm_instant_delivery` / `open_instant_dispute`; the existing cron releases. Why: buyer protection without auto-refunds.
 - Code audit flags on listings are writable only by service role (trigger); `src/lib/code-audit.functions.ts` runs the Gemini pool audit. Why: sellers cannot self-certify.
 - Leaderboard ranking lives in the `get_merit_leaderboard` SQL function. Why: one tamper-proof formula.
+- Order lifecycle emails go through `notifyOrderEvent` (`src/lib/order-email.functions.ts`) called fire-and-forget via `fireOrderEmail`. Why: mail failures never block order actions.
+- Order chat integrity is enforced by the `order_messages_integrity` trigger (no edits/deletes once a dispute exists). Why: forensic evidence for arbitrators.
+- Dispute splits use `admin_resolve_dispute(..., 'split', ..., _refund_pct)`, which pays out manually and clears `escrow_locked` before completing. Why: stops the escrow trigger paying the seller twice.

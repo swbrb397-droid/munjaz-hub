@@ -159,18 +159,22 @@ function CaseModal({ item, onClose }: { item: AdminDispute; onClose: () => void 
     toast.success(tr("تم إرسال التوجيه الإداري إلى محادثة الطلب.", "Official directive posted to the order chat."));
   };
 
-  const settle = (action: "release" | "refund") => {
+  const [splitPct, setSplitPct] = useState(50);
+  const settle = (action: "release" | "refund" | "split") => {
     resolve.mutate(
       {
         id: item.id,
         action,
+        ...(action === "split" ? { refundPct: splitPct } : {}),
         orderId: item.order_id,
         ...(ruling.trim() ? { ruling: ruling.trim() } : {}),
       },
       {
         onSuccess: () => {
           toast.success(
-            action === "release"
+            action === "split"
+              ? tr(`تمت التسوية: ${splitPct}% للمشتري ✅`, `Split settled: ${splitPct}% to buyer ✅`)
+              : action === "release"
               ? tr("تم تحرير المبلغ للبائع ✅", "Escrow released to the seller ✅")
               : tr("تم إرجاع المبلغ للمشتري ✅", "Escrow refunded to the buyer ✅"),
           );
@@ -307,6 +311,33 @@ function CaseModal({ item, onClose }: { item: AdminDispute; onClose: () => void 
                 className="rounded-xl border border-destructive/60 px-4 py-2 text-sm font-bold text-destructive disabled:opacity-60"
               >
                 {tr("إرجاع المبلغ للمشتري", "Refund buyer")}
+              </button>
+            </div>
+
+            <div className="mt-4 grid gap-2 rounded-xl border border-border p-3">
+              <span className="text-sm font-bold">{tr("تسوية جزئية", "Partial settlement")}</span>
+              <input
+                type="range"
+                min={1}
+                max={99}
+                value={splitPct}
+                onChange={(e) => setSplitPct(Number(e.target.value))}
+                aria-label={tr("نسبة الاسترداد للمشتري", "Buyer refund percentage")}
+              />
+              <p className="text-xs text-muted-foreground">
+                {tr("المشتري", "Buyer")}: <bdi>{splitPct}%</bdi>
+                {item.order ? <> (<bdi>{(Number(item.order.amount_usdt) * splitPct / 100).toFixed(2)}</bdi> USDT)</> : null}
+                {" · "}
+                {tr("البائع", "Seller")}: <bdi>{100 - splitPct}%</bdi>
+                {item.order ? <> (<bdi>{(Number(item.order.amount_usdt) * (100 - splitPct) / 100).toFixed(2)}</bdi> USDT {tr("قبل العمولة", "before fee")})</> : null}
+              </p>
+              <button
+                type="button"
+                disabled={resolve.isPending || !item.order}
+                onClick={() => settle("split")}
+                className="w-fit rounded-xl border border-primary/60 px-4 py-2 text-sm font-bold text-primary disabled:opacity-60"
+              >
+                {tr("تنفيذ التسوية الجزئية", "Apply partial split")}
               </button>
             </div>
           </>
