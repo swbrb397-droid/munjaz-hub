@@ -55,21 +55,6 @@ const navGroups: ReadonlyArray<NavGroup> = [
 
 const headerNav = navGroups[0]?.items ?? [];
 
-const adminGroup: { title: [string, string]; items: { to: string; label: [string, string]; icon: LucideIcon }[] } = {
-  title: ["الإدارة والحوكمة", "Admin Governance"],
-  items: [
-    { to: "/admin", label: ["لوحة الإدارة العامة", "Admin overview"], icon: ShieldCheck },
-    { to: "/admin/disputes", label: ["مركز تسوية النزاعات والضمان", "Disputes & escrow"], icon: Gavel },
-    { to: "/admin/kyc", label: ["مراجعة توثيق الهوية KYC", "KYC review"], icon: BadgeCheck },
-    { to: "/admin/services", label: ["إدارة العروض والخدمات", "Services moderation"], icon: Store },
-    { to: "/admin/users", label: ["إدارة المستخدمين", "User management"], icon: Users },
-    { to: "/admin/ai", label: ["مساعد الذكاء الاصطناعي", "AI co-pilot"], icon: Bot },
-    { to: "/admin/governance", label: ["مولد الاشتراكات وحوكمة الرسوم", "Passes & governance"], icon: Settings2 },
-  ],
-};
-
-
-
 function AuthButton() {
   const { tr } = useLang();
   const { isAuthenticated } = useAuth();
@@ -284,9 +269,13 @@ function Notifications() {
 export function Shell({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
   const { t, lang } = useLang();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const wallet = useWallet();
-  const { isAdmin } = useUserProfile();
+  const { isAdmin, profile } = useUserProfile();
+  const { tr } = useLang();
+  const { view, toggleView } = useViewMode();
+  const qc = useQueryClient();
+  const navigate = useNavigate();
   const [manifesto, setManifesto] = useManifestoFirstRun(isAuthenticated);
 
   // Lock page scroll behind the mobile drawer so scrolling never leaks to the page.
@@ -337,7 +326,14 @@ export function Shell({ children }: { children: ReactNode }) {
                 <bdi>{Number(wallet.data?.available_usdt ?? 0).toFixed(2)}</bdi> USDT
               </Link>
             )}
-            {isAuthenticated ? <UserMenu isAdmin={isAdmin} /> : <AuthButton />}
+            {isAuthenticated ? (
+              <>
+                <span className="hidden lg:block"><UserMenu isAdmin={isAdmin} /></span>
+                <button type="button" onClick={() => setOpen(true)} aria-label={t("menu")} className="grid size-9 shrink-0 place-items-center rounded-full border border-primary/40 bg-secondary text-xs font-black text-primary lg:hidden">
+                  {(user?.email ?? "U").slice(0, 2).toUpperCase()}
+                </button>
+              </>
+            ) : <AuthButton />}
             <LangSwitch />
 
             <button type="button" className="grid size-9 shrink-0 place-items-center rounded-lg border border-border lg:hidden" onClick={() => setOpen(!open)} aria-label={t("menu")}>
@@ -349,57 +345,80 @@ export function Shell({ children }: { children: ReactNode }) {
 
         {open && (
           <nav className="max-h-[calc(100dvh-4rem)] overflow-y-auto border-t border-border px-3 py-3 sm:px-4 lg:hidden">
-            {navGroups.map((group, gi) => (
-              <div key={group.title[0]} className={gi > 0 ? "mt-3 border-t border-border pt-3" : ""}>
-                <p className="px-3 pb-1 text-[11px] font-bold uppercase tracking-wide text-muted-foreground/70">
-                  {lang === "ar" ? group.title[0] : group.title[1]}
-                </p>
-                <div className="grid gap-0.5">
-                  {group.items.map((item) => (
-                    <Link
-                      key={item.to}
-                      to={item.to}
-                      onClick={() => setOpen(false)}
-                      className="flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm text-muted-foreground hover:bg-secondary"
-                      activeProps={{ className: "flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm bg-secondary text-primary" }}
-                      activeOptions={{ exact: item.to === "/" }}
-                    >
-                      <item.icon size={18} strokeWidth={1.8} className="shrink-0" />
-                      {t(item.key)}
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            ))}
-            {isAdmin && (
-              <div className="mt-3 border-t border-primary/30 pt-3">
-                <p className="px-3 pb-1 text-[11px] font-bold uppercase tracking-wide text-primary">
-                  {lang === "ar" ? adminGroup.title[0] : adminGroup.title[1]} (Admin Governance)
-                </p>
-                <div className="grid gap-0.5">
-                  {adminGroup.items.map((item) => (
-                    <Link
-                      key={item.to}
-                      to={item.to}
-                      onClick={() => setOpen(false)}
-                      className="flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm text-muted-foreground hover:bg-secondary"
-                      activeProps={{ className: "flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm bg-secondary text-primary" }}
-                    >
-                      <item.icon size={18} strokeWidth={1.8} className="shrink-0" />
-                      {lang === "ar" ? item.label[0] : item.label[1]}
-                    </Link>
-                  ))}
+            {isAuthenticated && (
+              <div className="mb-3 grid grid-cols-[auto_minmax(0,1fr)] items-center gap-3 rounded-xl border border-border bg-secondary/40 p-3">
+                <span className="grid size-11 shrink-0 place-items-center overflow-hidden rounded-full border border-primary/40 bg-secondary text-sm font-black text-primary">
+                  {profile?.avatar_url ? <img src={profile.avatar_url} alt="" className="size-full object-cover" /> : (user?.email ?? "U").slice(0, 2).toUpperCase()}
+                </span>
+                <div className="min-w-0">
+                  <p className="flex min-w-0 items-center gap-1 text-sm font-bold">
+                    <span className="truncate">{profile?.display_name || user?.email}</span>
+                    {profile?.is_verified && <BadgeCheck className="size-4 shrink-0 text-accent" />}
+                  </p>
+                  <Link to="/wallet" onClick={() => setOpen(false)} className="mt-1 inline-flex items-center gap-1.5 rounded-md border border-primary/40 bg-primary/10 px-2 py-1 text-xs font-bold text-primary">
+                    <Wallet2 className="size-3.5" /> <bdi>{Number(wallet.data?.available_usdt ?? 0).toFixed(2)}</bdi> USDT
+                  </Link>
                 </div>
               </div>
             )}
-            <button
-              type="button"
-              onClick={() => { setOpen(false); setManifesto(true); }}
-              className="mt-3 flex w-full items-center gap-2.5 rounded-lg border border-primary/40 bg-primary/10 px-3 py-2.5 text-sm font-bold text-primary"
-            >
-              <ScrollText size={18} strokeWidth={1.8} className="shrink-0" />
-              {lang === "ar" ? "ميثاق المنصة" : "Platform manifesto"}
-            </button>
+            {(() => {
+              const row = "flex w-full items-center gap-2.5 rounded-lg px-3 py-3 text-sm text-muted-foreground hover:bg-secondary";
+              const active = { className: "flex w-full items-center gap-2.5 rounded-lg px-3 py-3 text-sm bg-secondary text-primary" };
+              const primary: NavItem[] = navGroups[0]?.items.filter((i) => isAuthenticated || i.to !== "/create-listing") ?? [];
+              const personal: { to: string; label: string; icon: LucideIcon }[] = [
+                { to: "/workspace", label: tr("مساحة العمل والطلبات", "Workspace & orders"), icon: Briefcase },
+                { to: "/wallet", label: tr("المحفظة والسجل المالي", "Wallet & ledger"), icon: Wallet2 },
+                { to: "/kyc", label: tr("توثيق الهوية", "Identity verification"), icon: BadgeCheck },
+                { to: "/referrals", label: tr("برنامج الإحالة", "Referral program"), icon: Users },
+                { to: "/profile", label: tr("إعدادات الحساب", "Account settings"), icon: UserCog },
+              ];
+              return (
+                <>
+                  <div className="grid gap-0.5">
+                    {primary.map((item) => (
+                      <Link key={item.to} to={item.to} onClick={() => setOpen(false)} className={row} activeProps={active} activeOptions={{ exact: item.to === "/" }}>
+                        <item.icon size={18} strokeWidth={1.8} className="shrink-0" /> {t(item.key)}
+                      </Link>
+                    ))}
+                  </div>
+                  {isAuthenticated && (
+                    <div className="mt-3 grid gap-0.5 border-t border-border pt-3">
+                      <p className="px-3 pb-1 text-[11px] font-bold text-muted-foreground/70">{tr("مساحتي الشخصية", "My space")}</p>
+                      {personal.map((l) => (
+                        <Link key={l.to} to={l.to} onClick={() => setOpen(false)} className={row} activeProps={active}>
+                          <l.icon size={18} strokeWidth={1.8} className="shrink-0" /> {l.label}
+                        </Link>
+                      ))}
+                      <button type="button" onClick={toggleView} className={row}>
+                        <Repeat2 size={18} strokeWidth={1.8} className="shrink-0 text-accent" />
+                        {view === "buyer" ? tr("التحويل لوضع البائع", "Switch to seller mode") : tr("التحويل لوضع المشتري", "Switch to buyer mode")}
+                      </button>
+                      {isAdmin && (
+                        <Link to="/admin" onClick={() => setOpen(false)} className={`${row} text-primary`}>
+                          <ShieldCheck size={18} strokeWidth={1.8} className="shrink-0" /> {tr("لوحة الإدارة", "Admin panel")}
+                        </Link>
+                      )}
+                      <button
+                        type="button"
+                        className={`${row} mt-2 text-destructive hover:bg-destructive/10`}
+                        onClick={async () => {
+                          setOpen(false);
+                          await qc.cancelQueries();
+                          qc.clear();
+                          await supabase.auth.signOut();
+                          navigate({ to: "/auth", replace: true });
+                        }}
+                      >
+                        <LogOut size={18} strokeWidth={1.8} className="shrink-0" /> {tr("تسجيل الخروج", "Sign out")}
+                      </button>
+                    </div>
+                  )}
+                  <button type="button" onClick={() => { setOpen(false); setManifesto(true); }} className="mt-3 w-full px-3 py-2 text-start text-xs text-muted-foreground underline-offset-4 hover:underline">
+                    {tr("ميثاق المنصة", "Platform charter")}
+                  </button>
+                </>
+              );
+            })()}
           </nav>
         )}
       </header>

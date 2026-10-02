@@ -184,6 +184,21 @@ function Admin() {
 
   return (
     <Section title={tr("لوحة الإدارة", "Admin Dashboard")} subtitle={tr("تشغيل المنصة والرقابة والتحليلات", "Platform operations, oversight, and analytics")}>
+      <nav className="mb-5 flex flex-wrap gap-2" aria-label={tr("أقسام الإدارة", "Admin sections")}>
+        {([
+          ["/admin/disputes", tr("النزاعات", "Disputes")],
+          ["/admin/kyc", tr("توثيق الهوية", "KYC")],
+          ["/admin/services", tr("العروض", "Services")],
+          ["/admin/users", tr("المستخدمون", "Users")],
+          ["/admin/ai", tr("الذكاء الاصطناعي", "AI")],
+          ["/admin/governance", tr("الحوكمة", "Governance")],
+          ["/admin/audit", tr("سجل التدقيق", "Audit log")],
+        ] as const).map(([to, label]) => (
+          <Link key={to} to={to} className="min-h-[40px] rounded-lg border border-border px-3 py-2 text-xs font-bold text-muted-foreground hover:bg-secondary hover:text-foreground">
+            {label}
+          </Link>
+        ))}
+      </nav>
       <Card className="mb-6 flex flex-wrap gap-2">
         {tabs.map((t) => (
           <button
