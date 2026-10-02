@@ -307,7 +307,6 @@ export function useSetDeliverableApproval(orderId: string | null) {
         .update({ approval_state: state })
         .eq("id", id);
       if (error) throw error;
-      fireOrderEmail(orderId, "deliverable_submitted");
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["order_deliverables", orderId] }),
   });
