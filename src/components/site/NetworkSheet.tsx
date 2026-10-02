@@ -61,7 +61,7 @@ export function NetworkSheet({ value, onChange, rows }: { value: Net; onChange: 
                     <span className="rounded-full border border-border/60 bg-background/60 px-2 py-0.5 text-[10px] font-bold">{tr(b.badgeAr, b.badgeEn)}</span>
                     {row && (
                       <>
-                        <span className="rounded-full border border-border/60 bg-background/60 px-2 py-0.5 font-mono text-[10px] font-bold" dir="ltr">≈ {row.fee.toFixed(3)} USDT</span>
+                        <span className="rounded-full border border-border/60 bg-background/60 px-2 py-0.5 font-mono text-[10px] font-bold" dir="ltr">{row.fee.toFixed(2)} USDT</span>
                         <span className="rounded-full border border-border/60 bg-background/60 px-2 py-0.5 text-[10px] font-bold">{tr(row.etaAr, row.etaEn)}</span>
                       </>
                     )}

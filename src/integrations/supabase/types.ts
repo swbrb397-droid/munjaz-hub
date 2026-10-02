@@ -924,6 +924,7 @@ export type Database = {
           rating: number
           referral_code: string
           referred_by: string | null
+          security_updated_at: string | null
           terms_accepted_at: string | null
           updated_at: string
           xp_points: number
@@ -954,6 +955,7 @@ export type Database = {
           rating?: number
           referral_code: string
           referred_by?: string | null
+          security_updated_at?: string | null
           terms_accepted_at?: string | null
           updated_at?: string
           xp_points?: number
@@ -984,6 +986,7 @@ export type Database = {
           rating?: number
           referral_code?: string
           referred_by?: string | null
+          security_updated_at?: string | null
           terms_accepted_at?: string | null
           updated_at?: string
           xp_points?: number
@@ -1551,10 +1554,12 @@ export type Database = {
         }
         Returns: string
       }
+      admin_set_financial_halt: { Args: { p_on: boolean }; Returns: boolean }
       admin_toggle_user_ban: {
         Args: { p_banned: boolean; p_reason: string; p_user_id: string }
         Returns: undefined
       }
+      assert_financial_open: { Args: never; Returns: undefined }
       attach_referral_after_oauth: {
         Args: { p_code: string }
         Returns: boolean
@@ -1622,6 +1627,7 @@ export type Database = {
         }
       }
       fee_rates: { Args: never; Returns: Json }
+      financial_halt_active: { Args: never; Returns: boolean }
       get_admin_dashboard_metrics: { Args: never; Returns: Json }
       get_leaderboard: {
         Args: { p_filter?: string; p_limit?: number }
@@ -1971,6 +1977,14 @@ export type Database = {
             }
           }
       unspent_deposit_balance: { Args: { _user_id: string }; Returns: number }
+      withdrawal_cooldown_until: {
+        Args: { _user_id?: string }
+        Returns: string
+      }
+      withdrawal_network_fee: {
+        Args: { _network: Database["public"]["Enums"]["usdt_network"] }
+        Returns: number
+      }
     }
     Enums: {
       account_tier: "free" | "pro" | "corporate"
