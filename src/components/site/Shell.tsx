@@ -53,7 +53,7 @@ const navGroups: ReadonlyArray<NavGroup> = [
   },
 ];
 
-const headerNav = navGroups[0].items;
+const headerNav = navGroups[0]?.items ?? [];
 
 const adminGroup: { title: [string, string]; items: { to: string; label: [string, string]; icon: LucideIcon }[] } = {
   title: ["الإدارة والحوكمة", "Admin Governance"],
@@ -131,7 +131,7 @@ function UserMenu({ isAdmin }: { isAdmin: boolean }) {
   }, [open]);
 
   const initials = (user?.email ?? "U").slice(0, 2).toUpperCase();
-  const avatar = (user?.user_metadata?.avatar_url as string | undefined) ?? null;
+  const avatar = (user?.user_metadata?.["avatar_url"] as string | undefined) ?? null;
   const item = "flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm text-foreground hover:bg-secondary";
   const links: { to: string; label: string; icon: LucideIcon }[] = [
     { to: "/workspace", label: tr("مساحة العمل والطلبات", "Workspace & orders"), icon: Briefcase },

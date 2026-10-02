@@ -71,15 +71,15 @@ export function RevenueLedger() {
     onError: () => toast.error(tr("تعذّر التسجيل — تأكد من صلاحية المشرف والتحقق الثنائي.", "Failed — admin role and 2FA are required.")),
   });
 
-  const submit = async () => {
+  const submit = async (): Promise<void> => {
     const value = Number(amount);
-    if (!(value > 0)) return toast.error(tr("أدخل مبلغاً صحيحاً", "Enter a valid amount"));
+    if (!(value > 0)) { toast.error(tr("أدخل مبلغاً صحيحاً", "Enter a valid amount")); return; }
     if (summary.data && value > summary.data.net) {
-      return toast.error(tr("المبلغ يتجاوز صافي الأرباح المتبقية", "Amount exceeds undrawn profit"));
+      { toast.error(tr("المبلغ يتجاوز صافي الأرباح المتبقية", "Amount exceeds undrawn profit")); return; }
     }
     const { data } = await supabase.auth.mfa.listFactors();
     const factor = data?.totp?.find((f) => f.status === "verified");
-    if (!factor) return toast.error(tr("فعّل التحقق الثنائي أولاً", "Enable 2FA first"));
+    if (!factor) { toast.error(tr("فعّل التحقق الثنائي أولاً", "Enable 2FA first")); return; }
     setFactorId(factor.id);
   };
 
