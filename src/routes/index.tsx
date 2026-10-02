@@ -3,7 +3,7 @@ import { useState } from "react";
 import { ArrowLeft, BadgeCheck, GraduationCap, ShieldCheck, Sparkle, Star, Zap } from "lucide-react";
 import { Card, Section } from "@/components/site/Shell";
 import { NETWORK_STRIP } from "@/lib/network-strip";
-import { useListings, useNfts } from "@/lib/catalog";
+import { useListings } from "@/lib/catalog";
 import { usePlatformStats } from "@/lib/platform";
 import { useLang } from "@/lib/lang";
 import { VerifiedBadge } from "@/components/site/VerifiedBadge";
@@ -35,7 +35,6 @@ function Landing() {
   const { tr } = useLang();
   const featuredQuery = useListings({ sort: "popular", pageSize: 8 });
   const featured = featuredQuery.data?.items ?? [];
-  const { data: nfts = [] } = useNfts({ sort: "price_desc" });
   return (
     <>
       <Hero />
@@ -56,13 +55,6 @@ function Landing() {
         ) : <EmptyState text={tr("لا توجد منتجات أو دورات حالياً", "No products or courses yet")} />}
       </Section>
 
-      <Section level={2} title={tr("معرض NFT", "NFT gallery")} subtitle={tr("أصول رقمية موثقة على Polygon", "Verified digital assets on Polygon")} action={<Link to="/store" className="text-sm text-primary">{tr("المعرض الكامل ←", "Full gallery ←")}</Link>}>
-        {nfts.length > 0 ? (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {nfts.slice(0, 3).map((n) => <NftCard key={n.id} {...n} />)}
-          </div>
-        ) : <EmptyState text={tr("لا توجد عناصر NFT معروضة حالياً", "No NFT items listed yet")} />}
-      </Section>
 
 
       <AffiliateCalculator />
@@ -85,8 +77,8 @@ function Hero() {
           </h1>
           <p className="mt-4 max-w-xl text-base text-muted-foreground sm:text-lg">
             {tr(
-              "خدمات مستقلين، منتجات رقمية فورية، دورات تدريبية، و NFT — بمحفظة داخلية بدون رسوم غاز، وسحوبات فورية للحسابات الموثقة.",
-              "Freelance services, instant digital products, courses, and NFTs — with a gas-free internal wallet and instant withdrawals for verified accounts.",
+              "خدمات مستقلين، منتجات رقمية فورية، دورات تدريبية — بمحفظة داخلية بدون رسوم غاز، وسحوبات فورية للحسابات الموثقة.",
+              "Freelance services, instant digital products, and courses — with a gas-free internal wallet and instant withdrawals for verified accounts.",
             )}
           </p>
           <div className="mt-7 grid grid-cols-2 gap-3 sm:flex sm:flex-wrap">

@@ -84,7 +84,7 @@ function Dashboard() {
   return (
     <Section
       title={tr("لوحة التحكم", "Dashboard")}
-      subtitle={profile.data?.display_name || user?.email || tr("عرض مزدوج: بائع / مشتري", "Dual view: seller / buyer")}
+      subtitle={profile.data?.display_name || user?.email || tr("حساب موحّد للشراء والبيع", "One account to buy and sell")}
       action={
         <div className="flex rounded-xl border border-border p-1">
           {(["seller", "buyer"] as const).map((v) => (
@@ -93,7 +93,7 @@ function Dashboard() {
               onClick={() => setView(v)}
               className={`rounded-lg px-4 py-2 text-sm ${view === v ? "bg-primary font-bold text-primary-foreground" : "text-muted-foreground"}`}
             >
-              {v === "seller" ? tr("بائع", "Seller") : tr("مشتري", "Buyer")}
+              {v === "seller" ? tr("مبيعاتي", "My sales") : tr("مشترياتي", "My purchases")}
             </button>
           ))}
         </div>

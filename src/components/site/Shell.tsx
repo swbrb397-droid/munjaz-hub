@@ -11,7 +11,6 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useLang, type TranslationKey } from "@/lib/lang";
 import { useLiveNotifications, useMarkNotificationRead } from "@/lib/notifications";
 import { useAuth } from "@/hooks/use-auth";
-import { useViewMode } from "@/lib/view-mode";
 import { ErrorBoundary } from "@/components/site/ErrorBoundary";
 import { useWallet } from "@/lib/queries";
 import { useUserProfile } from "@/hooks/use-user-profile";
@@ -100,7 +99,6 @@ function AuthButton() {
 function UserMenu({ isAdmin }: { isAdmin: boolean }) {
   const { tr } = useLang();
   const { user } = useAuth();
-  const { view, toggleView } = useViewMode();
   const navigate = useNavigate();
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
@@ -119,6 +117,7 @@ function UserMenu({ isAdmin }: { isAdmin: boolean }) {
   const avatar = (user?.user_metadata?.["avatar_url"] as string | undefined) ?? null;
   const item = "flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm text-foreground hover:bg-secondary";
   const links: { to: string; label: string; icon: LucideIcon }[] = [
+    { to: "/dashboard", label: tr("لوحة التحكم", "Dashboard"), icon: LayoutDashboard },
     { to: "/workspace", label: tr("مساحة العمل والطلبات", "Workspace & orders"), icon: Briefcase },
     { to: "/wallet", label: tr("المحفظة والسجل المالي", "My wallet & ledger"), icon: Wallet2 },
     { to: "/kyc", label: tr("توثيق الهوية", "Identity verification"), icon: BadgeCheck },
@@ -144,10 +143,6 @@ function UserMenu({ isAdmin }: { isAdmin: boolean }) {
               <l.icon className="size-4 shrink-0 text-muted-foreground" /> {l.label}
             </Link>
           ))}
-          <button type="button" onClick={toggleView} className={item}>
-            <Repeat2 className="size-4 shrink-0 text-accent" />
-            {view === "buyer" ? tr("التحويل لوضع البائع", "Switch to seller mode") : tr("التحويل لوضع المشتري", "Switch to buyer mode")}
-          </button>
           {isAdmin && (
             <Link to="/admin" className={`${item} text-primary`}>
               <ShieldCheck className="size-4 shrink-0" /> {tr("لوحة الإدارة", "Admin panel")}
@@ -273,7 +268,6 @@ export function Shell({ children }: { children: ReactNode }) {
   const wallet = useWallet();
   const { isAdmin, profile } = useUserProfile();
   const { tr } = useLang();
-  const { view, toggleView } = useViewMode();
   const qc = useQueryClient();
   const navigate = useNavigate();
   const [manifesto, setManifesto] = useManifestoFirstRun(isAuthenticated);
@@ -329,9 +323,6 @@ export function Shell({ children }: { children: ReactNode }) {
             {isAuthenticated ? (
               <>
                 <span className="hidden lg:block"><UserMenu isAdmin={isAdmin} /></span>
-                <button type="button" onClick={() => setOpen(true)} aria-label={t("menu")} className="grid size-9 shrink-0 place-items-center rounded-full border border-primary/40 bg-secondary text-xs font-black text-primary lg:hidden">
-                  {(user?.email ?? "U").slice(0, 2).toUpperCase()}
-                </button>
               </>
             ) : <AuthButton />}
             <LangSwitch />
@@ -366,6 +357,7 @@ export function Shell({ children }: { children: ReactNode }) {
               const active = { className: "flex w-full items-center gap-2.5 rounded-lg px-3 py-3 text-sm bg-secondary text-primary" };
               const primary: NavItem[] = navGroups[0]?.items.filter((i) => isAuthenticated || i.to !== "/create-listing") ?? [];
               const personal: { to: string; label: string; icon: LucideIcon }[] = [
+                { to: "/dashboard", label: tr("لوحة التحكم", "Dashboard"), icon: LayoutDashboard },
                 { to: "/workspace", label: tr("مساحة العمل والطلبات", "Workspace & orders"), icon: Briefcase },
                 { to: "/wallet", label: tr("المحفظة والسجل المالي", "Wallet & ledger"), icon: Wallet2 },
                 { to: "/kyc", label: tr("توثيق الهوية", "Identity verification"), icon: BadgeCheck },
@@ -389,10 +381,6 @@ export function Shell({ children }: { children: ReactNode }) {
                           <l.icon size={18} strokeWidth={1.8} className="shrink-0" /> {l.label}
                         </Link>
                       ))}
-                      <button type="button" onClick={toggleView} className={row}>
-                        <Repeat2 size={18} strokeWidth={1.8} className="shrink-0 text-accent" />
-                        {view === "buyer" ? tr("التحويل لوضع البائع", "Switch to seller mode") : tr("التحويل لوضع المشتري", "Switch to buyer mode")}
-                      </button>
                       {isAdmin && (
                         <Link to="/admin" onClick={() => setOpen(false)} className={`${row} text-primary`}>
                           <ShieldCheck size={18} strokeWidth={1.8} className="shrink-0" /> {tr("لوحة الإدارة", "Admin panel")}
