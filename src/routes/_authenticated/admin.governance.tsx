@@ -1,7 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Copy, Loader2, Settings2, Ticket } from "lucide-react";
+import { Copy, Loader2, Settings2, ShieldAlert, Ticket } from "lucide-react";
+import { MfaChallengeDialog } from "@/components/site/MfaChallengeDialog";
+import { supabase } from "@/lib/cloud-client";
+import { useFinancialHalt, useSetFinancialHalt } from "@/lib/withdrawals";
 import { Card, Section } from "@/components/site/Shell";
 import { useLang } from "@/lib/lang";
 import { useUserProfile } from "@/hooks/use-user-profile";
@@ -33,6 +36,19 @@ function AdminGovernance() {
   const [note, setNote] = useState("");
 
   const g = gov.data;
+  const halt = useFinancialHalt(isAdmin);
+  const setHalt = useSetFinancialHalt();
+  const [pendingHalt, setPendingHalt] = useState<boolean | null>(null);
+  const [factorId, setFactorId] = useState<string | null>(null);
+
+  const requestHaltToggle = async (next: boolean) => {
+    const { data, error } = await supabase.auth.mfa.listFactors();
+    if (error) return toast.error(error.message);
+    const f = (data?.totp ?? []).find((x) => x.status === "verified");
+    if (!f) return toast.error(tr("فعّل المصادقة الثنائية أولاً من إعدادات الأمان.", "Enable 2FA in security settings first."));
+    setFactorId(f.id);
+    setPendingHalt(next);
+  };
 
   const patch = (p: Record<string, number | boolean>) =>
     updateGov.mutate(p, {
@@ -45,6 +61,43 @@ function AdminGovernance() {
       title={tr("مولد الاشتراكات وحوكمة الرسوم", "Subscription generator & fee governance")}
       subtitle={tr("سياسات المنصة وبطاقات الاشتراك أحادية الاستخدام", "Platform policies and single-use subscription passes")}
     >
+      <div className={`mb-4 rounded-2xl border-2 p-4 ${halt.data ? "border-destructive bg-destructive/10" : "border-border"}`}>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="min-w-0">
+            <h3 className="flex items-center gap-2 font-black text-destructive">
+              <ShieldAlert className="size-5" /> {tr("مفتاح الطوارئ المالي الشامل (Kill-Switch)", "Global emergency financial kill-switch")}
+            </h3>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {tr(
+                "عند التفعيل تتوقف السحوبات والمشتريات والطلبات وفواتير الشحن فوراً. يبقى التصفح متاحاً وتُضاف الإيداعات المدفوعة مسبقاً.",
+                "When active, withdrawals, purchases, orders and top-up invoices stop instantly. Browsing stays open and already-paid deposits still credit.",
+              )}
+            </p>
+          </div>
+          <button
+            type="button"
+            disabled={!isAdmin || halt.isLoading || setHalt.isPending}
+            onClick={() => void requestHaltToggle(!halt.data)}
+            className={`min-h-[44px] rounded-xl px-4 py-2 text-sm font-black disabled:opacity-60 ${halt.data ? "border border-border bg-surface" : "bg-destructive text-destructive-foreground"}`}
+          >
+            {halt.data ? tr("إيقاف وضع الطوارئ", "Deactivate emergency mode") : tr("تفعيل وضع الطوارئ", "Activate emergency mode")}
+          </button>
+        </div>
+        <p className="mt-2 text-xs font-bold">
+          {tr("الحالة:", "Status:")} {halt.data ? tr("مفعّل — النظام المالي متوقف", "ACTIVE — finance halted") : tr("غير مفعّل", "Inactive")}
+        </p>
+      </div>
+      {factorId && pendingHalt !== null && (
+        <MfaChallengeDialog
+          factorId={factorId}
+          title={tr("تأكيد مفتاح الطوارئ المالي", "Confirm financial kill-switch")}
+          onClose={() => { setFactorId(null); setPendingHalt(null); }}
+          onVerified={async () => {
+            await setHalt.mutateAsync(pendingHalt);
+            toast.success(pendingHalt ? tr("تم تفعيل وضع الطوارئ", "Emergency mode activated") : tr("تم إيقاف وضع الطوارئ", "Emergency mode deactivated"));
+          }}
+        />
+      )}
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>
           <h3 className="flex items-center gap-2 font-bold"><Settings2 className="size-4 text-primary" /> {tr("إعدادات الحوكمة", "Governance settings")}</h3>

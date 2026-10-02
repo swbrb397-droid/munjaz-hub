@@ -674,6 +674,18 @@ function WalletPage() {
               <span className="text-foreground" dir="ltr">
                 {usdt2(Math.max(0, parsed - totalFee))} USDT
               </span>
+              <span className="mt-1 block text-[11px]">
+                {tr("رسوم الشبكة:", "Network fee:")}{" "}
+                <span dir="ltr">{usdt2(NETWORK_WITHDRAWAL_FEE[network])} USDT</span>
+                {" · "}
+                {tr("الوصول المتوقع:", "Est. arrival:")}{" "}
+                {(() => { const r = gasRows.find((g) => g.value === network); return r ? tr(r.etaAr, r.etaEn) : ""; })()}
+              </span>
+              {belowNetMinimum && (
+                <span className="mt-1 block text-[11px] font-bold text-destructive">
+                  {tr("يجب ألا يقل الصافي بعد الرسوم عن 10 USDT.", "Net payout after fees must be at least 10 USDT.")}
+                </span>
+              )}
             </span>
             <button
                onClick={() => protectWithMfa("withdraw")}
