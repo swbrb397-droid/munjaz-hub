@@ -25,7 +25,7 @@ const dict = {
     menu: "القائمة",
     verified: "موثّق",
     terms: "الشروط والأحكام",
-    footer: "جميع الحقوق محفوظة لـ المنجز",
+    footer: "جميع الحقوق محفوظة لـ منصة المُنجِز",
     footerSub: "TRC-20 · BEP-20 · Polygon",
   },
   en: {
@@ -48,7 +48,7 @@ const dict = {
     menu: "Menu",
     verified: "Verified",
     terms: "Terms of Service",
-    footer: "Al-Munjaz — the USDT-native digital services marketplace.",
+    footer: "All rights reserved © Al Munjiz Hub",
     footerSub: "TRC-20 · BEP-20 · Polygon",
   },
 } as const;

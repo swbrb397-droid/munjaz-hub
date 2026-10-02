@@ -53,7 +53,7 @@ const navGroups: ReadonlyArray<NavGroup> = [
   },
 ];
 
-const flatNav = navGroups.flatMap((g) => g.items);
+const headerNav = navGroups[0].items;
 
 const adminGroup: { title: [string, string]; items: { to: string; label: [string, string]; icon: LucideIcon }[] } = {
   title: ["الإدارة والحوكمة", "Admin Governance"],
@@ -312,7 +312,7 @@ export function Shell({ children }: { children: ReactNode }) {
           </Link>
 
           <nav className="mx-auto hidden min-w-0 items-center gap-0.5 overflow-hidden lg:flex xl:gap-1">
-            {flatNav.map((item) => (
+            {headerNav.filter((i) => isAuthenticated || i.to !== "/create-listing").map((item) => (
               <Link
                 key={item.to}
                 to={item.to}
@@ -326,7 +326,6 @@ export function Shell({ children }: { children: ReactNode }) {
           </nav>
 
           <div className="ms-auto flex shrink-0 items-center gap-1.5 sm:gap-2 lg:ms-0">
-            {isAuthenticated && <ViewSwitch />}
             {isAuthenticated && <Notifications />}
             {isAuthenticated && (
 
@@ -335,20 +334,10 @@ export function Shell({ children }: { children: ReactNode }) {
                 className="hidden items-center gap-2 rounded-lg border border-primary/40 bg-primary/10 px-3 py-2 text-sm font-semibold text-primary md:flex"
               >
                 <Wallet2 className="size-4" />
-                {Number(wallet.data?.available_usdt ?? 0).toLocaleString()} USDT
+                <bdi>{Number(wallet.data?.available_usdt ?? 0).toFixed(2)}</bdi> USDT
               </Link>
             )}
-            <button
-              type="button"
-              onClick={() => setManifesto(true)}
-              title={t("brand")}
-              aria-label={lang === "ar" ? "ميثاق المنصة" : "Platform manifesto"}
-              className="hidden h-9 shrink-0 items-center gap-1.5 rounded-lg border border-primary/40 bg-primary/10 px-2.5 text-xs font-bold text-primary transition-colors hover:bg-primary/20 sm:flex"
-            >
-              <ScrollText className="size-4" />
-              <span className="hidden xl:inline">{lang === "ar" ? "ميثاق المنصة" : "Manifesto"}</span>
-            </button>
-            <AuthButton />
+            {isAuthenticated ? <UserMenu isAdmin={isAdmin} /> : <AuthButton />}
             <LangSwitch />
 
             <button type="button" className="grid size-9 shrink-0 place-items-center rounded-lg border border-border lg:hidden" onClick={() => setOpen(!open)} aria-label={t("menu")}>
@@ -429,6 +418,9 @@ export function Shell({ children }: { children: ReactNode }) {
               {t("terms")}
             </Link>
             <DmcaTrigger />
+            <button type="button" onClick={() => setManifesto(true)} className="flex items-center gap-1.5 hover:text-foreground transition-colors">
+              <ScrollText size={16} strokeWidth={1.8} /> {lang === "ar" ? "ميثاق المنصة" : "Platform charter"}
+            </button>
             {isAdmin && (
               <Link to="/admin" className="flex items-center gap-1.5 text-muted-foreground/70 hover:text-foreground">
                 <ShieldCheck size={18} strokeWidth={1.8} /> {t("admin")}
