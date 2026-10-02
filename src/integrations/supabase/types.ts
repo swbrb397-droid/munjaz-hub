@@ -1457,7 +1457,12 @@ export type Database = {
         }[]
       }
       admin_resolve_dispute: {
-        Args: { _action: string; _case_id: string; _ruling?: string }
+        Args: {
+          _action: string
+          _case_id: string
+          _refund_pct?: number
+          _ruling?: string
+        }
         Returns: {
           admin_ruling: string | null
           against_user: string | null
@@ -1555,6 +1560,7 @@ export type Database = {
         Returns: boolean
       }
       auto_release_escrow: { Args: never; Returns: number }
+      buyer_instant_cancel: { Args: { p_order_id: string }; Returns: undefined }
       check_rate_limit: {
         Args: { _action: string; _max: number; _window: string }
         Returns: number
