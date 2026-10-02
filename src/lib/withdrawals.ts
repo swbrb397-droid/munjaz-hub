@@ -13,8 +13,53 @@ export type WithdrawalStatus =
   | "paid"
   | "rejected";
 
-export const WITHDRAWAL_FEE = 0.8;
+export { NETWORK_WITHDRAWAL_FEE } from "@/lib/gas";
+/** Minimum NET payout (amount minus fees), enforced in request_withdrawal(). */
 export const MIN_WITHDRAWAL = 10;
+
+/** Timestamp when the 24h security cooling-off ends, or null if clear (DB-computed). */
+export function useWithdrawalCooldown() {
+  const { user } = useAuth();
+  return useQuery({
+    queryKey: ["withdrawal-cooldown", user?.id],
+    enabled: !!user,
+    refetchInterval: 60_000,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("withdrawal_cooldown_until" as never);
+      if (error) throw error;
+      return (data as unknown as string | null) ?? null;
+    },
+  });
+}
+
+/** Global emergency financial kill-switch state. */
+export function useFinancialHalt(enabled = true) {
+  return useQuery({
+    queryKey: ["financial-halt"],
+    enabled,
+    refetchInterval: 60_000,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("platform_settings")
+        .select("value")
+        .eq("key", "emergency_financial_halt")
+        .maybeSingle();
+      if (error) throw error;
+      return data?.value === "true";
+    },
+  });
+}
+
+export function useSetFinancialHalt() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (on: boolean) => {
+      const { error } = await supabase.rpc("admin_set_financial_halt" as never, { p_on: on } as never);
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["financial-halt"] }),
+  });
+}
 
 export function slaHoursForTier(tier: string | null | undefined): number {
   return tier === "pro" || tier === "corporate" ? 12 : 48;
@@ -26,6 +71,10 @@ export function withdrawalErrorMessage(raw: string, ar: boolean): string {
     RATE_LIMITED: ["تجاوزت عدد المحاولات المسموح بها. حاول لاحقاً.", "Too many attempts. Please try again later."],
     INVALID_AMOUNT: ["أدخل مبلغاً صحيحاً.", "Enter a valid amount."],
     MIN_WITHDRAWAL_10: ["الحد الأدنى للسحب 10 USDT.", "Minimum withdrawal is 10 USDT."],
+    MIN_NET_PAYOUT_10: ["يجب ألا يقل صافي المبلغ بعد خصم رسوم الشبكة عن 10 USDT.", "The net payout after network fees must be at least 10 USDT."],
+    INVALID_NETWORK: ["اختر شبكة سحب صالحة (Polygon أو BSC أو Tron).", "Select a valid network (Polygon, BSC or Tron)."],
+    WITHDRAWAL_LOCKED_SECURITY_COOLDOWN: ["تم تجميد السحب مؤقتاً لمدة 24 ساعة كإجراء احترازي لتحديث بيانات الأمان.", "Withdrawals are paused for 24 hours as a precaution after a security update."],
+    SYSTEM_UNDER_EMERGENCY_MAINTENANCE: ["النظام المالي في وضع صيانة طارئة حالياً. جميع التحويلات معلقة مؤقتاً.", "The financial system is under emergency maintenance. All transfers are temporarily suspended."],
     INVALID_ADDRESS: ["عنوان المحفظة غير صالح.", "Invalid wallet address."],
     INSUFFICIENT_FUNDS: ["الرصيد غير كافٍ (شامل الرسوم).", "Insufficient balance (including fees)."],
     ACCOUNT_FROZEN: ["الحساب مجمّد أمنياً — تواصل مع الدعم.", "Account frozen for security — contact support."],
