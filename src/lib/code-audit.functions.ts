@@ -26,7 +26,7 @@ export const requestCodeAudit = createServerFn({ method: "POST" })
     const rl = await supabase.rpc("check_rate_limit", { _action: "code_audit", _max: 3, _window: "1 hour" });
     if (rl.error) {
       if (rl.error.message.includes("RATE_LIMITED"))
-        throw new Error("RATE_LIMITED: تجاوزت الحد المسموح (3 طلبات فحص في الساعة). يُرجى المحاولة لاحقاً.");
+        throw new Error("تجاوزت الحد المسموح (3 طلبات فحص في الساعة). يُرجى المحاولة لاحقاً.");
       throw new Error("AUDIT_UNAVAILABLE");
     }
 

@@ -228,8 +228,8 @@ function Fulfillment() {
               </button>
             )}
             {/\.(zip|rar|7z|tar|gz)$/i.test(delivery.data?.file_name ?? delivery.data?.file_path ?? "") && (
-              <p role="note" className="flex items-start gap-2 rounded-xl border border-warning/40 bg-warning/10 p-3 text-xs font-bold text-foreground">
-                <AlertTriangle className="mt-0.5 size-4 shrink-0 text-warning" />
+              <p role="note" className="flex items-start gap-2 rounded-xl border border-destructive/40 bg-destructive/10 p-3 text-xs font-bold text-foreground">
+                <AlertTriangle className="mt-0.5 size-4 shrink-0 text-destructive" />
                 تنبيه أمني: يُرجى دائماً فحص الملفات المضغوطة ببرنامج مكافحة الفيروسات قبل فتحها.
               </p>
             )}
