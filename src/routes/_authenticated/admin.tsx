@@ -1,4 +1,5 @@
-import { createFileRoute, Outlet, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
+import { ArrowRight } from "lucide-react";
 import { useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/use-auth";
@@ -16,6 +17,8 @@ function AdminGate() {
   const { user, loading: authLoading } = useAuth();
   const roles = useRoles();
   const handled = useRef(false);
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const isSub = pathname.replace(/\/$/, "") !== "/admin";
 
   const isAdmin = (roles.data ?? []).includes("admin");
   const settled = !authLoading && !!user && !roles.isLoading && roles.data !== undefined;
@@ -37,5 +40,16 @@ function AdminGate() {
   }
 
   if (!isAdmin) return null;
-  return <Outlet />;
+  return (
+    <>
+      {isSub && (
+        <div className="sticky top-16 z-30 mx-auto max-w-7xl px-4 pt-4">
+          <Link to="/admin" className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-primary/40 bg-card px-4 py-2 text-sm font-bold text-primary shadow">
+            <ArrowRight className="size-4 ltr:rotate-180" /> {tr("العودة إلى لوحة الإدارة الرئيسية", "Back to main admin dashboard")}
+          </Link>
+        </div>
+      )}
+      <Outlet />
+    </>
+  );
 }

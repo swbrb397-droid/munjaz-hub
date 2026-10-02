@@ -145,7 +145,7 @@ function Admin() {
     { key: "sandbox", label: tr("مختبر الاختبار", "Test sandbox"), icon: FlaskConical },
   ] as const;
 
-  const [tab, setTab] = useState<(typeof tabs)[number]["key"]>("disputes");
+  const [tab, setTab] = useState<(typeof tabs)[number]["key"] | null>(null);
   const [securityView, setSecurityView] = useState<"incidents" | "frozen">("incidents");
   const frozen = useFrozenAccounts(isAdmin && tab === "security");
 
@@ -184,38 +184,36 @@ function Admin() {
 
   return (
     <Section title={tr("لوحة الإدارة", "Admin Dashboard")} subtitle={tr("تشغيل المنصة والرقابة والتحليلات", "Platform operations, oversight, and analytics")}>
-      <nav className="mb-5 flex flex-wrap gap-2" aria-label={tr("أقسام الإدارة", "Admin sections")}>
+      {tab && (
+        <button type="button" onClick={() => setTab(null)} className="sticky top-16 z-30 mb-3 inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-primary/40 bg-card px-4 py-2 text-sm font-bold text-primary shadow">
+          <ArrowRight className="size-4 ltr:rotate-180" /> {tr("العودة إلى لوحة الإدارة الرئيسية", "Back to main admin dashboard")}
+        </button>
+      )}
+      <nav className="mb-6 -mx-1 flex gap-2 overflow-x-auto px-1 pb-2" aria-label={tr("أقسام الإدارة", "Admin sections")}>
+        {tabs.map((t) => (
+          <button
+            key={t.key}
+            type="button"
+            onClick={() => setTab(t.key)}
+            className={`inline-flex min-h-[40px] shrink-0 items-center gap-2 whitespace-nowrap rounded-lg px-3 py-2 text-xs font-bold ${tab === t.key ? "bg-primary text-primary-foreground" : "border border-border text-muted-foreground hover:bg-secondary"}`}
+          >
+            <t.icon className="size-4" /> {t.label}
+          </button>
+        ))}
         {([
-          ["/admin/disputes", tr("النزاعات", "Disputes")],
-          ["/admin/kyc", tr("توثيق الهوية", "KYC")],
+          ["/admin/disputes", tr("مكتب النزاعات", "Dispute desk")],
+          ["/admin/kyc", tr("مراجعة التوثيق", "KYC review")],
           ["/admin/services", tr("العروض", "Services")],
           ["/admin/users", tr("المستخدمون", "Users")],
           ["/admin/ai", tr("الذكاء الاصطناعي", "AI")],
           ["/admin/governance", tr("الحوكمة", "Governance")],
           ["/admin/audit", tr("سجل التدقيق", "Audit log")],
         ] as const).map(([to, label]) => (
-          <Link key={to} to={to} className="min-h-[40px] rounded-lg border border-border px-3 py-2 text-xs font-bold text-muted-foreground hover:bg-secondary hover:text-foreground">
-            {label}
+          <Link key={to} to={to} className="inline-flex min-h-[40px] shrink-0 items-center gap-2 whitespace-nowrap rounded-lg border border-border px-3 py-2 text-xs font-bold text-muted-foreground hover:bg-secondary hover:text-foreground">
+            {to === "/admin/audit" && <ScrollText className="size-4" />} {label}
           </Link>
         ))}
       </nav>
-      <Card className="mb-6 flex flex-wrap gap-2">
-        {tabs.map((t) => (
-          <button
-            key={t.key}
-            onClick={() => setTab(t.key)}
-            className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm ${tab === t.key ? "bg-primary font-bold text-primary-foreground" : "border border-border text-muted-foreground"}`}
-          >
-            <t.icon className="size-4" /> {t.label}
-          </button>
-        ))}
-        <Link
-          to="/admin/audit"
-          className="ms-auto inline-flex items-center gap-2 rounded-lg border border-primary/50 bg-primary/10 px-4 py-2 text-sm font-bold text-primary"
-        >
-          <ScrollText className="size-4" /> {tr("سجل التدقيق", "Audit log")}
-        </Link>
-      </Card>
 
 
       <div className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
