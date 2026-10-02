@@ -36,6 +36,7 @@ import { useFrozenAccounts } from "@/lib/frozen-accounts";
 import { useUserAudit } from "@/lib/admin-user-audit";
 import { useServerFn } from "@tanstack/react-start";
 import { sendCryptoPayout } from "@/lib/payout.functions";
+import { RevenueLedger } from "@/components/site/RevenueLedger";
 
 export const Route = createFileRoute("/_authenticated/admin/")({
   head: () => ({
@@ -628,18 +629,20 @@ function Admin() {
       )}
 
       {tab === "revenue" && (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {[
-            [tr("إجمالي حجم التداول", "Total trading volume"), `${volume.toLocaleString()} USDT`],
-            [tr("صافي عمولة المنصة", "Net platform commission"), `${fees.toLocaleString()} USDT`],
-            [tr("عدد الطلبات", "Orders"), String(rows.length)],
-            [tr("نسبة النزاعات", "Dispute rate"), `${disputeRate.toFixed(1)}%`],
-          ].map(([k, v]) => (
-            <Card key={k}>
-              <p className="text-sm text-muted-foreground">{k}</p>
-              <p className="text-2xl font-black text-primary">{v}</p>
-            </Card>
-          ))}
+        <div className="grid gap-4">
+          <RevenueLedger />
+          <div className="grid gap-4 sm:grid-cols-3">
+            {[
+              [tr("إجمالي حجم التداول", "Total trading volume"), `${volume.toFixed(2)} USDT`],
+              [tr("عدد الطلبات", "Orders"), String(rows.length)],
+              [tr("نسبة النزاعات", "Dispute rate"), `${disputeRate.toFixed(2)}%`],
+            ].map(([k, v]) => (
+              <Card key={k}>
+                <p className="text-sm text-muted-foreground">{k}</p>
+                <p className="text-2xl font-black text-primary"><bdi>{v}</bdi></p>
+              </Card>
+            ))}
+          </div>
         </div>
       )}
 

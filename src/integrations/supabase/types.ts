@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_profit_withdrawals: {
+        Row: {
+          admin_id: string
+          amount: number
+          created_at: string
+          id: string
+          notes: string | null
+          tx_ref: string | null
+        }
+        Insert: {
+          admin_id: string
+          amount: number
+          created_at?: string
+          id?: string
+          notes?: string | null
+          tx_ref?: string | null
+        }
+        Update: {
+          admin_id?: string
+          amount?: number
+          created_at?: string
+          id?: string
+          notes?: string | null
+          tx_ref?: string | null
+        }
+        Relationships: []
+      }
       audit_logs: {
         Row: {
           action_type: string
@@ -1477,6 +1504,14 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      admin_revenue_summary: {
+        Args: never
+        Returns: {
+          gross_commission: number
+          net_available: number
+          owner_withdrawals: number
+        }[]
       }
       admin_review_kyc: {
         Args: { _approve: boolean; _note?: string; _submission_id: string }

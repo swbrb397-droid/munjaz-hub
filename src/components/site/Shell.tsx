@@ -53,7 +53,7 @@ const navGroups: ReadonlyArray<NavGroup> = [
   },
 ];
 
-const flatNav = navGroups.flatMap((g) => g.items);
+const headerNav = navGroups[0]?.items ?? [];
 
 const adminGroup: { title: [string, string]; items: { to: string; label: [string, string]; icon: LucideIcon }[] } = {
   title: ["الإدارة والحوكمة", "Admin Governance"],
@@ -112,28 +112,81 @@ function AuthButton() {
 }
 
 
-function ViewSwitch() {
+function UserMenu({ isAdmin }: { isAdmin: boolean }) {
   const { tr } = useLang();
+  const { user } = useAuth();
   const { view, toggleView } = useViewMode();
-  const label =
-    view === "buyer"
-      ? tr("التحويل للوحة البائع", "Switch to Seller Dashboard")
-      : tr("التحويل للوحة المشتري", "Switch to Buyer Dashboard");
+  const navigate = useNavigate();
+  const qc = useQueryClient();
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", onDown);
+    return () => document.removeEventListener("mousedown", onDown);
+  }, [open]);
+
+  const initials = (user?.email ?? "U").slice(0, 2).toUpperCase();
+  const avatar = (user?.user_metadata?.["avatar_url"] as string | undefined) ?? null;
+  const item = "flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm text-foreground hover:bg-secondary";
+  const links: { to: string; label: string; icon: LucideIcon }[] = [
+    { to: "/workspace", label: tr("مساحة العمل والطلبات", "Workspace & orders"), icon: Briefcase },
+    { to: "/wallet", label: tr("المحفظة والسجل المالي", "My wallet & ledger"), icon: Wallet2 },
+    { to: "/kyc", label: tr("توثيق الهوية", "Identity verification"), icon: BadgeCheck },
+    { to: "/referrals", label: tr("برنامج الإحالة والعمولات", "Referral program"), icon: Users },
+  ];
 
   return (
-    <button
-      type="button"
-      onClick={toggleView}
-      title={label}
-      aria-label={label}
-      className="hidden h-9 shrink-0 items-center gap-1.5 rounded-lg border border-accent/40 bg-accent/10 px-2.5 text-xs font-bold text-accent transition-colors hover:bg-accent/20 md:flex"
-    >
-      <Repeat2 className="size-4" />
-      <span className="hidden lg:inline">{label}</span>
-      <span className="lg:hidden">
-        {view === "buyer" ? tr("بائع", "Seller") : tr("مشتري", "Buyer")}
-      </span>
-    </button>
+    <div className="relative shrink-0" ref={ref}>
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        aria-label={tr("قائمة الحساب", "Account menu")}
+        className="grid size-9 place-items-center overflow-hidden rounded-full border border-primary/40 bg-secondary text-xs font-black text-primary"
+      >
+        {avatar ? <img src={avatar} alt="" className="size-full object-cover" /> : initials}
+      </button>
+      {open && (
+        <div className="absolute end-0 top-11 z-50 w-64 rounded-xl border border-border bg-card p-1.5 shadow-xl" onClick={() => setOpen(false)}>
+          <p className="truncate px-3 py-2 text-xs text-muted-foreground" dir="ltr">{user?.email}</p>
+          {links.map((l) => (
+            <Link key={l.to} to={l.to} className={item}>
+              <l.icon className="size-4 shrink-0 text-muted-foreground" /> {l.label}
+            </Link>
+          ))}
+          <button type="button" onClick={toggleView} className={item}>
+            <Repeat2 className="size-4 shrink-0 text-accent" />
+            {view === "buyer" ? tr("التحويل لوضع البائع", "Switch to seller mode") : tr("التحويل لوضع المشتري", "Switch to buyer mode")}
+          </button>
+          {isAdmin && (
+            <Link to="/admin" className={`${item} text-primary`}>
+              <ShieldCheck className="size-4 shrink-0" /> {tr("لوحة الإدارة", "Admin panel")}
+            </Link>
+          )}
+          <div className="my-1 border-t border-border" />
+          <Link to="/profile" className={item}>
+            <UserCog className="size-4 shrink-0 text-muted-foreground" /> {tr("إعدادات الحساب", "Account settings")}
+          </Link>
+          <button
+            type="button"
+            className={`${item} text-destructive hover:bg-destructive/10`}
+            onClick={async () => {
+              await qc.cancelQueries();
+              qc.clear();
+              await supabase.auth.signOut();
+              navigate({ to: "/auth", replace: true });
+            }}
+          >
+            <LogOut className="size-4 shrink-0" /> {tr("تسجيل الخروج", "Sign out")}
+          </button>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -259,7 +312,7 @@ export function Shell({ children }: { children: ReactNode }) {
           </Link>
 
           <nav className="mx-auto hidden min-w-0 items-center gap-0.5 overflow-hidden lg:flex xl:gap-1">
-            {flatNav.map((item) => (
+            {headerNav.filter((i) => isAuthenticated || i.to !== "/create-listing").map((item) => (
               <Link
                 key={item.to}
                 to={item.to}
@@ -273,7 +326,6 @@ export function Shell({ children }: { children: ReactNode }) {
           </nav>
 
           <div className="ms-auto flex shrink-0 items-center gap-1.5 sm:gap-2 lg:ms-0">
-            {isAuthenticated && <ViewSwitch />}
             {isAuthenticated && <Notifications />}
             {isAuthenticated && (
 
@@ -282,20 +334,10 @@ export function Shell({ children }: { children: ReactNode }) {
                 className="hidden items-center gap-2 rounded-lg border border-primary/40 bg-primary/10 px-3 py-2 text-sm font-semibold text-primary md:flex"
               >
                 <Wallet2 className="size-4" />
-                {Number(wallet.data?.available_usdt ?? 0).toLocaleString()} USDT
+                <bdi>{Number(wallet.data?.available_usdt ?? 0).toFixed(2)}</bdi> USDT
               </Link>
             )}
-            <button
-              type="button"
-              onClick={() => setManifesto(true)}
-              title={t("brand")}
-              aria-label={lang === "ar" ? "ميثاق المنصة" : "Platform manifesto"}
-              className="hidden h-9 shrink-0 items-center gap-1.5 rounded-lg border border-primary/40 bg-primary/10 px-2.5 text-xs font-bold text-primary transition-colors hover:bg-primary/20 sm:flex"
-            >
-              <ScrollText className="size-4" />
-              <span className="hidden xl:inline">{lang === "ar" ? "ميثاق المنصة" : "Manifesto"}</span>
-            </button>
-            <AuthButton />
+            {isAuthenticated ? <UserMenu isAdmin={isAdmin} /> : <AuthButton />}
             <LangSwitch />
 
             <button type="button" className="grid size-9 shrink-0 place-items-center rounded-lg border border-border lg:hidden" onClick={() => setOpen(!open)} aria-label={t("menu")}>
@@ -376,6 +418,9 @@ export function Shell({ children }: { children: ReactNode }) {
               {t("terms")}
             </Link>
             <DmcaTrigger />
+            <button type="button" onClick={() => setManifesto(true)} className="flex items-center gap-1.5 hover:text-foreground transition-colors">
+              <ScrollText size={16} strokeWidth={1.8} /> {lang === "ar" ? "ميثاق المنصة" : "Platform charter"}
+            </button>
             {isAdmin && (
               <Link to="/admin" className="flex items-center gap-1.5 text-muted-foreground/70 hover:text-foreground">
                 <ShieldCheck size={18} strokeWidth={1.8} /> {t("admin")}
