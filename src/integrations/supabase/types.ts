@@ -416,6 +416,48 @@ export type Database = {
           },
         ]
       }
+      listing_license_keys: {
+        Row: {
+          created_at: string
+          id: string
+          is_redeemed: boolean
+          key_text: string
+          listing_id: string
+          redeemed_by_order_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_redeemed?: boolean
+          key_text: string
+          listing_id: string
+          redeemed_by_order_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_redeemed?: boolean
+          key_text?: string
+          listing_id?: string
+          redeemed_by_order_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "listing_license_keys_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "listings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "listing_license_keys_redeemed_by_order_id_fkey"
+            columns: ["redeemed_by_order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       listings: {
         Row: {
           audit_report: string | null
@@ -755,6 +797,8 @@ export type Database = {
           listing_id: string | null
           order_number: number
           platform_fee_usdt: number
+          revisions_allowed: number
+          revisions_used: number
           seller_id: string
           sow_terms: string
           status: Database["public"]["Enums"]["order_status"]
@@ -783,6 +827,8 @@ export type Database = {
           listing_id?: string | null
           order_number?: number
           platform_fee_usdt?: number
+          revisions_allowed?: number
+          revisions_used?: number
           seller_id: string
           sow_terms?: string
           status?: Database["public"]["Enums"]["order_status"]
@@ -811,6 +857,8 @@ export type Database = {
           listing_id?: string | null
           order_number?: number
           platform_fee_usdt?: number
+          revisions_allowed?: number
+          revisions_used?: number
           seller_id?: string
           sow_terms?: string
           status?: Database["public"]["Enums"]["order_status"]
@@ -1703,6 +1751,7 @@ export type Database = {
         Args: { _order_id: string; _user_id: string }
         Returns: boolean
       }
+      listing_key_stock: { Args: { p_listing_id: string }; Returns: number }
       log_security_event: {
         Args: {
           _detail: string
@@ -1714,6 +1763,12 @@ export type Database = {
       open_instant_dispute: {
         Args: { p_evidence: Json; p_order_id: string; p_reason: string }
         Returns: string
+      }
+      orphaned_vault_objects: {
+        Args: { p_limit?: number }
+        Returns: {
+          name: string
+        }[]
       }
       pay_referral_commission: {
         Args: { _fee: number; _order_id: string; _referred: string }
@@ -1824,6 +1879,10 @@ export type Database = {
         }
       }
       release_escrow_to_seller: { Args: { p_order_id: string }; Returns: Json }
+      request_order_revision: {
+        Args: { p_deliverable_id: string }
+        Returns: number
+      }
       request_wallet_withdrawal: { Args: { p_amount: number }; Returns: Json }
       request_withdrawal: {
         Args: {
