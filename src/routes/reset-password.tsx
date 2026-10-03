@@ -71,7 +71,11 @@ function ResetPassword() {
         const { error } = await supabase.auth.mfa.challengeAndVerify({ factorId, code });
         if (error) throw new Error(tr("رمز المصادقة غير صحيح", "Invalid authenticator code"));
       }
-      const { error } = await supabase.auth.updateUser({ password });
+      const { data: upd, error } = await supabase.auth.updateUser({ password });
+      if (!error && upd.user) {
+        // Starts the 24h withdrawal cooling-off (security_updated_at is stamped by a DB trigger).
+        void supabase.from("profiles").update({ password_last_changed_at: new Date().toISOString() }).eq("id", upd.user.id);
+      }
       if (error) throw error;
       toast.success(tr("تم تحديث كلمة المرور", "Password updated"));
       void navigate({ to: "/dashboard", replace: true });

@@ -43,9 +43,9 @@ function AdminGovernance() {
 
   const requestHaltToggle = async (next: boolean) => {
     const { data, error } = await supabase.auth.mfa.listFactors();
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     const f = (data?.totp ?? []).find((x) => x.status === "verified");
-    if (!f) return toast.error(tr("فعّل المصادقة الثنائية أولاً من إعدادات الأمان.", "Enable 2FA in security settings first."));
+    if (!f) { toast.error(tr("فعّل المصادقة الثنائية أولاً من إعدادات الأمان.", "Enable 2FA in security settings first.")); return; }
     setFactorId(f.id);
     setPendingHalt(next);
   };
