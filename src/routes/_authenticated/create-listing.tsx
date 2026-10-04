@@ -23,6 +23,7 @@ import { type ListingCategory } from "@/lib/catalog";
 import { isInstantCategory, saveInstantDelivery, uploadInstantFile } from "@/lib/instant-delivery";
 import { z } from "zod";
 import { ErrorBoundary } from "@/components/site/ErrorBoundary";
+import { LicenseKeysManager } from "@/components/site/LicenseKeysManager";
 
 function SafeCreateListing() {
   return (
@@ -871,6 +872,7 @@ function CreateListing() {
               </>
             )}
           </form>
+          {editingId && instantMode && <LicenseKeysManager listingId={editingId} />}
         </Card>
       </Section>
 
