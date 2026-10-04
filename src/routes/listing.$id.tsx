@@ -48,6 +48,17 @@ function ListingDetail() {
   const [error, setError] = useState<string | null>(null);
   const [topUp, setTopUp] = useState(false);
   const [buyingInstant, setBuyingInstant] = useState(false);
+  // License-key stock: null = listing does not sell keys.
+  const stock = useQuery({
+    queryKey: ["listing-key-stock", id],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("listing_key_stock", { p_listing_id: id });
+      if (error) throw error;
+      return (data as number | null) ?? null;
+    },
+  });
+  const keyStock = stock.data;
+  const outOfStock = keyStock === 0;
 
   // Per-listing title, description and Product structured data (pure SPA: set on the client).
   const seo = listing.data;
