@@ -1,5 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, Loader2, ShieldCheck, Star, Timer } from "lucide-react";
 import { Card, Section } from "@/components/site/Shell";
 import { VerifiedBadge } from "@/components/site/VerifiedBadge";
@@ -125,7 +126,7 @@ function ListingDetail() {
         const { data: orderId, error: rpcError } = await supabase.rpc("purchase_digital_asset_instant", {
           p_listing_id: item!.id,
         });
-        if (rpcError) throw new Error(rpcError.message.includes("INSUFFICIENT") ? "INSUFFICIENT_BALANCE" : rpcError.message);
+        if (rpcError) throw new Error(rpcError.message.includes("INSUFFICIENT") ? "INSUFFICIENT_BALANCE" : rpcError.message.includes("OUT_OF_STOCK") ? "OUT_OF_STOCK" : rpcError.message);
         navigate({ to: "/fulfillment/$orderId", params: { orderId: orderId as string } });
         return;
       }
@@ -241,14 +242,21 @@ function ListingDetail() {
               </p>
             )}
 
+            {keyStock !== null && keyStock !== undefined && (
+              <p className={`mt-3 text-xs font-bold ${outOfStock ? "text-destructive" : "text-primary"}`}>
+                {outOfStock ? tr("نفد المخزون", "Out of stock") : <>{tr("المفاتيح المتاحة", "Keys in stock")}: <bdi>{keyStock}</bdi></>}
+              </p>
+            )}
             <button
               onClick={buy}
-              disabled={createOrder.isPending || buyingInstant || isOwner}
+              disabled={createOrder.isPending || buyingInstant || isOwner || outOfStock}
               className="mt-4 w-full rounded-xl bg-primary px-4 py-3 font-bold text-primary-foreground glow disabled:opacity-50"
             >
               {createOrder.isPending || buyingInstant
                 ? tr("جارٍ إنشاء الطلب...", "Creating order...")
-                : isOwner
+                : outOfStock
+                  ? tr("نفد المخزون", "Out of stock")
+                  : isOwner
                   ? tr("هذا عرضك", "This is your listing")
                   : user
                     ? tr("اطلب الآن بضمان الوساطة", "Order now with escrow")
@@ -256,7 +264,9 @@ function ListingDetail() {
             </button>
             {error && (
               <p className="mt-3 text-xs text-destructive">
-                {error === "INSUFFICIENT_BALANCE"
+                {error === "OUT_OF_STOCK"
+                  ? tr("نفد مخزون المفاتيح لهذا العرض", "This listing is out of keys")
+                  : error === "INSUFFICIENT_BALANCE"
                   ? tr("رصيدك غير كافٍ لإتمام الطلب. يرجى شحن المحفظة أولاً", "Insufficient balance. Please top up your wallet first")
                   : error}
               </p>
