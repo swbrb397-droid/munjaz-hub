@@ -37,6 +37,7 @@ import { useFrozenAccounts } from "@/lib/frozen-accounts";
 import { useUserAudit } from "@/lib/admin-user-audit";
 import { useServerFn } from "@tanstack/react-start";
 import { sendCryptoPayout } from "@/lib/payout.functions";
+import { purgeOrphanedVaultFiles } from "@/lib/storage-maintenance.functions";
 import { RevenueLedger } from "@/components/site/RevenueLedger";
 
 export const Route = createFileRoute("/_authenticated/admin/")({
@@ -104,6 +105,8 @@ function Admin() {
   const audit = useUserAudit(auditUser, isAdmin);
   const [payoutBusy, setPayoutBusy] = useState<string | null>(null);
   const runCryptoPayout = useServerFn(sendCryptoPayout);
+  const runPurge = useServerFn(purgeOrphanedVaultFiles);
+  const [purging, setPurging] = useState(false);
 
   const oneClickPayout = async (withdrawalId: string) => {
     if (payoutBusy) return;
@@ -188,6 +191,26 @@ function Admin() {
       {tab && (
         <button type="button" onClick={() => setTab(null)} className="sticky top-16 z-30 mb-3 inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-primary/40 bg-card px-4 py-2 text-sm font-bold text-primary shadow">
           <ArrowRight className="size-4 ltr:rotate-180" /> {tr("العودة إلى لوحة الإدارة الرئيسية", "Back to main admin dashboard")}
+        </button>
+      )}
+      {!tab && (
+        <button
+          type="button"
+          disabled={purging}
+          onClick={async () => {
+            setPurging(true);
+            try {
+              const r = await runPurge();
+              toast.success(tr(`حُذف ${r.removed} ملف يتيم`, `${r.removed} orphaned files removed`));
+            } catch {
+              toast.error(tr("تعذّر تنظيف الملفات", "Cleanup failed"));
+            } finally {
+              setPurging(false);
+            }
+          }}
+          className="mb-3 inline-flex min-h-[40px] items-center gap-2 rounded-lg border border-border px-3 py-2 text-xs font-bold text-muted-foreground hover:bg-secondary disabled:opacity-50"
+        >
+          {tr("تنظيف الملفات اليتيمة (أقدم من 180 يوماً)", "Clean orphaned files (older than 180 days)")}
         </button>
       )}
       <nav className="mb-6 -mx-1 flex gap-2 overflow-x-auto px-1 pb-2" aria-label={tr("أقسام الإدارة", "Admin sections")}>

@@ -321,3 +321,18 @@ export async function vaultUrl(storagePath: string, seconds = 3600) {
   if (error) throw error;
   return data.signedUrl;
 }
+
+/** Counted revision request (server enforces revisions_allowed). */
+export function useRequestRevision(orderId: string | null) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (deliverableId: string) => {
+      const { error } = await supabase.rpc("request_order_revision", { p_deliverable_id: deliverableId });
+      if (error) throw new Error(error.message.includes("REVISION_LIMIT") ? "REVISION_LIMIT_REACHED" : error.message);
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["order_deliverables", orderId] });
+      void qc.invalidateQueries({ queryKey: ["orders"] });
+    },
+  });
+}

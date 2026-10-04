@@ -106,6 +106,19 @@ function Fulfillment() {
 
   const delivery = useInstantDelivery(order.data?.listing_id ?? null, !!order.data?.listing_id);
 
+  const licenseKey = useQuery({
+    queryKey: ["order-license-key", order.data?.id],
+    enabled: !!order.data?.id,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("listing_license_keys")
+        .select("key_text")
+        .eq("redeemed_by_order_id", order.data!.id)
+        .maybeSingle();
+      return data?.key_text ?? null;
+    },
+  });
+
   const download = async () => {
     const path = delivery.data?.file_path;
     if (!path) return;
@@ -234,6 +247,27 @@ function Fulfillment() {
               </p>
             )}
 
+            {licenseKey.data && (
+              <div className="grid gap-2">
+                <span className="text-xs font-bold text-muted-foreground">
+                  {tr("مفتاح الترخيص الخاص بك (استخدام واحد)", "Your license key (single use)")}
+                </span>
+                <code dir="ltr" className="break-all rounded-xl border border-primary/40 bg-primary/5 p-3 font-mono text-sm">
+                  {licenseKey.data}
+                </code>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    await navigator.clipboard.writeText(licenseKey.data ?? "");
+                    toast.success(tr("تم نسخ المفتاح", "Key copied"));
+                  }}
+                  className="inline-flex min-h-[44px] w-fit items-center gap-2 rounded-xl border border-primary/40 bg-primary/10 px-4 py-2 text-sm font-bold text-primary"
+                >
+                  <Copy className="size-4" /> {tr("نسخ المفتاح", "Copy key")}
+                </button>
+              </div>
+            )}
+
             {delivery.data?.content && (
               <div className="grid gap-2">
                 <span className="text-xs font-bold text-muted-foreground">
@@ -255,7 +289,7 @@ function Fulfillment() {
               </div>
             )}
 
-            {!delivery.data?.file_path && !delivery.data?.content && (
+            {!delivery.data?.file_path && !delivery.data?.content && !licenseKey.data && (
               <p className="text-sm text-muted-foreground">
                 {tr(
                   "لم يرفق البائع محتوى فورياً بعد — تواصل مع الدعم لاسترجاع المبلغ أو استلام المحتوى.",

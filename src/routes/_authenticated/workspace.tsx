@@ -49,6 +49,7 @@ import {
   useSendMessage,
   useCacheTranslation,
   useSetDeliverableApproval,
+  useRequestRevision,
   useUploadDeliverable,
   vaultUrl,
   VAULT_BUCKET,
@@ -465,6 +466,8 @@ function Workspace() {
   const uploadDeliverable = useUploadDeliverable(selected);
   const linkDeliverable = useLinkDeliverable(selected);
   const setApproval = useSetDeliverableApproval(selected);
+  const requestRevision = useRequestRevision(selected);
+  const revLeft = order ? Math.max(0, (order.revisions_allowed ?? 2) - (order.revisions_used ?? 0)) : 0;
   const transition = useOrderTransition();
   const instantCancel = useBuyerInstantCancel();
   const releaseEscrow = useMutation({
@@ -1574,13 +1577,26 @@ function Workspace() {
                               <div className="flex flex-wrap gap-2">
                                 <button
                                   type="button"
+                                  disabled={revLeft === 0 || requestRevision.isPending}
                                   onClick={() =>
-                                    setApproval.mutate({ id: f.id, state: "revision" })
+                                    requestRevision.mutate(f.id, {
+                                      onError: (e) =>
+                                        toast.error(
+                                          (e as Error).message === "REVISION_LIMIT_REACHED"
+                                            ? tr("استنفدت التعديلات المتاحة. اعتمد التسليم أو افتح نزاعاً رسمياً.", "No revisions left. Accept the delivery or open a formal dispute.")
+                                            : tr("تعذّر إرسال طلب التعديل", "Could not request a revision"),
+                                        ),
+                                    })
                                   }
-                                  className="rounded-lg border border-accent/50 bg-accent/10 px-3 py-1.5 text-[11px] font-bold text-accent"
+                                  className="rounded-lg border border-accent/50 bg-accent/10 px-3 py-1.5 text-[11px] font-bold text-accent disabled:opacity-50"
                                 >
-                                  {tr("طلب تعديل على المسودة", "Request draft revision")}
+                                  {tr("طلب تعديل", "Request revision")} (<bdi>{revLeft}</bdi> {tr("متبقٍ", "left")})
                                 </button>
+                                {revLeft === 0 && (
+                                  <span className="w-full text-[11px] font-bold text-destructive">
+                                    {tr("انتهت دورات التعديل: اعتمد التسليم أو افتح نزاعاً للوساطة.", "Revision cycles used up: accept the delivery or open a dispute for mediation.")}
+                                  </span>
+                                )}
                                 <button
                                   type="button"
                                   onClick={() =>
