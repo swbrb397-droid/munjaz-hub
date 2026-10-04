@@ -122,6 +122,7 @@ function UserMenu({ isAdmin }: { isAdmin: boolean }) {
     { to: "/wallet", label: tr("المحفظة والسجل المالي", "My wallet & ledger"), icon: Wallet2 },
     { to: "/kyc", label: tr("توثيق الهوية", "Identity verification"), icon: BadgeCheck },
     { to: "/referrals", label: tr("برنامج الإحالة والعمولات", "Referral program"), icon: Users },
+    { to: "/pricing", label: tr("الباقات والاشتراكات", "Plans & pricing"), icon: CreditCard },
   ];
 
   return (
@@ -362,6 +363,7 @@ export function Shell({ children }: { children: ReactNode }) {
                 { to: "/wallet", label: tr("المحفظة والسجل المالي", "Wallet & ledger"), icon: Wallet2 },
                 { to: "/kyc", label: tr("توثيق الهوية", "Identity verification"), icon: BadgeCheck },
                 { to: "/referrals", label: tr("برنامج الإحالة", "Referral program"), icon: Users },
+                { to: "/pricing", label: tr("الباقات والاشتراكات", "Plans & pricing"), icon: CreditCard },
                 { to: "/profile", label: tr("إعدادات الحساب", "Account settings"), icon: UserCog },
               ];
               return (
@@ -421,6 +423,9 @@ export function Shell({ children }: { children: ReactNode }) {
         <div className="mx-auto flex max-w-7xl flex-col items-center gap-4 px-4 pb-28 pt-9 text-center text-sm text-muted-foreground sm:flex-row sm:justify-between sm:py-8 sm:text-start">
           <p className="leading-relaxed">{t("footer")}</p>
           <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-3 text-xs sm:justify-end">
+            <Link to="/pricing" className="hover:text-foreground transition-colors">
+              {lang === "ar" ? "الباقات" : "Pricing"}
+            </Link>
             <Link to="/terms" className="hover:text-foreground transition-colors">
               {t("terms")}
             </Link>
