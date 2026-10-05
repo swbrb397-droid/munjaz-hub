@@ -111,7 +111,8 @@ function ListingDetail() {
   const sellerNet = Number((price - fee).toFixed(2));
   const balance = Number(wallet.data?.available_usdt ?? 0);
   const isOwner = !!user && item.ownerId === user.id;
-  const deliveryDays = Number(item.deliveryDays ?? 3);
+  const deliveryDays = Number(item.deliveryDays ?? 0);
+  const instant = isInstantCategory(item.category);
 
   async function buy() {
     setError(null);
@@ -236,15 +237,17 @@ function ListingDetail() {
             <div className="mt-4 flex items-center justify-between rounded-lg border border-border/40 bg-card/50 p-3 text-sm">
               <span className="text-muted-foreground">{tr("مدة التسليم المحددة", "Set delivery time")}</span>
               <span className="font-semibold text-foreground">
-                <bdi>{deliveryDays} {tr("أيام", "days")}</bdi>
+                {instant ? tr("تسليم فوري", "Instant delivery") : deliveryDays > 0 ? <bdi>{deliveryDays} {deliveryDays === 1 ? tr("يوم", "day") : tr("أيام", "days")}</bdi> : tr("يحددها البائع عند القبول", "Set by seller on acceptance")}
               </span>
             </div>
 
-            <dl className="mt-4 grid gap-1 border-t border-border pt-4 text-sm">
-              <div className="flex justify-between"><dt className="text-muted-foreground">{tr("مبلغ الضمان", "Escrow amount")}</dt><dd><bdi>{price.toFixed(2)} USDT</bdi></dd></div>
-              <div className="flex justify-between"><dt className="text-muted-foreground">{tr(`عمولة المنصة (${feePct}%)`, `Platform fee (${feePct}%)`)}</dt><dd><bdi>{fee.toFixed(2)} USDT</bdi></dd></div>
-              <div className="flex justify-between font-bold"><dt>{tr("صافي البائع", "Seller net")}</dt><dd className="text-primary"><bdi>{sellerNet.toFixed(2)} USDT</bdi></dd></div>
-            </dl>
+            {isOwner && (
+              <dl className="mt-4 grid gap-1 border-t border-border pt-4 text-sm">
+                  <div className="flex justify-between"><dt className="text-muted-foreground">{tr("مبلغ الضمان", "Escrow amount")}</dt><dd><bdi>{price.toFixed(2)} USDT</bdi></dd></div>
+                  <div className="flex justify-between"><dt className="text-muted-foreground">{tr(`عمولة المنصة (${feePct}%)`, `Platform fee (${feePct}%)`)}</dt><dd><bdi>{fee.toFixed(2)} USDT</bdi></dd></div>
+                  <div className="flex justify-between font-bold"><dt>{tr("صافي البائع", "Seller net")}</dt><dd className="text-primary"><bdi>{sellerNet.toFixed(2)} USDT</bdi></dd></div>
+                </dl>
+            )}
 
             {user && (
               <p className="mt-3 text-xs text-muted-foreground">

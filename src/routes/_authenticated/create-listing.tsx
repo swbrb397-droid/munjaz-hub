@@ -316,7 +316,7 @@ function CreateListing() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("listings")
-        .select("id,title_ar,title_en,category,price_usdt,is_published,created_at,tag_ar,tag_en")
+        .select("id,title_ar,title_en,category,price_usdt,is_published,created_at,tag_ar,tag_en,delivery_days,inspection_window_hours")
         .eq("owner_id", user!.id)
         .order("created_at", { ascending: false });
       if (error) throw error;
