@@ -71,6 +71,7 @@ type FormState = {
   tag_en: string;
   description_ar: string;
   inspection_window_hours: number;
+  delivery_days: number;
 };
 
 const emptyForm: FormState = {
@@ -82,7 +83,10 @@ const emptyForm: FormState = {
   tag_en: "",
   description_ar: "",
   inspection_window_hours: 24,
+  delivery_days: 3,
 };
+
+const DELIVERY_DAY_OPTIONS = [1, 2, 3, 5, 7, 10, 14, 21, 30];
 
 /** Escrow inspection window allowed per account tier. */
 const INSPECTION_OPTIONS: Record<"free" | "pro" | "corporate", number[]> = {
@@ -312,7 +316,7 @@ function CreateListing() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("listings")
-        .select("id,title_ar,title_en,category,price_usdt,is_published,created_at,tag_ar,tag_en")
+        .select("id,title_ar,title_en,category,price_usdt,is_published,created_at,tag_ar,tag_en,delivery_days,inspection_window_hours")
         .eq("owner_id", user!.id)
         .order("created_at", { ascending: false });
       if (error) throw error;
@@ -352,6 +356,7 @@ function CreateListing() {
             tag_ar: sanitizeText(form.tag_ar, 40),
             tag_en: sanitizeText(form.tag_en, 40) || sanitizeText(form.tag_ar, 40),
             inspection_window_hours: inspectionHours,
+            delivery_days: isInstantCategory(form.category) ? 0 : form.delivery_days,
             ...(descriptionResult.success ? { description: sanitizeText(form.description_ar, MAX_DESC) } : {}),
           })
           .eq("id", editingId);
@@ -401,6 +406,7 @@ function CreateListing() {
           tag_ar: sanitizeText(form.tag_ar, 40),
           tag_en: sanitizeText(form.tag_en, 40) || sanitizeText(form.tag_ar, 40),
           inspection_window_hours: inspectionHours,
+          delivery_days: isInstantCategory(form.category) ? 0 : form.delivery_days,
           description: sanitizeText(form.description_ar, MAX_DESC),
           cover_key: "product",
           cover_url: coverUrl,
@@ -630,6 +636,26 @@ function CreateListing() {
                   <span className="text-muted-foreground">{tr("وسم قصير (إنجليزي)", "Short tag (English)")}</span>
                   <input className={field} maxLength={40} value={form.tag_en} onChange={(e) => setForm({ ...form, tag_en: e.target.value })} />
                 </label>
+
+                {!instantMode && (
+                  <label className="grid gap-1.5 text-sm sm:col-span-2">
+                    <span className="text-muted-foreground">{tr("مدة التسليم المطلوبة", "Delivery time")}</span>
+                    <select
+                      className={field}
+                      value={form.delivery_days}
+                      onChange={(e) => setForm({ ...form, delivery_days: Number(e.target.value) })}
+                    >
+                      {DELIVERY_DAY_OPTIONS.map((d) => (
+                        <option key={d} value={d}>
+                          {d} {d === 1 ? tr("يوم", "day") : tr("أيام", "days")}
+                        </option>
+                      ))}
+                    </select>
+                    <span className="text-[11px] text-muted-foreground">
+                      {tr("المدة التي تلتزم خلالها بتسليم العمل بعد بدء الطلب.", "The time you commit to deliver after the order starts.")}
+                    </span>
+                  </label>
+                )}
 
                 <label className="grid gap-1.5 text-sm sm:col-span-2">
                   <span className="text-muted-foreground">
@@ -886,9 +912,11 @@ function CreateListing() {
           <div className="grid gap-3">
             {(mine.data ?? []).map((l) => (
               <Card key={l.id} className="flex select-none flex-wrap items-center gap-3">
-                <div className="min-w-0">
-                  <p className="truncate font-bold">{lang === "ar" ? l.title_ar : l.title_en}</p>
-                  <p className="text-xs text-muted-foreground">{l.category}</p>
+                <div className="min-w-0 basis-full">
+                  <p className="line-clamp-2 break-words font-bold">{lang === "ar" ? l.title_ar : l.title_en}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {l.category === "freelance" ? tr("خدمة مستقلة", "Freelance") : l.category === "course" ? tr("دورة", "Course") : tr("منتج رقمي", "Digital product")}
+                  </p>
                 </div>
                 <span
                   className={`rounded-full border px-2.5 py-1 text-[10px] font-bold ${
@@ -897,7 +925,7 @@ function CreateListing() {
                 >
                   {l.is_published ? tr("نشط", "Active") : tr("متوقف", "Inactive")}
                 </span>
-                <span className="ms-auto text-sm font-bold text-primary">{Number(l.price_usdt).toLocaleString()} USDT</span>
+                <span className="ms-auto text-sm font-bold text-primary"><bdi>{Number(l.price_usdt).toFixed(2)} USDT</bdi></span>
 
                 <div className="relative">
                   <button
@@ -952,6 +980,7 @@ function CreateListing() {
                             inspection_window_hours: Number(
                               (l as { inspection_window_hours?: number }).inspection_window_hours ?? 24,
                             ),
+                            delivery_days: Number(l.delivery_days) > 0 ? Number(l.delivery_days) : 3,
                           });
                           setStep(1);
                           window.scrollTo({ top: 0, behavior: "smooth" });
