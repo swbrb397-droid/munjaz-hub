@@ -123,6 +123,23 @@ function Dashboard() {
         ))}
       </div>
 
+      {view === "seller" && profile.data && (() => {
+        const tier = profile.data.account_tier;
+        const exp = profile.data.plan_expires_at ? new Date(profile.data.plan_expires_at) : null;
+        const paid = tier !== "free" && exp && exp.getTime() > Date.now();
+        const name = tier === "corporate" ? tr("باقة الشركات", "Corporate plan") : tier === "pro" ? tr("باقة المحترفين", "Pro plan") : tr("الباقة الأساسية", "Basic plan");
+        return (
+          <Link to="/pricing" className="mt-4 flex flex-wrap items-center gap-2 rounded-xl border border-border px-4 py-2.5 text-sm transition hover:border-primary/50">
+            <span className="font-bold text-primary">{name}</span>
+            <span className="text-muted-foreground">
+              {paid
+                ? <>{tr("صالحة حتى", "Valid until")} <bdi>{exp!.toLocaleDateString(tr("ar", "en-GB"), { year: "numeric", month: "long", day: "numeric" })}</bdi></>
+                : tr("(دائمة)", "(permanent)")}
+            </span>
+          </Link>
+        );
+      })()}
+
       {view === "seller" && (
         <div className="mt-6">
           <PrestigeTracker metrics={prestige} />
