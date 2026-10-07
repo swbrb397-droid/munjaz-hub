@@ -958,12 +958,14 @@ export type Database = {
           display_name: string
           frozen_at: string | null
           frozen_reason: string | null
+          hide_online_status: boolean
           id: string
           is_deactivated: boolean
           is_frozen: boolean
           is_verified: boolean
           kyc_status: string
           kyc_tier: Database["public"]["Enums"]["kyc_tier"]
+          last_active_at: string | null
           level: number
           mfa_updated_at: string | null
           notification_preferences: Json
@@ -989,12 +991,14 @@ export type Database = {
           display_name?: string
           frozen_at?: string | null
           frozen_reason?: string | null
+          hide_online_status?: boolean
           id: string
           is_deactivated?: boolean
           is_frozen?: boolean
           is_verified?: boolean
           kyc_status?: string
           kyc_tier?: Database["public"]["Enums"]["kyc_tier"]
+          last_active_at?: string | null
           level?: number
           mfa_updated_at?: string | null
           notification_preferences?: Json
@@ -1020,12 +1024,14 @@ export type Database = {
           display_name?: string
           frozen_at?: string | null
           frozen_reason?: string | null
+          hide_online_status?: boolean
           id?: string
           is_deactivated?: boolean
           is_frozen?: boolean
           is_verified?: boolean
           kyc_status?: string
           kyc_tier?: Database["public"]["Enums"]["kyc_tier"]
+          last_active_at?: string | null
           level?: number
           mfa_updated_at?: string | null
           notification_preferences?: Json
@@ -1043,6 +1049,126 @@ export type Database = {
           {
             foreignKeyName: "profiles_referred_by_fkey"
             columns: ["referred_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_proposals: {
+        Row: {
+          amount_usdt: number
+          cover_letter: string
+          created_at: string
+          delivery_days: number
+          freelancer_id: string
+          id: string
+          project_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          amount_usdt: number
+          cover_letter: string
+          created_at?: string
+          delivery_days: number
+          freelancer_id: string
+          id?: string
+          project_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          amount_usdt?: number
+          cover_letter?: string
+          created_at?: string
+          delivery_days?: number
+          freelancer_id?: string
+          id?: string
+          project_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_proposals_freelancer_id_fkey"
+            columns: ["freelancer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_proposals_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      projects: {
+        Row: {
+          admin_note: string | null
+          awarded_proposal_id: string | null
+          budget_max: number
+          budget_min: number
+          category: string
+          created_at: string
+          delivery_days: number
+          description: string
+          id: string
+          order_id: string | null
+          owner_id: string
+          proposals_count: number
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          admin_note?: string | null
+          awarded_proposal_id?: string | null
+          budget_max: number
+          budget_min: number
+          category?: string
+          created_at?: string
+          delivery_days?: number
+          description: string
+          id?: string
+          order_id?: string | null
+          owner_id: string
+          proposals_count?: number
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          admin_note?: string | null
+          awarded_proposal_id?: string | null
+          budget_max?: number
+          budget_min?: number
+          category?: string
+          created_at?: string
+          delivery_days?: number
+          description?: string
+          id?: string
+          order_id?: string | null
+          owner_id?: string
+          proposals_count?: number
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "projects_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projects_owner_id_fkey"
+            columns: ["owner_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -1467,6 +1593,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      accept_project_proposal: {
+        Args: { _proposal_id: string }
+        Returns: string
+      }
       admin_adjust_user_role: {
         Args: { p_action: string; p_role: string; p_user_id: string }
         Returns: undefined
@@ -1494,6 +1624,10 @@ export type Database = {
           referral_earned: number
           roles: string[]
         }[]
+      }
+      admin_moderate_project: {
+        Args: { _action: string; _note: string; _project_id: string }
+        Returns: undefined
       }
       admin_platform_overview: {
         Args: never
@@ -1607,6 +1741,17 @@ export type Database = {
         Args: { p_banned: boolean; p_reason: string; p_user_id: string }
         Returns: undefined
       }
+      admin_user_activity: {
+        Args: never
+        Returns: {
+          id: string
+          last_active_at: string
+          last_listing_at: string
+          last_project_at: string
+          proposals_24h: number
+        }[]
+      }
+      assert_active_account: { Args: { _uid: string }; Returns: undefined }
       assert_financial_open: { Args: never; Returns: undefined }
       attach_referral_after_oauth: {
         Args: { p_code: string }
@@ -1618,6 +1763,7 @@ export type Database = {
         Args: { _action: string; _max: number; _window: string }
         Returns: number
       }
+      close_own_project: { Args: { _project_id: string }; Returns: undefined }
       confirm_deposit: {
         Args: { _tx_hash?: string; _tx_id: string }
         Returns: {
@@ -1646,6 +1792,7 @@ export type Database = {
         Args: { p_order_id: string }
         Returns: undefined
       }
+      contains_contact_info: { Args: { _t: string }; Returns: boolean }
       create_deposit: {
         Args: {
           _address?: string
@@ -1674,9 +1821,37 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      create_project: {
+        Args: {
+          _budget_max: number
+          _budget_min: number
+          _category: string
+          _delivery_days: number
+          _description: string
+          _title: string
+        }
+        Returns: string
+      }
       fee_rates: { Args: never; Returns: Json }
       financial_halt_active: { Args: never; Returns: boolean }
       get_admin_dashboard_metrics: { Args: never; Returns: Json }
+      get_freelancers_directory: {
+        Args: { _limit?: number }
+        Returns: {
+          account_tier: Database["public"]["Enums"]["account_tier"]
+          avatar_url: string
+          bio: string
+          completed_orders: number
+          country: string
+          created_at: string
+          display_name: string
+          id: string
+          is_verified: boolean
+          last_active_at: string
+          listings_count: number
+          rating: number
+        }[]
+      }
       get_leaderboard: {
         Args: { p_filter?: string; p_limit?: number }
         Returns: {
@@ -1719,6 +1894,13 @@ export type Database = {
           xp_points: number
         }[]
       }
+      get_presence: {
+        Args: { _ids: string[] }
+        Returns: {
+          id: string
+          last_active_at: string
+        }[]
+      }
       get_public_profiles: {
         Args: { _ids: string[] }
         Returns: {
@@ -1759,6 +1941,13 @@ export type Database = {
           _meta?: Json
         }
         Returns: string
+      }
+      my_proposal_quota: {
+        Args: never
+        Returns: {
+          cap: number
+          used: number
+        }[]
       }
       open_instant_dispute: {
         Args: { p_evidence: Json; p_order_id: string; p_reason: string }
@@ -1834,6 +2023,7 @@ export type Database = {
         }
       }
       process_withdrawal_queue: { Args: never; Returns: number }
+      proposal_daily_cap: { Args: { _uid: string }; Returns: number }
       public_leaderboard: {
         Args: { _limit?: number }
         Returns: {
@@ -1979,6 +2169,10 @@ export type Database = {
         Args: { _frozen: boolean; _reason?: string; _user_id: string }
         Returns: undefined
       }
+      set_presence_visibility: {
+        Args: { _hidden: boolean }
+        Returns: undefined
+      }
       submit_kyc:
         | {
             Args: {
@@ -2035,7 +2229,21 @@ export type Database = {
               isSetofReturn: false
             }
           }
+      submit_project_proposal: {
+        Args: {
+          _amount: number
+          _cover: string
+          _delivery_days: number
+          _project_id: string
+        }
+        Returns: string
+      }
+      touch_presence: { Args: never; Returns: undefined }
       unspent_deposit_balance: { Args: { _user_id: string }; Returns: number }
+      withdraw_project_proposal: {
+        Args: { _proposal_id: string }
+        Returns: undefined
+      }
       withdrawal_cooldown_until: {
         Args: { _user_id?: string }
         Returns: string
