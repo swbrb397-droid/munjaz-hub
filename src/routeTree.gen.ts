@@ -14,6 +14,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as LeaderboardRouteImport } from './routes/leaderboard'
 import { Route as PricingRouteImport } from './routes/pricing'
+import { Route as ProjectsRouteImport } from './routes/projects'
 import { Route as ReferralsRouteImport } from './routes/referrals'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as StoreRouteImport } from './routes/store'
@@ -21,6 +22,7 @@ import { Route as TermsRouteImport } from './routes/terms'
 import { Route as VerifyRouteImport } from './routes/verify'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedCreateListingRouteImport } from './routes/_authenticated/create-listing'
+import { Route as AuthenticatedCreateProjectRouteImport } from './routes/_authenticated/create-project'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedKycRouteImport } from './routes/_authenticated/kyc'
 import { Route as AuthenticatedOrdersRouteImport } from './routes/_authenticated/orders'
@@ -28,6 +30,7 @@ import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedWalletRouteImport } from './routes/_authenticated/wallet'
 import { Route as AuthenticatedWorkspaceRouteImport } from './routes/_authenticated/workspace'
 import { Route as ListingIdRouteImport } from './routes/listing.$id'
+import { Route as ProjectIdRouteImport } from './routes/project.$id'
 import { Route as UserUsernameRouteImport } from './routes/user.$username'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
 import { Route as AuthenticatedAdminAiRouteImport } from './routes/_authenticated/admin.ai'
@@ -62,6 +65,11 @@ const LeaderboardRoute = LeaderboardRouteImport.update({
 const PricingRoute = PricingRouteImport.update({
   id: '/pricing',
   path: '/pricing',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProjectsRoute = ProjectsRouteImport.update({
+  id: '/projects',
+  path: '/projects',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ReferralsRoute = ReferralsRouteImport.update({
@@ -100,6 +108,12 @@ const AuthenticatedCreateListingRoute =
     path: '/create-listing',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedCreateProjectRoute =
+  AuthenticatedCreateProjectRouteImport.update({
+    id: '/create-project',
+    path: '/create-project',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -133,6 +147,11 @@ const AuthenticatedWorkspaceRoute = AuthenticatedWorkspaceRouteImport.update({
 const ListingIdRoute = ListingIdRouteImport.update({
   id: '/listing/$id',
   path: '/listing/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProjectIdRoute = ProjectIdRouteImport.update({
+  id: '/project/$id',
+  path: '/project/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
 const UserUsernameRoute = UserUsernameRouteImport.update({
@@ -201,6 +220,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/leaderboard': typeof LeaderboardRoute
   '/pricing': typeof PricingRoute
+  '/projects': typeof ProjectsRoute
   '/referrals': typeof ReferralsRoute
   '/reset-password': typeof ResetPasswordRoute
   '/store': typeof StoreRoute
@@ -208,6 +228,7 @@ export interface FileRoutesByFullPath {
   '/verify': typeof VerifyRoute
   '/admin': typeof AuthenticatedAdminRouteWithChildren
   '/create-listing': typeof AuthenticatedCreateListingRoute
+  '/create-project': typeof AuthenticatedCreateProjectRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/kyc': typeof AuthenticatedKycRoute
   '/orders': typeof AuthenticatedOrdersRoute
@@ -215,6 +236,7 @@ export interface FileRoutesByFullPath {
   '/wallet': typeof AuthenticatedWalletRoute
   '/workspace': typeof AuthenticatedWorkspaceRoute
   '/listing/$id': typeof ListingIdRoute
+  '/project/$id': typeof ProjectIdRoute
   '/user/$username': typeof UserUsernameRoute
   '/admin/ai': typeof AuthenticatedAdminAiRoute
   '/admin/audit': typeof AuthenticatedAdminAuditRoute
@@ -232,12 +254,14 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/leaderboard': typeof LeaderboardRoute
   '/pricing': typeof PricingRoute
+  '/projects': typeof ProjectsRoute
   '/referrals': typeof ReferralsRoute
   '/reset-password': typeof ResetPasswordRoute
   '/store': typeof StoreRoute
   '/terms': typeof TermsRoute
   '/verify': typeof VerifyRoute
   '/create-listing': typeof AuthenticatedCreateListingRoute
+  '/create-project': typeof AuthenticatedCreateProjectRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/kyc': typeof AuthenticatedKycRoute
   '/orders': typeof AuthenticatedOrdersRoute
@@ -245,6 +269,7 @@ export interface FileRoutesByTo {
   '/wallet': typeof AuthenticatedWalletRoute
   '/workspace': typeof AuthenticatedWorkspaceRoute
   '/listing/$id': typeof ListingIdRoute
+  '/project/$id': typeof ProjectIdRoute
   '/user/$username': typeof UserUsernameRoute
   '/admin/ai': typeof AuthenticatedAdminAiRoute
   '/admin/audit': typeof AuthenticatedAdminAuditRoute
@@ -264,6 +289,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/leaderboard': typeof LeaderboardRoute
   '/pricing': typeof PricingRoute
+  '/projects': typeof ProjectsRoute
   '/referrals': typeof ReferralsRoute
   '/reset-password': typeof ResetPasswordRoute
   '/store': typeof StoreRoute
@@ -271,6 +297,7 @@ export interface FileRoutesById {
   '/verify': typeof VerifyRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
   '/_authenticated/create-listing': typeof AuthenticatedCreateListingRoute
+  '/_authenticated/create-project': typeof AuthenticatedCreateProjectRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/kyc': typeof AuthenticatedKycRoute
   '/_authenticated/orders': typeof AuthenticatedOrdersRoute
@@ -278,6 +305,7 @@ export interface FileRoutesById {
   '/_authenticated/wallet': typeof AuthenticatedWalletRoute
   '/_authenticated/workspace': typeof AuthenticatedWorkspaceRoute
   '/listing/$id': typeof ListingIdRoute
+  '/project/$id': typeof ProjectIdRoute
   '/user/$username': typeof UserUsernameRoute
   '/_authenticated/admin/ai': typeof AuthenticatedAdminAiRoute
   '/_authenticated/admin/audit': typeof AuthenticatedAdminAuditRoute
@@ -297,6 +325,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/leaderboard'
     | '/pricing'
+    | '/projects'
     | '/referrals'
     | '/reset-password'
     | '/store'
@@ -304,6 +333,7 @@ export interface FileRouteTypes {
     | '/verify'
     | '/admin'
     | '/create-listing'
+    | '/create-project'
     | '/dashboard'
     | '/kyc'
     | '/orders'
@@ -311,6 +341,7 @@ export interface FileRouteTypes {
     | '/wallet'
     | '/workspace'
     | '/listing/$id'
+    | '/project/$id'
     | '/user/$username'
     | '/admin/ai'
     | '/admin/audit'
@@ -328,12 +359,14 @@ export interface FileRouteTypes {
     | '/auth'
     | '/leaderboard'
     | '/pricing'
+    | '/projects'
     | '/referrals'
     | '/reset-password'
     | '/store'
     | '/terms'
     | '/verify'
     | '/create-listing'
+    | '/create-project'
     | '/dashboard'
     | '/kyc'
     | '/orders'
@@ -341,6 +374,7 @@ export interface FileRouteTypes {
     | '/wallet'
     | '/workspace'
     | '/listing/$id'
+    | '/project/$id'
     | '/user/$username'
     | '/admin/ai'
     | '/admin/audit'
@@ -359,6 +393,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/leaderboard'
     | '/pricing'
+    | '/projects'
     | '/referrals'
     | '/reset-password'
     | '/store'
@@ -366,6 +401,7 @@ export interface FileRouteTypes {
     | '/verify'
     | '/_authenticated/admin'
     | '/_authenticated/create-listing'
+    | '/_authenticated/create-project'
     | '/_authenticated/dashboard'
     | '/_authenticated/kyc'
     | '/_authenticated/orders'
@@ -373,6 +409,7 @@ export interface FileRouteTypes {
     | '/_authenticated/wallet'
     | '/_authenticated/workspace'
     | '/listing/$id'
+    | '/project/$id'
     | '/user/$username'
     | '/_authenticated/admin/ai'
     | '/_authenticated/admin/audit'
@@ -392,12 +429,14 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   LeaderboardRoute: typeof LeaderboardRoute
   PricingRoute: typeof PricingRoute
+  ProjectsRoute: typeof ProjectsRoute
   ReferralsRoute: typeof ReferralsRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   StoreRoute: typeof StoreRoute
   TermsRoute: typeof TermsRoute
   VerifyRoute: typeof VerifyRoute
   ListingIdRoute: typeof ListingIdRoute
+  ProjectIdRoute: typeof ProjectIdRoute
   UserUsernameRoute: typeof UserUsernameRoute
   ApiPublicCryptoDepositWebhookRoute: typeof ApiPublicCryptoDepositWebhookRoute
 }
@@ -437,6 +476,13 @@ declare module '@tanstack/react-router' {
       path: '/pricing'
       fullPath: '/pricing'
       preLoaderRoute: typeof PricingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/projects': {
+      id: '/projects'
+      path: '/projects'
+      fullPath: '/projects'
+      preLoaderRoute: typeof ProjectsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/referrals': {
@@ -488,6 +534,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCreateListingRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/create-project': {
+      id: '/_authenticated/create-project'
+      path: '/create-project'
+      fullPath: '/create-project'
+      preLoaderRoute: typeof AuthenticatedCreateProjectRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/dashboard': {
       id: '/_authenticated/dashboard'
       path: '/dashboard'
@@ -535,6 +588,13 @@ declare module '@tanstack/react-router' {
       path: '/listing/$id'
       fullPath: '/listing/$id'
       preLoaderRoute: typeof ListingIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/project/$id': {
+      id: '/project/$id'
+      path: '/project/$id'
+      fullPath: '/project/$id'
+      preLoaderRoute: typeof ProjectIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/user/$username': {
@@ -645,6 +705,7 @@ const AuthenticatedAdminRouteWithChildren =
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRouteWithChildren
   AuthenticatedCreateListingRoute: typeof AuthenticatedCreateListingRoute
+  AuthenticatedCreateProjectRoute: typeof AuthenticatedCreateProjectRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedKycRoute: typeof AuthenticatedKycRoute
   AuthenticatedOrdersRoute: typeof AuthenticatedOrdersRoute
@@ -657,6 +718,7 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminRoute: AuthenticatedAdminRouteWithChildren,
   AuthenticatedCreateListingRoute: AuthenticatedCreateListingRoute,
+  AuthenticatedCreateProjectRoute: AuthenticatedCreateProjectRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedKycRoute: AuthenticatedKycRoute,
   AuthenticatedOrdersRoute: AuthenticatedOrdersRoute,
@@ -675,12 +737,14 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   LeaderboardRoute: LeaderboardRoute,
   PricingRoute: PricingRoute,
+  ProjectsRoute: ProjectsRoute,
   ReferralsRoute: ReferralsRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   StoreRoute: StoreRoute,
   TermsRoute: TermsRoute,
   VerifyRoute: VerifyRoute,
   ListingIdRoute: ListingIdRoute,
+  ProjectIdRoute: ProjectIdRoute,
   UserUsernameRoute: UserUsernameRoute,
   ApiPublicCryptoDepositWebhookRoute: ApiPublicCryptoDepositWebhookRoute,
 }
