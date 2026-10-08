@@ -30,6 +30,7 @@ import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedWalletRouteImport } from './routes/_authenticated/wallet'
 import { Route as AuthenticatedWorkspaceRouteImport } from './routes/_authenticated/workspace'
 import { Route as ListingIdRouteImport } from './routes/listing.$id'
+import { Route as ProjectIdRouteImport } from './routes/project.$id'
 import { Route as UserUsernameRouteImport } from './routes/user.$username'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
 import { Route as AuthenticatedAdminAiRouteImport } from './routes/_authenticated/admin.ai'
@@ -148,6 +149,11 @@ const ListingIdRoute = ListingIdRouteImport.update({
   path: '/listing/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ProjectIdRoute = ProjectIdRouteImport.update({
+  id: '/project/$id',
+  path: '/project/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const UserUsernameRoute = UserUsernameRouteImport.update({
   id: '/user/$username',
   path: '/user/$username',
@@ -230,6 +236,7 @@ export interface FileRoutesByFullPath {
   '/wallet': typeof AuthenticatedWalletRoute
   '/workspace': typeof AuthenticatedWorkspaceRoute
   '/listing/$id': typeof ListingIdRoute
+  '/project/$id': typeof ProjectIdRoute
   '/user/$username': typeof UserUsernameRoute
   '/admin/ai': typeof AuthenticatedAdminAiRoute
   '/admin/audit': typeof AuthenticatedAdminAuditRoute
@@ -262,6 +269,7 @@ export interface FileRoutesByTo {
   '/wallet': typeof AuthenticatedWalletRoute
   '/workspace': typeof AuthenticatedWorkspaceRoute
   '/listing/$id': typeof ListingIdRoute
+  '/project/$id': typeof ProjectIdRoute
   '/user/$username': typeof UserUsernameRoute
   '/admin/ai': typeof AuthenticatedAdminAiRoute
   '/admin/audit': typeof AuthenticatedAdminAuditRoute
@@ -297,6 +305,7 @@ export interface FileRoutesById {
   '/_authenticated/wallet': typeof AuthenticatedWalletRoute
   '/_authenticated/workspace': typeof AuthenticatedWorkspaceRoute
   '/listing/$id': typeof ListingIdRoute
+  '/project/$id': typeof ProjectIdRoute
   '/user/$username': typeof UserUsernameRoute
   '/_authenticated/admin/ai': typeof AuthenticatedAdminAiRoute
   '/_authenticated/admin/audit': typeof AuthenticatedAdminAuditRoute
@@ -332,6 +341,7 @@ export interface FileRouteTypes {
     | '/wallet'
     | '/workspace'
     | '/listing/$id'
+    | '/project/$id'
     | '/user/$username'
     | '/admin/ai'
     | '/admin/audit'
@@ -364,6 +374,7 @@ export interface FileRouteTypes {
     | '/wallet'
     | '/workspace'
     | '/listing/$id'
+    | '/project/$id'
     | '/user/$username'
     | '/admin/ai'
     | '/admin/audit'
@@ -398,6 +409,7 @@ export interface FileRouteTypes {
     | '/_authenticated/wallet'
     | '/_authenticated/workspace'
     | '/listing/$id'
+    | '/project/$id'
     | '/user/$username'
     | '/_authenticated/admin/ai'
     | '/_authenticated/admin/audit'
@@ -424,6 +436,7 @@ export interface RootRouteChildren {
   TermsRoute: typeof TermsRoute
   VerifyRoute: typeof VerifyRoute
   ListingIdRoute: typeof ListingIdRoute
+  ProjectIdRoute: typeof ProjectIdRoute
   UserUsernameRoute: typeof UserUsernameRoute
   ApiPublicCryptoDepositWebhookRoute: typeof ApiPublicCryptoDepositWebhookRoute
 }
@@ -577,6 +590,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ListingIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/project/$id': {
+      id: '/project/$id'
+      path: '/project/$id'
+      fullPath: '/project/$id'
+      preLoaderRoute: typeof ProjectIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/user/$username': {
       id: '/user/$username'
       path: '/user/$username'
@@ -724,6 +744,7 @@ const rootRouteChildren: RootRouteChildren = {
   TermsRoute: TermsRoute,
   VerifyRoute: VerifyRoute,
   ListingIdRoute: ListingIdRoute,
+  ProjectIdRoute: ProjectIdRoute,
   UserUsernameRoute: UserUsernameRoute,
   ApiPublicCryptoDepositWebhookRoute: ApiPublicCryptoDepositWebhookRoute,
 }
