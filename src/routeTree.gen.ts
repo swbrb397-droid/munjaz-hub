@@ -14,6 +14,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as LeaderboardRouteImport } from './routes/leaderboard'
 import { Route as PricingRouteImport } from './routes/pricing'
+import { Route as ProjectsRouteImport } from './routes/projects'
 import { Route as ReferralsRouteImport } from './routes/referrals'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as StoreRouteImport } from './routes/store'
@@ -21,6 +22,7 @@ import { Route as TermsRouteImport } from './routes/terms'
 import { Route as VerifyRouteImport } from './routes/verify'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedCreateListingRouteImport } from './routes/_authenticated/create-listing'
+import { Route as AuthenticatedCreateProjectRouteImport } from './routes/_authenticated/create-project'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedKycRouteImport } from './routes/_authenticated/kyc'
 import { Route as AuthenticatedOrdersRouteImport } from './routes/_authenticated/orders'
@@ -64,6 +66,11 @@ const PricingRoute = PricingRouteImport.update({
   path: '/pricing',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ProjectsRoute = ProjectsRouteImport.update({
+  id: '/projects',
+  path: '/projects',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ReferralsRoute = ReferralsRouteImport.update({
   id: '/referrals',
   path: '/referrals',
@@ -98,6 +105,12 @@ const AuthenticatedCreateListingRoute =
   AuthenticatedCreateListingRouteImport.update({
     id: '/create-listing',
     path: '/create-listing',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedCreateProjectRoute =
+  AuthenticatedCreateProjectRouteImport.update({
+    id: '/create-project',
+    path: '/create-project',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
@@ -201,6 +214,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/leaderboard': typeof LeaderboardRoute
   '/pricing': typeof PricingRoute
+  '/projects': typeof ProjectsRoute
   '/referrals': typeof ReferralsRoute
   '/reset-password': typeof ResetPasswordRoute
   '/store': typeof StoreRoute
@@ -208,6 +222,7 @@ export interface FileRoutesByFullPath {
   '/verify': typeof VerifyRoute
   '/admin': typeof AuthenticatedAdminRouteWithChildren
   '/create-listing': typeof AuthenticatedCreateListingRoute
+  '/create-project': typeof AuthenticatedCreateProjectRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/kyc': typeof AuthenticatedKycRoute
   '/orders': typeof AuthenticatedOrdersRoute
@@ -232,12 +247,14 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/leaderboard': typeof LeaderboardRoute
   '/pricing': typeof PricingRoute
+  '/projects': typeof ProjectsRoute
   '/referrals': typeof ReferralsRoute
   '/reset-password': typeof ResetPasswordRoute
   '/store': typeof StoreRoute
   '/terms': typeof TermsRoute
   '/verify': typeof VerifyRoute
   '/create-listing': typeof AuthenticatedCreateListingRoute
+  '/create-project': typeof AuthenticatedCreateProjectRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/kyc': typeof AuthenticatedKycRoute
   '/orders': typeof AuthenticatedOrdersRoute
@@ -264,6 +281,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/leaderboard': typeof LeaderboardRoute
   '/pricing': typeof PricingRoute
+  '/projects': typeof ProjectsRoute
   '/referrals': typeof ReferralsRoute
   '/reset-password': typeof ResetPasswordRoute
   '/store': typeof StoreRoute
@@ -271,6 +289,7 @@ export interface FileRoutesById {
   '/verify': typeof VerifyRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
   '/_authenticated/create-listing': typeof AuthenticatedCreateListingRoute
+  '/_authenticated/create-project': typeof AuthenticatedCreateProjectRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/kyc': typeof AuthenticatedKycRoute
   '/_authenticated/orders': typeof AuthenticatedOrdersRoute
@@ -297,6 +316,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/leaderboard'
     | '/pricing'
+    | '/projects'
     | '/referrals'
     | '/reset-password'
     | '/store'
@@ -304,6 +324,7 @@ export interface FileRouteTypes {
     | '/verify'
     | '/admin'
     | '/create-listing'
+    | '/create-project'
     | '/dashboard'
     | '/kyc'
     | '/orders'
@@ -328,12 +349,14 @@ export interface FileRouteTypes {
     | '/auth'
     | '/leaderboard'
     | '/pricing'
+    | '/projects'
     | '/referrals'
     | '/reset-password'
     | '/store'
     | '/terms'
     | '/verify'
     | '/create-listing'
+    | '/create-project'
     | '/dashboard'
     | '/kyc'
     | '/orders'
@@ -359,6 +382,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/leaderboard'
     | '/pricing'
+    | '/projects'
     | '/referrals'
     | '/reset-password'
     | '/store'
@@ -366,6 +390,7 @@ export interface FileRouteTypes {
     | '/verify'
     | '/_authenticated/admin'
     | '/_authenticated/create-listing'
+    | '/_authenticated/create-project'
     | '/_authenticated/dashboard'
     | '/_authenticated/kyc'
     | '/_authenticated/orders'
@@ -392,6 +417,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   LeaderboardRoute: typeof LeaderboardRoute
   PricingRoute: typeof PricingRoute
+  ProjectsRoute: typeof ProjectsRoute
   ReferralsRoute: typeof ReferralsRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   StoreRoute: typeof StoreRoute
@@ -437,6 +463,13 @@ declare module '@tanstack/react-router' {
       path: '/pricing'
       fullPath: '/pricing'
       preLoaderRoute: typeof PricingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/projects': {
+      id: '/projects'
+      path: '/projects'
+      fullPath: '/projects'
+      preLoaderRoute: typeof ProjectsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/referrals': {
@@ -486,6 +519,13 @@ declare module '@tanstack/react-router' {
       path: '/create-listing'
       fullPath: '/create-listing'
       preLoaderRoute: typeof AuthenticatedCreateListingRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/create-project': {
+      id: '/_authenticated/create-project'
+      path: '/create-project'
+      fullPath: '/create-project'
+      preLoaderRoute: typeof AuthenticatedCreateProjectRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/dashboard': {
@@ -645,6 +685,7 @@ const AuthenticatedAdminRouteWithChildren =
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRouteWithChildren
   AuthenticatedCreateListingRoute: typeof AuthenticatedCreateListingRoute
+  AuthenticatedCreateProjectRoute: typeof AuthenticatedCreateProjectRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedKycRoute: typeof AuthenticatedKycRoute
   AuthenticatedOrdersRoute: typeof AuthenticatedOrdersRoute
@@ -657,6 +698,7 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminRoute: AuthenticatedAdminRouteWithChildren,
   AuthenticatedCreateListingRoute: AuthenticatedCreateListingRoute,
+  AuthenticatedCreateProjectRoute: AuthenticatedCreateProjectRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedKycRoute: AuthenticatedKycRoute,
   AuthenticatedOrdersRoute: AuthenticatedOrdersRoute,
@@ -675,6 +717,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   LeaderboardRoute: LeaderboardRoute,
   PricingRoute: PricingRoute,
+  ProjectsRoute: ProjectsRoute,
   ReferralsRoute: ReferralsRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   StoreRoute: StoreRoute,
