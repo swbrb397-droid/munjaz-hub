@@ -3,7 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import {
   Bell, Globe, LogIn, LogOut, Menu, Repeat2, Wallet2, X,
   Home, Store, Trophy, PlusCircle, LayoutDashboard, ClipboardList, Briefcase, Users, UserCog, CreditCard, ShieldCheck,
-  Gavel, BadgeCheck, Settings2, ScrollText,
+  Gavel, BadgeCheck, Settings2, ScrollText, FolderKanban, Medal,
   type LucideIcon,
   Bot,
 } from "lucide-react";
@@ -18,6 +18,7 @@ import { SupportWidget } from "@/components/site/SupportWidget";
 import { DmcaTrigger } from "@/components/site/DmcaModal";
 import { ManifestoModal, useManifestoFirstRun } from "@/components/site/ManifestoModal";
 import { supabase } from "@/lib/cloud-client";
+import { usePresenceHeartbeat } from "@/lib/presence";
 
 type NavItem = { to: string; key: TranslationKey; icon: LucideIcon };
 type NavGroup = { title: [string, string]; items: ReadonlyArray<NavItem> };
@@ -28,7 +29,10 @@ const navGroups: ReadonlyArray<NavGroup> = [
     items: [
       { to: "/", key: "home", icon: Home },
       { to: "/store", key: "store", icon: Store },
+      { to: "/projects", key: "projects", icon: FolderKanban },
+      { to: "/freelancers", key: "freelancers", icon: Users },
       { to: "/leaderboard", key: "leaderboard", icon: Trophy },
+      { to: "/levels", key: "levels", icon: Medal },
       { to: "/create-listing", key: "createListing", icon: PlusCircle },
     ],
   },
@@ -52,7 +56,7 @@ const navGroups: ReadonlyArray<NavGroup> = [
   },
 ];
 
-const headerNav = navGroups[0]?.items ?? [];
+const headerNav = (navGroups[0]?.items ?? []).filter((i) => i.to !== "/levels" && i.to !== "/freelancers");
 
 function AuthButton() {
   const { tr } = useLang();
@@ -272,6 +276,7 @@ export function Shell({ children }: { children: ReactNode }) {
   const qc = useQueryClient();
   const navigate = useNavigate();
   const [manifesto, setManifesto] = useManifestoFirstRun(isAuthenticated);
+  usePresenceHeartbeat(isAuthenticated);
 
   // Lock page scroll behind the mobile drawer so scrolling never leaks to the page.
   useEffect(() => {
@@ -443,12 +448,54 @@ export function Shell({ children }: { children: ReactNode }) {
           </div>
         </div>
       </footer>
+      <BottomBar />
       <SupportWidget />
       <ManifestoModal open={manifesto} onClose={() => setManifesto(false)} />
     </div>
   );
 }
 
+
+/** Mobile-only bottom navigation; hidden on order workspaces so it never covers chat input. */
+function BottomBar() {
+  const { tr } = useLang();
+  const { isAuthenticated } = useAuth();
+  const location = useLocation();
+  if (location.pathname.startsWith("/fulfillment") || location.pathname.startsWith("/workspace")) return null;
+  const items: { to: string; label: string; icon: LucideIcon }[] = isAuthenticated
+    ? [
+        { to: "/", label: tr("الرئيسية", "Home"), icon: Home },
+        { to: "/projects", label: tr("المشاريع", "Projects"), icon: FolderKanban },
+        { to: "/orders", label: tr("الطلبات", "Orders"), icon: ClipboardList },
+        { to: "/wallet", label: tr("المحفظة", "Wallet"), icon: Wallet2 },
+        { to: "/profile", label: tr("حسابي", "Account"), icon: UserCog },
+      ]
+    : [
+        { to: "/", label: tr("الرئيسية", "Home"), icon: Home },
+        { to: "/store", label: tr("السوق", "Store"), icon: Store },
+        { to: "/projects", label: tr("المشاريع", "Projects"), icon: FolderKanban },
+        { to: "/freelancers", label: tr("المستقلون", "Freelancers"), icon: Users },
+        { to: "/auth", label: tr("دخول", "Sign in"), icon: LogIn },
+      ];
+  return (
+    <nav aria-label={tr("التنقل السفلي", "Bottom navigation")} className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-card/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-md sm:hidden">
+      <div className="grid grid-cols-5">
+        {items.map((i) => (
+          <Link
+            key={i.to}
+            to={i.to}
+            activeOptions={{ exact: i.to === "/" }}
+            className="flex min-h-[56px] flex-col items-center justify-center gap-0.5 text-[10px] font-bold text-muted-foreground"
+            activeProps={{ className: "flex min-h-[56px] flex-col items-center justify-center gap-0.5 text-[10px] font-bold text-primary" }}
+          >
+            <i.icon className="size-5" strokeWidth={1.8} />
+            <span className="max-w-full truncate px-1">{i.label}</span>
+          </Link>
+        ))}
+      </div>
+    </nav>
+  );
+}
 
 export function Section({
   title,

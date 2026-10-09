@@ -12,7 +12,9 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as FreelancersRouteImport } from './routes/freelancers'
 import { Route as LeaderboardRouteImport } from './routes/leaderboard'
+import { Route as LevelsRouteImport } from './routes/levels'
 import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as ProjectsRouteImport } from './routes/projects'
 import { Route as ReferralsRouteImport } from './routes/referrals'
@@ -38,6 +40,7 @@ import { Route as AuthenticatedAdminAuditRouteImport } from './routes/_authentic
 import { Route as AuthenticatedAdminDisputesRouteImport } from './routes/_authenticated/admin.disputes'
 import { Route as AuthenticatedAdminGovernanceRouteImport } from './routes/_authenticated/admin.governance'
 import { Route as AuthenticatedAdminKycRouteImport } from './routes/_authenticated/admin.kyc'
+import { Route as AuthenticatedAdminProjectsRouteImport } from './routes/_authenticated/admin.projects'
 import { Route as AuthenticatedAdminServicesRouteImport } from './routes/_authenticated/admin.services'
 import { Route as AuthenticatedAdminUsersRouteImport } from './routes/_authenticated/admin.users'
 import { Route as AuthenticatedFulfillmentOrderIdRouteImport } from './routes/_authenticated/fulfillment.$orderId'
@@ -57,9 +60,19 @@ const AuthRoute = AuthRouteImport.update({
   path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
+const FreelancersRoute = FreelancersRouteImport.update({
+  id: '/freelancers',
+  path: '/freelancers',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LeaderboardRoute = LeaderboardRouteImport.update({
   id: '/leaderboard',
   path: '/leaderboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LevelsRoute = LevelsRouteImport.update({
+  id: '/levels',
+  path: '/levels',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PricingRoute = PricingRouteImport.update({
@@ -191,6 +204,12 @@ const AuthenticatedAdminKycRoute = AuthenticatedAdminKycRouteImport.update({
   path: '/kyc',
   getParentRoute: () => AuthenticatedAdminRoute,
 } as any)
+const AuthenticatedAdminProjectsRoute =
+  AuthenticatedAdminProjectsRouteImport.update({
+    id: '/projects',
+    path: '/projects',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 const AuthenticatedAdminServicesRoute =
   AuthenticatedAdminServicesRouteImport.update({
     id: '/services',
@@ -218,7 +237,9 @@ const ApiPublicCryptoDepositWebhookRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/freelancers': typeof FreelancersRoute
   '/leaderboard': typeof LeaderboardRoute
+  '/levels': typeof LevelsRoute
   '/pricing': typeof PricingRoute
   '/projects': typeof ProjectsRoute
   '/referrals': typeof ReferralsRoute
@@ -243,6 +264,7 @@ export interface FileRoutesByFullPath {
   '/admin/disputes': typeof AuthenticatedAdminDisputesRoute
   '/admin/governance': typeof AuthenticatedAdminGovernanceRoute
   '/admin/kyc': typeof AuthenticatedAdminKycRoute
+  '/admin/projects': typeof AuthenticatedAdminProjectsRoute
   '/admin/services': typeof AuthenticatedAdminServicesRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
   '/fulfillment/$orderId': typeof AuthenticatedFulfillmentOrderIdRoute
@@ -252,7 +274,9 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/freelancers': typeof FreelancersRoute
   '/leaderboard': typeof LeaderboardRoute
+  '/levels': typeof LevelsRoute
   '/pricing': typeof PricingRoute
   '/projects': typeof ProjectsRoute
   '/referrals': typeof ReferralsRoute
@@ -276,6 +300,7 @@ export interface FileRoutesByTo {
   '/admin/disputes': typeof AuthenticatedAdminDisputesRoute
   '/admin/governance': typeof AuthenticatedAdminGovernanceRoute
   '/admin/kyc': typeof AuthenticatedAdminKycRoute
+  '/admin/projects': typeof AuthenticatedAdminProjectsRoute
   '/admin/services': typeof AuthenticatedAdminServicesRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
   '/fulfillment/$orderId': typeof AuthenticatedFulfillmentOrderIdRoute
@@ -287,7 +312,9 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
+  '/freelancers': typeof FreelancersRoute
   '/leaderboard': typeof LeaderboardRoute
+  '/levels': typeof LevelsRoute
   '/pricing': typeof PricingRoute
   '/projects': typeof ProjectsRoute
   '/referrals': typeof ReferralsRoute
@@ -312,6 +339,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/disputes': typeof AuthenticatedAdminDisputesRoute
   '/_authenticated/admin/governance': typeof AuthenticatedAdminGovernanceRoute
   '/_authenticated/admin/kyc': typeof AuthenticatedAdminKycRoute
+  '/_authenticated/admin/projects': typeof AuthenticatedAdminProjectsRoute
   '/_authenticated/admin/services': typeof AuthenticatedAdminServicesRoute
   '/_authenticated/admin/users': typeof AuthenticatedAdminUsersRoute
   '/_authenticated/fulfillment/$orderId': typeof AuthenticatedFulfillmentOrderIdRoute
@@ -323,7 +351,9 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
+    | '/freelancers'
     | '/leaderboard'
+    | '/levels'
     | '/pricing'
     | '/projects'
     | '/referrals'
@@ -348,6 +378,7 @@ export interface FileRouteTypes {
     | '/admin/disputes'
     | '/admin/governance'
     | '/admin/kyc'
+    | '/admin/projects'
     | '/admin/services'
     | '/admin/users'
     | '/fulfillment/$orderId'
@@ -357,7 +388,9 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
+    | '/freelancers'
     | '/leaderboard'
+    | '/levels'
     | '/pricing'
     | '/projects'
     | '/referrals'
@@ -381,6 +414,7 @@ export interface FileRouteTypes {
     | '/admin/disputes'
     | '/admin/governance'
     | '/admin/kyc'
+    | '/admin/projects'
     | '/admin/services'
     | '/admin/users'
     | '/fulfillment/$orderId'
@@ -391,7 +425,9 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/auth'
+    | '/freelancers'
     | '/leaderboard'
+    | '/levels'
     | '/pricing'
     | '/projects'
     | '/referrals'
@@ -416,6 +452,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/disputes'
     | '/_authenticated/admin/governance'
     | '/_authenticated/admin/kyc'
+    | '/_authenticated/admin/projects'
     | '/_authenticated/admin/services'
     | '/_authenticated/admin/users'
     | '/_authenticated/fulfillment/$orderId'
@@ -427,7 +464,9 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  FreelancersRoute: typeof FreelancersRoute
   LeaderboardRoute: typeof LeaderboardRoute
+  LevelsRoute: typeof LevelsRoute
   PricingRoute: typeof PricingRoute
   ProjectsRoute: typeof ProjectsRoute
   ReferralsRoute: typeof ReferralsRoute
@@ -464,11 +503,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/freelancers': {
+      id: '/freelancers'
+      path: '/freelancers'
+      fullPath: '/freelancers'
+      preLoaderRoute: typeof FreelancersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/leaderboard': {
       id: '/leaderboard'
       path: '/leaderboard'
       fullPath: '/leaderboard'
       preLoaderRoute: typeof LeaderboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/levels': {
+      id: '/levels'
+      path: '/levels'
+      fullPath: '/levels'
+      preLoaderRoute: typeof LevelsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/pricing': {
@@ -646,6 +699,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminKycRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/projects': {
+      id: '/_authenticated/admin/projects'
+      path: '/projects'
+      fullPath: '/admin/projects'
+      preLoaderRoute: typeof AuthenticatedAdminProjectsRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/admin/services': {
       id: '/_authenticated/admin/services'
       path: '/services'
@@ -683,6 +743,7 @@ interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminDisputesRoute: typeof AuthenticatedAdminDisputesRoute
   AuthenticatedAdminGovernanceRoute: typeof AuthenticatedAdminGovernanceRoute
   AuthenticatedAdminKycRoute: typeof AuthenticatedAdminKycRoute
+  AuthenticatedAdminProjectsRoute: typeof AuthenticatedAdminProjectsRoute
   AuthenticatedAdminServicesRoute: typeof AuthenticatedAdminServicesRoute
   AuthenticatedAdminUsersRoute: typeof AuthenticatedAdminUsersRoute
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
@@ -694,6 +755,7 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminDisputesRoute: AuthenticatedAdminDisputesRoute,
   AuthenticatedAdminGovernanceRoute: AuthenticatedAdminGovernanceRoute,
   AuthenticatedAdminKycRoute: AuthenticatedAdminKycRoute,
+  AuthenticatedAdminProjectsRoute: AuthenticatedAdminProjectsRoute,
   AuthenticatedAdminServicesRoute: AuthenticatedAdminServicesRoute,
   AuthenticatedAdminUsersRoute: AuthenticatedAdminUsersRoute,
   AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
@@ -735,7 +797,9 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  FreelancersRoute: FreelancersRoute,
   LeaderboardRoute: LeaderboardRoute,
+  LevelsRoute: LevelsRoute,
   PricingRoute: PricingRoute,
   ProjectsRoute: ProjectsRoute,
   ReferralsRoute: ReferralsRoute,
