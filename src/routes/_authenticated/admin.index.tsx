@@ -228,6 +228,7 @@ function Admin() {
           ["/admin/disputes", tr("مكتب النزاعات", "Dispute desk")],
           ["/admin/kyc", tr("مراجعة التوثيق", "KYC review")],
           ["/admin/services", tr("العروض", "Services")],
+          ["/admin/projects", tr("المشاريع والعروض", "Projects & bids")],
           ["/admin/users", tr("المستخدمون", "Users")],
           ["/admin/ai", tr("الذكاء الاصطناعي", "AI")],
           ["/admin/governance", tr("الحوكمة", "Governance")],
