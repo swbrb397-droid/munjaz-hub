@@ -1,4 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { PresenceBadge, usePresence } from "@/lib/presence";
 import { useEffect, useState } from "react";
 import { ArrowLeft, Loader2, ShieldCheck, Star, Timer } from "lucide-react";
 import { Card, Section } from "@/components/site/Shell";
@@ -187,6 +188,7 @@ function ListingDetail() {
           )}
           <p className="mt-2 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
             {item.seller} {item.verified && <VerifiedBadge />}
+            {item.ownerId && <ListingSellerPresence id={item.ownerId} />}
             <span className="inline-flex items-center gap-1"><Star className="size-3.5 fill-accent text-accent" /> {item.rating}</span>
             <span>· {item.orders} {tr("طلب", "orders")}</span>
           </p>
@@ -359,4 +361,9 @@ function BuyerReviews({ listingId }: { listingId: string }) {
       )}
     </Card>
   );
+}
+
+function ListingSellerPresence({ id }: { id: string }) {
+  const presence = usePresence([id]);
+  return <PresenceBadge lastActive={presence.data?.[id]} className="ms-2" />;
 }

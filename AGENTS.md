@@ -20,3 +20,5 @@
 - Order lifecycle emails go through `notifyOrderEvent` (`src/lib/order-email.functions.ts`) called fire-and-forget via `fireOrderEmail`. Why: mail failures never block order actions.
 - Order chat integrity is enforced by the `order_messages_integrity` trigger (no edits/deletes once a dispute exists). Why: forensic evidence for arbitrators.
 - Dispute splits use `admin_resolve_dispute(..., 'split', ..., _refund_pct)`, which pays out manually and clears `escrow_locked` before completing. Why: stops the escrow trigger paying the seller twice.
+- Open projects/proposals are written only through SECURITY DEFINER RPCs (`create_project`, `submit_project_proposal`, `accept_project_proposal`, `admin_moderate_project`); accepting inserts a normal order and flips it to in_progress so `handle_order_escrow` locks funds. Why: one escrow engine, guards (contact filter, daily caps, frozen accounts) can't be bypassed.
+- Presence uses `touch_presence` heartbeat + `get_presence` (respects `hide_online_status`). Why: no realtime load, privacy opt-out honoured server-side.

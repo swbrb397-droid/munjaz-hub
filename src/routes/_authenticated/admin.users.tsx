@@ -143,6 +143,17 @@ function UserPanel({ u }: { u: AdminUserRow }) {
   const [type, setType] = useState("info");
   const [confirm, setConfirm] = useState(0);
   const refresh = () => qc.invalidateQueries({ queryKey: ["admin-users"] });
+  const activity = useQuery({
+    queryKey: ["admin-user-activity"],
+    staleTime: 60_000,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("admin_user_activity");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+  const act = activity.data?.find((a) => a.id === u.id);
+  const when = (d: string | null | undefined) => (d ? new Date(d).toLocaleString(ar ? "ar" : "en") : "—");
   const [challenge, setChallenge] = useState<{ factorId: string; action: () => Promise<void> } | null>(null);
 
   /** 2FA step-up: privileged mutations run only after a fresh TOTP verification. */
@@ -217,6 +228,10 @@ function UserPanel({ u }: { u: AdminUserRow }) {
         {stat(tr("الرصيد المتاح", "Available balance"), fmt(u.available_usdt))}
         {stat(tr("محجوز بالضمان", "Locked in escrow"), fmt(u.locked_usdt))}
         {stat(tr("إجمالي الأرباح", "Lifetime earnings"), fmt(u.lifetime_earned))}
+        {stat(tr("آخر نشاط", "Last active"), when(act?.last_active_at))}
+        {stat(tr("آخر عرض منشور", "Last listing"), when(act?.last_listing_at))}
+        {stat(tr("آخر مشروع", "Last project"), when(act?.last_project_at))}
+        {stat(tr("عروض آخر 24 ساعة", "Bids in 24h"), String(act?.proposals_24h ?? 0))}
         {stat(tr("المدعوون / أرباح الإحالة", "Invited / referral earnings"), `${u.invited_count} / ${fmt(u.referral_earned)}`)}
       </div>
 
