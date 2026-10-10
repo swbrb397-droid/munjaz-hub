@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { PresenceBadge, usePresence } from "@/lib/presence";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, BadgeCheck, Star, TrendingUp, Trophy, Zap } from "lucide-react";
 import { Card, Section } from "@/components/site/Shell";
@@ -94,6 +95,7 @@ function SellerProfilePage() {
             {s.display_name}
             {s.is_verified && <BadgeCheck className="size-5 text-accent" />}
           </h1>
+          <SellerPresence id={s.id} />
           <p className="mt-1 text-xs text-muted-foreground">
             {tr("بيانات الأداء محسوبة مباشرة من الطلبات المكتملة على المنصة.", "Performance data is computed directly from completed platform orders.")}
           </p>
@@ -142,4 +144,9 @@ function SellerProfilePage() {
       )}
     </Section>
   );
+}
+
+function SellerPresence({ id }: { id: string }) {
+  const presence = usePresence([id]);
+  return <PresenceBadge lastActive={presence.data?.[id]} className="mt-1" />;
 }
