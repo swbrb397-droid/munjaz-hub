@@ -20,6 +20,8 @@ import { SecurityPanel } from "@/components/site/SecurityPanel";
 import { EXECUTABLE_REJECTION, isDangerousFile } from "@/lib/file-guard";
 import { NameChangeControl } from "@/components/site/NameChangeCard";
 import { supabase } from "@/lib/cloud-client";
+import { useQueryClient } from "@tanstack/react-query";
+import { useProfile } from "@/lib/queries";
 import { COUNTRIES, flagEmoji } from "@/lib/countries";
 
 export const Route = createFileRoute("/_authenticated/profile")({
