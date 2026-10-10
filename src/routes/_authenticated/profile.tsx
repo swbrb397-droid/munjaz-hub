@@ -340,7 +340,36 @@ function SettingsPanel() {
         </div>
       </Card>
 
+      <PresenceToggle />
       <SecurityPanel className="lg:col-span-2" />
     </div>
+  );
+}
+
+function PresenceToggle() {
+  const profile = useProfile();
+  const qc = useQueryClient();
+  const hidden = Boolean((profile.data as { hide_online_status?: boolean } | null | undefined)?.hide_online_status);
+  return (
+    <Card>
+      <h3 className="text-sm font-black">الخصوصية وحالة الاتصال</h3>
+      <label className="mt-3 flex cursor-pointer items-start justify-between gap-3 rounded-xl border border-border bg-surface-2/40 px-4 py-3 text-sm">
+        <span className="min-w-0">
+          <span className="block font-bold">إخفاء حالة «متصل الآن» وآخر ظهور</span>
+          <span className="mt-0.5 block text-[11px] text-muted-foreground">عند التفعيل لن يرى المشترون ولا المستقلون وقت نشاطك.</span>
+        </span>
+        <input
+          type="checkbox"
+          checked={hidden}
+          onChange={async (e) => {
+            const { error } = await supabase.rpc("set_presence_visibility", { _hidden: e.target.checked });
+            if (error) { toast.error("تعذّر حفظ الإعداد"); return; }
+            toast.success(e.target.checked ? "تم إخفاء حالة الاتصال" : "حالة الاتصال ظاهرة الآن");
+            void qc.invalidateQueries({ queryKey: ["profile"] });
+          }}
+          className="mt-1 size-5 shrink-0 accent-primary"
+        />
+      </label>
+    </Card>
   );
 }
