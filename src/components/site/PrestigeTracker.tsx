@@ -12,7 +12,7 @@ export function PrestigeTracker({ metrics }: { metrics: PrestigeMetrics }) {
   const rows = metricBreakdown(metrics, next);
 
   return (
-    <Card className="select-none">
+    <Card>
       <div className="flex flex-wrap items-center gap-3">
         <span className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-black ${tier.badge}`}>
           {tier.aura ? <Crown className="size-4 animate-pulse" /> : <Sparkles className="size-3.5" />}

@@ -249,7 +249,8 @@ function SellerCountry({ code }: { code: string | null }) {
   const { tr, lang } = useLang();
   const [open, setOpen] = useState(false);
   const name = countryName(code, lang === "ar");
-  const label = name ?? tr("الدولة غير محددة", "Country not set");
+  if (!name) return null;
+  const label = name;
   return (
     <span className="relative inline-flex">
       <button

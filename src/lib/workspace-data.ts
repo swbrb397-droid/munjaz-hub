@@ -190,17 +190,19 @@ export function useCreateMilestones(orderId: string | null) {
   });
 }
 
+/** Real partial payout: moves the milestone share from buyer escrow to seller wallet (atomic RPC). */
 export function useReleaseMilestone(orderId: string | null) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from("order_milestones")
-        .update({ status: "released", released_at: new Date().toISOString() })
-        .eq("id", id);
+      const { error } = await supabase.rpc("release_order_milestone", { _milestone_id: id });
       if (error) throw error;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["order_milestones", orderId] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["order_milestones", orderId] });
+      qc.invalidateQueries({ queryKey: ["wallet"] });
+      qc.invalidateQueries({ queryKey: ["orders"] });
+    },
   });
 }
 

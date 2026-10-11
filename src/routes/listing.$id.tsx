@@ -216,15 +216,20 @@ function ListingDetail() {
             </>
           )}
 
-          <h2 className="mt-8 text-lg font-bold">{tr("نطاق العمل (SOW)", "Statement of work (SOW)")}</h2>
-          <textarea
-            value={sow}
-            onChange={(e) => setSow(e.target.value)}
-            rows={5}
-            aria-label={tr("نطاق العمل (SOW)", "Statement of work (SOW)")}
-            placeholder={tr("اكتب متطلباتك بدقة: المخرجات، الصيغ، عدد التعديلات...", "Describe your requirements: deliverables, formats, revisions...")}
-            className="mt-3 w-full rounded-xl border border-input bg-surface p-3 text-sm outline-none focus:border-primary"
-          />
+          {/* SOW only applies to freelance work; instant goods ship as-is. */}
+          {!instant && (
+            <>
+              <h2 className="mt-8 text-lg font-bold">{tr("نطاق العمل (SOW)", "Statement of work (SOW)")}</h2>
+              <textarea
+                value={sow}
+                onChange={(e) => setSow(e.target.value)}
+                rows={5}
+                aria-label={tr("نطاق العمل (SOW)", "Statement of work (SOW)")}
+                placeholder={tr("اكتب متطلباتك بدقة: المخرجات، الصيغ، عدد التعديلات...", "Describe your requirements: deliverables, formats, revisions...")}
+                className="mt-3 w-full rounded-xl border border-input bg-surface p-3 text-sm outline-none focus:border-primary"
+              />
+            </>
+          )}
 
           <MediaShowcase
             items={[{ id: "cover", src: item.cover, title: tr("غلاف الخدمة", "Service cover"), format: "image", category: item.category }]}
