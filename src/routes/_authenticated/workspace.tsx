@@ -2292,7 +2292,13 @@ function Workspace() {
                           <button
                             type="button"
                             disabled={isReleased || releaseMilestone.isPending}
-                            onClick={() => releaseMilestone.mutate(m.id)}
+                            onClick={() => {
+                              if (!window.confirm(tr(`سيتم تحويل ${Number(m.amount_usdt).toFixed(2)} USDT للبائع نهائياً. متابعة؟`, `${Number(m.amount_usdt).toFixed(2)} USDT will be paid to the seller irrevocably. Continue?`))) return;
+                              releaseMilestone.mutate(m.id, {
+                                onSuccess: () => toast.success(tr("تم تحرير المرحلة وتحويل المبلغ للبائع", "Milestone released and paid to the seller")),
+                                onError: (e) => toast.error((e as Error).message.includes("DISPUTED") ? tr("لا يمكن التحرير أثناء نزاع مفتوح", "Cannot release during an open dispute") : tr("تعذّر تحرير المرحلة", "Could not release milestone")),
+                              });
+                            }}
                             className="min-h-[36px] shrink-0 rounded-lg border border-primary/50 bg-primary/10 px-3 py-1.5 text-[11px] font-bold text-primary disabled:opacity-40"
                           >
                             {isReleased

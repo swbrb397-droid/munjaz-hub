@@ -77,7 +77,7 @@ function SellerProfilePage() {
     { icon: Star, label: tr("التقييم", "Rating"), value: Number(s.rating ?? 0).toFixed(2) },
     { icon: Trophy, label: tr("الطلبات المكتملة", "Completed orders"), value: Number(s.completed_orders ?? 0).toLocaleString("en-US") },
     { icon: Zap, label: tr("نقاط الخبرة", "XP points"), value: Number(s.xp_points ?? 0).toLocaleString("en-US") },
-    { icon: TrendingUp, label: tr("المستوى", "Level"), value: String(s.level ?? 1) },
+    { icon: TrendingUp, label: tr("الرتبة", "Rank"), value: String(s.level ?? 1) },
   ];
 
   return (

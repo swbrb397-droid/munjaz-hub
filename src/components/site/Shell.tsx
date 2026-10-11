@@ -485,6 +485,7 @@ function BottomBar() {
             key={i.to}
             to={i.to}
             activeOptions={{ exact: i.to === "/" }}
+            onClick={() => window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior })}
             className="flex min-h-[56px] flex-col items-center justify-center gap-0.5 text-[10px] font-bold text-muted-foreground"
             activeProps={{ className: "flex min-h-[56px] flex-col items-center justify-center gap-0.5 text-[10px] font-bold text-primary" }}
           >
@@ -516,9 +517,9 @@ export function Section({
         <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
           <div>
             {title && (level === 1 ? (
-              <h1 className="select-none text-xl font-extrabold sm:text-3xl">{title}</h1>
+              <h1 className="text-xl font-extrabold sm:text-3xl">{title}</h1>
             ) : (
-              <h2 className="select-none text-xl font-extrabold sm:text-3xl">{title}</h2>
+              <h2 className="text-xl font-extrabold sm:text-3xl">{title}</h2>
             ))}
             {subtitle && <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p>}
           </div>
@@ -531,5 +532,5 @@ export function Section({
 }
 
 export function Card({ children, className = "", id }: { children: ReactNode; className?: string; id?: string }) {
-  return <div id={id} className={`select-none rounded-lg border border-border bg-card/70 p-4 backdrop-blur sm:p-5 ${className}`}>{children}</div>;
+  return <div id={id} className={`rounded-lg border border-border bg-card/70 p-4 backdrop-blur sm:p-5 ${className}`}>{children}</div>;
 }

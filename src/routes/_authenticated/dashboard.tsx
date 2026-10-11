@@ -185,7 +185,7 @@ function Dashboard() {
             <div className="flex items-center gap-2">
               <Award className="size-5 text-violet" />
               <h3 className="font-bold">
-                {tr("المستوى", "Level")} {level}
+                {tr("الرتبة", "Rank")} {level}
                 {profile.data?.is_verified ? ` · ${tr("موثّق", "Verified")}` : ""}
               </h3>
             </div>
@@ -195,7 +195,7 @@ function Dashboard() {
             </div>
             <div className="mt-4 flex flex-wrap gap-2 text-xs">
               <button type="button" onClick={() => setKycOpen(true)} className="cursor-pointer rounded-full border border-primary/40 bg-primary/10 px-3 py-1 font-bold text-primary transition hover:bg-primary/20">
-                {tr("المستوى", "Level")} {level}{profile.data?.is_verified ? ` · ${tr("موثّق", "Verified")}` : ""} · <bdi>KYC: {profile.data?.kyc_tier ?? "tier0"}</bdi>
+                {tr("الرتبة", "Rank")} {level}{profile.data?.is_verified ? ` · ${tr("موثّق", "Verified")}` : ""} · <bdi>KYC: {profile.data?.kyc_tier ?? "tier0"}</bdi>
               </button>
               <KycLevelDrawer
                 open={kycOpen}
