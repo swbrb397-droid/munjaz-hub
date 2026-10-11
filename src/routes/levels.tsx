@@ -8,10 +8,10 @@ import { PRESTIGE_TIERS } from "@/lib/prestige";
 export const Route = createFileRoute("/levels")({
   head: () => ({
     meta: [
-      { title: "سلّم المستويات | المنجز" },
-      { name: "description", content: "المستويات الثمانية في المنجز: شروط واضحة ومعلنة من الانطلاقة إلى الهيمنة — تُكتسب بالأداء فقط ولا تُشترى." },
-      { property: "og:title", content: "سلّم المستويات الثمانية | المنجز" },
-      { property: "og:description", content: "شروط شفافة لكل مستوى: الطلبات، حجم التداول، التقييم، والالتزام بالمواعيد." },
+      { title: "سلّم الرتب | المنجز" },
+      { name: "description", content: "الرتب الثمانية في المنجز: شروط واضحة ومعلنة من الانطلاقة إلى الهيمنة — تُكتسب بالأداء فقط ولا تُشترى." },
+      { property: "og:title", content: "سلّم الرتب الثمانية | المنجز" },
+      { property: "og:description", content: "شروط شفافة لكل رتبة: الطلبات، حجم التداول، التقييم، والالتزام بالمواعيد." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -32,13 +32,13 @@ function Levels() {
   const gross = Math.max(0, Number(monthly) || 0);
 
   return (
-    <Section title={tr("سلّم المستويات", "Prestige levels")} subtitle={tr("ثمانية مستويات بشروط معلنة — تُكتسب بالأداء الحقيقي فقط، ولا تقيّد حقك في النشر.", "Eight levels with public criteria — earned by real performance only, never restricting publishing.")}>
+    <Section title={tr("سلّم الرتب", "Rank ladder")} subtitle={tr("ثماني رتب بشروط معلنة — تُكتسب بالأداء الحقيقي فقط، ولا تقيّد حقك في النشر.", "Eight ranks with public criteria — earned by real performance only, never restricting publishing.")}>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {PRESTIGE_TIERS.map((t) => (
           <Card key={t.level} className="grid gap-2">
             <span className={`inline-flex w-fit items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-black ${t.badge}`}>
               {t.aura ? <Crown className="size-3.5" /> : <Sparkles className="size-3.5" />}
-              {tr(`المستوى ${t.level} — ${t.ar}`, `Level ${t.level} — ${t.en}`)}
+              {tr(`الرتبة ${t.level} — ${t.ar}`, `Rank ${t.level} — ${t.en}`)}
             </span>
             {t.level === 1 ? (
               <p className="text-xs text-muted-foreground">{tr("نقطة البداية لكل حساب جديد.", "Starting point for every new account.")}</p>
@@ -54,7 +54,7 @@ function Levels() {
         ))}
       </div>
       <p className="mt-3 text-xs text-muted-foreground">
-        {tr("يُمنح المستوى عند تحقيق الشروط الأربعة معاً. تابع تقدّمك من ", "A level is earned when all four criteria are met together. Track your progress from ")}
+        {tr("تُمنح الرتبة عند تحقيق الشروط الأربعة معاً. تابع تقدّمك من ", "A rank is earned when all four criteria are met together. Track your progress from ")}
         <Link to="/dashboard" className="font-bold text-primary">{tr("لوحة التحكم", "your dashboard")}</Link>.
       </p>
 

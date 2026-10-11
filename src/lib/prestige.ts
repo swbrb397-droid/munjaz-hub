@@ -24,15 +24,16 @@ export type PrestigeTier = {
   aura?: boolean;
 };
 
+// Each rank owns a unique hue: bronze → emerald → cyan → royal blue → amethyst → gold → platinum → crimson.
 export const PRESTIGE_TIERS: ReadonlyArray<PrestigeTier> = [
-  { level: 1, ar: "الانطلاقة", en: "Starter", orders: 0, volume: 0, rating: 0, onTime: 0, badge: "border-[#7a5c3a]/50 bg-[#7a5c3a]/10 text-[#b98a56]" },
-  { level: 2, ar: "الصاعد", en: "Rising", orders: 5, volume: 150, rating: 4.2, onTime: 85, badge: "border-[#c9853f]/60 bg-[#c9853f]/12 text-[#e0a45f]" },
-  { level: 3, ar: "المتمكن", en: "Proven", orders: 15, volume: 600, rating: 4.5, onTime: 90, badge: "border-[#9aa6b2]/60 bg-[#9aa6b2]/12 text-[#c3ced9]" },
-  { level: 4, ar: "المحترف", en: "Pro", orders: 40, volume: 2000, rating: 4.7, onTime: 93, badge: "border-[#cfdae6]/70 bg-[#cfdae6]/14 text-[#e6eef7] shadow-[0_0_24px_-8px_#cfdae6]" },
-  { level: 5, ar: "الخبير", en: "Expert", orders: 90, volume: 5000, rating: 4.8, onTime: 95, badge: "border-primary/60 bg-primary/12 text-primary shadow-[0_0_26px_-8px_var(--primary)]" },
-  { level: 6, ar: "النخبة", en: "Elite", orders: 200, volume: 12000, rating: 4.85, onTime: 97, badge: "border-[#e3b341]/70 bg-[#e3b341]/14 text-[#f2cf6d] shadow-[0_0_30px_-8px_#e3b341]" },
-  { level: 7, ar: "الأستاذ", en: "Master", orders: 450, volume: 30000, rating: 4.9, onTime: 98, badge: "border-[#dfe6ef]/80 bg-[#dfe6ef]/16 text-[#f3f7fc] shadow-[0_0_34px_-8px_#dfe6ef]" },
-  { level: 8, ar: "الهيمنة", en: "Dominance", orders: 800, volume: 60000, rating: 4.95, onTime: 99, badge: "border-primary/70 bg-gradient-to-r from-[#0b0f14] via-[#12212a] to-[#0b0f14] text-primary shadow-[0_0_40px_-6px_var(--primary)]", aura: true },
+  { level: 1, ar: "الانطلاقة", en: "Starter", orders: 0, volume: 0, rating: 0, onTime: 0, badge: "border-[#cd7f32]/60 bg-[#cd7f32]/12 text-[#e0a06a]" },
+  { level: 2, ar: "الصاعد", en: "Rising", orders: 5, volume: 150, rating: 4.2, onTime: 85, badge: "border-[#10b981]/60 bg-[#10b981]/12 text-[#34d399]" },
+  { level: 3, ar: "المتمكن", en: "Proven", orders: 15, volume: 600, rating: 4.5, onTime: 90, badge: "border-[#06b6d4]/60 bg-[#06b6d4]/12 text-[#22d3ee]" },
+  { level: 4, ar: "المحترف", en: "Pro", orders: 40, volume: 2000, rating: 4.7, onTime: 93, badge: "border-[#3b82f6]/65 bg-[#3b82f6]/14 text-[#60a5fa] shadow-[0_0_22px_-8px_#3b82f6]" },
+  { level: 5, ar: "الخبير", en: "Expert", orders: 90, volume: 5000, rating: 4.8, onTime: 95, badge: "border-[#a855f7]/65 bg-[#a855f7]/14 text-[#c084fc] shadow-[0_0_26px_-8px_#a855f7]" },
+  { level: 6, ar: "النخبة", en: "Elite", orders: 200, volume: 12000, rating: 4.85, onTime: 97, badge: "border-[#f59e0b]/70 bg-[#f59e0b]/14 text-[#fbbf24] shadow-[0_0_30px_-8px_#f59e0b]" },
+  { level: 7, ar: "الأستاذ", en: "Master", orders: 450, volume: 30000, rating: 4.9, onTime: 98, badge: "border-[#e2e8f0]/80 bg-gradient-to-r from-[#e2e8f0]/10 via-[#ffffff]/20 to-[#e2e8f0]/10 text-[#f8fafc] shadow-[0_0_34px_-8px_#e2e8f0]" },
+  { level: 8, ar: "الهيمنة", en: "Dominance", orders: 800, volume: 60000, rating: 4.95, onTime: 99, badge: "border-[#e11d48]/80 bg-gradient-to-r from-[#150507] via-[#2a0a0f] to-[#150507] text-[#fb7185] shadow-[0_0_36px_-6px_rgba(225,29,72,0.55)]", aura: true },
 ];
 
 export function tierFor(m: PrestigeMetrics): PrestigeTier {

@@ -485,6 +485,7 @@ function BottomBar() {
             key={i.to}
             to={i.to}
             activeOptions={{ exact: i.to === "/" }}
+            onClick={() => window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior })}
             className="flex min-h-[56px] flex-col items-center justify-center gap-0.5 text-[10px] font-bold text-muted-foreground"
             activeProps={{ className: "flex min-h-[56px] flex-col items-center justify-center gap-0.5 text-[10px] font-bold text-primary" }}
           >

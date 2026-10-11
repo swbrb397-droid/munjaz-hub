@@ -16,16 +16,16 @@ export function PrestigeTracker({ metrics }: { metrics: PrestigeMetrics }) {
       <div className="flex flex-wrap items-center gap-3">
         <span className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-black ${tier.badge}`}>
           {tier.aura ? <Crown className="size-4 animate-pulse" /> : <Sparkles className="size-3.5" />}
-          {tr(`المستوى ${tier.level} — ${tier.ar}`, `Level ${tier.level} — ${tier.en}`)}
+          {tr(`الرتبة ${tier.level} — ${tier.ar}`, `Rank ${tier.level} — ${tier.en}`)}
         </span>
         <span className="text-xs text-muted-foreground">
-          {tr("مستوى التميز يعكس سجل الإنجاز وجودة الأداء.", "Your prestige level reflects delivery history and service quality.")}
+          {tr("رتبتك تعكس سجل الإنجاز وجودة الأداء.", "Your rank reflects delivery history and service quality.")}
         </span>
       </div>
 
       <p className="mt-4 text-sm text-muted-foreground">
         {next
-          ? tr(`التقدّم نحو المستوى ${next.level} — ${next.ar}`, `Progress toward level ${next.level} — ${next.en}`)
+          ? tr(`التقدّم نحو الرتبة ${next.level} — ${next.ar}`, `Progress toward rank ${next.level} — ${next.en}`)
           : tr("بلغتَ قمة الهيمنة.", "You have reached the apex.")}
       </p>
       <div className="mt-2 h-3 overflow-hidden rounded-full bg-secondary">

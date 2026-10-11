@@ -90,7 +90,7 @@ function Leaderboard() {
                           {seller.is_verified && <BadgeCheck className="size-4 shrink-0 text-accent" />}
                         </span>
                         <span className="block text-[11px] text-muted-foreground">
-                          {tr("المستوى", "Level")} {seller.level}
+                          {tr("الرتبة", "Rank")} {seller.level}
                         </span>
                       </span>
                     </div>
@@ -158,7 +158,7 @@ function Leaderboard() {
                             {s.is_verified && <BadgeCheck className="size-4 text-accent" />}
                           </span>
                           <span className="block text-xs text-muted-foreground">
-                            {tr("المستوى", "Level")} {s.level}
+                            {tr("الرتبة", "Rank")} {s.level}
                           </span>
                         </span>
                       </span>
