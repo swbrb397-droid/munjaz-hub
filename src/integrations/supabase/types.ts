@@ -797,6 +797,7 @@ export type Database = {
           listing_id: string | null
           order_number: number
           platform_fee_usdt: number
+          released_usdt: number
           revisions_allowed: number
           revisions_used: number
           seller_id: string
@@ -827,6 +828,7 @@ export type Database = {
           listing_id?: string | null
           order_number?: number
           platform_fee_usdt?: number
+          released_usdt?: number
           revisions_allowed?: number
           revisions_used?: number
           seller_id: string
@@ -857,6 +859,7 @@ export type Database = {
           listing_id?: string | null
           order_number?: number
           platform_fee_usdt?: number
+          released_usdt?: number
           revisions_allowed?: number
           revisions_used?: number
           seller_id?: string
@@ -2069,6 +2072,10 @@ export type Database = {
         }
       }
       release_escrow_to_seller: { Args: { p_order_id: string }; Returns: Json }
+      release_order_milestone: {
+        Args: { _milestone_id: string }
+        Returns: Json
+      }
       request_order_revision: {
         Args: { p_deliverable_id: string }
         Returns: number
