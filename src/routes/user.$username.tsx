@@ -7,6 +7,7 @@ import { useLang } from "@/lib/lang";
 import { supabase } from "@/lib/cloud-client";
 import { ServiceCard } from "@/routes/index";
 import { COVERS } from "@/lib/catalog";
+import { PRESTIGE_TIERS } from "@/lib/prestige";
 
 export const Route = createFileRoute("/user/$username")({
   head: ({ params }) => ({
@@ -31,9 +32,16 @@ function SellerProfilePage() {
   const seller = useQuery({
     queryKey: ["public-seller", username],
     queryFn: async () => {
+      // Direct public-profile lookup by id: works for every account, not only leaderboard top sellers.
+      if (/^[0-9a-f-]{36}$/i.test(username)) {
+        const { data, error } = await supabase.rpc("get_public_profiles", { _ids: [username] });
+        if (error) throw error;
+        const p = (data ?? [])[0];
+        if (p) return p;
+      }
       const { data, error } = await supabase.rpc("public_leaderboard", { _limit: 200 });
       if (error) throw error;
-      return (data ?? []).find((r) => String(r.id) === username || r.display_name === username) ?? null;
+      return ((data ?? []).find((r) => String(r.id) === username || r.display_name === username) ?? null) as any;
     },
   });
 
@@ -91,10 +99,15 @@ function SellerProfilePage() {
           </span>
         )}
         <div className="min-w-0">
-          <h1 className="flex items-center gap-2 text-2xl font-black">
-            {s.display_name}
+          <h1 className="flex flex-wrap items-center gap-2 text-2xl font-black">
+            {s.display_name || tr("مستخدم", "User")}
             {s.is_verified && <BadgeCheck className="size-5 text-accent" />}
           </h1>
+          {(() => {
+            const t = PRESTIGE_TIERS[Math.min(Math.max(Number(s.level ?? 1), 1), 8) - 1]!;
+            return <span className={`mt-1 inline-flex rounded-full border px-2.5 py-0.5 text-xs font-bold ${t.badge}`}>{tr("الرتبة:", "Rank:")} {tr(t.ar, t.en)}</span>;
+          })()}
+          {s.country && <p className="mt-1 text-xs text-muted-foreground">{s.country}</p>}
           <SellerPresence id={s.id} />
           <p className="mt-1 text-xs text-muted-foreground">
             {tr("بيانات الأداء محسوبة مباشرة من الطلبات المكتملة على المنصة.", "Performance data is computed directly from completed platform orders.")}

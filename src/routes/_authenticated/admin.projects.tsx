@@ -69,7 +69,7 @@ function AdminProjects() {
   return (
     <Section title={tr("إدارة المشاريع", "Project moderation")} subtitle={tr("كل إجراء يُسجَّل في سجل التدقيق. المشاريع ذات الضمان الجاري تُدار من مكتب النزاعات.", "Every action is audited. Projects with active escrow are handled via the dispute desk.")}>
       <select value={status} onChange={(e) => setStatus(e.target.value)} className="mb-3 rounded-lg border border-input bg-surface px-3 py-2 text-sm">
-        {["all", "open", "in_progress", "completed", "closed", "removed"].map((s) => <option key={s} value={s}>{s}</option>)}
+        {([["all", "الكل", "All"], ["open", "مفتوح", "Open"], ["in_progress", "قيد التنفيذ", "In progress"], ["completed", "مكتمل", "Completed"], ["closed", "مغلق", "Closed"], ["removed", "محذوف", "Removed"]] as const).map(([s, a, e]) => <option key={s} value={s}>{tr(a, e)}</option>)}
       </select>
       <p className="mb-2 text-xs text-muted-foreground">{tr("العدد:", "Count:")} <bdi>{rows.length}</bdi></p>
       <div className="grid gap-2">
