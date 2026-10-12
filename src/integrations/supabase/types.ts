@@ -1740,6 +1740,10 @@ export type Database = {
         Returns: string
       }
       admin_set_financial_halt: { Args: { p_on: boolean }; Returns: boolean }
+      admin_set_verified: {
+        Args: { p_user_id: string; p_verified: boolean }
+        Returns: undefined
+      }
       admin_toggle_user_ban: {
         Args: { p_banned: boolean; p_reason: string; p_user_id: string }
         Returns: undefined
