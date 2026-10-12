@@ -106,6 +106,30 @@
     user-select: text;
   }
 
+  /* Unified field look: soft surface, clear border, glowing focus ring. */
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+  select,
+  textarea {
+    border-radius: 0.75rem;
+    border-color: color-mix(in oklab, var(--border) 100%, var(--primary) 18%);
+    background-color: color-mix(in oklab, var(--card) 85%, var(--primary) 4%);
+    transition: border-color 0.15s, box-shadow 0.15s, background-color 0.15s;
+  }
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):focus,
+  select:focus,
+  textarea:focus {
+    outline: none;
+    border-color: var(--primary);
+    background-color: var(--card);
+    box-shadow: 0 0 0 3px color-mix(in oklab, var(--primary) 22%, transparent);
+  }
+  input::placeholder,
+  textarea::placeholder {
+    color: var(--muted-foreground);
+    opacity: 0.75;
+  }
+
+
   img,
   video,
   canvas,

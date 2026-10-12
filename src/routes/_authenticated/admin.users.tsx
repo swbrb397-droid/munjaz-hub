@@ -245,6 +245,17 @@ function UserPanel({ u }: { u: AdminUserRow }) {
       </Card>
 
       <Card>
+        <div className="flex items-center justify-between gap-2">
+          <span className="flex items-center gap-2 text-sm font-bold"><ShieldCheck className="size-4 text-primary" />{tr("شارة التوثيق (حساب مدعو)", "Verified badge (invited account)")}</span>
+          <Switch checked={u.is_verified} disabled={busy === "verify"} onCheckedChange={(v) => void gated(() => run("verify", async () => {
+            const { error } = await supabase.rpc("admin_set_verified" as never, { p_user_id: u.id, p_verified: v } as never);
+            if (error) throw error;
+          }, v ? tr("تم منح التوثيق", "Verification granted") : tr("تم إلغاء التوثيق", "Verification removed")))} />
+        </div>
+        <p className="mt-1 text-[11px] text-muted-foreground">{tr("يُسجَّل في سجل التدقيق ويتطلب المصادقة الثنائية.", "Audited and requires 2FA.")}</p>
+      </Card>
+
+      <Card>
         <div className="mb-2 flex items-center gap-2 text-sm font-bold"><ShieldCheck className="size-4" />{tr("الأدوار", "Roles")}</div>
         <div className="flex flex-wrap gap-2">
           {[["admin", tr("مشرف عام", "super admin")], ["moderator", tr("مراقب", "moderator")]].map(([r, l]) => {
