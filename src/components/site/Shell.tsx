@@ -219,7 +219,7 @@ function Notifications() {
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
-        className="relative grid size-9 place-items-center rounded-lg border border-border text-muted-foreground transition-colors hover:text-foreground"
+        className="relative grid size-9 shrink-0 place-items-center rounded-lg border border-border bg-secondary text-foreground transition-colors hover:border-primary/50"
         aria-label={tr("التنبيهات", "Notifications")}
       >
         <Bell className="size-4" />
