@@ -1,13 +1,13 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { PresenceBadge, usePresence } from "@/lib/presence";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, BadgeCheck, Star, TrendingUp, Trophy, Zap } from "lucide-react";
+import { ArrowLeft, BadgeCheck, CalendarDays, Star, TrendingUp, Trophy } from "lucide-react";
 import { Card, Section } from "@/components/site/Shell";
 import { useLang } from "@/lib/lang";
 import { supabase } from "@/lib/cloud-client";
 import { ServiceCard } from "@/routes/index";
 import { COVERS } from "@/lib/catalog";
-import { PRESTIGE_TIERS } from "@/lib/prestige";
+import { PRESTIGE_TIERS, rankLabel } from "@/lib/prestige";
 
 export const Route = createFileRoute("/user/$username")({
   head: ({ params }) => ({
@@ -84,8 +84,8 @@ function SellerProfilePage() {
   const stats = [
     { icon: Star, label: tr("التقييم", "Rating"), value: Number(s.rating ?? 0).toFixed(2) },
     { icon: Trophy, label: tr("الطلبات المكتملة", "Completed orders"), value: Number(s.completed_orders ?? 0).toLocaleString("en-US") },
-    { icon: Zap, label: tr("نقاط الخبرة", "XP points"), value: Number(s.xp_points ?? 0).toLocaleString("en-US") },
-    { icon: TrendingUp, label: tr("الرتبة", "Rank"), value: String(s.level ?? 1) },
+    { icon: CalendarDays, label: tr("تاريخ الانضمام", "Joined"), value: s.created_at ? new Date(s.created_at).toLocaleDateString(lang === "ar" ? "ar" : "en", { month: "long", year: "numeric" }) : "—" },
+    { icon: TrendingUp, label: tr("الرتبة", "Rank"), value: rankLabel(s.level, lang === "ar" ? "ar" : "en") },
   ];
 
   return (
@@ -105,7 +105,7 @@ function SellerProfilePage() {
           </h1>
           {(() => {
             const t = PRESTIGE_TIERS[Math.min(Math.max(Number(s.level ?? 1), 1), 8) - 1]!;
-            return <span className={`mt-1 inline-flex rounded-full border px-2.5 py-0.5 text-xs font-bold ${t.badge}`}>{tr("الرتبة:", "Rank:")} {tr(t.ar, t.en)}</span>;
+            return <span className={`mt-1 inline-flex rounded-full border px-2.5 py-0.5 text-xs font-bold ${t.badge}`}>{rankLabel(s.level, lang === "ar" ? "ar" : "en")}</span>;
           })()}
           {s.country && <p className="mt-1 text-xs text-muted-foreground">{s.country}</p>}
           <SellerPresence id={s.id} />
@@ -114,6 +114,27 @@ function SellerProfilePage() {
           </p>
         </div>
       </Card>
+
+      {(s.bio || (Array.isArray(s.skills) && s.skills.length > 0)) && (
+        <Card className="mt-4">
+          {s.bio && (
+            <>
+              <h2 className="text-sm font-black">{tr("نبذة عني", "About me")}</h2>
+              <p className="mt-2 whitespace-pre-line break-words text-sm leading-7 text-muted-foreground">{s.bio}</p>
+            </>
+          )}
+          {Array.isArray(s.skills) && s.skills.length > 0 && (
+            <>
+              <h2 className={`text-sm font-black ${s.bio ? "mt-4" : ""}`}>{tr("المهارات", "Skills")}</h2>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {(s.skills as string[]).map((sk) => (
+                  <span key={sk} className="rounded-full border border-primary/40 bg-primary/10 px-3 py-1 text-xs font-bold text-primary"><bdi>{sk}</bdi></span>
+                ))}
+              </div>
+            </>
+          )}
+        </Card>
+      )}
 
       <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {stats.map((k) => (

@@ -15,6 +15,13 @@
       "when": 1791803903606,
       "tag": "0001_admin_set_verified",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791901013266,
+      "tag": "0002_milestone_revisions_and_skills",
+      "breakpoints": true
     }
   ]
 }

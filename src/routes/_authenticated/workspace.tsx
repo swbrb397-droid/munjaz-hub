@@ -467,7 +467,7 @@ function Workspace() {
   const linkDeliverable = useLinkDeliverable(selected);
   const setApproval = useSetDeliverableApproval(selected);
   const requestRevision = useRequestRevision(selected);
-  const revLeft = order ? Math.max(0, (order.revisions_allowed ?? 2) - (order.revisions_used ?? 0)) : 0;
+  const orderRevLeft = order ? Math.max(0, (order.revisions_allowed ?? 2) - (order.revisions_used ?? 0)) : 0;
   const transition = useOrderTransition();
   const instantCancel = useBuyerInstantCancel();
   const releaseEscrow = useMutation({
@@ -586,6 +586,11 @@ function Workspace() {
   const releaseMilestone = useReleaseMilestone(selected);
   const milestoneRows = milestonesQuery.data ?? [];
   const milestonesOn = milestoneRows.length > 0;
+  // Revisions are budgeted per milestone: the current (first unreleased) stage owns its own allowance.
+  const currentMilestone = milestoneRows.filter((m) => m.status !== "released").sort((a, b) => a.position - b.position)[0];
+  const revLeft = currentMilestone
+    ? Math.max(0, (currentMilestone.revisions_allowed ?? 2) - (currentMilestone.revisions_used ?? 0))
+    : milestonesOn ? 0 : orderRevLeft;
   const orderAmount = Number(order?.amount_usdt ?? 0);
   type DraftMilestone = { title: string; amount: string; due: string };
   const [builderOn, setBuilderOn] = useState(false);
@@ -1590,7 +1595,7 @@ function Workspace() {
                                   }
                                   className="rounded-lg border border-accent/50 bg-accent/10 px-3 py-1.5 text-[11px] font-bold text-accent disabled:opacity-50"
                                 >
-                                  {tr("طلب تعديل", "Request revision")} (<bdi>{revLeft}</bdi> {tr("متبقٍ", "left")})
+                                  {tr("طلب تعديل", "Request revision")} (<bdi>{revLeft}</bdi> {currentMilestone ? tr("متبقٍ لهذه المرحلة", "left this stage") : tr("متبقٍ", "left")})
                                 </button>
                                 {revLeft === 0 && (
                                   <span className="w-full text-[11px] font-bold text-destructive">

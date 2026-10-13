@@ -224,6 +224,13 @@ function ProfilePage() {
           </div>
         </Card>
 
+        <AboutEditor
+          userId={user?.id}
+          initialBio={liveProfile?.bio ?? ""}
+          initialSkills={((liveProfile as { skills?: string[] } | null)?.skills ?? []) as string[]}
+          onSaved={() => void refetch()}
+        />
+
         <div className="mt-4">
           <SettingsPanel />
         </div>
@@ -372,6 +379,105 @@ function PresenceToggle() {
           className="mt-1 size-5 shrink-0 accent-primary"
         />
       </label>
+    </Card>
+  );
+}
+
+const MAX_SKILLS = 15;
+const MAX_BIO = 600;
+
+function AboutEditor({
+  userId,
+  initialBio,
+  initialSkills,
+  onSaved,
+}: {
+  userId: string | undefined;
+  initialBio: string;
+  initialSkills: string[];
+  onSaved: () => void;
+}) {
+  const [bio, setBio] = useState<string | null>(null);
+  const [skills, setSkills] = useState<string[] | null>(null);
+  const [draft, setDraft] = useState("");
+  const [saving, setSaving] = useState(false);
+  const curBio = bio ?? initialBio;
+  const curSkills = skills ?? initialSkills;
+
+  const addSkill = (raw: string) => {
+    const v = raw.trim().replace(/[,،]+$/, "").slice(0, 30);
+    if (!v) return;
+    if (curSkills.length >= MAX_SKILLS) { toast.error(`الحد الأقصى ${MAX_SKILLS} مهارة`); return; }
+    if (curSkills.some((x) => x.toLowerCase() === v.toLowerCase())) { setDraft(""); return; }
+    setSkills([...curSkills, v]);
+    setDraft("");
+  };
+
+  return (
+    <Card className="mt-4">
+      <h3 className="text-sm font-black">نبذة عني والمهارات</h3>
+      <p className="mt-1 text-[11px] text-muted-foreground">تظهر في ملفك العام ليتعرّف عليك المشترون قبل الشراء.</p>
+      <label className="mt-3 grid gap-1.5 text-sm">
+        <span className="flex items-center justify-between text-muted-foreground">
+          <span>نبذة عني</span>
+          <bdi className="text-[11px]">{curBio.length} / {MAX_BIO}</bdi>
+        </span>
+        <textarea
+          rows={4}
+          maxLength={MAX_BIO}
+          value={curBio}
+          onChange={(e) => setBio(e.target.value)}
+          placeholder="عرّف بنفسك: خبرتك، ما تقدمه، وكيف تعمل مع عملائك."
+          className="w-full rounded-xl border border-border bg-secondary/40 px-3 py-2 text-sm leading-7"
+        />
+      </label>
+      <div className="mt-3 grid gap-1.5 text-sm">
+        <span className="flex items-center justify-between text-muted-foreground">
+          <span>المهارات والاهتمامات</span>
+          <bdi className="text-[11px]">{curSkills.length} / {MAX_SKILLS}</bdi>
+        </span>
+        <div className="flex flex-wrap gap-2">
+          {curSkills.map((sk) => (
+            <span key={sk} className="inline-flex items-center gap-1 rounded-full border border-primary/40 bg-primary/10 px-3 py-1 text-xs font-bold text-primary">
+              <bdi>{sk}</bdi>
+              <button type="button" aria-label={`حذف ${sk}`} onClick={() => setSkills(curSkills.filter((x) => x !== sk))} className="ms-1 leading-none">×</button>
+            </span>
+          ))}
+        </div>
+        <input
+          value={draft}
+          maxLength={31}
+          disabled={curSkills.length >= MAX_SKILLS}
+          onChange={(e) => {
+            const v = e.target.value;
+            if (/[,،]$/.test(v)) addSkill(v); else setDraft(v);
+          }}
+          onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addSkill(draft); } }}
+          onBlur={() => draft.trim() && addSkill(draft)}
+          placeholder={curSkills.length >= MAX_SKILLS ? "وصلت للحد الأقصى" : "اكتب مهارة ثم اضغط Enter (مثال: تسويق، React)"}
+          className="w-full rounded-xl border border-border bg-secondary/40 px-3 py-2 text-sm"
+        />
+      </div>
+      <button
+        type="button"
+        disabled={saving || !userId || (bio === null && skills === null)}
+        onClick={async () => {
+          if (!userId) return;
+          setSaving(true);
+          const { error } = await supabase
+            .from("profiles")
+            .update({ bio: curBio.trim() || null, skills: curSkills })
+            .eq("id", userId);
+          setSaving(false);
+          if (error) { toast.error("تعذّر حفظ النبذة"); return; }
+          toast.success("تم حفظ النبذة والمهارات");
+          setBio(null); setSkills(null);
+          onSaved();
+        }}
+        className="mt-4 inline-flex min-h-10 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-bold text-primary-foreground disabled:opacity-50"
+      >
+        {saving && <Loader2 className="size-4 animate-spin" />} حفظ
+      </button>
     </Card>
   );
 }

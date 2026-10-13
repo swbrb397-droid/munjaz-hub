@@ -230,7 +230,7 @@ function Notifications() {
         )}
       </button>
       {open && (
-        <div className="absolute end-0 top-11 z-50 max-h-80 w-72 overflow-y-auto rounded-xl border border-border bg-card p-2 shadow-xl">
+        <div className="fixed inset-x-2 top-16 z-50 max-h-[70vh] overflow-y-auto rounded-xl sm:absolute sm:inset-x-auto sm:end-0 sm:top-11 sm:max-h-80 sm:w-80 border border-border bg-card p-2 shadow-xl">
           {items.length === 0 && (
             <p className="px-3 py-2 text-xs text-muted-foreground">
               {tr("لا توجد إشعارات جديدة", "No new notifications")}

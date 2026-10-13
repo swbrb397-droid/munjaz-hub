@@ -335,6 +335,7 @@ export function useRequestRevision(orderId: string | null) {
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ["order_deliverables", orderId] });
       void qc.invalidateQueries({ queryKey: ["orders"] });
+      void qc.invalidateQueries({ queryKey: ["order_milestones", orderId] });
     },
   });
 }
