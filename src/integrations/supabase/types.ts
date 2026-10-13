@@ -740,6 +740,8 @@ export type Database = {
           pct: number
           position: number
           released_at: string | null
+          revisions_allowed: number
+          revisions_used: number
           status: string
           title: string
           updated_at: string
@@ -752,6 +754,8 @@ export type Database = {
           pct?: number
           position?: number
           released_at?: string | null
+          revisions_allowed?: number
+          revisions_used?: number
           status?: string
           title: string
           updated_at?: string
@@ -764,6 +768,8 @@ export type Database = {
           pct?: number
           position?: number
           released_at?: string | null
+          revisions_allowed?: number
+          revisions_used?: number
           status?: string
           title?: string
           updated_at?: string
@@ -978,6 +984,7 @@ export type Database = {
           referral_code: string
           referred_by: string | null
           security_updated_at: string | null
+          skills: string[]
           terms_accepted_at: string | null
           updated_at: string
           xp_points: number
@@ -1011,6 +1018,7 @@ export type Database = {
           referral_code: string
           referred_by?: string | null
           security_updated_at?: string | null
+          skills?: string[]
           terms_accepted_at?: string | null
           updated_at?: string
           xp_points?: number
@@ -1044,6 +1052,7 @@ export type Database = {
           referral_code?: string
           referred_by?: string | null
           security_updated_at?: string | null
+          skills?: string[]
           terms_accepted_at?: string | null
           updated_at?: string
           xp_points?: number
@@ -1922,6 +1931,7 @@ export type Database = {
           is_verified: boolean
           level: number
           rating: number
+          skills: string[]
           xp_points: number
         }[]
       }
