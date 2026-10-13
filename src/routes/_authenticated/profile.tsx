@@ -392,7 +392,7 @@ function AboutEditor({
   initialSkills,
   onSaved,
 }: {
-  userId?: string;
+  userId: string | undefined;
   initialBio: string;
   initialSkills: string[];
   onSaved: () => void;
