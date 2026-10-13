@@ -595,7 +595,7 @@ function CreateListing() {
                           role="radio"
                           aria-checked={on}
                           onClick={() => setForm({ ...form, category: c.key })}
-                          className={`relative flex min-h-[64px] items-center gap-3 rounded-2xl border bg-card/60 p-3 text-start backdrop-blur-md transition-all ${on ? `${meta.ring} ring-2` : "border-border hover:border-muted-foreground/50"}`}
+                          className={`relative flex min-h-[64px] items-center gap-3 rounded-2xl border bg-card/60 p-3 text-start backdrop-blur-md transition-all ${on ? `${meta.ring} ring-2 scale-[1.02] bg-card shadow-[0_0_24px_-6px_var(--color-primary)]` : "border-border hover:-translate-y-0.5 hover:border-muted-foreground/50"}`}
                         >
                           <span className={`grid size-10 shrink-0 place-items-center rounded-xl ${meta.chip}`}>
                             <Icon className="size-5" />

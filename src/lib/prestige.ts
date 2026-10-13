@@ -71,3 +71,13 @@ export function metricBreakdown(m: PrestigeMetrics, next: PrestigeTier | null) {
     { key: "onTime" as const, ar: "الالتزام بالمواعيد %", en: "On-time rate %", value: m.onTime, target: next?.onTime ?? m.onTime, pct: Math.round(ratio(m.onTime, next?.onTime ?? 0) * 100) },
   ];
 }
+
+const AR_ORDINALS = ["الأولى", "الثانية", "الثالثة", "الرابعة", "الخامسة", "السادسة", "السابعة", "الثامنة"];
+const EN_ORDINALS = ["1st", "2nd", "3rd", "4th", "5th", "6th", "7th", "8th"];
+
+/** «الرتبة الأولى · الانطلاقة» — human rank label instead of a bare number. */
+export function rankLabel(level: number | null | undefined, lang: "ar" | "en" = "ar"): string {
+  const i = Math.min(Math.max(Number(level ?? 1) || 1, 1), 8) - 1;
+  const t = PRESTIGE_TIERS[i]!;
+  return lang === "ar" ? `الرتبة ${AR_ORDINALS[i]} · ${t.ar}` : `${EN_ORDINALS[i]} rank · ${t.en}`;
+}
