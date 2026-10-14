@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { Loader2, ShieldCheck } from "lucide-react";
+import { Check, Clapperboard, Code2, Loader2, Megaphone, Palette, PenLine, Shapes, ShieldCheck, Sparkles, type LucideIcon } from "lucide-react";
 import { toast } from "sonner";
 import { Card, Section } from "@/components/site/Shell";
 import { useLang } from "@/lib/lang";
@@ -23,7 +23,24 @@ export const Route = createFileRoute("/_authenticated/create-project")({
   component: CreateProject,
 });
 
-const DAYS = [1, 2, 3, 5, 7, 10, 14, 21, 30, 45, 60, 90];
+const DAYS = [
+  { v: 1, ar: "يوم", en: "1 day" },
+  { v: 2, ar: "يومان", en: "2 days" },
+  { v: 3, ar: "3 أيام", en: "3 days" },
+  { v: 7, ar: "أسبوع", en: "1 week" },
+  { v: 14, ar: "أسبوعان", en: "2 weeks" },
+  { v: 30, ar: "شهر", en: "1 month" },
+];
+
+const CAT_ICONS: Record<string, LucideIcon> = {
+  development: Code2,
+  design: Palette,
+  writing: PenLine,
+  marketing: Megaphone,
+  video: Clapperboard,
+  ai: Sparkles,
+  other: Shapes,
+};
 
 function CreateProject() {
   const { tr, lang } = useLang();
@@ -74,18 +91,37 @@ function CreateProject() {
               {errors.description ?? <bdi>{f.description.trim().length} / 4000</bdi>}
             </span>
           </label>
-          <label className="grid gap-1.5 text-sm">
+          <div className="grid gap-2 text-sm sm:col-span-2" role="radiogroup" aria-label={tr("التصنيف", "Category")}>
             <span className="text-muted-foreground">{tr("التصنيف", "Category")}</span>
-            <select className={field} value={f.category} onChange={(e) => setF({ ...f, category: e.target.value })}>
-              {PROJECT_CATEGORIES.map((c) => <option key={c.key} value={c.key}>{ar ? c.ar : c.en}</option>)}
-            </select>
-          </label>
-          <label className="grid gap-1.5 text-sm">
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+              {PROJECT_CATEGORIES.map((c) => {
+                const Icon = CAT_ICONS[c.key] ?? Shapes;
+                const on = f.category === c.key;
+                return (
+                  <button key={c.key} type="button" role="radio" aria-checked={on} onClick={() => setF({ ...f, category: c.key })}
+                    className={`relative flex min-h-20 flex-col items-center justify-center gap-1.5 rounded-xl border p-3 text-center text-xs font-bold transition ${on ? "border-primary bg-primary/10 text-foreground shadow-[0_0_18px_-4px_var(--primary)]" : "border-border bg-surface text-muted-foreground hover:border-primary/50"}`}>
+                    {on && <Check className="absolute end-1.5 top-1.5 size-3.5 text-primary" />}
+                    <Icon className={`size-6 ${on ? "text-primary" : ""}`} />
+                    {ar ? c.ar : c.en}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+          <div className="grid gap-2 text-sm sm:col-span-2" role="radiogroup" aria-label={tr("مدة التسليم المتوقعة", "Expected delivery")}>
             <span className="text-muted-foreground">{tr("مدة التسليم المتوقعة", "Expected delivery")}</span>
-            <select className={field} value={f.days} onChange={(e) => setF({ ...f, days: Number(e.target.value) })}>
-              {DAYS.map((d) => <option key={d} value={d}>{d} {d === 1 ? tr("يوم", "day") : tr("أيام", "days")}</option>)}
-            </select>
-          </label>
+            <div className="flex flex-wrap gap-2">
+              {DAYS.map((d) => {
+                const on = f.days === d.v;
+                return (
+                  <button key={d.v} type="button" role="radio" aria-checked={on} onClick={() => setF({ ...f, days: d.v })}
+                    className={`h-9 rounded-full border px-4 text-xs font-bold transition ${on ? "border-primary bg-primary text-primary-foreground" : "border-border bg-surface text-muted-foreground hover:border-primary/50"}`}>
+                    {ar ? d.ar : d.en}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
           <label className="grid gap-1.5 text-sm">
             <span className="text-muted-foreground">{tr("الميزانية من (USDT)", "Budget from (USDT)")}</span>
             <input className={field} type="number" min={3} step="0.01" inputMode="decimal" value={f.min} onChange={(e) => setF({ ...f, min: e.target.value })} placeholder="3" />
