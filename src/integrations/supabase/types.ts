@@ -1076,6 +1076,7 @@ export type Database = {
           freelancer_id: string
           id: string
           project_id: string
+          screening_answer: string | null
           status: string
           updated_at: string
         }
@@ -1087,6 +1088,7 @@ export type Database = {
           freelancer_id: string
           id?: string
           project_id: string
+          screening_answer?: string | null
           status?: string
           updated_at?: string
         }
@@ -1098,6 +1100,7 @@ export type Database = {
           freelancer_id?: string
           id?: string
           project_id?: string
+          screening_answer?: string | null
           status?: string
           updated_at?: string
         }
@@ -1121,6 +1124,7 @@ export type Database = {
       projects: {
         Row: {
           admin_note: string | null
+          attachments: Json
           awarded_proposal_id: string | null
           budget_max: number
           budget_min: number
@@ -1129,15 +1133,19 @@ export type Database = {
           delivery_days: number
           description: string
           id: string
+          min_level: number
           order_id: string | null
           owner_id: string
           proposals_count: number
+          screening_question: string | null
+          skills: string[]
           status: string
           title: string
           updated_at: string
         }
         Insert: {
           admin_note?: string | null
+          attachments?: Json
           awarded_proposal_id?: string | null
           budget_max: number
           budget_min: number
@@ -1146,15 +1154,19 @@ export type Database = {
           delivery_days?: number
           description: string
           id?: string
+          min_level?: number
           order_id?: string | null
           owner_id: string
           proposals_count?: number
+          screening_question?: string | null
+          skills?: string[]
           status?: string
           title: string
           updated_at?: string
         }
         Update: {
           admin_note?: string | null
+          attachments?: Json
           awarded_proposal_id?: string | null
           budget_max?: number
           budget_min?: number
@@ -1163,9 +1175,12 @@ export type Database = {
           delivery_days?: number
           description?: string
           id?: string
+          min_level?: number
           order_id?: string | null
           owner_id?: string
           proposals_count?: number
+          screening_question?: string | null
+          skills?: string[]
           status?: string
           title?: string
           updated_at?: string
@@ -1809,6 +1824,7 @@ export type Database = {
         Returns: undefined
       }
       contains_contact_info: { Args: { _t: string }; Returns: boolean }
+      contains_profanity: { Args: { _t: string }; Returns: boolean }
       create_deposit: {
         Args: {
           _address?: string
@@ -1848,8 +1864,24 @@ export type Database = {
         }
         Returns: string
       }
+      create_project_v2: {
+        Args: {
+          _attachments: Json
+          _budget_max: number
+          _budget_min: number
+          _category: string
+          _delivery_days: number
+          _description: string
+          _min_level: number
+          _screening: string
+          _skills: string[]
+          _title: string
+        }
+        Returns: string
+      }
       fee_rates: { Args: never; Returns: Json }
       financial_halt_active: { Args: never; Returns: boolean }
+      freelancer_level: { Args: { _uid: string }; Returns: number }
       get_admin_dashboard_metrics: { Args: never; Returns: Json }
       get_freelancers_directory: {
         Args: { _limit?: number }
@@ -2253,6 +2285,16 @@ export type Database = {
       submit_project_proposal: {
         Args: {
           _amount: number
+          _cover: string
+          _delivery_days: number
+          _project_id: string
+        }
+        Returns: string
+      }
+      submit_project_proposal_v2: {
+        Args: {
+          _amount: number
+          _answer: string
           _cover: string
           _delivery_days: number
           _project_id: string

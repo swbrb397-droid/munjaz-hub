@@ -29,6 +29,13 @@
       "when": 1791974024071,
       "tag": "0003_public_profiles_for_visitors",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1792100567081,
+      "tag": "0004_project_upgrade_and_universal_moderation",
+      "breakpoints": true
     }
   ]
 }

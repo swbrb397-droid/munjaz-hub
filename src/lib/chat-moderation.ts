@@ -113,16 +113,23 @@ export const CONTACT_BLOCK_MESSAGE =
 export const PROFANITY_BLOCK_MESSAGE =
   "⚠️ تم حظر الرسالة: تحتوي على ألفاظ مسيئة — يرجى الالتزام بلغة مهنية داخل غرفة الطلب.";
 
+/** Whole-word match (with Arabic prefixes) so words like «زبون» never trip «زب». */
+function hasWord(text: string, word: string): boolean {
+  if (word.includes(" ")) return text.includes(word);
+  const esc = word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp(`(^|[^\\p{L}])(يا|ال|وال|و|بال)?${esc}([^\\p{L}]|$)`, "u").test(text);
+}
+
 /** Single authoritative guard used by both message creation and message editing. */
 export function moderateChatText(raw: string): ModerationVerdict {
   const text = String(raw ?? "");
   if (!text.trim()) return { blocked: false };
   const { converted, strippedDigits } = normalizeForModeration(text);
 
-  if (PROFANITY.some((w) => converted.includes(w))) {
+  if (PROFANITY.some((w) => hasWord(converted, w))) {
     return { blocked: true, reason: PROFANITY_BLOCK_MESSAGE };
   }
-  if (EXTERNAL_KEYWORDS.some((w) => converted.includes(w))) {
+  if (EXTERNAL_KEYWORDS.some((w) => (w.includes(".") ? converted.includes(w) : hasWord(converted, w)))) {
     return { blocked: true, reason: CONTACT_BLOCK_MESSAGE };
   }
   if (URL_CONTACT_RE.test(converted) || EMAIL_RE.test(converted) || EMAIL_RE.test(strippedDigits)) {
@@ -132,6 +139,15 @@ export function moderateChatText(raw: string): ModerationVerdict {
     return { blocked: true, reason: CONTACT_BLOCK_MESSAGE };
   }
   return { blocked: false };
+}
+
+/** Checks several user-written fields at once; returns the first block reason or null. */
+export function moderateFields(...texts: (string | null | undefined)[]): string | null {
+  for (const t of texts) {
+    const v = moderateChatText(t ?? "");
+    if (v.blocked) return v.reason ?? CONTACT_BLOCK_MESSAGE;
+  }
+  return null;
 }
 
 /** Messages may only be edited within this window (legal chat integrity). */
