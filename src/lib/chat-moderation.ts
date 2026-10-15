@@ -129,7 +129,7 @@ export function moderateChatText(raw: string): ModerationVerdict {
   if (PROFANITY.some((w) => hasWord(converted, w))) {
     return { blocked: true, reason: PROFANITY_BLOCK_MESSAGE };
   }
-  if (EXTERNAL_KEYWORDS.some((w) => (/^[a-z ]+$/.test(w) ? hasWord(converted, w) : converted.includes(w)))) {
+  if (EXTERNAL_KEYWORDS.some((w) => (w.includes(".") ? converted.includes(w) : hasWord(converted, w)))) {
     return { blocked: true, reason: CONTACT_BLOCK_MESSAGE };
   }
   if (URL_CONTACT_RE.test(converted) || EMAIL_RE.test(converted) || EMAIL_RE.test(strippedDigits)) {
