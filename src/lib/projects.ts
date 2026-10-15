@@ -20,6 +20,10 @@ export const categoryLabel = (key: string, ar: boolean) => {
   return c ? (ar ? c.ar : c.en) : key;
 };
 
+export type ProjectAttachment = { path: string; name: string; size: number; mime: string };
+export const PROJECT_FILES_BUCKET = "project-files";
+export const PROJECT_FILE_MAX_MB = 25;
+
 export const usd = (n: number | string | null | undefined) => Number(n ?? 0).toFixed(2);
 
 /** Maps backend guard codes to readable messages. */
@@ -42,6 +46,12 @@ export function projectError(e: unknown, ar: boolean): string {
     PROJECT_HAS_ESCROW: ["لا يمكن تعديل مشروع عليه ضمان جارٍ أو مكتمل.", "Projects with active or completed escrow cannot be moderated."],
     FINANCIAL_HALT: ["العمليات المالية متوقفة مؤقتاً.", "Financial operations are temporarily halted."],
     FORBIDDEN: ["غير مصرّح.", "Not allowed."],
+    PROFANITY_BLOCKED: ["النص يحتوي على ألفاظ مسيئة — يرجى الالتزام بلغة مهنية.", "The text contains offensive language — please keep it professional."],
+    LEVEL_TOO_LOW: ["رتبتك أقل من الرتبة الدنيا التي حددها صاحب المشروع.", "Your rank is below the minimum set by the project owner."],
+    ANSWER_REQUIRED: ["أجب عن سؤال صاحب المشروع (5 أحرف على الأقل).", "Answer the owner's screening question (min 5 characters)."],
+    TOO_MANY_SKILLS: ["الحد الأقصى 5 مهارات.", "Maximum 5 skills."],
+    TOO_MANY_FILES: ["الحد الأقصى 3 مرفقات.", "Maximum 3 attachments."],
+    INVALID_DAYS: ["مدة التسليم بين يوم و90 يوماً.", "Delivery must be 1–90 days."],
   };
   for (const [code, [a, en]] of Object.entries(map)) if (m.includes(code)) return ar ? a : en;
   return ar ? "تعذّر إتمام العملية، حاول مجدداً." : "Could not complete the action, try again.";
@@ -127,10 +137,15 @@ function useInvalidate() {
 export function useCreateProject() {
   const inv = useInvalidate();
   return useMutation({
-    mutationFn: async (v: { title: string; description: string; category: string; min: number; max: number; days: number }) => {
-      const { data, error } = await supabase.rpc("create_project", {
+    mutationFn: async (v: {
+      title: string; description: string; category: string; min: number; max: number; days: number;
+      skills: string[]; screening: string; minLevel: number; attachments: ProjectAttachment[];
+    }) => {
+      const { data, error } = await supabase.rpc("create_project_v2", {
         _title: v.title, _description: v.description, _category: v.category,
         _budget_min: v.min, _budget_max: v.max, _delivery_days: v.days,
+        _skills: v.skills, _screening: v.screening, _min_level: v.minLevel,
+        _attachments: v.attachments as unknown as never,
       });
       if (error) throw error;
       return data as string;
@@ -142,9 +157,9 @@ export function useCreateProject() {
 export function useSubmitProposal() {
   const inv = useInvalidate();
   return useMutation({
-    mutationFn: async (v: { projectId: string; amount: number; days: number; cover: string }) => {
-      const { error } = await supabase.rpc("submit_project_proposal", {
-        _project_id: v.projectId, _amount: v.amount, _delivery_days: v.days, _cover: v.cover,
+    mutationFn: async (v: { projectId: string; amount: number; days: number; cover: string; answer: string }) => {
+      const { error } = await supabase.rpc("submit_project_proposal_v2", {
+        _project_id: v.projectId, _amount: v.amount, _delivery_days: v.days, _cover: v.cover, _answer: v.answer,
       });
       if (error) throw error;
     },
