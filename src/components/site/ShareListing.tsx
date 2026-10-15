@@ -29,7 +29,7 @@ export function ShareListing({ id, title, variant = "icon" }: { id: string; titl
         }
       >
         <Share2 className="size-3.5" />
-        {variant === "button" && <span>مشاركة العرض 🔗</span>}
+        {variant === "button" && <span>مشاركة العرض</span>}
       </button>
 
 

@@ -169,7 +169,7 @@ function PricingPage() {
       </section>
 
       <Section level={2} title={tr("الباقات", "Plans")} subtitle={tr("الدفع بعملة USDT عبر TRC-20 أو BEP-20", "Pay in USDT via TRC-20 or BEP-20")}>
-        <div className="grid gap-5 lg:grid-cols-3">
+        <div className="mx-auto grid max-w-4xl gap-5 sm:grid-cols-2">
           {/* Corporate tier is temporarily concealed until the B2B launch. */}
           {TIERS.filter((t) => t.id !== "corporate").map((t) => (
             <Card
