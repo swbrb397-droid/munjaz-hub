@@ -1,14 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Bot, Gavel, ImageOff, Loader2, Radar } from "lucide-react";
+import { Bot, Gavel, ImageOff, Loader2, Lock, Radar, Send, ShieldCheck } from "lucide-react";
+import { MfaChallengeDialog } from "@/components/site/MfaChallengeDialog";
 import { Card, Section } from "@/components/site/Shell";
 import { useLang } from "@/lib/lang";
 import { translateAuthError } from "@/lib/auth-errors";
 import { supabase } from "@/lib/cloud-client";
-import { aiCoverAuditor, aiDisputeCopilot, aiFraudInspector } from "@/lib/admin-ai.functions";
+import { aiCoverAuditor, aiDisputeCopilot, aiExecutiveChat, aiFraudInspector } from "@/lib/admin-ai.functions";
 
 export const Route = createFileRoute("/_authenticated/admin/ai")({
   head: () => ({
@@ -26,6 +27,7 @@ export const Route = createFileRoute("/_authenticated/admin/ai")({
 
 const errMsg = (e: unknown, ar: boolean) => {
   const m = (e as Error)?.message ?? "";
+  if (m.includes("MFA_REQUIRED")) return ar ? "انتهت الجلسة الأمنية — أدخل رمز المصادقة الثنائية مجدداً" : "Secure session expired — enter your 2FA code again";
   if (m.includes("AI_UNAVAILABLE")) return ar ? "خدمة الذكاء الاصطناعي غير متاحة حالياً، حاول لاحقاً" : "The AI service is unavailable right now, try again later";
   return translateAuthError(e, ar);
 };
@@ -72,6 +74,7 @@ function AdminAi() {
   return (
     <Section title={tr("مساعد الذكاء الاصطناعي للإدارة", "Admin AI assistant")} subtitle={tr("كل النتائج استشارية فقط — القرار النهائي للمشرف.", "All results are advisory only — the admin makes the final decision.")}>
       <div className="grid gap-4 lg:grid-cols-2">
+        <ExecutiveCopilot />
         <Card>
           <h2 className="flex items-center gap-2 font-black"><Gavel className="size-5 text-primary" />{tr("مساعد تحكيم النزاعات", "Dispute arbitration co-pilot")}</h2>
           <select value={caseId} onChange={(e) => setCaseId(e.target.value)} className="mt-3 min-h-11 w-full rounded-lg border border-input bg-surface px-3 text-sm">
@@ -126,5 +129,114 @@ function AdminAi() {
         </Card>
       </div>
     </Section>
+  );
+}
+
+const IDLE_MS = 30 * 60 * 1000;
+type ChatMsg = { role: "user" | "assistant"; content: string };
+
+/** Private admin chat. Locked behind a fresh 2FA code each time the page opens; relocks after 30 min idle. */
+function ExecutiveCopilot() {
+  const { tr, lang } = useLang();
+  const chat = useServerFn(aiExecutiveChat);
+  const [factorId, setFactorId] = useState<string | null | undefined>(undefined);
+  const [challenge, setChallenge] = useState(false);
+  const [unlocked, setUnlocked] = useState(false);
+  const [msgs, setMsgs] = useState<ChatMsg[]>([]);
+  const [text, setText] = useState("");
+  const [busy, setBusy] = useState(false);
+  const lastActive = useRef(Date.now());
+  const endRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    void supabase.auth.mfa.listFactors().then(({ data }) => {
+      const f = data?.totp?.find((x) => x.status === "verified");
+      setFactorId(f?.id ?? null);
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!unlocked) return;
+    const id = window.setInterval(() => {
+      if (Date.now() - lastActive.current > IDLE_MS) {
+        setUnlocked(false);
+        setMsgs([]);
+        toast.info(tr("أُغلقت الجلسة الأمنية بعد 30 دقيقة من عدم النشاط", "Secure session locked after 30 minutes idle"));
+      }
+    }, 30_000);
+    return () => window.clearInterval(id);
+  }, [unlocked, tr]);
+
+  useEffect(() => { endRef.current?.scrollIntoView({ block: "end" }); }, [msgs.length]);
+
+  const send = async () => {
+    const q = text.trim();
+    if (!q || busy) return;
+    lastActive.current = Date.now();
+    const next = [...msgs, { role: "user" as const, content: q.slice(0, 4000) }];
+    setMsgs(next);
+    setText("");
+    setBusy(true);
+    try {
+      const { reply } = await chat({ data: { messages: next.slice(-20) } });
+      setMsgs((m) => [...m, { role: "assistant", content: reply }]);
+    } catch (e) {
+      const m = (e as Error)?.message ?? "";
+      if (m.includes("MFA_REQUIRED")) setUnlocked(false);
+      toast.error(errMsg(e, lang === "ar"));
+    } finally {
+      setBusy(false);
+      lastActive.current = Date.now();
+    }
+  };
+
+  return (
+    <Card className="lg:col-span-2">
+      <h2 className="flex items-center gap-2 font-black"><ShieldCheck className="size-5 text-primary" />{tr("المستشار التنفيذي الخاص", "Private executive copilot")}</h2>
+      <p className="mt-1 text-xs text-muted-foreground">{tr("محادثة خاصة بالمدير يطّلع فيها المساعد على مؤشرات المنصة الحية — استشارية فقط ولا تنفذ أي إجراء.", "Admin-only chat grounded on live platform metrics — advisory only, it never performs actions.")}</p>
+      {!unlocked ? (
+        <div className="mt-4 grid place-items-center gap-3 rounded-xl border border-dashed border-border p-6 text-center">
+          <Lock className="size-8 text-primary" />
+          {factorId === null ? (
+            <p className="text-sm text-muted-foreground">{tr("فعّل المصادقة الثنائية من صفحة الملف الشخصي أولاً لفتح المستشار.", "Enable two-factor authentication in your profile first to open the copilot.")}</p>
+          ) : (
+            <button type="button" disabled={!factorId} onClick={() => setChallenge(true)} className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-primary px-5 font-bold text-primary-foreground disabled:opacity-60">
+              {factorId === undefined && <Loader2 className="size-4 animate-spin" />}{tr("فتح الجلسة برمز المصادقة", "Unlock with 2FA code")}
+            </button>
+          )}
+        </div>
+      ) : (
+        <div className="mt-4 grid gap-3">
+          <div className="grid max-h-[28rem] min-h-48 content-start gap-3 overflow-y-auto rounded-xl border border-border bg-surface/40 p-3">
+            {msgs.length === 0 && <p className="text-xs text-muted-foreground">{tr("اسألني عن أداء المنصة، النزاعات، السحوبات، السياسات أو أي قرار تفكر فيه.", "Ask about performance, disputes, withdrawals, policies or any decision.")}</p>}
+            {msgs.map((m, i) => (
+              <div key={i} className={m.role === "user" ? "ms-auto max-w-[85%] rounded-2xl bg-primary px-3 py-2 text-sm text-primary-foreground" : "max-w-full whitespace-pre-wrap break-words text-sm leading-relaxed"}>
+                {m.content}
+              </div>
+            ))}
+            {busy && <Loader2 className="size-4 animate-spin text-primary" />}
+            <div ref={endRef} />
+          </div>
+          <form className="flex items-end gap-2" onSubmit={(e) => { e.preventDefault(); void send(); }}>
+            <textarea value={text} maxLength={4000} onChange={(e) => { setText(e.target.value); lastActive.current = Date.now(); }}
+              onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void send(); } }}
+              className="min-h-11 flex-1 resize-none rounded-xl border border-input bg-surface px-3 py-2 text-sm outline-none focus:border-primary" rows={2}
+              placeholder={tr("اكتب سؤالك…", "Type your question…")} />
+            <button type="submit" aria-label={tr("إرسال", "Send")} disabled={busy || !text.trim()} className="grid size-11 shrink-0 place-items-center rounded-xl bg-primary text-primary-foreground disabled:opacity-50">
+              <Send className="size-4" />
+            </button>
+          </form>
+          <button type="button" onClick={() => { setUnlocked(false); setMsgs([]); }} className="justify-self-start text-xs font-bold text-muted-foreground hover:text-destructive">{tr("قفل الجلسة الآن", "Lock now")}</button>
+        </div>
+      )}
+      {challenge && factorId && (
+        <MfaChallengeDialog
+          factorId={factorId}
+          title={tr("تأكيد هويتك لفتح المستشار", "Verify to open the copilot")}
+          onVerified={() => { setUnlocked(true); setChallenge(false); lastActive.current = Date.now(); }}
+          onClose={() => setChallenge(false)}
+        />
+      )}
+    </Card>
   );
 }
