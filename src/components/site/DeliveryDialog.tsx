@@ -5,8 +5,6 @@ import { useLang } from "@/lib/lang";
 import { moderateFields } from "@/lib/chat-moderation";
 import { useLinkDeliverable, useSendMessage, useUploadDeliverable } from "@/lib/workspace-data";
 import { useOrderTransition } from "@/lib/orders";
-import { checkUpload } from "@/lib/file-guard";
-import { fireOrderEmail } from "@/lib/order-email";
 
 /**
  * Official delivery: final file and/or link + a delivery note, then the order
@@ -30,17 +28,12 @@ export function DeliveryDialog({ orderId, onClose }: { orderId: string; onClose:
     const bad = moderateFields(note);
     if (bad) { toast.error(bad); return; }
     if (url.trim() && /(wa\.me|t\.me|telegram|whatsapp)/i.test(url)) { toast.error(tr("روابط تطبيقات المراسلة غير مسموحة", "Messaging-app links are not allowed")); return; }
-    if (file) {
-      const err = checkUpload ? null : null;
-      if (err) { toast.error(err); return; }
-    }
     setBusy(true);
     try {
       if (file) await upload.mutateAsync({ file, isFinal: true });
       if (url.trim()) await link.mutateAsync({ link: url.trim(), isFinal: true });
       await send.mutateAsync({ body: `📦 ${tr("تسليم رسمي", "Official delivery")}:\n${note.trim()}`, lang });
       await transition.mutateAsync({ id: orderId, status: "delivered" });
-      fireOrderEmail(orderId, "deliverable_submitted");
       toast.success(tr("تم التسليم الرسمي — بدأت مهلة الفحص للمشتري", "Delivered — the buyer's inspection window has started"));
       onClose();
     } catch (e) {
