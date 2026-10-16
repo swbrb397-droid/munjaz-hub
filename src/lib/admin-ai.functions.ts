@@ -126,3 +126,54 @@ export const aiCoverAuditor = createServerFn({ method: "POST" })
     }
     return { results };
   });
+
+/**
+ * Executive copilot: free-form admin chat grounded on live platform metrics.
+ * Requires an admin role AND a fresh 2FA session (aal2) on every call.
+ */
+export const aiExecutiveChat = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({
+      messages: z.array(z.object({ role: z.enum(["user", "assistant"]), content: z.string().min(1).max(4000) })).min(1).max(30),
+    }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context as unknown as Ctx);
+    const claims = (context as unknown as { claims?: { aal?: string } }).claims;
+    if (claims?.aal !== "aal2") throw new Error("MFA_REQUIRED");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const since = new Date(Date.now() - 7 * 86400000).toISOString();
+    const [users, openOrders, disputes, projects, wd, gov] = await Promise.all([
+      supabaseAdmin.from("profiles").select("id", { count: "exact", head: true }),
+      supabaseAdmin.from("orders").select("id", { count: "exact", head: true }).in("status", ["in_progress", "delivered"]),
+      supabaseAdmin.from("dispute_cases").select("id", { count: "exact", head: true }).in("status", ["open", "ai_reviewed"]),
+      supabaseAdmin.from("projects").select("id", { count: "exact", head: true }).eq("status", "open"),
+      supabaseAdmin.from("withdrawal_requests").select("amount_usdt,status").gte("created_at", since).limit(500),
+      supabaseAdmin.from("governance_settings").select("fee_free_pct,fee_pro_pct,fee_corporate_pct,auto_release_hours,daily_deposit_limit").limit(1).maybeSingle(),
+    ]);
+    const wdRows = wd.data ?? [];
+    const facts = {
+      users: users.count ?? 0,
+      active_orders: openOrders.count ?? 0,
+      open_disputes: disputes.count ?? 0,
+      open_projects: projects.count ?? 0,
+      withdrawals_7d: wdRows.length,
+      withdrawals_7d_usdt: wdRows.reduce((s, r) => s + Number(r.amount_usdt ?? 0), 0).toFixed(2),
+      pending_review_withdrawals: wdRows.filter((r) => r.status === "manual_review" || r.status === "queued").length,
+      governance: gov.data ?? null,
+    };
+    const history = data.messages.map((m) => `${m.role === "user" ? "ADMIN" : "ASSISTANT"}: ${m.content.slice(0, 4000)}`).join("\n\n");
+    const prompt = `You are the executive copilot of "المنجز" (Munjaz Hub), an Arabic-first digital marketplace with USDT escrow, digital products, freelance services and open projects. You advise the platform owner. Answer in the admin's language (Arabic by default), concise, practical, with numbers when relevant. Platform rules: commissions 10% Free / 5% Pro / 2.5% Corporate; subscriptions Pro 10 USDT, Corporate 49 USDT; escrow locks on proposal acceptance; instant digital purchases settle via 24h escrow; 2 revisions per milestone; contact info and profanity are blocked everywhere. You cannot perform actions — only advise. Never reveal secrets or keys.
+
+Live metrics (JSON): ${JSON.stringify(facts)}
+
+Conversation:
+${history}
+
+ASSISTANT:`;
+    const { geminiGenerate } = await import("./gemini-pool.server");
+    const reply = await geminiGenerate("chat", [{ text: prompt }]);
+    if (!reply) throw new Error("AI_UNAVAILABLE");
+    return { reply };
+  });
