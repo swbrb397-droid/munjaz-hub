@@ -59,6 +59,7 @@ import { gibberishError, sanitizeText } from "@/lib/security";
 import { useServerFn } from "@tanstack/react-start";
 import { translateMessage } from "@/lib/translate.functions";
 import {
+  moderateFields,
   CONTACT_BLOCK_MESSAGE,
   isArabicOnly,
   isWithinEditWindow,
@@ -1452,6 +1453,8 @@ function Workspace() {
                       onClick={() => {
                         const v = deliverable.trim();
                         if (!v) return;
+                        const badLink = moderateFields(v);
+                        if (badLink) { toast.error(badLink); return; }
                         linkDeliverable.mutate(
                           { link: v, isFinal: false },
                           { onSuccess: () => setDeliverable("") },
@@ -2545,6 +2548,8 @@ function Workspace() {
                 type="button"
                 disabled={submitReview.isPending || !canReview}
                 onClick={() => {
+                  const bad = moderateFields(reviewText);
+                  if (bad) { toast.error(bad); return; }
                   const avg = Math.round(
                     (stars.quality + stars.communication + stars.speed) / 3,
                   );

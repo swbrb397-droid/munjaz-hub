@@ -25,6 +25,8 @@ export function NameChangeControl({ profile }: { profile: ProfileLike }) {
   const save = useMutation({
     mutationFn: async (value: string) => {
       if (!user) throw new Error("NOT_AUTHENTICATED");
+      const bad = moderateFields(value);
+      if (bad) throw new Error(bad);
       const { error } = await supabase
         .from("profiles")
         .update({ display_name: value, name_changes_count: 1 } as never)

@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { BadgeCheck, Boxes, Code2, GraduationCap, ImagePlus, Loader2, MoreHorizontal, Pencil, PlusCircle, Power, ShieldCheck, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
+import { moderateFields } from "@/lib/chat-moderation";
 import { Card, Section } from "@/components/site/Shell";
 import { useLang } from "@/lib/lang";
 import { useAuth } from "@/hooks/use-auth";
@@ -518,6 +519,8 @@ function CreateListing() {
       return;
     }
     if (create.isPending) return;
+    const bad = moderateFields(form.title_ar, form.title_en, form.description_ar);
+    if (bad) { toast.error(bad); return; }
     create.mutate();
   };
 
