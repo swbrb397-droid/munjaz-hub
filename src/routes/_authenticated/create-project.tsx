@@ -1,12 +1,16 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { Check, Clapperboard, Code2, Loader2, Megaphone, Palette, PenLine, Shapes, ShieldCheck, Sparkles, type LucideIcon } from "lucide-react";
+import { Check, Paperclip, X, Clapperboard, Code2, Loader2, Megaphone, Palette, PenLine, Shapes, ShieldCheck, Sparkles, type LucideIcon } from "lucide-react";
 import { toast } from "sonner";
 import { Card, Section } from "@/components/site/Shell";
 import { useLang } from "@/lib/lang";
-import { PROJECT_CATEGORIES, categoryLabel, projectError, useCreateProject, useMyProjects, usd } from "@/lib/projects";
+import { PROJECT_CATEGORIES, PROJECT_FILES_BUCKET, PROJECT_FILE_MAX_MB, type ProjectAttachment, categoryLabel, projectError, useCreateProject, useMyProjects, usd } from "@/lib/projects";
 import { useAuth } from "@/hooks/use-auth";
 import { sanitizeText } from "@/lib/security";
+import { moderateFields } from "@/lib/chat-moderation";
+import { isDangerousFile } from "@/lib/file-guard";
+import { supabase } from "@/lib/cloud-client";
+import { PRESTIGE_TIERS } from "@/lib/prestige";
 import { ProjectStatusChip as StatusChip } from "@/components/site/ProjectStatusChip";
 
 export const Route = createFileRoute("/_authenticated/create-project")({
@@ -50,6 +54,45 @@ function CreateProject() {
   const create = useCreateProject();
   const mine = useMyProjects(user?.id);
   const [f, setF] = useState({ title: "", description: "", category: "development", min: "", max: "", days: 7 });
+  const [skills, setSkills] = useState<string[]>([]);
+  const [skillDraft, setSkillDraft] = useState("");
+  const [screening, setScreening] = useState("");
+  const [minLevel, setMinLevel] = useState(1);
+  const [files, setFiles] = useState<ProjectAttachment[]>([]);
+  const [uploading, setUploading] = useState(false);
+
+  const addSkill = () => {
+    const v = skillDraft.trim().slice(0, 40);
+    if (!v) return;
+    if (skills.length >= 5) { toast.error(tr("الحد الأقصى 5 مهارات", "Maximum 5 skills")); return; }
+    const bad = moderateFields(v);
+    if (bad) { toast.error(bad); return; }
+    if (!skills.includes(v)) setSkills([...skills, v]);
+    setSkillDraft("");
+  };
+
+  const uploadFile = async (file: File) => {
+    if (!user) return;
+    if (files.length >= 3) { toast.error(tr("الحد الأقصى 3 مرفقات", "Maximum 3 attachments")); return; }
+    if (isDangerousFile(file.name)) { toast.error(tr("نوع الملف غير مسموح", "File type not allowed")); return; }
+    if (file.size > PROJECT_FILE_MAX_MB * 1024 * 1024) { toast.error(tr(`الحجم الأقصى ${PROJECT_FILE_MAX_MB}MB`, `Max size ${PROJECT_FILE_MAX_MB}MB`)); return; }
+    setUploading(true);
+    try {
+      const safe = file.name.replace(/[^\w.\-]+/g, "_").slice(-80);
+      const path = `${user.id}/${Date.now()}-${safe}`;
+      const { error } = await supabase.storage.from(PROJECT_FILES_BUCKET).upload(path, file, { contentType: file.type || "application/octet-stream", upsert: false });
+      if (error) throw error;
+      setFiles((x) => [...x, { path, name: file.name.slice(0, 160), size: file.size, mime: file.type || "application/octet-stream" }]);
+    } catch {
+      toast.error(tr("تعذّر رفع الملف", "Upload failed"));
+    } finally {
+      setUploading(false);
+    }
+  };
+  const removeFile = (path: string) => {
+    setFiles((x) => x.filter((a) => a.path !== path));
+    void supabase.storage.from(PROJECT_FILES_BUCKET).remove([path]);
+  };
 
   const min = Number(f.min), max = Number(f.max);
   const errors = {
@@ -62,9 +105,14 @@ function CreateProject() {
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!valid || create.isPending) return;
+    if (!valid || create.isPending || uploading) return;
+    const bad = moderateFields(f.title, f.description, screening, ...skills);
+    if (bad) { toast.error(bad); return; }
     create.mutate(
-      { title: sanitizeText(f.title, 120), description: sanitizeText(f.description, 4000), category: f.category, min, max, days: f.days },
+      {
+        title: sanitizeText(f.title, 120), description: sanitizeText(f.description, 4000), category: f.category, min, max, days: f.days,
+        skills, screening: sanitizeText(screening, 300), minLevel, attachments: files,
+      },
       {
         onSuccess: (id) => {
           toast.success(tr("تم نشر مشروعك", "Project published"));
@@ -122,6 +170,58 @@ function CreateProject() {
               })}
             </div>
           </div>
+          <div className="grid gap-2 text-sm sm:col-span-2">
+            <span className="text-muted-foreground">{tr("المهارات المطلوبة (حتى 5)", "Required skills (up to 5)")}</span>
+            <div className="flex flex-wrap gap-2">
+              {skills.map((s) => (
+                <span key={s} className="inline-flex items-center gap-1 rounded-full border border-primary/40 bg-primary/10 px-3 py-1 text-xs font-bold text-primary">
+                  {s}
+                  <button type="button" aria-label={tr("حذف", "Remove")} onClick={() => setSkills(skills.filter((x) => x !== s))}><X className="size-3" /></button>
+                </span>
+              ))}
+            </div>
+            {skills.length < 5 && (
+              <input className={field} value={skillDraft} maxLength={40} placeholder={tr("اكتب مهارة ثم Enter", "Type a skill then Enter")}
+                onChange={(e) => setSkillDraft(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter" || e.key === ",") { e.preventDefault(); addSkill(); } }}
+                onBlur={addSkill} />
+            )}
+          </div>
+          <label className="grid gap-1.5 text-sm sm:col-span-2">
+            <span className="text-muted-foreground">{tr("سؤال للمتقدمين (اختياري)", "Screening question (optional)")}</span>
+            <input className={field} maxLength={300} value={screening} onChange={(e) => setScreening(e.target.value)} placeholder={tr("مثال: أرسل وصفاً لمشروع مشابه نفذته", "e.g. Describe a similar project you delivered")} />
+          </label>
+          <div className="grid gap-2 text-sm sm:col-span-2" role="radiogroup" aria-label={tr("الرتبة الدنيا للمستقل", "Minimum freelancer rank")}>
+            <span className="text-muted-foreground">{tr("الرتبة الدنيا للمتقدمين", "Minimum freelancer rank")}</span>
+            <div className="flex flex-wrap gap-2">
+              {PRESTIGE_TIERS.slice(0, 6).map((t) => {
+                const on = minLevel === t.level;
+                return (
+                  <button key={t.level} type="button" role="radio" aria-checked={on} onClick={() => setMinLevel(t.level)}
+                    className={`h-9 rounded-full border px-3 text-xs font-bold transition ${on ? `${t.badge} ring-2 ring-primary` : "border-border bg-surface text-muted-foreground"}`}>
+                    {t.level === 1 ? tr("الجميع", "Everyone") : ar ? t.ar : t.en}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+          <div className="grid gap-2 text-sm sm:col-span-2">
+            <span className="text-muted-foreground">{tr(`مرفقات توضيحية (حتى 3 ملفات، ${PROJECT_FILE_MAX_MB}MB لكل ملف)`, `Attachments (up to 3, ${PROJECT_FILE_MAX_MB}MB each)`)}</span>
+            {files.map((a) => (
+              <span key={a.path} className="flex min-w-0 items-center justify-between gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-xs">
+                <span className="truncate">{a.name}</span>
+                <button type="button" aria-label={tr("حذف", "Remove")} onClick={() => removeFile(a.path)}><X className="size-4 text-muted-foreground" /></button>
+              </span>
+            ))}
+            {files.length < 3 && (
+              <label className="inline-flex h-10 w-fit cursor-pointer items-center gap-2 rounded-lg border border-dashed border-primary/50 px-4 text-xs font-bold text-primary">
+                {uploading ? <Loader2 className="size-4 animate-spin" /> : <Paperclip className="size-4" />}
+                {tr("إرفاق ملف", "Attach a file")}
+                <input type="file" className="hidden" accept=".pdf,.png,.jpg,.jpeg,.webp,.doc,.docx,.xls,.xlsx,.txt,.zip" disabled={uploading}
+                  onChange={(e) => { const file = e.target.files?.[0]; if (file) void uploadFile(file); e.target.value = ""; }} />
+              </label>
+            )}
+          </div>
           <label className="grid gap-1.5 text-sm">
             <span className="text-muted-foreground">{tr("الميزانية من (USDT)", "Budget from (USDT)")}</span>
             <input className={field} type="number" min={3} step="0.01" inputMode="decimal" value={f.min} onChange={(e) => setF({ ...f, min: e.target.value })} placeholder="3" />
@@ -136,7 +236,7 @@ function CreateProject() {
             {tr("يُمنع وضع أرقام هواتف أو بريد أو روابط تواصل خارجية. التسليم يتبع مهلة الفحص المعتادة للضمان قبل تحرير المبلغ.", "No phone numbers, emails or external contact links. Delivery follows the usual escrow inspection window before release.")}
           </p>
           <div className="sm:col-span-2">
-            <button type="submit" disabled={!valid || create.isPending} className="inline-flex h-11 items-center gap-2 rounded-xl bg-primary px-5 text-sm font-bold text-primary-foreground disabled:opacity-50">
+            <button type="submit" disabled={!valid || create.isPending || uploading} className="inline-flex h-11 items-center gap-2 rounded-xl bg-primary px-5 text-sm font-bold text-primary-foreground disabled:opacity-50">
               {create.isPending && <Loader2 className="size-4 animate-spin" />} {tr("نشر المشروع", "Publish project")}
             </button>
           </div>

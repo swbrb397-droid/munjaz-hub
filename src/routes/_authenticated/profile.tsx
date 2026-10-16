@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
+import { moderateFields } from "@/lib/chat-moderation";
 import {
   AlertTriangle,
   Camera,
@@ -463,6 +464,8 @@ function AboutEditor({
         disabled={saving || !userId || (bio === null && skills === null)}
         onClick={async () => {
           if (!userId) return;
+          const bad = moderateFields(curBio, ...curSkills);
+          if (bad) { toast.error(bad); return; }
           setSaving(true);
           const { error } = await supabase
             .from("profiles")

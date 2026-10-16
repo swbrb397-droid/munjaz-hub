@@ -28,6 +28,7 @@ import { toast } from "sonner";
 import { Card, Section } from "@/components/site/Shell";
 import { SecureDownload } from "@/components/site/SecureDownload";
 import { ChatSecurityNotice } from "@/components/site/ChatSecurityNotice";
+import { DeliveryDialog, ReleaseCountdown } from "@/components/site/DeliveryDialog";
 import { downloadElementPdf } from "@/lib/pdf";
 import { logAuditEvent } from "@/lib/audit";
 import { localGet, localSet } from "@/lib/safe-storage";
@@ -59,6 +60,7 @@ import { gibberishError, sanitizeText } from "@/lib/security";
 import { useServerFn } from "@tanstack/react-start";
 import { translateMessage } from "@/lib/translate.functions";
 import {
+  moderateFields,
   CONTACT_BLOCK_MESSAGE,
   isArabicOnly,
   isWithinEditWindow,
@@ -380,6 +382,7 @@ function Workspace() {
   const [disputeMsg, setDisputeMsg] = useState<string | null>(null);
   const [actionMsg, setActionMsg] = useState<string | null>(null);
   const [deliverable, setDeliverable] = useState("");
+  const [deliveryOpen, setDeliveryOpen] = useState(false);
 
   // AI translation: per-message revision drives cache invalidation.
   const [msgRev, setMsgRev] = useState<Record<string, number>>({});
@@ -1452,6 +1455,8 @@ function Workspace() {
                       onClick={() => {
                         const v = deliverable.trim();
                         if (!v) return;
+                        const badLink = /^https?:\/\//i.test(v) && !/(wa\.me|t\.me|telegram|whatsapp)/i.test(v) ? null : moderateFields(v);
+                        if (badLink) { toast.error(badLink); return; }
                         linkDeliverable.mutate(
                           { link: v, isFinal: false },
                           { onSuccess: () => setDeliverable("") },
@@ -2039,6 +2044,10 @@ function Workspace() {
                         releaseEscrow.mutate(order.id);
                         return;
                       }
+                      if (a.key === "delivered") {
+                        setDeliveryOpen(true);
+                        return;
+                      }
                       transition.mutate(
                         { id: order.id, status: a.key },
                         {
@@ -2115,6 +2124,10 @@ function Workspace() {
                     {new Date(order.auto_release_at).toLocaleString()}
                   </p>
                 )}
+                {order?.auto_release_at && order.status === "delivered" && (
+                  <ReleaseCountdown at={order.auto_release_at} hours={order.inspection_window_hours || order.auto_release_hours || 72} isBuyer={isBuyer} />
+                )}
+                {deliveryOpen && order && <DeliveryDialog orderId={order.id} onClose={() => setDeliveryOpen(false)} />}
               </>
             )}
           </Card>
@@ -2545,6 +2558,8 @@ function Workspace() {
                 type="button"
                 disabled={submitReview.isPending || !canReview}
                 onClick={() => {
+                  const bad = moderateFields(reviewText);
+                  if (bad) { toast.error(bad); return; }
                   const avg = Math.round(
                     (stars.quality + stars.communication + stars.speed) / 3,
                   );
