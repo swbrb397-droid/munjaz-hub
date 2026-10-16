@@ -1453,7 +1453,7 @@ function Workspace() {
                       onClick={() => {
                         const v = deliverable.trim();
                         if (!v) return;
-                        const badLink = moderateFields(v);
+                        const badLink = /^https?:\/\//i.test(v) && !/(wa\.me|t\.me|telegram|whatsapp)/i.test(v) ? null : moderateFields(v);
                         if (badLink) { toast.error(badLink); return; }
                         linkDeliverable.mutate(
                           { link: v, isFinal: false },
