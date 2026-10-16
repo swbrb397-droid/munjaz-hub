@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { BadgeCheck, Clock, Loader2, Lock, ShieldCheck, Star, Timer } from "lucide-react";
+import { BadgeCheck, Clock, Paperclip, Wallet as WalletIcon, Loader2, Lock, ShieldCheck, Star, Timer } from "lucide-react";
 import { toast } from "sonner";
 import { Card, Section } from "@/components/site/Shell";
 import { ProjectStatusChip } from "@/components/site/ProjectStatusChip";
@@ -10,9 +10,12 @@ import { useAuth } from "@/hooks/use-auth";
 import { useWallet } from "@/lib/queries";
 import { supabase } from "@/lib/cloud-client";
 import { sanitizeText } from "@/lib/security";
+import { moderateFields } from "@/lib/chat-moderation";
+import { PRESTIGE_TIERS } from "@/lib/prestige";
+import { TopUpDialog } from "@/components/site/TopUpDialog";
 import { PresenceBadge, relativeAgo, usePresence } from "@/lib/presence";
 import {
-  categoryLabel, projectError, usd, useProject, useProjectAction, useProjectProposals, useProposalQuota, useSubmitProposal,
+  PROJECT_FILES_BUCKET, type ProjectAttachment, categoryLabel, projectError, usd, useProject, useProjectAction, useProjectProposals, useProposalQuota, useSubmitProposal,
 } from "@/lib/projects";
 
 export const Route = createFileRoute("/project/$id")({
@@ -76,6 +79,7 @@ function ProjectDetail() {
   const presence = usePresence(ids);
   const action = useProjectAction();
   const wallet = useWallet();
+  const [topUp, setTopUp] = useState<number | null>(null);
 
   const order = useQuery({
     queryKey: ["project-order", p?.order_id],
@@ -110,6 +114,7 @@ function ProjectDetail() {
               <span className="inline-flex items-center gap-1 text-xs text-muted-foreground"><Clock className="size-3.5" /> <bdi>{p.delivery_days}</bdi> {tr("يوم", "days")}</span>
             </div>
             <p className="whitespace-pre-wrap break-words text-sm leading-relaxed">{p.description}</p>
+            <ProjectExtras p={p} isAuthenticated={isAuthenticated} />
             {p.admin_note && isOwner && <p className="mt-3 rounded-lg bg-destructive/10 p-2 text-xs text-destructive">{p.admin_note}</p>}
           </Card>
 
@@ -160,7 +165,19 @@ function ProjectDetail() {
                         <ProposalStatus status={r.status} />
                       </div>
                       <p className="mt-2 whitespace-pre-wrap break-words text-xs leading-relaxed text-muted-foreground">{r.cover_letter}</p>
-                      {p.status === "open" && r.status === "pending" && (
+                      {r.screening_answer && (
+                        <p className="mt-2 rounded-lg border border-border bg-surface p-2 text-xs leading-relaxed">
+                          <span className="font-bold text-primary">{tr("إجابة سؤالك:", "Screening answer:")}</span> <span className="whitespace-pre-wrap break-words">{r.screening_answer}</span>
+                        </p>
+                      )}
+                      {p.status === "open" && r.status === "pending" && available < Number(r.amount_usdt) && (
+                        <button type="button" onClick={() => setTopUp(Number(r.amount_usdt) - available)}
+                          className="mt-3 inline-flex min-h-10 items-center gap-2 rounded-lg border border-primary bg-primary/10 px-4 text-xs font-bold text-primary">
+                          <WalletIcon className="size-4" />
+                          {tr("اشحن محفظتك بـ", "Top up")} <bdi>{usd(Number(r.amount_usdt) - available)}</bdi> USDT {tr("لقبول العرض", "to accept")}
+                        </button>
+                      )}
+                      {p.status === "open" && r.status === "pending" && available >= Number(r.amount_usdt) && (
                         <button
                           type="button"
                           disabled={action.isPending}
@@ -190,7 +207,7 @@ function ProjectDetail() {
               </div>
             </Card>
           ) : (
-            <ProposalBox projectId={p.id} open={p.status === "open"} myProposal={myProposal} isAuthenticated={isAuthenticated} />
+            <ProposalBox projectId={p.id} question={p.screening_question} minLevel={p.min_level} open={p.status === "open"} myProposal={myProposal} isAuthenticated={isAuthenticated} />
           )}
         </div>
 
@@ -209,6 +226,7 @@ function ProjectDetail() {
           </Card>
         </aside>
       </div>
+      {topUp !== null && <TopUpDialog defaultAmount={topUp} onClose={() => { setTopUp(null); void wallet.refetch(); }} />}
     </Section>
   );
 }
@@ -225,8 +243,44 @@ function ProposalStatus({ status }: { status: string }) {
   return <span className={`font-bold ${c}`}>{tr(a, e)}</span>;
 }
 
-function ProposalBox({ projectId, open, myProposal, isAuthenticated }: {
-  projectId: string; open: boolean; isAuthenticated: boolean;
+function ProjectExtras({ p, isAuthenticated }: { p: { skills: string[]; min_level: number; screening_question: string | null; attachments: unknown }; isAuthenticated: boolean }) {
+  const { tr, lang } = useLang();
+  const files = (Array.isArray(p.attachments) ? p.attachments : []) as ProjectAttachment[];
+  const tier = PRESTIGE_TIERS.find((t) => t.level === p.min_level);
+  const open = async (a: ProjectAttachment) => {
+    const { data, error } = await supabase.storage.from(PROJECT_FILES_BUCKET).createSignedUrl(a.path, 300);
+    if (error || !data) { toast.error(tr("تعذّر فتح الملف", "Could not open the file")); return; }
+    window.open(data.signedUrl, "_blank", "noopener");
+  };
+  if (!p.skills.length && !files.length && p.min_level <= 1 && !p.screening_question) return null;
+  return (
+    <div className="mt-4 grid gap-3 border-t border-border pt-3 text-xs">
+      {p.skills.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {p.skills.map((s) => <span key={s} className="rounded-full border border-primary/40 bg-primary/10 px-2.5 py-1 font-bold text-primary">{s}</span>)}
+        </div>
+      )}
+      {tier && p.min_level > 1 && (
+        <p className="flex flex-wrap items-center gap-2 text-muted-foreground">{tr("الرتبة الدنيا للمتقدمين:", "Minimum rank:")} <span className={`rounded-full border px-2 py-0.5 font-bold ${tier.badge}`}>{lang === "ar" ? tier.ar : tier.en}</span></p>
+      )}
+      {p.screening_question && <p className="text-muted-foreground">{tr("سؤال صاحب المشروع:", "Owner's question:")} <span className="font-bold text-foreground">{p.screening_question}</span></p>}
+      {files.length > 0 && (
+        <div className="grid gap-1.5">
+          {files.map((a) => isAuthenticated ? (
+            <button key={a.path} type="button" onClick={() => void open(a)} className="flex min-w-0 items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-start hover:border-primary">
+              <Paperclip className="size-4 shrink-0 text-primary" /><span className="truncate">{a.name}</span>
+            </button>
+          ) : (
+            <span key={a.path} className="flex items-center gap-2 text-muted-foreground"><Paperclip className="size-4" /> {tr("سجّل الدخول لعرض المرفقات", "Sign in to view attachments")}</span>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ProposalBox({ projectId, open, myProposal, isAuthenticated, question, minLevel }: {
+  projectId: string; open: boolean; isAuthenticated: boolean; question: string | null; minLevel: number;
   myProposal: { id: string; amount_usdt: number; delivery_days: number; cover_letter: string; status: string } | undefined;
 }) {
   const { tr, lang } = useLang();
@@ -237,6 +291,17 @@ function ProposalBox({ projectId, open, myProposal, isAuthenticated }: {
   const [amount, setAmount] = useState("");
   const [days, setDays] = useState(7);
   const [cover, setCover] = useState("");
+  const [answer, setAnswer] = useState("");
+  const { user } = useAuth();
+  const myLevel = useQuery({
+    queryKey: ["freelancer-level", user?.id],
+    enabled: !!user && minLevel > 1,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("freelancer_level", { _uid: user!.id });
+      if (error) throw error;
+      return Number(data ?? 1);
+    },
+  });
   const field = "w-full rounded-lg border border-input bg-surface px-3 py-2 text-sm outline-none focus:border-primary";
 
   if (!isAuthenticated) {
@@ -267,7 +332,11 @@ function ProposalBox({ projectId, open, myProposal, isAuthenticated }: {
   if (!open) return <Card className="text-sm text-muted-foreground">{tr("هذا المشروع لم يعد يستقبل عروضاً.", "This project no longer accepts proposals.")}</Card>;
 
   const amt = Number(amount);
-  const valid = amt >= 3 && cover.trim().length >= 30;
+  const valid = amt >= 3 && cover.trim().length >= 30 && (!question || answer.trim().length >= 5);
+  if (minLevel > 1 && myLevel.data !== undefined && myLevel.data < minLevel) {
+    const t = PRESTIGE_TIERS.find((x) => x.level === minLevel);
+    return <Card className="text-sm text-muted-foreground">{tr(`هذا المشروع متاح لرتبة «${t?.ar ?? ""}» فما فوق. أكمل المزيد من الطلبات لترتقي.`, `This project is open to «${t?.en ?? ""}» rank and above. Complete more orders to rank up.`)}</Card>;
+  }
   const q = quota.data;
   return (
     <Card>
@@ -280,7 +349,9 @@ function ProposalBox({ projectId, open, myProposal, isAuthenticated }: {
         onSubmit={(e) => {
           e.preventDefault();
           if (!valid || submit.isPending) return;
-          submit.mutate({ projectId, amount: amt, days, cover: sanitizeText(cover, 2500) }, {
+          const bad = moderateFields(cover, answer);
+          if (bad) { toast.error(bad); return; }
+          submit.mutate({ projectId, amount: amt, days, cover: sanitizeText(cover, 2500), answer: sanitizeText(answer, 1000) }, {
             onSuccess: () => toast.success(tr("تم إرسال عرضك", "Proposal sent")),
             onError: (err) => toast.error(projectError(err, ar)),
           });
@@ -299,6 +370,12 @@ function ProposalBox({ projectId, open, myProposal, isAuthenticated }: {
           <textarea className={`${field} min-h-28 resize-y`} maxLength={2500} value={cover} onChange={(e) => setCover(e.target.value)} />
           <span className="text-[11px] text-muted-foreground"><bdi>{cover.trim().length}</bdi> / 2500 · {tr("30 حرفاً على الأقل · بدون وسائل تواصل خارجية", "30 characters min · no external contact details")}</span>
         </label>
+        {question && (
+          <label className="grid gap-1.5 text-sm sm:col-span-2">
+            <span className="font-bold">{question}</span>
+            <textarea className={`${field} min-h-20 resize-y`} maxLength={1000} value={answer} onChange={(e) => setAnswer(e.target.value)} />
+          </label>
+        )}
         <div className="sm:col-span-2">
           <button type="submit" disabled={!valid || submit.isPending || (!!q && q.used >= q.cap)} className="inline-flex h-11 items-center gap-2 rounded-xl bg-primary px-5 text-sm font-bold text-primary-foreground disabled:opacity-50">
             {submit.isPending && <Loader2 className="size-4 animate-spin" />} {tr("إرسال العرض", "Send proposal")}
