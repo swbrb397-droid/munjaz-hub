@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { moderateFields } from "@/lib/chat-moderation";
 import { toast } from "sonner";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Lock, Pencil, X } from "lucide-react";
