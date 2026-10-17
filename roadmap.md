@@ -8,3 +8,5 @@
 - [x] Freelancers directory, levels page, earnings calculator, mobile bottom bar
 - [x] Live presence badge + privacy toggle; admin projects page + activity columns
 - [ ] Signed-in end-to-end test of posting/bidding/accepting (needs two signed-in accounts)
+- [x] Smart top-up on accept, universal text filter, project extras, official delivery + countdown, admin copilot with 2FA, unused files removed
+- [ ] Signed-in test of the new project/delivery/copilot flows (needs signed-in accounts)
