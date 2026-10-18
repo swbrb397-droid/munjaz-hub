@@ -19,10 +19,10 @@ export const Route = createFileRoute("/levels")({
   component: Levels,
 });
 
+// Corporate rate stays unpublished until the B2B launch.
 const PLANS = [
   { ar: "المجانية", en: "Free", pct: 10 },
   { ar: "Pro", en: "Pro", pct: 5 },
-  { ar: "الشركات", en: "Corporate", pct: 2.5 },
 ];
 
 function Levels() {
@@ -64,7 +64,7 @@ function Levels() {
           <span className="text-muted-foreground">{tr("مبيعاتك الشهرية (USDT)", "Your monthly sales (USDT)")}</span>
           <input type="number" min={0} step="0.01" inputMode="decimal" value={monthly} onChange={(e) => setMonthly(e.target.value)} className="rounded-lg border border-input bg-surface px-3 py-2 text-sm outline-none focus:border-primary" />
         </label>
-        <div className="mt-4 grid gap-2 sm:grid-cols-3">
+        <div className="mt-4 grid gap-2 sm:grid-cols-2">
           {PLANS.map((p) => {
             const net = gross * (1 - p.pct / 100);
             return (

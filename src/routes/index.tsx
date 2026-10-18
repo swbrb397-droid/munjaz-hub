@@ -10,6 +10,7 @@ import { VerifiedBadge } from "@/components/site/VerifiedBadge";
 import { ShareListing } from "@/components/site/ShareListing";
 import { CoverImage } from "@/components/site/CoverImage";
 import { countryName, flagEmoji } from "@/lib/countries";
+import { WhyMunjaz } from "@/components/site/WhyMunjaz";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -39,6 +40,7 @@ function Landing() {
     <>
       <Hero />
       <Ticker />
+      <WhyMunjaz />
       <Section level={2} title={tr("خدمات مميزة", "Featured services")} subtitle={tr("بضمان الوساطة ومراحل تسليم موثقة", "With escrow protection and verified delivery milestones")} action={<Link to="/store" className="text-sm text-primary">{tr("تصفح الكل ←", "Browse all ←")}</Link>}>
         {featured.length > 0 ? (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
