@@ -16,11 +16,12 @@ export const EXECUTABLE_REJECTION =
 
 export type UploadTier = "free" | "pro" | "corporate";
 
-/** Single-file size ceiling per subscription tier, in megabytes. */
-export function tierFileLimitMb(tier: string | null | undefined): number {
-  if (tier === "corporate") return 2048;
-  if (tier === "pro") return 500;
-  return 50;
+/** One upload ceiling for every account; larger work is delivered via a cloud link. */
+export const UPLOAD_LIMIT_MB = 50;
+
+/** Kept for existing callers; the limit no longer depends on the plan. */
+export function tierFileLimitMb(_tier?: string | null): number {
+  return UPLOAD_LIMIT_MB;
 }
 
 export function fileExtension(name: string): string {
@@ -36,11 +37,10 @@ export function isDangerousFile(name: string): boolean {
  * Validates a single upload candidate.
  * Returns an Arabic error message, or null when the file is accepted.
  */
-export function checkUpload(file: File, tier: string | null | undefined): string | null {
+export function checkUpload(file: File, _tier?: string | null): string | null {
   if (isDangerousFile(file.name)) return EXECUTABLE_REJECTION;
-  const limit = tierFileLimitMb(tier);
-  if (file.size > limit * 1024 * 1024) {
-    return `حجم الملف يتجاوز الحد المسموح لباقاتك (${limit}MB) — قم بترقية حسابك لرفع أحجام أكبر`;
+  if (file.size > UPLOAD_LIMIT_MB * 1024 * 1024) {
+    return `حجم الملف يتجاوز ${UPLOAD_LIMIT_MB}MB — للملفات الأكبر أرسل رابطاً سحابياً (Google Drive / Dropbox) بدلاً من الرفع المباشر`;
   }
   return null;
 }

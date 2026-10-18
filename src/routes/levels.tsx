@@ -19,10 +19,10 @@ export const Route = createFileRoute("/levels")({
   component: Levels,
 });
 
+// Corporate rate stays unpublished until the B2B launch.
 const PLANS = [
   { ar: "المجانية", en: "Free", pct: 10 },
   { ar: "Pro", en: "Pro", pct: 5 },
-  { ar: "الشركات", en: "Corporate", pct: 2.5 },
 ];
 
 function Levels() {

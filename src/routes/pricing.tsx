@@ -47,7 +47,6 @@ const TIERS: Array<{
     features: [
       ["عمولة المنصة: 10% قياسية", "Platform commission: standard 10%"],
       ["حجز أمان الضمان (Escrow) لمدة 48 ساعة", "Escrow hold period: 48 hours"],
-      ["حد رفع الملفات 50MB", "File upload limit: 50MB"],
       ["رابط إحالة مالي قياسي لمدة 12 شهراً", "Standard referral link valid for 12 months"],
       [
         "أولوية متساوية في محرك البحث تعتمد على الكفاءة",
@@ -67,7 +66,6 @@ const TIERS: Array<{
         "تقليص حجز الضمان إلى 24 ساعة (مع توثيق KYC)",
         "Escrow hold reduced to 24 hours (with verified KYC)",
       ],
-      ["رفع ملفات حتى 500MB", "File uploads up to 500MB"],
       [
         "شارة «بائع Pro موثق» (دون التأثير على خوارزمية جدارة البحث)",
         "“Verified Pro Seller” badge (search ranking stays merit-based)",
@@ -81,15 +79,11 @@ const TIERS: Array<{
     price: 49,
     premium: true,
     cta: ["حجز مقعد الشركات", "Reserve a corporate seat"],
+    // Hidden from the page; commission is never published here.
     features: [
-      ["عمولة المنصة: 2.5% أدنى عمولة في المنصة", "Platform commission: lowest at 2.5%"],
       [
         "تسريع دورة الضمان إلى 12–16 ساعة (بموافقة المشتري)",
         "Escrow hold accelerated to 12–16 hours (with buyer approval)",
-      ],
-      [
-        "رفع مشاريع وسائط حتى 2GB عبر التخزين السحابي المباشر",
-        "Media projects up to 2GB via direct cloud storage",
       ],
       ["شارة «حساب شركات معتمد»", "“Certified Corporate Account” badge"],
       [
@@ -261,7 +255,6 @@ function PricingPage() {
                 </thead>
                 <tbody>
                   {[
-                    ["حد التخزين والرفع", "50MB", "500MB"],
                     ["عمولة المنصة", "10% قياسية", "5% مخفضة"],
                     ["مدة حجز الضمان", "48 ساعة", "24 ساعة (مع KYC)"],
                     ["أدوات فرق العمل", "—", "—"],
