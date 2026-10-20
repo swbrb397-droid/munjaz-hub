@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { ArrowLeft, BadgeCheck, GraduationCap, ShieldCheck, Sparkle, Star, Zap } from "lucide-react";
+import { ArrowLeft, BadgeCheck, GraduationCap, ShieldCheck, Star, Zap } from "lucide-react";
 import { Card, Section } from "@/components/site/Shell";
 import { NETWORK_STRIP } from "@/lib/network-strip";
 import { useListings } from "@/lib/catalog";
@@ -68,23 +68,22 @@ function Hero() {
   const { tr } = useLang();
   return (
     <div className="relative overflow-hidden border-b border-border">
-      <div className="pointer-events-none absolute inset-0 grid-lines opacity-40" />
       <div className="relative mx-auto grid max-w-7xl items-center gap-8 px-4 py-12 sm:py-16 lg:grid-cols-[1.1fr_.9fr] lg:gap-10 lg:py-20">
         <div>
           <span className="inline-flex max-w-full items-center gap-2 rounded-full border border-primary/40 bg-primary/10 px-3 py-1 text-[11px] font-semibold text-primary sm:text-xs">
-            <Sparkle className="size-3.5" /> {tr("ضمان ذكي + تسوية نزاعات بالذكاء الاصطناعي", "Smart escrow + AI dispute resolution")}
+            <ShieldCheck className="size-3.5" /> {tr("أموالك محجوزة بأمان حتى تستلم عملك", "Your money is held safely until you receive your work")}
           </span>
           <h1 className="mt-5 text-3xl leading-tight font-black sm:text-5xl lg:text-6xl">
-            {tr("سوق رقمي كامل يعمل بـ", "A full digital marketplace powered by")} <span className="neon-text">USDT</span>
+            {tr("سوق عربي موثوق للعمل الحر والمنتجات الرقمية", "A trusted Arabic marketplace for freelance work and digital products")}
           </h1>
           <p className="mt-4 max-w-xl text-base text-muted-foreground sm:text-lg">
             {tr(
-              "خدمات مستقلين، منتجات رقمية فورية، دورات تدريبية — بمحفظة داخلية بدون رسوم غاز، وسحوبات فورية للحسابات الموثقة.",
+              "خدمات مستقلين ومنتجات رقمية ودورات، تدفع وتسحب بـ USDT، ولا يصل المبلغ للبائع إلا بعد استلامك ورضاك.",
               "Freelance services, instant digital products, and courses — with a gas-free internal wallet and instant withdrawals for verified accounts.",
             )}
           </p>
           <div className="mt-7 grid grid-cols-2 gap-3 sm:flex sm:flex-wrap">
-            <Link to="/store" className="inline-flex min-w-0 items-center justify-center gap-2 rounded-lg bg-primary px-4 py-3 text-sm font-bold text-primary-foreground glow sm:px-5 sm:text-base">
+            <Link to="/store" className="inline-flex min-w-0 items-center justify-center gap-2 rounded-lg bg-primary px-4 py-3 text-sm font-bold text-primary-foreground sm:px-5 sm:text-base">
               {tr("ابدأ التصفح", "Start browsing")} <ArrowLeft className="size-4" />
             </Link>
             <Link to="/dashboard" className="min-w-0 rounded-lg border border-border px-4 py-3 text-center text-sm font-semibold text-foreground hover:bg-secondary sm:px-5 sm:text-base">
@@ -96,12 +95,12 @@ function Hero() {
         </div>
 
         <div className="grid gap-4">
-          <Card className="glow">
+          <Card>
             <div className="flex items-center gap-3">
               <ShieldCheck className="size-5 text-primary" />
               <div>
                 <p className="font-bold">{tr("ضمان المراحل (Escrow)", "Milestone escrow")}</p>
-                <p className="text-sm text-muted-foreground">{tr("تُجمَّد الأموال حتى اعتماد التسليم أو حكم الوكيل الذكي.", "Funds are held until delivery is approved or the AI agent rules.")}</p>
+                <p className="text-sm text-muted-foreground">{tr("تُحجز الأموال حتى تعتمد التسليم، وعند الخلاف يحكم فريق تحكيم محايد.", "Funds are held until delivery is approved or the AI agent rules.")}</p>
               </div>
             </div>
           </Card>
@@ -218,15 +217,14 @@ export function ServiceCard({
           {audited && (
             <span
               className="absolute top-2 end-2 inline-flex items-center gap-1 rounded-full border border-primary/60 bg-background/70 px-2 py-0.5 text-[10px] font-bold text-primary backdrop-blur"
-              style={{ boxShadow: "0 0 12px oklch(0.76 0.17 165 / 0.55)" }}
-            >
+                          >
               <ShieldCheck className="size-3" /> {tr("كود مدقق أمنياً", "Security Audited")}
             </span>
           )}
         </div>
         {instant && (
-          <span className="mb-2 inline-flex w-fit items-center gap-1 rounded-full bg-accent px-2.5 py-1 text-[10px] font-black text-accent-foreground">
-            <Zap className="size-3" /> ⚡ تسليم وتحميل فوري بعد الدفع
+          <span className="mb-2 inline-flex w-fit items-center gap-1 rounded-full border border-border px-2.5 py-1 text-[10px] font-bold text-muted-foreground">
+            <Zap className="size-3" /> {tr("تحميل فوري بعد الدفع", "Instant download after payment")}
           </span>
         )}
         <h3 className="mt-1 font-bold leading-snug">{title}</h3>
@@ -263,7 +261,7 @@ function SellerCountry({ code }: { code: string | null }) {
         onBlur={() => setOpen(false)}
         className="inline-flex min-h-7 items-center gap-1 rounded-full border border-border bg-secondary/60 px-2 text-xs hover:border-primary/60"
       >
-        <span aria-hidden>{code ? flagEmoji(code) : "🌐"}</span>
+        <span aria-hidden>{code ? flagEmoji(code) : ""}</span>
         {name && <span className="max-w-24 truncate text-[11px] font-bold text-foreground">{name}</span>}
       </button>
       {open && (
@@ -303,8 +301,8 @@ export function NftCard({ name, collection, price, hue }: { name: string; collec
           style={{ background: `linear-gradient(120deg, transparent 40%, oklch(0.95 0.05 ${hue} / 0.18) 50%, transparent 60%)` }}
         />
       </div>
-      <span className="mt-3 inline-flex w-fit items-center gap-1 rounded-full bg-accent px-2.5 py-1 text-[10px] font-black text-accent-foreground">
-        <Zap className="size-3" /> ⚡ تسليم وتحميل فوري بعد الدفع
+      <span className="mt-3 inline-flex w-fit items-center gap-1 rounded-full border border-border px-2.5 py-1 text-[10px] font-bold text-muted-foreground">
+        <Zap className="size-3" /> تحميل فوري بعد الدفع
       </span>
       <div className="mt-3 flex items-end justify-between gap-2">
         <div className="min-w-0">

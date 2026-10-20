@@ -583,7 +583,7 @@ function WalletPage() {
                       <span className="text-xs font-black">{g.label}</span>
                       {g.tone === "best" && (
                         <span className="rounded-full bg-primary px-1.5 py-0.5 text-[9px] font-black text-primary-foreground">
-                          {tr("موصى بها · رسوم فائقة الانخفاض ⚡", "Recommended · ultra-low ⚡")}
+                          {tr("موصى بها · رسوم منخفضة جداً", "Recommended · ultra-low fees")}
                         </span>
                       )}
                       {g.tone === "high" && (

@@ -159,7 +159,7 @@ export function TopUpDialog({ onClose, defaultAmount }: { onClose: () => void; d
                     <span>{n.label}</span>
                     {n.best && (
                       <span className="mt-0.5 block text-[9px] font-black opacity-80">
-                        {tr("موصى بها · رسوم فائقة الانخفاض ⚡", "Recommended · ultra-low ⚡")}
+                        {tr("موصى بها · رسوم منخفضة جداً", "Recommended · ultra-low fees")}
                       </span>
                     )}
                   </button>

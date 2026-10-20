@@ -36,7 +36,7 @@ const CHAPTERS: ReadonlyArray<Chapter> = [
   },
   {
     icon: Zap,
-    badge: ["⚡ تمكين الصانع", "⚡ Maker Empowerment"],
+    badge: ["تمكين الصانع", "Maker Empowerment"],
     title: ["سيادة الصانع: الآلة تُطيع وأنت تأمر", "Maker Sovereignty: The Machine Obeys While You Command"],
     quote: [
       "الميدان لمن يقود طوفان الخوارزميات لا من يغرق فيه؛ الذكاء الاصطناعي أداة تنفيذية، وأنت سيّد الفكرة والقرار.",
@@ -76,7 +76,7 @@ const CHAPTERS: ReadonlyArray<Chapter> = [
   },
   {
     icon: Globe,
-    badge: ["🌐 الاستقلال المالي", "🌐 Financial Independence"],
+    badge: ["الاستقلال المالي", "Financial Independence"],
     title: ["السيادة الخالصة: لا وصي على دخلك سواك", "Absolute Sovereignty: No Guardian Over Your Income But You"],
     quote: [
       "أرض عمل بلا حواجز جغرافية ولا قيود مصرفية تبتز أتعابك؛ محفظتك ملكك الخالص.",
