@@ -302,7 +302,7 @@ export function NftCard({ name, collection, price, hue }: { name: string; collec
         />
       </div>
       <span className="mt-3 inline-flex w-fit items-center gap-1 rounded-full border border-border px-2.5 py-1 text-[10px] font-bold text-muted-foreground">
-        <Zap className="size-3" /> {tr("تحميل فوري بعد الدفع", "Instant download after payment")}
+        <Zap className="size-3" /> تحميل فوري بعد الدفع
       </span>
       <div className="mt-3 flex items-end justify-between gap-2">
         <div className="min-w-0">
