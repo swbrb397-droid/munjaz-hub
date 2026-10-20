@@ -70,10 +70,9 @@
   --border: oklch(0.3 0.03 280);
   --input: oklch(0.28 0.03 280);
   --ring: oklch(0.76 0.17 165);
-  --glow-primary: 0 0 0 1px color-mix(in oklab, var(--primary) 35%, transparent),
-    0 0 32px -6px color-mix(in oklab, var(--primary) 55%, transparent);
-  --glow-accent: 0 0 32px -8px color-mix(in oklab, var(--accent) 65%, transparent);
-  --gradient-neon: linear-gradient(120deg, var(--primary), var(--accent) 55%, var(--violet));
+  --glow-primary: 0 1px 2px color-mix(in oklab, var(--background) 60%, transparent);
+  --glow-accent: 0 1px 2px color-mix(in oklab, var(--background) 60%, transparent);
+  --gradient-neon: var(--primary);
 }
 
 @layer base {
@@ -85,10 +84,6 @@
     background-color: var(--color-background);
     color: var(--color-foreground);
     font-family: var(--font-sans);
-    background-image:
-      radial-gradient(60rem 40rem at 85% -10%, color-mix(in oklab, var(--violet) 18%, transparent), transparent),
-      radial-gradient(50rem 34rem at 5% 0%, color-mix(in oklab, var(--primary) 14%, transparent), transparent);
-    background-attachment: fixed;
     min-width: 320px;
   }
 
@@ -155,28 +150,25 @@
   }
 }
 
+/* Calm brand: single solid accent color, no gradients on text. */
 @utility neon-text {
-  background-image: var(--gradient-neon);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  color: var(--primary);
 }
 
 @utility glass {
-  background: color-mix(in oklab, var(--surface) 75%, transparent);
-  backdrop-filter: blur(14px);
-  border: 1px solid color-mix(in oklab, var(--border) 90%, transparent);
+  background: color-mix(in oklab, var(--background) 92%, transparent);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--border);
 }
 
+/* Calm brand: subtle shadow instead of neon halo. */
 @utility glow {
   box-shadow: var(--glow-primary);
 }
 
+/* Calm brand: decorative grid removed. */
 @utility grid-lines {
-  background-image:
-    linear-gradient(color-mix(in oklab, var(--border) 60%, transparent) 1px, transparent 1px),
-    linear-gradient(90deg, color-mix(in oklab, var(--border) 60%, transparent) 1px, transparent 1px);
-  background-size: 46px 46px;
+  background-image: none;
 }
 
 /* Sovereign fintech selection chip: hairline border, ambient hover glow. */

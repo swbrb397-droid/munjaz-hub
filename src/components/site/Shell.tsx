@@ -293,9 +293,12 @@ export function Shell({ children }: { children: ReactNode }) {
       <header className="sticky top-0 z-50 glass">
         <div className="mx-auto flex h-16 max-w-7xl items-center gap-2 px-3 sm:gap-4 sm:px-4 lg:gap-6 xl:gap-8">
           <Link to="/" className="flex min-w-0 shrink items-center gap-1.5 sm:gap-2 lg:shrink-0" aria-label={t("brand")}>
-            <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-primary/15 text-sm font-bold text-primary glow sm:size-9 sm:text-base">م</span>
-            <span className="whitespace-nowrap text-sm font-extrabold leading-none neon-text sm:text-base lg:text-lg">
-              المنجز
+            <svg viewBox="0 0 32 32" className="size-8 shrink-0 text-primary sm:size-9" aria-hidden="true">
+              <path d="M16 2.5 28 7v8.5c0 7-5 12.2-12 14-7-1.8-12-7-12-14V7z" fill="currentColor" />
+              <path d="m10.5 16.2 3.8 3.8 7.4-7.6" fill="none" stroke="var(--primary-foreground)" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            <span className="whitespace-nowrap py-1 text-base font-bold leading-normal text-foreground lg:text-lg">
+              المُنجِز
             </span>
 
           </Link>
