@@ -167,6 +167,62 @@ export type Database = {
         }
         Relationships: []
       }
+      direct_contracts: {
+        Row: {
+          amount_usdt: number
+          buyer_id: string | null
+          created_at: string
+          delivery_days: number
+          description: string
+          expires_at: string
+          id: string
+          order_id: string | null
+          seller_id: string
+          status: string
+          title: string
+          token: string
+          updated_at: string
+        }
+        Insert: {
+          amount_usdt: number
+          buyer_id?: string | null
+          created_at?: string
+          delivery_days: number
+          description: string
+          expires_at?: string
+          id?: string
+          order_id?: string | null
+          seller_id: string
+          status?: string
+          title: string
+          token?: string
+          updated_at?: string
+        }
+        Update: {
+          amount_usdt?: number
+          buyer_id?: string | null
+          created_at?: string
+          delivery_days?: number
+          description?: string
+          expires_at?: string
+          id?: string
+          order_id?: string | null
+          seller_id?: string
+          status?: string
+          title?: string
+          token?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "direct_contracts_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       dispute_cases: {
         Row: {
           admin_ruling: string | null
@@ -1620,6 +1676,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      accept_direct_contract: { Args: { _token: string }; Returns: string }
       accept_project_proposal: {
         Args: { _proposal_id: string }
         Returns: string
@@ -1790,6 +1847,7 @@ export type Database = {
       }
       auto_release_escrow: { Args: never; Returns: number }
       buyer_instant_cancel: { Args: { p_order_id: string }; Returns: undefined }
+      cancel_direct_contract: { Args: { _token: string }; Returns: undefined }
       check_rate_limit: {
         Args: { _action: string; _max: number; _window: string }
         Returns: number
@@ -1853,6 +1911,15 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      create_direct_contract: {
+        Args: {
+          _amount: number
+          _days: number
+          _description: string
+          _title: string
+        }
+        Returns: string
+      }
       create_project: {
         Args: {
           _budget_max: number
@@ -1883,6 +1950,22 @@ export type Database = {
       financial_halt_active: { Args: never; Returns: boolean }
       freelancer_level: { Args: { _uid: string }; Returns: number }
       get_admin_dashboard_metrics: { Args: never; Returns: Json }
+      get_direct_contract: {
+        Args: { _token: string }
+        Returns: {
+          amount_usdt: number
+          delivery_days: number
+          description: string
+          expires_at: string
+          is_seller: boolean
+          order_id: string
+          seller_id: string
+          seller_name: string
+          seller_verified: boolean
+          status: string
+          title: string
+        }[]
+      }
       get_freelancers_directory: {
         Args: { _limit?: number }
         Returns: {
