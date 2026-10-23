@@ -3,7 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import {
   Bell, Globe, LogIn, LogOut, Menu, Repeat2, Wallet2, X,
   Home, Store, Trophy, PlusCircle, LayoutDashboard, ClipboardList, Briefcase, Users, UserCog, CreditCard, ShieldCheck,
-  Gavel, BadgeCheck, Settings2, ScrollText, FolderKanban, Medal,
+  Gavel, BadgeCheck, Settings2, ScrollText, FolderKanban, Medal, Handshake,
   type LucideIcon,
   Bot,
 } from "lucide-react";
@@ -43,6 +43,7 @@ const navGroups: ReadonlyArray<NavGroup> = [
       { to: "/wallet", key: "wallet", icon: Wallet2 },
       { to: "/orders", key: "orders", icon: ClipboardList },
       { to: "/workspace", key: "workspace", icon: Briefcase },
+      { to: "/contracts", key: "contracts", icon: Handshake },
       { to: "/referrals", key: "referrals", icon: Users },
     ],
   },

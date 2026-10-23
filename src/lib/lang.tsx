@@ -20,6 +20,7 @@ const dict = {
     pricing: "الباقات",
     kyc: "التوثيق",
     orders: "الطلبات",
+    contracts: "الصفقات المباشرة",
     profile: "الملف والتوثيق",
     brand: "المنجز",
 
@@ -47,6 +48,7 @@ const dict = {
     pricing: "Plans",
     kyc: "Verification",
     orders: "Orders",
+    contracts: "Direct contracts",
     profile: "Profile & KYC",
     brand: "المُنجِز",
 
