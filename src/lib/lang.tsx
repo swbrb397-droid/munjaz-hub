@@ -48,13 +48,13 @@ const dict = {
     kyc: "Verification",
     orders: "Orders",
     profile: "Profile & KYC",
-    brand: "Al-Munjaz",
+    brand: "المُنجِز",
 
     notifications: "Notifications",
     menu: "Menu",
     verified: "Verified",
     terms: "Terms of Service",
-    footer: "All rights reserved © Al Munjiz Hub",
+    footer: "All rights reserved © المُنجِز",
     footerSub: "TRC-20 · BEP-20 · Polygon",
   },
 } as const;
