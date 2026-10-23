@@ -25,6 +25,7 @@ import { Route as StoreRouteImport } from './routes/store'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as VerifyRouteImport } from './routes/verify'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
+import { Route as AuthenticatedContractsRouteImport } from './routes/_authenticated/contracts'
 import { Route as AuthenticatedCreateListingRouteImport } from './routes/_authenticated/create-listing'
 import { Route as AuthenticatedCreateProjectRouteImport } from './routes/_authenticated/create-project'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
@@ -33,6 +34,7 @@ import { Route as AuthenticatedOrdersRouteImport } from './routes/_authenticated
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
 import { Route as AuthenticatedWalletRouteImport } from './routes/_authenticated/wallet'
 import { Route as AuthenticatedWorkspaceRouteImport } from './routes/_authenticated/workspace'
+import { Route as CTokenRouteImport } from './routes/c.$token'
 import { Route as ListingIdRouteImport } from './routes/listing.$id'
 import { Route as ProjectIdRouteImport } from './routes/project.$id'
 import { Route as UserUsernameRouteImport } from './routes/user.$username'
@@ -127,6 +129,11 @@ const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedContractsRoute = AuthenticatedContractsRouteImport.update({
+  id: '/contracts',
+  path: '/contracts',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedCreateListingRoute =
   AuthenticatedCreateListingRouteImport.update({
     id: '/create-listing',
@@ -168,6 +175,11 @@ const AuthenticatedWorkspaceRoute = AuthenticatedWorkspaceRouteImport.update({
   id: '/workspace',
   path: '/workspace',
   getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const CTokenRoute = CTokenRouteImport.update({
+  id: '/c/$token',
+  path: '/c/$token',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ListingIdRoute = ListingIdRouteImport.update({
   id: '/listing/$id',
@@ -262,6 +274,7 @@ export interface FileRoutesByFullPath {
   '/terms': typeof TermsRoute
   '/verify': typeof VerifyRoute
   '/admin': typeof AuthenticatedAdminRouteWithChildren
+  '/contracts': typeof AuthenticatedContractsRoute
   '/create-listing': typeof AuthenticatedCreateListingRoute
   '/create-project': typeof AuthenticatedCreateProjectRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
@@ -270,6 +283,7 @@ export interface FileRoutesByFullPath {
   '/profile': typeof AuthenticatedProfileRoute
   '/wallet': typeof AuthenticatedWalletRoute
   '/workspace': typeof AuthenticatedWorkspaceRoute
+  '/c/$token': typeof CTokenRoute
   '/listing/$id': typeof ListingIdRoute
   '/project/$id': typeof ProjectIdRoute
   '/user/$username': typeof UserUsernameRoute
@@ -300,6 +314,7 @@ export interface FileRoutesByTo {
   '/store': typeof StoreRoute
   '/terms': typeof TermsRoute
   '/verify': typeof VerifyRoute
+  '/contracts': typeof AuthenticatedContractsRoute
   '/create-listing': typeof AuthenticatedCreateListingRoute
   '/create-project': typeof AuthenticatedCreateProjectRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
@@ -308,6 +323,7 @@ export interface FileRoutesByTo {
   '/profile': typeof AuthenticatedProfileRoute
   '/wallet': typeof AuthenticatedWalletRoute
   '/workspace': typeof AuthenticatedWorkspaceRoute
+  '/c/$token': typeof CTokenRoute
   '/listing/$id': typeof ListingIdRoute
   '/project/$id': typeof ProjectIdRoute
   '/user/$username': typeof UserUsernameRoute
@@ -341,6 +357,7 @@ export interface FileRoutesById {
   '/terms': typeof TermsRoute
   '/verify': typeof VerifyRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
+  '/_authenticated/contracts': typeof AuthenticatedContractsRoute
   '/_authenticated/create-listing': typeof AuthenticatedCreateListingRoute
   '/_authenticated/create-project': typeof AuthenticatedCreateProjectRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
@@ -349,6 +366,7 @@ export interface FileRoutesById {
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
   '/_authenticated/wallet': typeof AuthenticatedWalletRoute
   '/_authenticated/workspace': typeof AuthenticatedWorkspaceRoute
+  '/c/$token': typeof CTokenRoute
   '/listing/$id': typeof ListingIdRoute
   '/project/$id': typeof ProjectIdRoute
   '/user/$username': typeof UserUsernameRoute
@@ -382,6 +400,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/verify'
     | '/admin'
+    | '/contracts'
     | '/create-listing'
     | '/create-project'
     | '/dashboard'
@@ -390,6 +409,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/wallet'
     | '/workspace'
+    | '/c/$token'
     | '/listing/$id'
     | '/project/$id'
     | '/user/$username'
@@ -420,6 +440,7 @@ export interface FileRouteTypes {
     | '/store'
     | '/terms'
     | '/verify'
+    | '/contracts'
     | '/create-listing'
     | '/create-project'
     | '/dashboard'
@@ -428,6 +449,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/wallet'
     | '/workspace'
+    | '/c/$token'
     | '/listing/$id'
     | '/project/$id'
     | '/user/$username'
@@ -460,6 +482,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/verify'
     | '/_authenticated/admin'
+    | '/_authenticated/contracts'
     | '/_authenticated/create-listing'
     | '/_authenticated/create-project'
     | '/_authenticated/dashboard'
@@ -468,6 +491,7 @@ export interface FileRouteTypes {
     | '/_authenticated/profile'
     | '/_authenticated/wallet'
     | '/_authenticated/workspace'
+    | '/c/$token'
     | '/listing/$id'
     | '/project/$id'
     | '/user/$username'
@@ -500,6 +524,7 @@ export interface RootRouteChildren {
   StoreRoute: typeof StoreRoute
   TermsRoute: typeof TermsRoute
   VerifyRoute: typeof VerifyRoute
+  CTokenRoute: typeof CTokenRoute
   ListingIdRoute: typeof ListingIdRoute
   ProjectIdRoute: typeof ProjectIdRoute
   UserUsernameRoute: typeof UserUsernameRoute
@@ -620,6 +645,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/contracts': {
+      id: '/_authenticated/contracts'
+      path: '/contracts'
+      fullPath: '/contracts'
+      preLoaderRoute: typeof AuthenticatedContractsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/create-listing': {
       id: '/_authenticated/create-listing'
       path: '/create-listing'
@@ -675,6 +707,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/workspace'
       preLoaderRoute: typeof AuthenticatedWorkspaceRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/c/$token': {
+      id: '/c/$token'
+      path: '/c/$token'
+      fullPath: '/c/$token'
+      preLoaderRoute: typeof CTokenRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/listing/$id': {
       id: '/listing/$id'
@@ -806,6 +845,7 @@ const AuthenticatedAdminRouteWithChildren =
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRouteWithChildren
+  AuthenticatedContractsRoute: typeof AuthenticatedContractsRoute
   AuthenticatedCreateListingRoute: typeof AuthenticatedCreateListingRoute
   AuthenticatedCreateProjectRoute: typeof AuthenticatedCreateProjectRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
@@ -819,6 +859,7 @@ interface AuthenticatedRouteRouteChildren {
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminRoute: AuthenticatedAdminRouteWithChildren,
+  AuthenticatedContractsRoute: AuthenticatedContractsRoute,
   AuthenticatedCreateListingRoute: AuthenticatedCreateListingRoute,
   AuthenticatedCreateProjectRoute: AuthenticatedCreateProjectRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
@@ -849,6 +890,7 @@ const rootRouteChildren: RootRouteChildren = {
   StoreRoute: StoreRoute,
   TermsRoute: TermsRoute,
   VerifyRoute: VerifyRoute,
+  CTokenRoute: CTokenRoute,
   ListingIdRoute: ListingIdRoute,
   ProjectIdRoute: ProjectIdRoute,
   UserUsernameRoute: UserUsernameRoute,
