@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as FeaturesRouteImport } from './routes/features'
 import { Route as FreelancersRouteImport } from './routes/freelancers'
 import { Route as LeaderboardRouteImport } from './routes/leaderboard'
 import { Route as LevelsRouteImport } from './routes/levels'
@@ -64,6 +65,11 @@ const AboutRoute = AboutRouteImport.update({
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FeaturesRoute = FeaturesRouteImport.update({
+  id: '/features',
+  path: '/features',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FreelancersRoute = FreelancersRouteImport.update({
@@ -244,6 +250,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/auth': typeof AuthRoute
+  '/features': typeof FeaturesRoute
   '/freelancers': typeof FreelancersRoute
   '/leaderboard': typeof LeaderboardRoute
   '/levels': typeof LevelsRoute
@@ -282,6 +289,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/auth': typeof AuthRoute
+  '/features': typeof FeaturesRoute
   '/freelancers': typeof FreelancersRoute
   '/leaderboard': typeof LeaderboardRoute
   '/levels': typeof LevelsRoute
@@ -321,6 +329,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/about': typeof AboutRoute
   '/auth': typeof AuthRoute
+  '/features': typeof FeaturesRoute
   '/freelancers': typeof FreelancersRoute
   '/leaderboard': typeof LeaderboardRoute
   '/levels': typeof LevelsRoute
@@ -361,6 +370,7 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/auth'
+    | '/features'
     | '/freelancers'
     | '/leaderboard'
     | '/levels'
@@ -399,6 +409,7 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/auth'
+    | '/features'
     | '/freelancers'
     | '/leaderboard'
     | '/levels'
@@ -437,6 +448,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/about'
     | '/auth'
+    | '/features'
     | '/freelancers'
     | '/leaderboard'
     | '/levels'
@@ -477,6 +489,7 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AboutRoute: typeof AboutRoute
   AuthRoute: typeof AuthRoute
+  FeaturesRoute: typeof FeaturesRoute
   FreelancersRoute: typeof FreelancersRoute
   LeaderboardRoute: typeof LeaderboardRoute
   LevelsRoute: typeof LevelsRoute
@@ -521,6 +534,13 @@ declare module '@tanstack/react-router' {
       path: '/auth'
       fullPath: '/auth'
       preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/features': {
+      id: '/features'
+      path: '/features'
+      fullPath: '/features'
+      preLoaderRoute: typeof FeaturesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/freelancers': {
@@ -818,6 +838,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AboutRoute: AboutRoute,
   AuthRoute: AuthRoute,
+  FeaturesRoute: FeaturesRoute,
   FreelancersRoute: FreelancersRoute,
   LeaderboardRoute: LeaderboardRoute,
   LevelsRoute: LevelsRoute,
