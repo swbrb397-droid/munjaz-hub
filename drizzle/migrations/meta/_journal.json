@@ -36,6 +36,13 @@
       "when": 1792100567081,
       "tag": "0004_project_upgrade_and_universal_moderation",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1792765431059,
+      "tag": "0005_migration",
+      "breakpoints": true
     }
   ]
 }
