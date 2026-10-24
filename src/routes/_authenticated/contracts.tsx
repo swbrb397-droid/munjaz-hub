@@ -67,8 +67,8 @@ function ContractsPage() {
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const mod = moderateFields([title, description]);
-    if (mod && !mod.ok) { toast.error(tr("لا يُسمح بوضع أرقام أو وسائل تواصل أو ألفاظ غير لائقة", "Contact details or bad words are not allowed")); return; }
+    const mod = moderateFields(title, description);
+    if (mod) { toast.error(mod); return; }
     setBusy(true);
     const { data, error } = await supabase.rpc("create_direct_contract", {
       _title: title, _description: description, _amount: Number(amount), _days: Number(days),

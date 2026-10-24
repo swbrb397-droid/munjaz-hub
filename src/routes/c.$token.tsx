@@ -106,7 +106,7 @@ function ContractInvite() {
         ) : c.is_seller ? (
           <p className="text-center text-sm text-muted-foreground">{tr("هذه صفقتك — أرسل الرابط لعميلك.", "This is your contract — send the link to your client.")}</p>
         ) : !isAuthenticated ? (
-          <Link to="/auth" search={{ redirect: `/c/${token}` } as never} className="inline-flex min-h-[48px] items-center justify-center rounded-lg bg-primary font-bold text-primary-foreground">
+          <Link to="/auth" search={{ redirectTo: `/c/${token}` }} className="inline-flex min-h-[48px] items-center justify-center rounded-lg bg-primary font-bold text-primary-foreground">
             {tr("سجّل الدخول لقبول الصفقة", "Sign in to accept")}
           </Link>
         ) : (
