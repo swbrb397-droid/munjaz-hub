@@ -438,6 +438,9 @@ export function Shell({ children }: { children: ReactNode }) {
             <Link to="/about" className="hover:text-foreground transition-colors">
               {lang === "ar" ? "من نحن" : "About"}
             </Link>
+            <Link to="/support" className="hover:text-foreground transition-colors">
+              {lang === "ar" ? "الدعم الفني" : "Support"}
+            </Link>
             <Link to="/pricing" className="hover:text-foreground transition-colors">
               {lang === "ar" ? "الباقات" : "Pricing"}
             </Link>

@@ -195,6 +195,11 @@ export function SupportWidget() {
             <Link to="/auth" className="font-bold text-primary underline">سجّل الدخول</Link> لاستخدام المساعد الذكي
           </div>
         )}
+        {isAuthenticated && (
+          <div className="px-3 pt-2 text-center text-[11px] text-muted-foreground">
+            لم تُحل مشكلتك؟ <Link to="/support" className="font-bold text-primary underline" onClick={() => setOpen(false)}>افتح تذكرة للإدارة</Link>
+          </div>
+        )}
         <div className="grid grid-cols-[minmax(0,1fr)_auto] items-end gap-2 p-3">
           <textarea
             value={input}

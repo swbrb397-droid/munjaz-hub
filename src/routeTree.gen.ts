@@ -47,6 +47,7 @@ import { Route as AuthenticatedAdminGovernanceRouteImport } from './routes/_auth
 import { Route as AuthenticatedAdminKycRouteImport } from './routes/_authenticated/admin.kyc'
 import { Route as AuthenticatedAdminProjectsRouteImport } from './routes/_authenticated/admin.projects'
 import { Route as AuthenticatedAdminServicesRouteImport } from './routes/_authenticated/admin.services'
+import { Route as AuthenticatedAdminTicketsRouteImport } from './routes/_authenticated/admin.tickets'
 import { Route as AuthenticatedAdminUsersRouteImport } from './routes/_authenticated/admin.users'
 import { Route as AuthenticatedFulfillmentOrderIdRouteImport } from './routes/_authenticated/fulfillment.$orderId'
 import { Route as ApiPublicCryptoDepositWebhookRouteImport } from './routes/api/public/crypto-deposit-webhook'
@@ -246,6 +247,12 @@ const AuthenticatedAdminServicesRoute =
     path: '/services',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const AuthenticatedAdminTicketsRoute =
+  AuthenticatedAdminTicketsRouteImport.update({
+    id: '/tickets',
+    path: '/tickets',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 const AuthenticatedAdminUsersRoute = AuthenticatedAdminUsersRouteImport.update({
   id: '/users',
   path: '/users',
@@ -301,6 +308,7 @@ export interface FileRoutesByFullPath {
   '/admin/kyc': typeof AuthenticatedAdminKycRoute
   '/admin/projects': typeof AuthenticatedAdminProjectsRoute
   '/admin/services': typeof AuthenticatedAdminServicesRoute
+  '/admin/tickets': typeof AuthenticatedAdminTicketsRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
   '/fulfillment/$orderId': typeof AuthenticatedFulfillmentOrderIdRoute
   '/api/public/crypto-deposit-webhook': typeof ApiPublicCryptoDepositWebhookRoute
@@ -342,6 +350,7 @@ export interface FileRoutesByTo {
   '/admin/kyc': typeof AuthenticatedAdminKycRoute
   '/admin/projects': typeof AuthenticatedAdminProjectsRoute
   '/admin/services': typeof AuthenticatedAdminServicesRoute
+  '/admin/tickets': typeof AuthenticatedAdminTicketsRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
   '/fulfillment/$orderId': typeof AuthenticatedFulfillmentOrderIdRoute
   '/api/public/crypto-deposit-webhook': typeof ApiPublicCryptoDepositWebhookRoute
@@ -386,6 +395,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/kyc': typeof AuthenticatedAdminKycRoute
   '/_authenticated/admin/projects': typeof AuthenticatedAdminProjectsRoute
   '/_authenticated/admin/services': typeof AuthenticatedAdminServicesRoute
+  '/_authenticated/admin/tickets': typeof AuthenticatedAdminTicketsRoute
   '/_authenticated/admin/users': typeof AuthenticatedAdminUsersRoute
   '/_authenticated/fulfillment/$orderId': typeof AuthenticatedFulfillmentOrderIdRoute
   '/api/public/crypto-deposit-webhook': typeof ApiPublicCryptoDepositWebhookRoute
@@ -430,6 +440,7 @@ export interface FileRouteTypes {
     | '/admin/kyc'
     | '/admin/projects'
     | '/admin/services'
+    | '/admin/tickets'
     | '/admin/users'
     | '/fulfillment/$orderId'
     | '/api/public/crypto-deposit-webhook'
@@ -471,6 +482,7 @@ export interface FileRouteTypes {
     | '/admin/kyc'
     | '/admin/projects'
     | '/admin/services'
+    | '/admin/tickets'
     | '/admin/users'
     | '/fulfillment/$orderId'
     | '/api/public/crypto-deposit-webhook'
@@ -514,6 +526,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/kyc'
     | '/_authenticated/admin/projects'
     | '/_authenticated/admin/services'
+    | '/_authenticated/admin/tickets'
     | '/_authenticated/admin/users'
     | '/_authenticated/fulfillment/$orderId'
     | '/api/public/crypto-deposit-webhook'
@@ -811,6 +824,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminServicesRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/tickets': {
+      id: '/_authenticated/admin/tickets'
+      path: '/tickets'
+      fullPath: '/admin/tickets'
+      preLoaderRoute: typeof AuthenticatedAdminTicketsRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/admin/users': {
       id: '/_authenticated/admin/users'
       path: '/users'
@@ -843,6 +863,7 @@ interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminKycRoute: typeof AuthenticatedAdminKycRoute
   AuthenticatedAdminProjectsRoute: typeof AuthenticatedAdminProjectsRoute
   AuthenticatedAdminServicesRoute: typeof AuthenticatedAdminServicesRoute
+  AuthenticatedAdminTicketsRoute: typeof AuthenticatedAdminTicketsRoute
   AuthenticatedAdminUsersRoute: typeof AuthenticatedAdminUsersRoute
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
 }
@@ -855,6 +876,7 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminKycRoute: AuthenticatedAdminKycRoute,
   AuthenticatedAdminProjectsRoute: AuthenticatedAdminProjectsRoute,
   AuthenticatedAdminServicesRoute: AuthenticatedAdminServicesRoute,
+  AuthenticatedAdminTicketsRoute: AuthenticatedAdminTicketsRoute,
   AuthenticatedAdminUsersRoute: AuthenticatedAdminUsersRoute,
   AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
 }
