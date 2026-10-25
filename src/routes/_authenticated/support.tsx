@@ -49,7 +49,7 @@ const ERR: Record<string, [string, string]> = {
 const errMsg = (e: unknown, ar: boolean) => {
   const m = (e as Error)?.message ?? "";
   const hit = Object.keys(ERR).find((k) => m.includes(k));
-  return hit ? ERR[hit][ar ? 0 : 1] : ar ? "حدث خطأ، حاول مجدداً" : "Something went wrong, try again";
+  return hit ? ERR[hit]![ar ? 0 : 1] : ar ? "حدث خطأ، حاول مجدداً" : "Something went wrong, try again";
 };
 
 function SupportPage() {
@@ -69,7 +69,10 @@ function SupportPage() {
 
   const submit = async () => {
     const blocked = moderateFields(subject, body);
-    if (blocked) return toast.error(blocked);
+    if (blocked) {
+      toast.error(blocked);
+      return;
+    }
     setBusy(true);
     try {
       await create({ data: { category, subject, body } });
@@ -148,7 +151,10 @@ function TicketThread({ id, onClose }: { id: string; onClose: () => void }) {
 
   const send = async () => {
     const blocked = moderateFields(text);
-    if (blocked) return toast.error(blocked);
+    if (blocked) {
+      toast.error(blocked);
+      return;
+    }
     setBusy(true);
     try {
       await reply({ data: { id, body: text } });
