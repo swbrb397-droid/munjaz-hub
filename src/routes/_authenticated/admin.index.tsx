@@ -226,6 +226,7 @@ function Admin() {
         ))}
         {([
           ["/admin/disputes", tr("مكتب النزاعات", "Dispute desk")],
+          ["/admin/tickets", tr("تذاكر الدعم", "Support tickets")],
           ["/admin/kyc", tr("مراجعة التوثيق", "KYC review")],
           ["/admin/services", tr("العروض", "Services")],
           ["/admin/projects", tr("المشاريع والعروض", "Projects & bids")],
