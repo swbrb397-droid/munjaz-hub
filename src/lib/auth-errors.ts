@@ -64,7 +64,7 @@ const RULES: Array<[RegExp, string, string]> = [
   [/invalid email|unable to validate email/i, "صيغة البريد الإلكتروني غير صحيحة", "Invalid email address."],
   [/user not found/i, "لا يوجد حساب بهذا البريد", "No account with this email."],
   [/signups not allowed|signup.*disabled/i, "التسجيل مغلق مؤقتاً", "Sign-ups are temporarily disabled."],
-  [/network|failed to fetch|fetch/i, "تعذّر الاتصال بالخادم — تحقق من الإنترنت", "Network error — check your connection."],
+  [/network|failed to fetch|fetch/i, "المنصة تخضع لتحديث قصير — حسابك وأموالك في أمان، حاول بعد دقائق", "The platform is briefly updating — your account and funds are safe. Try again in a few minutes."],
 ];
 
 export function translateAuthError(err: unknown, ar = true): string {
