@@ -141,6 +141,7 @@ function AdminThread({ id, onClose }: { id: string; onClose: () => void }) {
   const classify = useServerFn(classifyTicket);
   const [text, setText] = useState("");
   const [busy, setBusy] = useState<"reply" | "ai" | null>(null);
+  const [draftAr, setDraftAr] = useState("");
 
   const thread = useQuery({ queryKey: ["admin-ticket", id], queryFn: () => get({ data: { id } }) });
   const ticket = thread.data?.ticket;
@@ -150,6 +151,7 @@ function AdminThread({ id, onClose }: { id: string; onClose: () => void }) {
     try {
       const r = await classify({ data: { id } });
       if (r.draft) setText(r.draft);
+      setDraftAr(r.draftAr ?? "");
       toast.success(tr("صنّف الذكاء الاصطناعي التذكرة وجهّز رداً مقترحاً", "AI classified the ticket and drafted a reply"));
       void qc.invalidateQueries({ queryKey: ["admin-ticket", id] });
       void qc.invalidateQueries({ queryKey: ["admin-tickets"] });
@@ -165,6 +167,7 @@ function AdminThread({ id, onClose }: { id: string; onClose: () => void }) {
     try {
       await reply({ data: { id, body: text } });
       setText("");
+      setDraftAr("");
       toast.success(tr("أُرسل الرد وأُشعر المستخدم", "Reply sent and the user was notified"));
       void qc.invalidateQueries({ queryKey: ["admin-ticket", id] });
       void qc.invalidateQueries({ queryKey: ["admin-tickets"] });
@@ -202,7 +205,7 @@ function AdminThread({ id, onClose }: { id: string; onClose: () => void }) {
           {ticket?.ai_summary && (
             <div className="rounded-xl border border-primary/30 bg-primary/5 p-3 text-xs">
               <p className="mb-1 flex items-center gap-1 font-bold text-primary"><Bot className="size-3.5" />{tr("ملخص الذكاء الاصطناعي", "AI summary")}</p>
-              <p className="text-muted-foreground">{ticket.ai_summary}</p>
+              <p className="whitespace-pre-line text-muted-foreground">{ticket.ai_summary}</p>
             </div>
           )}
         </div>
@@ -213,6 +216,12 @@ function AdminThread({ id, onClose }: { id: string; onClose: () => void }) {
             {busy === "ai" ? <Loader2 className="size-4 animate-spin" /> : <Bot className="size-4" />}
             {tr("تصنيف ذكي + تجهيز رد مقترح", "AI classify + draft reply")}
           </button>
+          {draftAr && (
+            <div className="rounded-xl border border-border bg-secondary/40 p-2 text-xs" dir="rtl">
+              <p className="mb-1 font-bold text-primary">{tr("ترجمة الرد المقترح (للاطلاع فقط — سيُرسل بالإنجليزية)", "Arabic translation of the draft (reference only)")}</p>
+              <p className="whitespace-pre-line text-muted-foreground">{draftAr}</p>
+            </div>
+          )}
           <div className="flex items-end gap-2">
             <textarea value={text} onChange={(e) => setText(e.target.value)} maxLength={2000} rows={2}
               placeholder={tr("اكتب الرد للمستخدم…", "Write the reply…")}
