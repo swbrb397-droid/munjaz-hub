@@ -101,7 +101,7 @@ function AuthButton() {
 }
 
 
-function UserMenu({ isAdmin }: { isAdmin: boolean }) {
+function UserMenu({ isAdmin, verified }: { isAdmin: boolean; verified: boolean }) {
   const { tr } = useLang();
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -125,7 +125,8 @@ function UserMenu({ isAdmin }: { isAdmin: boolean }) {
     { to: "/dashboard", label: tr("لوحة التحكم", "Dashboard"), icon: LayoutDashboard },
     { to: "/workspace", label: tr("مساحة العمل والطلبات", "Workspace & orders"), icon: Briefcase },
     { to: "/wallet", label: tr("المحفظة والسجل المالي", "My wallet & ledger"), icon: Wallet2 },
-    { to: "/kyc", label: tr("توثيق الهوية", "Identity verification"), icon: BadgeCheck },
+    { to: "/contracts", label: tr("الصفقات المباشرة", "Direct contracts"), icon: Handshake },
+    ...(verified ? [] : [{ to: "/kyc", label: tr("توثيق الهوية", "Identity verification"), icon: BadgeCheck }]),
     { to: "/referrals", label: tr("برنامج الإحالة والعمولات", "Referral program"), icon: Users },
     { to: "/pricing", label: tr("الباقات والاشتراكات", "Plans & pricing"), icon: CreditCard },
   ];
@@ -144,6 +145,11 @@ function UserMenu({ isAdmin }: { isAdmin: boolean }) {
       {open && (
         <div className="absolute end-0 top-11 z-50 w-64 rounded-xl border border-border bg-card p-1.5 shadow-xl" onClick={() => setOpen(false)}>
           <p className="truncate px-3 py-2 text-xs text-muted-foreground" dir="ltr">{user?.email}</p>
+          {verified && (
+            <p className="mx-3 mb-1 inline-flex items-center gap-1 rounded-full border border-primary/40 bg-primary/10 px-2 py-0.5 text-[11px] font-bold text-primary">
+              <BadgeCheck className="size-3.5" /> {tr("حساب موثّق", "Verified account")}
+            </p>
+          )}
           {links.map((l) => (
             <Link key={l.to} to={l.to} className={item}>
               <l.icon className="size-4 shrink-0 text-muted-foreground" /> {l.label}
@@ -332,7 +338,7 @@ export function Shell({ children }: { children: ReactNode }) {
             )}
             {isAuthenticated ? (
               <>
-                <span className="hidden lg:block"><UserMenu isAdmin={isAdmin} /></span>
+                <span className="hidden lg:block"><UserMenu isAdmin={isAdmin} verified={profile?.kyc_status === "approved"} /></span>
               </>
             ) : <AuthButton />}
             <LangSwitch />
@@ -370,7 +376,8 @@ export function Shell({ children }: { children: ReactNode }) {
                 { to: "/dashboard", label: tr("لوحة التحكم", "Dashboard"), icon: LayoutDashboard },
                 { to: "/workspace", label: tr("مساحة العمل والطلبات", "Workspace & orders"), icon: Briefcase },
                 { to: "/wallet", label: tr("المحفظة والسجل المالي", "Wallet & ledger"), icon: Wallet2 },
-                { to: "/kyc", label: tr("توثيق الهوية", "Identity verification"), icon: BadgeCheck },
+                { to: "/contracts", label: tr("الصفقات المباشرة", "Direct contracts"), icon: Handshake },
+                ...(profile?.kyc_status === "approved" ? [] : [{ to: "/kyc", label: tr("توثيق الهوية", "Identity verification"), icon: BadgeCheck }]),
                 { to: "/referrals", label: tr("برنامج الإحالة", "Referral program"), icon: Users },
                 { to: "/pricing", label: tr("الباقات والاشتراكات", "Plans & pricing"), icon: CreditCard },
                 { to: "/profile", label: tr("إعدادات الحساب", "Account settings"), icon: UserCog },
