@@ -1,4 +1,6 @@
 /** Cryptographic payout-address validation shared by the wallet engine. */
+import { keccak_256 } from "@noble/hashes/sha3.js";
+import { bytesToHex } from "@noble/hashes/utils.js";
 
 export type PayoutNetwork = "trc20" | "bep20" | "polygon";
 
@@ -25,5 +27,24 @@ export function validatePayoutAddress(address: string, network: PayoutNetwork): 
   if (network === "trc20") {
     return TRON_ADDRESS_RE.test(value) ? null : TRON_ADDRESS_ERROR;
   }
-  return EVM_ADDRESS_RE.test(value) ? null : EVM_ADDRESS_ERROR;
+  if (!EVM_ADDRESS_RE.test(value)) return EVM_ADDRESS_ERROR;
+  return isValidEvmChecksum(value) ? null : EVM_CHECKSUM_ERROR;
+}
+
+export const EVM_CHECKSUM_ERROR =
+  "العنوان يحتوي على خطأ في الأحرف الكبيرة/الصغيرة (فشل فحص EIP-55) — انسخه مجدداً من محفظتك";
+
+/** EIP-55: all-lower / all-upper addresses carry no checksum; mixed case must match. */
+export function isValidEvmChecksum(address: string): boolean {
+  const hex = address.slice(2);
+  if (hex === hex.toLowerCase() || hex === hex.toUpperCase()) return true;
+  const hash = bytesToHex(keccak_256(new TextEncoder().encode(hex.toLowerCase())));
+  for (let i = 0; i < 40; i++) {
+    const c = hex[i];
+    if (/[a-f]/i.test(c)) {
+      const upper = parseInt(hash[i], 16) >= 8;
+      if (upper !== (c === c.toUpperCase())) return false;
+    }
+  }
+  return true;
 }
