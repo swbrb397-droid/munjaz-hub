@@ -409,6 +409,14 @@ function WalletPage() {
         الحد الأدنى للشحن بالبطاقة: 15 USD — البوابة تخضع للصيانة المؤقتة، يرجى استخدام التحويل
         المباشر عبر USDT كريبتو
       </p>
+      <p className="mb-4 flex items-start gap-2 rounded-xl border border-border bg-muted/40 px-4 py-3 text-xs leading-relaxed text-muted-foreground">
+        <ShieldAlert className="mt-0.5 size-4 shrink-0" />
+        {tr(
+          "تنبيه: «المُنْجِز» وسيط ضمان رقمي (Escrow) وليس بنكاً أو جهة إيداع مصرفية. عمليات السحب بالعملات المشفرة نهائية ولا يمكن استرجاعها بعد تأكيدها على الشبكة — تحقق من العنوان والشبكة قبل الإرسال.",
+          "Notice: Munjaz is a digital escrow intermediary, not a bank or deposit custodian. Crypto withdrawals are final and irreversible once confirmed on-chain — double-check the address and network before sending.",
+        )}
+      </p>
+
 
       <div className="grid gap-4 lg:grid-cols-3">
         <Card className="glow lg:col-span-1">
