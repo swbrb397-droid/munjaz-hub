@@ -26,3 +26,4 @@
 - User-written text (projects, proposals, reviews, profiles, listings, order chat) is checked by the `guard_user_text` DB trigger plus `moderateFields` in the UI. Why: one filter for phones/contacts/insults that can't be bypassed from the browser.
 - Project extras (skills, screening question, min rank, attachments) are written only via `create_project_v2` / `submit_project_proposal_v2`, which wrap the original RPCs. Why: keeps existing guards and escrow flow intact.
 - The admin executive chat (`aiExecutiveChat`) requires admin role + aal2 server-side. Why: no platform data reaches the AI without fresh 2FA.
+- Root not-found UI has its own LangProvider because it renders outside RootComponent; this preserves the visitor's saved language on unmatched URLs.

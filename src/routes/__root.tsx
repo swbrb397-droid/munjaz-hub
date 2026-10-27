@@ -13,7 +13,9 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Shell } from "../components/site/Shell";
-import { LangProvider } from "../lib/lang";
+import { LangProvider, useLang } from "../lib/lang";
+import { Button } from "@/components/ui/button";
+import { Home, FileQuestion } from "lucide-react";
 import { ViewModeProvider } from "../lib/view-mode";
 import { NotifyProvider } from "../lib/notify";
 import { Toaster } from "@/components/ui/sonner";
@@ -29,24 +31,31 @@ import { finishGoogleSignIn } from "@/lib/google-auth";
 
 
 function NotFoundComponent() {
+  return <LangProvider><NotFoundContent /></LangProvider>;
+}
+
+function NotFoundContent() {
+  const { lang, tr } = useLang();
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <div className="max-w-md text-center">
-        <h1 className="text-7xl font-bold text-foreground">404</h1>
-        <h2 className="mt-4 text-xl font-semibold text-foreground">Page not found</h2>
-        <p className="mt-2 text-sm text-muted-foreground">
-          The page you're looking for doesn't exist or has been moved.
+    <main dir={lang === "ar" ? "rtl" : "ltr"} className="flex min-h-dvh items-center justify-center bg-background px-5 py-12">
+      <div className="w-full max-w-md text-center">
+        <p className="mb-8 text-2xl font-black text-primary" dir="rtl">المُنجِز</p>
+        <FileQuestion aria-hidden="true" className="mx-auto mb-4 size-10 text-muted-foreground" />
+        <p className="text-7xl font-black leading-none text-primary" dir="ltr">404</p>
+        <h1 className="mt-6 text-xl font-bold text-foreground">{tr("الصفحة غير موجودة", "Page not found")}</h1>
+        <p className="mt-3 text-sm leading-7 text-muted-foreground">
+          {tr("قد يكون الرابط غير صحيح أو تم نقل الصفحة.", "The link may be incorrect, or the page may have moved.")}
         </p>
-        <div className="mt-6">
-          <Link
-            to="/"
-            className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-          >
-            Go home
-          </Link>
+        <div className="mt-7">
+          <Button asChild size="lg" className="min-h-11 max-w-full px-5">
+            <Link to="/">
+              <Home aria-hidden="true" />
+              {tr("العودة إلى الرئيسية", "Back to home")}
+            </Link>
+          </Button>
         </div>
       </div>
-    </div>
+    </main>
   );
 }
 
