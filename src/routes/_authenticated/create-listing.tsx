@@ -752,23 +752,34 @@ function CreateListing() {
                       {tr("محتوى التسليم الفوري (يُسلَّم للمشتري لحظة الدفع)", "Instant delivery content (handed over the moment payment clears)")}
                     </span>
                     <span className="text-[11px] text-muted-foreground">{instantHint}</span>
+                    <span className="text-[11px] font-bold text-muted-foreground">
+                      {tr(
+                        "الحد الأقصى للرفع المباشر هو 50 ميغابايت. للمنتجات ذات الأحجام الأكبر، يمكنك استخدام خيار الرابط السحابي الخارجي المباشر.",
+                        "Direct upload limit is 50MB. For larger products, use a direct external cloud link instead.",
+                      )}
+                    </span>
                     <input
                       ref={instantInput}
                       type="file"
                       className="hidden"
+                      accept=".zip,.rar,.pdf,.png,.jpg,.jpeg,.psd,.fig"
                       onChange={(e) => {
                         const f = e.target.files?.[0] ?? null;
                         e.target.value = "";
-                        if (f && f.size > 25 * 1024 * 1024) {
-                          toast.error(
-                            tr(
-                              "حجم الملف يتجاوز 25MB — يُرجى رفعه على رابط سحابي (Google Drive / Mega) ووضع الرابط في صندوق النص.",
-                              "File exceeds 25MB — please use a cloud link (Google Drive / Mega) in the text box.",
-                            ),
-                          );
+                        if (!f) return;
+                        const allowed = ["zip", "rar", "pdf", "png", "jpg", "jpeg", "psd", "fig"];
+                        const ext = f.name.toLowerCase().split(".").pop() ?? "";
+                        if (!allowed.includes(ext)) {
+                          toast.error(tr(
+                            "امتداد الملف غير مدعوم — المسموح: ZIP, RAR, PDF, PNG, JPG, PSD, FIG",
+                            "Unsupported file type — allowed: ZIP, RAR, PDF, PNG, JPG, PSD, FIG",
+                          ));
                           return;
                         }
+                        const rejection = checkUpload(f);
+                        if (rejection) { toast.error(rejection); return; }
                         setInstantFile(f);
+                        toast.success(tr("تم تجهيز الملف — سيُرفع عند حفظ العرض", "File ready — it will upload when you save"));
                       }}
                     />
                     <div className="flex flex-wrap items-center gap-2">

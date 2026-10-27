@@ -22,7 +22,7 @@ export const categoryLabel = (key: string, ar: boolean) => {
 
 export type ProjectAttachment = { path: string; name: string; size: number; mime: string };
 export const PROJECT_FILES_BUCKET = "project-files";
-export const PROJECT_FILE_MAX_MB = 25;
+export const PROJECT_FILE_MAX_MB = 50;
 
 export const usd = (n: number | string | null | undefined) => Number(n ?? 0).toFixed(2);
 
