@@ -25,6 +25,7 @@ import { isInstantCategory, saveInstantDelivery, uploadInstantFile } from "@/lib
 import { z } from "zod";
 import { ErrorBoundary } from "@/components/site/ErrorBoundary";
 import { LicenseKeysManager } from "@/components/site/LicenseKeysManager";
+import { checkUpload } from "@/lib/file-guard";
 
 function SafeCreateListing() {
   return (
@@ -204,9 +205,19 @@ function CreateListing() {
     let filePath = instantSaved.path;
     let fileName = instantSaved.name;
     if (instantFile) {
-      const uploaded = await uploadInstantFile(user!.id, instantFile);
-      filePath = uploaded.path;
-      fileName = uploaded.name;
+      try {
+        const uploaded = await uploadInstantFile(user!.id, instantFile);
+        filePath = uploaded.path;
+        fileName = uploaded.name;
+        toast.success(tr("تم رفع ملف التسليم بنجاح", "Deliverable uploaded successfully"));
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : "";
+        const tooBig = /413|too large|exceeded|maximum allowed size/i.test(msg);
+        toast.error(tooBig
+          ? tr("فشل الرفع: حجم الملف يتجاوز 50 ميغابايت — استخدم رابطاً سحابياً خارجياً", "Upload failed: file exceeds 50MB — use an external cloud link")
+          : msg || tr("فشل رفع الملف", "File upload failed"));
+        throw err;
+      }
     }
     if (!content && !filePath) return;
     await saveInstantDelivery({
