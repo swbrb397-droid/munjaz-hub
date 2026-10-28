@@ -7,9 +7,9 @@ export const Route = createFileRoute("/about")({
   head: () => ({
     meta: [
       { title: "من نحن | المنجز" },
-      { name: "description", content: "تعرّف على المنجز: سوق عربي للعمل الحر والمنتجات الرقمية بالدفع عبر USDT وضمان مالي يحمي الطرفين." },
+      { name: "description", content: "تعرّف على المنجز: سوق رقمي عالمي للعمل الحر والمنتجات الرقمية بالدفع عبر USDT وضمان مالي يحمي الطرفين." },
       { property: "og:title", content: "من نحن | المنجز" },
-      { property: "og:description", content: "سوق عربي موثوق: أموالك محجوزة حتى تستلم عملك، وتحكيم محايد عند الخلاف." },
+      { property: "og:description", content: "سوق رقمي عالمي موثوق: أموالك محجوزة حتى تستلم عملك، وتحكيم محايد عند الخلاف." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -30,7 +30,7 @@ function AboutPage() {
     { icon: Scale, t: tr("تحكيم محايد", "Neutral arbitration"), d: tr("عند الخلاف يراجع فريق التحكيم المحادثة والتسليم، ورسائل الطلب لا يمكن تعديلها أو حذفها.", "In a dispute, arbitrators review the chat and delivery; order messages can't be edited or deleted.") },
   ];
   return (
-    <Section title={tr("من نحن", "About us")} subtitle={tr("المُنجِز سوق عربي يجمع العمل الحر والمنتجات الرقمية في مكان واحد، بالدفع والسحب عبر USDT.", "Al Munjiz is an Arabic marketplace for freelance work and digital products, paid and withdrawn in USDT.")}>
+    <Section title={tr("من نحن", "About us")} subtitle={tr("المُنجِز سوق رقمي عالمي ثنائي اللغة يجمع العمل الحر والمنتجات الرقمية في مكان واحد، بالدفع والسحب عبر USDT.", "Al Munjiz is a global bilingual marketplace for freelance work and digital products, paid and withdrawn in USDT.")}>
       <div className="mx-auto max-w-3xl space-y-10">
         <p className="leading-relaxed text-muted-foreground">
           {tr(

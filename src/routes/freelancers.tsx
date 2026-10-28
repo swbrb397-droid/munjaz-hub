@@ -25,6 +25,7 @@ function Freelancers() {
   const { tr } = useLang();
   const [q, setQ] = useState("");
   const [onlineOnly, setOnlineOnly] = useState(false);
+  const [sort, setSort] = useState<"merit" | "rating" | "orders">("merit");
   const dir = useQuery({
     queryKey: ["freelancers-directory"],
     refetchInterval: 60_000,
@@ -36,23 +37,31 @@ function Freelancers() {
   });
   const rows = useMemo(() => {
     const s = q.trim().toLowerCase();
-    return (dir.data ?? []).filter((f) => {
+    const list = (dir.data ?? []).filter((f) => {
       if (s && !`${f.display_name} ${f.bio ?? ""}`.toLowerCase().includes(s)) return false;
       if (onlineOnly && !(f.last_active_at && Date.now() - new Date(f.last_active_at).getTime() < ONLINE_WINDOW_MS)) return false;
       return true;
     });
-  }, [dir.data, q, onlineOnly]);
+    if (sort === "rating") return [...list].sort((a, b) => Number(b.rating) - Number(a.rating));
+    if (sort === "orders") return [...list].sort((a, b) => Number(b.completed_orders) - Number(a.completed_orders));
+    return list;
+  }, [dir.data, q, onlineOnly, sort]);
 
   return (
     <Section title={tr("دليل المستقلين", "Freelancers")} subtitle={tr("مرتّب بالجدارة: الطلبات المكتملة ثم التقييم — لا ترتيب مدفوع.", "Ranked on merit: completed orders, then rating — no paid placement.")}>
       <div className="mb-4 flex flex-wrap items-center gap-2">
         <label className="relative min-w-0 flex-1">
           <Search className="absolute end-3 top-2.5 size-4 text-muted-foreground" />
-          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={tr("ابحث بالاسم أو المهارة", "Search by name or skill")} className="w-full rounded-lg border border-input bg-surface px-3 py-2 pe-9 text-sm outline-none focus:border-primary" />
+          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={tr("ابحث بالاسم أو النبذة", "Search by name or bio")} className="w-full rounded-lg border border-input bg-surface px-3 py-2 pe-9 text-sm outline-none focus:border-primary" />
         </label>
         <button type="button" onClick={() => setOnlineOnly((v) => !v)} className={`h-10 rounded-lg border px-3 text-xs font-bold ${onlineOnly ? "border-primary bg-primary/15 text-primary" : "border-border text-muted-foreground"}`}>
           {tr("المتصلون الآن", "Online now")}
         </button>
+        <select value={sort} onChange={(e) => setSort(e.target.value as "merit" | "rating" | "orders")} aria-label={tr("الترتيب", "Sort")} className="h-10 rounded-lg border border-input bg-surface px-2 text-xs font-bold">
+          <option value="merit">{tr("الجدارة", "Merit")}</option>
+          <option value="rating">{tr("الأعلى تقييماً", "Top rated")}</option>
+          <option value="orders">{tr("الأكثر إنجازاً", "Most completed")}</option>
+        </select>
       </div>
       {dir.isLoading ? (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{[0, 1, 2].map((i) => <div key={i} className="h-32 animate-pulse rounded-xl bg-secondary/70" />)}</div>

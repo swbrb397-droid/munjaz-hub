@@ -57,7 +57,7 @@ const navGroups: ReadonlyArray<NavGroup> = [
   },
 ];
 
-const headerNav = (navGroups[0]?.items ?? []).filter((i) => i.to !== "/levels" && i.to !== "/freelancers");
+const headerNav = (navGroups[0]?.items ?? []).filter((i) => i.to !== "/levels");
 
 function AuthButton() {
   const { tr } = useLang();

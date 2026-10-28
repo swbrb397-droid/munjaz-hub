@@ -9,7 +9,7 @@ export const Route = createFileRoute("/features")({
       { title: "مزايا المُنجِز | سبع ركائز تحمي صفقتك" },
       { name: "description", content: "تعرّف على ركائز المُنجِز: الصفقة المباشرة، الضمان المالي بالمراحل، الدفع بـ USDT، التسليم الرقمي الفوري، الظهور بالجدارة، التحكيم المنصف، وبرنامج الإحالة." },
       { property: "og:title", content: "مزايا المُنجِز | سبع ركائز تحمي صفقتك" },
-      { property: "og:description", content: "سوق عربي يحجز أموالك حتى تستلم، ويدفع للمستقل فور الاعتماد بـ USDT." },
+      { property: "og:description", content: "سوق رقمي عالمي يحجز أموالك حتى تستلم، ويدفع للمستقل فور الاعتماد بـ USDT." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
