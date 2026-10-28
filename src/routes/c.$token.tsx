@@ -65,7 +65,7 @@ function ContractInvite() {
       return;
     }
     toast.success(tr("تم حجز المبلغ في الضمان وبدأ العمل", "Funds held in escrow — work has started"));
-    if (data) navigate({ to: "/fulfillment/$orderId", params: { orderId: data as string } });
+    if (data) navigate({ to: "/workspace", search: { order: data as string } });
   };
 
   const steps = [
@@ -99,7 +99,7 @@ function ContractInvite() {
 
         {c.status === "accepted" ? (
           c.order_id
-            ? <Link to="/fulfillment/$orderId" params={{ orderId: c.order_id }} className="inline-flex min-h-[48px] items-center justify-center rounded-lg bg-primary font-bold text-primary-foreground">{tr("فتح الطلب", "Open order")}</Link>
+            ? <Link to="/workspace" search={{ order: c.order_id }} className="inline-flex min-h-[48px] items-center justify-center rounded-lg bg-primary font-bold text-primary-foreground">{tr("فتح الطلب", "Open order")}</Link>
             : <p className="text-center font-semibold text-muted-foreground">{tr("تم قبول هذه الصفقة مسبقاً.", "This contract was already accepted.")}</p>
         ) : c.status !== "open" ? (
           <p className="text-center font-semibold text-muted-foreground">{c.status === "expired" ? tr("انتهت صلاحية هذا الرابط.", "This link has expired.") : tr("ألغى المستقل هذه الصفقة.", "The freelancer cancelled this contract.")}</p>
