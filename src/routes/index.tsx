@@ -74,7 +74,7 @@ function Hero() {
             <ShieldCheck className="size-3.5" /> {tr("أموالك محجوزة بأمان حتى تستلم عملك", "Your money is held safely until you receive your work")}
           </span>
           <h1 className="mt-5 text-3xl leading-tight font-black sm:text-5xl lg:text-6xl">
-            {tr("سوق عربي موثوق للعمل الحر والمنتجات الرقمية", "A trusted Arabic marketplace for freelance work and digital products")}
+            {tr("سوق رقمي عالمي موثوق للعمل الحر والمنتجات الرقمية", "A trusted global marketplace for freelance work and digital products")}
           </h1>
           <p className="mt-4 max-w-xl text-base text-muted-foreground sm:text-lg">
             {tr(

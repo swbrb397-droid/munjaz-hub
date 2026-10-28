@@ -67,7 +67,7 @@ export function WhyMunjaz() {
           </h2>
           <p className="mt-3 text-sm leading-relaxed text-muted-foreground sm:text-base">
             {tr(
-              "سوق عربي بلا حدود يجمع العمل الحر والمنتجات الرقمية في مكان واحد — مالك محمي، وحقك مضمون، بلا بنوك ولا عمولات جائرة.",
+              "سوق رقمي عالمي بلا حدود يجمع العمل الحر والمنتجات الرقمية في مكان واحد — مالك محمي، وحقك مضمون، بلا بنوك ولا عمولات جائرة.",
               "A borderless marketplace for freelance work and digital products — your money protected, your rights guaranteed, no banks and no unfair fees.",
             )}
           </p>
