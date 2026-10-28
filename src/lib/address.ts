@@ -40,9 +40,9 @@ export function isValidEvmChecksum(address: string): boolean {
   if (hex === hex.toLowerCase() || hex === hex.toUpperCase()) return true;
   const hash = bytesToHex(keccak_256(new TextEncoder().encode(hex.toLowerCase())));
   for (let i = 0; i < 40; i++) {
-    const c = hex[i];
+    const c = hex[i] ?? "";
     if (/[a-f]/i.test(c)) {
-      const upper = parseInt(hash[i], 16) >= 8;
+      const upper = parseInt(hash[i] ?? "0", 16) >= 8;
       if (upper !== (c === c.toUpperCase())) return false;
     }
   }
