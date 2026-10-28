@@ -123,6 +123,9 @@ function Dashboard() {
         ))}
       </div>
 
+      <Link to="/orders" className="mt-4 inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-border px-4 text-sm font-bold transition hover:border-primary hover:text-primary">
+        <ShoppingBag className="size-4" /> {tr("طلباتي وحالة الضمان", "My orders & escrow")}
+      </Link>
       {view === "seller" && profile.data && (() => {
         const tier = profile.data.account_tier;
         const exp = profile.data.plan_expires_at ? new Date(profile.data.plan_expires_at) : null;
