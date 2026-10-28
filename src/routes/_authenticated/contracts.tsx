@@ -135,7 +135,7 @@ function ContractsPage() {
                 </div>
                 <div className="flex gap-2">
                   {c.order_id ? (
-                    <Link to="/fulfillment/$orderId" params={{ orderId: c.order_id }} className="inline-flex min-h-[40px] items-center rounded-lg border border-border px-3 text-xs font-semibold hover:bg-secondary">
+                    <Link to="/workspace" search={{ order: c.order_id }} className="inline-flex min-h-[40px] items-center rounded-lg border border-border px-3 text-xs font-semibold hover:bg-secondary">
                       {tr("فتح الطلب", "Open order")}
                     </Link>
                   ) : c.status === "open" && c.seller_id === user?.id ? (

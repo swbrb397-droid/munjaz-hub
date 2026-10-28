@@ -124,6 +124,7 @@ function UserMenu({ isAdmin, verified }: { isAdmin: boolean; verified: boolean }
   const links: { to: string; label: string; icon: LucideIcon }[] = [
     { to: "/dashboard", label: tr("لوحة التحكم", "Dashboard"), icon: LayoutDashboard },
     { to: "/workspace", label: tr("مساحة العمل والطلبات", "Workspace & orders"), icon: Briefcase },
+    { to: "/orders", label: tr("طلباتي وحالة الضمان", "My orders & escrow"), icon: ClipboardList },
     { to: "/wallet", label: tr("المحفظة والسجل المالي", "My wallet & ledger"), icon: Wallet2 },
     { to: "/contracts", label: tr("الصفقات المباشرة", "Direct contracts"), icon: Handshake },
     ...(verified ? [] : [{ to: "/kyc", label: tr("توثيق الهوية", "Identity verification"), icon: BadgeCheck }]),
@@ -375,7 +376,8 @@ export function Shell({ children }: { children: ReactNode }) {
               const personal: { to: string; label: string; icon: LucideIcon }[] = [
                 { to: "/dashboard", label: tr("لوحة التحكم", "Dashboard"), icon: LayoutDashboard },
                 { to: "/workspace", label: tr("مساحة العمل والطلبات", "Workspace & orders"), icon: Briefcase },
-                { to: "/wallet", label: tr("المحفظة والسجل المالي", "Wallet & ledger"), icon: Wallet2 },
+                { to: "/orders", label: tr("طلباتي وحالة الضمان", "My orders & escrow"), icon: ClipboardList },
+    { to: "/wallet", label: tr("المحفظة والسجل المالي", "Wallet & ledger"), icon: Wallet2 },
                 { to: "/contracts", label: tr("الصفقات المباشرة", "Direct contracts"), icon: Handshake },
                 ...(profile?.kyc_status === "approved" ? [] : [{ to: "/kyc", label: tr("توثيق الهوية", "Identity verification"), icon: BadgeCheck }]),
                 { to: "/referrals", label: tr("برنامج الإحالة", "Referral program"), icon: Users },

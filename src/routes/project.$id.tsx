@@ -121,7 +121,7 @@ function ProjectDetail() {
           {p.status === "in_progress" && order.data && (isOwner || myProposal?.status === "accepted") && (
             <Card className="flex flex-wrap items-center justify-between gap-3 border-primary/40">
               <span className="inline-flex items-center gap-2 text-sm"><Timer className="size-4 text-primary" /> {tr("الوقت المتبقي للتسليم:", "Time left to deliver:")} {order.data.due_at && <Countdown dueAt={order.data.due_at} />}</span>
-              <Link to="/fulfillment/$orderId" params={{ orderId: order.data.id }} className="rounded-lg bg-primary px-3 py-2 text-xs font-bold text-primary-foreground">
+              <Link to="/workspace" search={{ order: order.data.id }} className="rounded-lg bg-primary px-3 py-2 text-xs font-bold text-primary-foreground">
                 {tr("فتح مساحة التنفيذ", "Open workspace")}
               </Link>
             </Card>
@@ -190,7 +190,7 @@ function ProjectDetail() {
                             action.mutate({ kind: "accept", id: r.id }, {
                               onSuccess: (orderId) => {
                                 toast.success(tr("تم قبول العرض وحجز المبلغ في الضمان", "Proposal accepted and funds locked in escrow"));
-                                if (orderId) navigate({ to: "/fulfillment/$orderId", params: { orderId } });
+                                if (orderId) navigate({ to: "/workspace", search: { order: orderId } });
                               },
                               onError: (e) => toast.error(projectError(e, ar)),
                             });

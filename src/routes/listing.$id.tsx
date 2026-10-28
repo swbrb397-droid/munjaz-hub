@@ -142,7 +142,7 @@ function ListingDetail() {
         navigate({ to: "/fulfillment/$orderId", params: { orderId: orderId as string } });
         return;
       }
-      await createOrder.mutateAsync({
+      const created = await createOrder.mutateAsync({
         listingId: item!.id,
         sellerId: item!.ownerId,
         title: item!.title,
@@ -151,7 +151,7 @@ function ListingDetail() {
         deliveryDays: deliveryDays,
         sowTerms: sow.trim(),
       });
-      navigate({ to: "/workspace" });
+      navigate({ to: "/workspace", search: { order: created.id } });
     } catch (e) {
       const message = (e as Error).message;
       if (message === "INSUFFICIENT_BALANCE") {

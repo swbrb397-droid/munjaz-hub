@@ -251,7 +251,7 @@ function OrdersPage() {
                     }}
                     className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-destructive/60 bg-destructive/10 px-3 py-2 text-xs font-bold text-destructive disabled:opacity-50"
                   >
-                    <ShieldCheck className="size-3.5" /> إلغاء الطلب واسترداد الضمان بالكامل
+                    <ShieldCheck className="size-3.5" /> {tr("إلغاء الطلب واسترداد الضمان بالكامل", "Cancel order & get a full escrow refund")}
                   </button>
                 )}
 
