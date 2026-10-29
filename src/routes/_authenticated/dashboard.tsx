@@ -5,6 +5,7 @@ import { ArrowLeft, Award, Coins, ShoppingBag, TrendingUp, Users } from "lucide-
 import { Card, Section } from "@/components/site/Shell";
 import { PrestigeTracker } from "@/components/site/PrestigeTracker";
 import { KycLevelDrawer } from "@/components/site/KycLevelDrawer";
+import { WelcomeBanner } from "@/components/site/WelcomeBanner";
 import { useLang } from "@/lib/lang";
 import { useAuth } from "@/hooks/use-auth";
 import { useOrders, useProfile, useReferrals, useWallet } from "@/lib/queries";
@@ -99,6 +100,7 @@ function Dashboard() {
         </div>
       }
     >
+      <WelcomeBanner />
       {loadingCore && (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {[0, 1, 2, 3].map((i) => (
