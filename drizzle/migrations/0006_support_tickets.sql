@@ -1,6 +1,3 @@
--- Support tickets: user complaints/suggestions reviewed by AI, answered by admins.
--- Pending: apply via lov_database--migration once the Cloud backend resumes.
-
 CREATE TABLE public.support_tickets (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id uuid NOT NULL,
