@@ -1494,6 +1494,89 @@ export type Database = {
         }
         Relationships: []
       }
+      support_ticket_messages: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          is_admin: boolean
+          sender_id: string
+          ticket_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          is_admin?: boolean
+          sender_id: string
+          ticket_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          is_admin?: boolean
+          sender_id?: string
+          ticket_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_ticket_messages_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "support_tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      support_tickets: {
+        Row: {
+          ai_classified_at: string | null
+          ai_draft: string | null
+          ai_summary: string | null
+          body: string
+          category: string
+          created_at: string
+          id: string
+          order_id: string | null
+          priority: string
+          status: string
+          subject: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          ai_classified_at?: string | null
+          ai_draft?: string | null
+          ai_summary?: string | null
+          body: string
+          category?: string
+          created_at?: string
+          id?: string
+          order_id?: string | null
+          priority?: string
+          status?: string
+          subject: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          ai_classified_at?: string | null
+          ai_draft?: string | null
+          ai_summary?: string | null
+          body?: string
+          category?: string
+          created_at?: string
+          id?: string
+          order_id?: string | null
+          priority?: string
+          status?: string
+          subject?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -1725,6 +1808,10 @@ export type Database = {
           total_users: number
         }[]
       }
+      admin_reply_ticket: {
+        Args: { _body: string; _ticket_id: string }
+        Returns: string
+      }
       admin_resolve_dispute: {
         Args: {
           _action: string
@@ -1827,6 +1914,10 @@ export type Database = {
       }
       admin_toggle_user_ban: {
         Args: { p_banned: boolean; p_reason: string; p_user_id: string }
+        Returns: undefined
+      }
+      admin_update_ticket: {
+        Args: { _priority?: string; _status: string; _ticket_id: string }
         Returns: undefined
       }
       admin_user_activity: {
@@ -1943,6 +2034,15 @@ export type Database = {
           _screening: string
           _skills: string[]
           _title: string
+        }
+        Returns: string
+      }
+      create_support_ticket: {
+        Args: {
+          _body: string
+          _category: string
+          _order_id?: string
+          _subject: string
         }
         Returns: string
       }
@@ -2204,6 +2304,10 @@ export type Database = {
       release_order_milestone: {
         Args: { _milestone_id: string }
         Returns: Json
+      }
+      reply_support_ticket: {
+        Args: { _body: string; _ticket_id: string }
+        Returns: string
       }
       request_order_revision: {
         Args: { p_deliverable_id: string }
