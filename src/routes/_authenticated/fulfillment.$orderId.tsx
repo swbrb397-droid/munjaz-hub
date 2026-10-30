@@ -8,6 +8,8 @@ import { Card, Section } from "@/components/site/Shell";
 import { useLang } from "@/lib/lang";
 import { supabase } from "@/lib/cloud-client";
 import { useInstantDelivery, signInstantFile } from "@/lib/instant-delivery";
+import { OrderReviewCard } from "@/components/site/Reviews";
+import { useAuth } from "@/hooks/use-auth";
 
 export const Route = createFileRoute("/_authenticated/fulfillment/$orderId")({
   head: () => ({
@@ -33,7 +35,7 @@ function Fulfillment() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("orders")
-        .select("id,title,amount_usdt,status,listing_id,category,auto_release_at")
+        .select("id,title,amount_usdt,status,listing_id,category,auto_release_at,buyer_id,seller_id")
         .eq("id", orderId)
         .maybeSingle();
       if (error) throw error;
@@ -42,6 +44,7 @@ function Fulfillment() {
   });
 
   const qc = useQueryClient();
+  const { user } = useAuth();
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 1000);
@@ -221,6 +224,9 @@ function Fulfillment() {
             <CheckCircle2 className="size-4 shrink-0" />
             {tr("اكتمل الطلب وتم تحرير المبلغ للبائع.", "Order completed and funds released to the seller.")}
           </p>
+        )}
+        {status === "completed" && user && order.data && (
+          <OrderReviewCard orderId={order.data.id} buyerId={order.data.buyer_id} sellerId={order.data.seller_id} userId={user.id} />
         )}
 
         {delivery.isLoading ? (

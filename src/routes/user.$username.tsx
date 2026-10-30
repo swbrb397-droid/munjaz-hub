@@ -1,3 +1,4 @@
+import { SellerReviews } from "@/components/site/Reviews";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { PresenceBadge, usePresence } from "@/lib/presence";
 import { useQuery } from "@tanstack/react-query";
@@ -176,6 +177,8 @@ function SellerProfilePage() {
           ))}
         </div>
       )}
+
+      <SellerReviews sellerId={s.id} />
     </Section>
   );
 }
