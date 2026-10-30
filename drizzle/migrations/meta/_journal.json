@@ -57,6 +57,13 @@
       "when": 1793303726319,
       "tag": "0007_security_hardening",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1793351484092,
+      "tag": "0008_seller_reviews_rpc",
+      "breakpoints": true
     }
   ]
 }
