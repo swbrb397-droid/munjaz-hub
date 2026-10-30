@@ -2150,6 +2150,20 @@ export type Database = {
           xp_points: number
         }[]
       }
+      get_seller_reviews: {
+        Args: { p_seller_id: string }
+        Returns: {
+          comment: string
+          communication: number
+          created_at: string
+          id: string
+          order_title: string
+          punctuality: number
+          quality: number
+          rating: number
+          reviewer_name: string
+        }[]
+      }
       has_recent_mfa_verification: {
         Args: { _user_id: string }
         Returns: boolean
