@@ -318,7 +318,7 @@
 }
 
 /* Dialog cards centred by grid must never grow wider than the screen (long nowrap titles). */
-[role="dialog"].grid > * {
+.fixed.inset-0.grid > * {
   min-width: 0;
   max-width: 100%;
 }
