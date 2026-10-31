@@ -150,7 +150,12 @@ export function SellerReviews({ sellerId }: { sellerId: string }) {
             {rows.map((r) => (
               <Card key={r.id}>
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <span className="min-w-0 truncate text-sm font-bold">{r.reviewer_name || tr("مشترٍ", "Buyer")}</span>
+                  <span className="flex min-w-0 items-center gap-2">
+                    <span className="min-w-0 truncate text-sm font-bold">{r.reviewer_name || tr("مشترٍ", "Buyer")}</span>
+                    <span className="shrink-0 rounded border border-border px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground" title={tr("صدر هذا التقييم بعد صفقة مكتملة عبر الضمان", "Posted after a completed escrow order")}>
+                      {tr("شراء موثّق", "Verified purchase")}
+                    </span>
+                  </span>
                   <Stars value={r.rating} />
                 </div>
                 {r.order_title && <p className="mt-1 truncate text-xs text-muted-foreground"><bdi>{r.order_title}</bdi></p>}
