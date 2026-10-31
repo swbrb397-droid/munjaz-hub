@@ -75,7 +75,7 @@ function ContractInvite() {
   ];
 
   return (
-    <Section title={tr("دعوة لصفقة مباشرة", "Direct contract invitation")} subtitle={tr("بضمان المُنجِز — أموالك محفوظة حتى تستلم عملك.", "Protected by المُنجِز — your money is safe until you receive the work.")}>
+    <Section title={tr("دعوة لصفقة مباشرة", "Direct contract invitation")} subtitle={tr("بضمان المُنجِز — أموالك محفوظة حتى تستلم عملك.", "Protected by Al Munjaz Hub — your money is safe until you receive the work.")}>
       <div className="mx-auto grid max-w-2xl gap-5">
         <Card className="grid gap-3">
           <p className="flex items-center gap-1.5 text-sm text-muted-foreground">{tr("من", "From")}: <span className="font-semibold text-foreground">{c.seller_name}</span> {c.seller_verified && <VerifiedBadge />}</p>

@@ -50,13 +50,13 @@ const dict = {
     orders: "Orders",
     contracts: "Direct contracts",
     profile: "Profile & KYC",
-    brand: "المُنجِز",
+    brand: "Al Munjaz Hub",
 
     notifications: "Notifications",
     menu: "Menu",
     verified: "Verified",
     terms: "Terms of Service",
-    footer: "All rights reserved © المُنجِز",
+    footer: "All rights reserved © Al Munjaz Hub",
     footerSub: "TRC-20 · BEP-20 · Polygon",
   },
 } as const;

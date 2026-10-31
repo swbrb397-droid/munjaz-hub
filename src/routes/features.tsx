@@ -75,7 +75,7 @@ function FeaturesPage() {
   ];
 
   return (
-    <Section title={tr("مزايا المُنجِز", "Why المُنجِز")} subtitle={tr("سبع ركائز تجعل كل صفقة آمنة وعادلة للطرفين.", "Seven pillars that keep every deal safe and fair for both sides.")}>
+    <Section title={tr("مزايا المُنجِز", "Why Al Munjaz Hub")} subtitle={tr("سبع ركائز تجعل كل صفقة آمنة وعادلة للطرفين.", "Seven pillars that keep every deal safe and fair for both sides.")}>
       <div className="mx-auto grid max-w-5xl gap-4 md:grid-cols-2">
         {pillars.map((p, i) => (
           <Card key={p.title} className="flex flex-col gap-3">

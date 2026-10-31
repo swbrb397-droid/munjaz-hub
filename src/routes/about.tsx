@@ -30,7 +30,7 @@ function AboutPage() {
     { icon: Scale, t: tr("تحكيم محايد", "Neutral arbitration"), d: tr("عند الخلاف يراجع فريق التحكيم المحادثة والتسليم، ورسائل الطلب لا يمكن تعديلها أو حذفها.", "In a dispute, arbitrators review the chat and delivery; order messages can't be edited or deleted.") },
   ];
   return (
-    <Section title={tr("من نحن", "About us")} subtitle={tr("المُنجِز سوق رقمي عالمي ثنائي اللغة يجمع العمل الحر والمنتجات الرقمية في مكان واحد، بالدفع والسحب عبر USDT.", "Al Munjiz is a global bilingual marketplace for freelance work and digital products, paid and withdrawn in USDT.")}>
+    <Section title={tr("من نحن", "About us")} subtitle={tr("المُنجِز سوق رقمي عالمي ثنائي اللغة يجمع العمل الحر والمنتجات الرقمية في مكان واحد، بالدفع والسحب عبر USDT.", "Al Munjaz Hub is a global bilingual marketplace for freelance work and digital products, paid and withdrawn in USDT.")}>
       <div className="mx-auto max-w-3xl space-y-10">
         <p className="leading-relaxed text-muted-foreground">
           {tr(

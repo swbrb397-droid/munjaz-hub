@@ -243,6 +243,7 @@ function OrdersPage() {
                     type="button"
                     disabled={transition.isPending}
                     onClick={() => {
+                      if (!window.confirm(tr("هل أنت متأكد من إلغاء هذا الطلب؟ سيُسترد مبلغ الضمان بالكامل ولا يمكن التراجع.", "Cancel this order? The full escrow will be refunded and this cannot be undone."))) return;
                       setError(null);
                       transition.mutate(
                         { id: o.id, status: "cancelled" },
