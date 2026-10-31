@@ -306,7 +306,7 @@ export function Shell({ children }: { children: ReactNode }) {
               <path d="m10.5 16.2 3.8 3.8 7.4-7.6" fill="none" stroke="var(--primary-foreground)" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
             <span className="whitespace-nowrap py-1 text-base font-bold leading-normal text-foreground lg:text-lg">
-              المُنجِز
+              {lang === "ar" ? "المُنجِز" : "Al Munjaz Hub"}
             </span>
 
           </Link>

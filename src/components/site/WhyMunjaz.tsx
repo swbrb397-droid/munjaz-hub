@@ -63,7 +63,7 @@ export function WhyMunjaz() {
         <div className="mx-auto max-w-2xl text-center">
           <span className="chip">{tr("من نحن", "About us")}</span>
           <h2 id="why-munjaz" className="mt-3 text-2xl font-black sm:text-4xl">
-            {tr("لماذا المُنجِز؟", "Why Al Munjiz?")}
+            {tr("لماذا المُنجِز؟", "Why Al Munjaz Hub?")}
           </h2>
           <p className="mt-3 text-sm leading-relaxed text-muted-foreground sm:text-base">
             {tr(

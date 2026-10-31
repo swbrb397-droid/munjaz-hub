@@ -64,9 +64,9 @@ export function OrderReviewCard({ orderId, buyerId, sellerId, userId }: { orderI
   }
 
   const axes: [Axis, string][] = [
-    ["quality", tr("جودة المنتج ومطابقته للوصف", "Product quality & accuracy")],
-    ["communication", tr("تعامل البائع ودعمه", "Seller support")],
-    ["punctuality", tr("سرعة وسلاسة التسليم", "Delivery speed")],
+    ["quality", tr("مطابقة المنتج للوصف والمعاينة", "Matches description & preview")],
+    ["communication", tr("جودة الملفات وسلامتها", "File quality & integrity")],
+    ["punctuality", tr("وضوح الشرح والتعليمات", "Clear docs & instructions")],
   ];
 
   return (
